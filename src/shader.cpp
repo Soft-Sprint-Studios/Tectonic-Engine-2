@@ -38,10 +38,11 @@ Shader::~Shader()
     }
 }
 
-bool Shader::Load(const std::string& vertPath, const std::string& fragPath)
+bool Shader::Load(const std::string& vertPath, const std::string& fragPath, const std::string& geomPath)
 {
     std::string vCode = Filesystem::ReadText(vertPath);
     std::string fCode = Filesystem::ReadText(fragPath);
+    std::string gCode = !geomPath.empty() ? Filesystem::ReadText(geomPath) : "";
 
     if (vCode.empty() || fCode.empty())
     {
@@ -50,10 +51,18 @@ bool Shader::Load(const std::string& vertPath, const std::string& fragPath)
 
     GLuint vs = CompileShader(GL_VERTEX_SHADER, vCode);
     GLuint fs = CompileShader(GL_FRAGMENT_SHADER, fCode);
+    GLuint gs = 0;
 
     m_program = glCreateProgram();
     glAttachShader(m_program, vs);
     glAttachShader(m_program, fs);
+
+    if (!gCode.empty())
+    {
+        gs = CompileShader(GL_GEOMETRY_SHADER, gCode);
+        glAttachShader(m_program, gs);
+    }
+
     glLinkProgram(m_program);
 
     GLint success;
@@ -68,6 +77,8 @@ bool Shader::Load(const std::string& vertPath, const std::string& fragPath)
 
     glDeleteShader(vs);
     glDeleteShader(fs);
+    if (gs != 0) 
+        glDeleteShader(gs);
     return true;
 }
 
@@ -124,4 +135,9 @@ void Shader::SetVec3(const std::string& name, const glm::vec3& vec) const
 void Shader::SetInt(const std::string& name, int value) const
 {
     glUniform1i(GetUniformLocation(name), value);
+}
+
+void Shader::SetFloat(const std::string& name, float value) const
+{
+    glUniform1f(GetUniformLocation(name), value);
 }
