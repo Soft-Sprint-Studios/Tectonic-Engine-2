@@ -188,16 +188,20 @@ namespace BSP
             int numFaces = m_header->lumps[LUMP_FACES].length / sizeof(Face);
             std::unordered_map<std::string, std::vector<int>> textureBatches;
 
-            for (int i = 0; i < numFaces; i++)
+            const Model& worldModel = d_models[0];
+
+            for (int i = 0; i < worldModel.numfaces; i++)
             {
-                const Face& face = d_faces[i];
+                int faceIdx = worldModel.firstface + i;
+                const Face& face = d_faces[faceIdx];
                 const TexInfo& tex = d_texinfos[face.texinfo];
+
                 if (tex.flags & 0x0080 || tex.flags & 0x0004 || tex.flags & 0x0002)
                     continue; // Skip nodraw/triggers
 
                 const TexData& td = d_texdatas[tex.texdata];
                 std::string name = d_stringdata + d_stringtable[td.nameStringTableID];
-                textureBatches[name].push_back(i);
+                textureBatches[name].push_back(faceIdx);
             }
 
             // Process each batch

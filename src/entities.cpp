@@ -260,6 +260,15 @@ std::shared_ptr<Entity> EntityManager::SpawnEntity(const std::string& className,
         if (ent->m_physObject)
         {
             ent->m_physObject->setUserPointer(ent.get());
+
+            if (!ent->IsCollidable())
+            {
+                ent->m_physObject->setCollisionFlags(ent->m_physObject->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
+            }
+            else
+            {
+                ent->m_physObject->setCollisionFlags(ent->m_physObject->getCollisionFlags() & ~btCollisionObject::CF_NO_CONTACT_RESPONSE);
+            }
         }
     }
 

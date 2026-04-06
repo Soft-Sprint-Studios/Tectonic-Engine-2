@@ -73,6 +73,15 @@ public:
             m_disabled = !m_disabled;
     }
 
+    bool IsVisible() const override 
+    { 
+        return false; 
+    }
+    bool IsCollidable() const override 
+    { 
+        return false; 
+    }
+
 protected:
     float m_wait = 1.0f;
     float m_nextFireTime = 0.0f;
@@ -116,6 +125,15 @@ public:
 
         FireOutput("OnPressed");
         m_nextUseTime = (float)Time::TotalTime() + m_delay;
+    }
+
+    bool IsVisible() const override
+    {
+        return true;
+    }
+    bool IsCollidable() const override
+    {
+        return true;
     }
 
 private:
