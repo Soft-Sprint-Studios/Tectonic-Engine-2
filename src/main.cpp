@@ -38,12 +38,14 @@
 #include "player.h"
 #include "maps.h"
 #include "networking.h"
+#include "sound.h"
 
 ENGINE_API int Engine_Main(int argc, char** argv)
 {
     // Core Systems Init
     Filesystem::Init();
     Console::Init();
+    Sound::Init();
     Networking::Init();
     CVar::Init();
 
@@ -82,6 +84,7 @@ ENGINE_API int Engine_Main(int argc, char** argv)
         // Update Time and Console
         Time::Update();
         Console::Update();
+        Sound::Update(camera.position, camera.GetForward());
         Networking::Update();
         Physics::Update(Time::DeltaTime());
 
@@ -115,6 +118,8 @@ ENGINE_API int Engine_Main(int argc, char** argv)
 
     // Cleanup
     renderer.Shutdown();
+    Sound::Shutdown();
+
     Resources::Clear();
     EntityManager::Shutdown();
     Physics::Shutdown();

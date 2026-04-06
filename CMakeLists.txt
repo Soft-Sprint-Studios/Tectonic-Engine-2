@@ -16,6 +16,8 @@ set(GLAD_PATH ${CMAKE_SOURCE_DIR}/libs/glad)
 set(BULLET_PATH ${CMAKE_SOURCE_DIR}/libs/bullet)
 set(CGLTF_PATH ${CMAKE_SOURCE_DIR}/libs/cgltf)
 set(FLTK_PATH ${CMAKE_SOURCE_DIR}/libs/fltk-1.4.4)
+set(OPENAL_PATH ${CMAKE_SOURCE_DIR}/libs/openal-soft-1.24.3)
+set(MINIMP3_PATH ${CMAKE_SOURCE_DIR}/libs/minimp3)
 
 # ---- Detect 32/64-bit ----
 if(WIN32)
@@ -45,6 +47,8 @@ target_include_directories(TectonicEngine2 PRIVATE
     ${GLAD_PATH}/include
     ${BULLET_PATH}/include
     ${CGLTF_PATH}/include
+    ${OPENAL_PATH}/include
+    ${MINIMP3_PATH}/include
     src
 )
 
@@ -58,6 +62,7 @@ if(WIN32)
         ${BULLET_PATH}/lib/${ARCH_FOLDER}/BulletCollision.lib
         ${BULLET_PATH}/lib/${ARCH_FOLDER}/BulletDynamics.lib
         ${BULLET_PATH}/lib/${ARCH_FOLDER}/LinearMath.lib
+        ${OPENAL_PATH}/lib/${ARCH_FOLDER}/OpenAL32.lib
         OpenGL::GL
     )
 else()

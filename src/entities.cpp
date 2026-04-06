@@ -23,9 +23,11 @@
  */
 #include "entities.h"
 #include "console.h"
+#include "concmd.h"
 #include "timing.h"
 #include "physics.h"
 #include "bsploader.h"
+#include "filesystem.h"
 #include <sstream>
 #include <vector>
 
@@ -38,16 +40,16 @@ void Entity::Spawn(const std::unordered_map<std::string, std::string>& keyvalues
     m_targetName = GetValue("targetname");
     m_spawnflags = GetInt("spawnflags", 0);
 
-    // Parse Outputs: "target,input,parameter,delay,timesToFire"
     for (auto const& [key, val] : keyvalues)
     {
-        if (key.compare(0, 2, "On") == 0)
+        // outputs have \x1b escape must read to not corrupt outputs
+        if (val.find('\x1b') != std::string::npos)
         {
             std::stringstream ss(val);
             std::string segment;
             std::vector<std::string> parts;
 
-            while (std::getline(ss, segment, ','))
+            while (std::getline(ss, segment, '\x1b'))
             {
                 parts.push_back(segment);
             }
@@ -58,8 +60,8 @@ void Entity::Spawn(const std::unordered_map<std::string, std::string>& keyvalues
                 io.targetEntity = parts[0];
                 io.input = parts[1];
                 io.parameter = (parts.size() > 2) ? parts[2] : "";
-                io.delay = (parts.size() > 3) ? std::stof(parts[3]) : 0.0f;
-                io.timesToFire = (parts.size() > 4) ? std::stoi(parts[4]) : -1;
+                io.delay = (parts.size() > 3 && !parts[3].empty()) ? std::stof(parts[3]) : 0.0f;
+                io.timesToFire = (parts.size() > 4 && !parts[4].empty()) ? std::stoi(parts[4]) : -1;
 
                 m_outputs.push_back({ key, io });
             }
@@ -106,7 +108,9 @@ void Entity::FireOutput(const std::string& outputName)
 {
     for (auto& [name, io] : m_outputs)
     {
-        if (name == outputName)
+        bool match = Filesystem::StringEqual(name, outputName);
+
+        if (match)
         {
             auto target = EntityManager::FindEntityByName(io.targetEntity);
             if (target)
@@ -121,7 +125,7 @@ void Entity::FireOutput(const std::string& outputName)
                     di.target = target;
                     di.input = io.input;
                     di.parameter = io.parameter;
-                    di.fireTime = Time::TotalTime() + io.delay;
+                    di.fireTime = (float)Time::TotalTime() + io.delay;
                     EntityManager::AddDelayedInput(di);
                 }
             }
@@ -287,4 +291,14 @@ std::shared_ptr<Entity> EntityManager::FindEntityByName(const std::string& name)
         }
     }
     return nullptr;
+}
+
+CON_COMMAND(ent_dump, "Lists all entities and their targetnames")
+{
+    Console::Log("--- Entity Dump ---");
+    for (auto const& ent : EntityManager::GetEntities())
+    {
+        Console::Log("Class: " + ent->GetClassName() + " | Name: " + ent->GetTargetName());
+    }
+    Console::Log("-------------------");
 }

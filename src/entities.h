@@ -112,6 +112,11 @@ public:
         s_delayedInputs.push_back(di);
     }
 
+    static const std::vector<std::shared_ptr<Entity>>& GetEntities() 
+    { 
+        return s_entities; 
+    }
+
     static std::unordered_map<std::string, std::function<std::shared_ptr<Entity>()>>& GetFactory()
     {
         static std::unordered_map<std::string, std::function<std::shared_ptr<Entity>()>> s_factory;
