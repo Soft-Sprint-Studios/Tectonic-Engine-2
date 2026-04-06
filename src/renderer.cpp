@@ -38,6 +38,10 @@ CVar r_debug_lightmaps_directional("r_debug_lightmaps_directional", "0", CVAR_NO
 CVar r_debug_vertexlight("r_debug_vertexlight", "0", CVAR_NONE);
 CVar r_debug_vertexlight_directional("r_debug_vertexlight_directional", "0", CVAR_NONE);
 
+CVar r_fov("fov", "75.0", CVAR_SAVE);
+CVar r_skybox("r_skybox", "1", CVAR_SAVE);
+CVar r_wireframe("r_wireframe", "0", CVAR_NONE);
+
 Renderer::Renderer() : m_windowRef(nullptr)
 {
 }
@@ -111,7 +115,11 @@ void Renderer::Render(Camera& camera)
     int w, h;
     SDL_GetWindowSize(m_windowRef->Get(), &w, &h);
 
+    camera.SetFOV(r_fov.GetFloat());
     camera.SetAspectRatio((float)w / (float)h);
+
+    if (r_wireframe.GetInt() > 0)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     m_postProcess->Begin();
     glViewport(0, 0, w, h);
@@ -155,12 +163,14 @@ void Renderer::Render(Camera& camera)
     }
 
     // Draw sky
-    if (m_skyRenderer)
+    if (m_skyRenderer && r_skybox.GetInt() > 0)
     {
         m_skyRenderer->Draw(camera);
     }
 
     m_postProcess->End();
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     // Draw postprocessing
     glDisable(GL_DEPTH_TEST);

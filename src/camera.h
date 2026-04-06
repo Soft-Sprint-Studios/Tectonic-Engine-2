@@ -63,6 +63,16 @@ public:
         return m_aspect;
     }
 
+    void SetFOV(float fov) 
+    {
+        m_fov = fov; 
+    }
+
+    float GetFOV() const 
+    { 
+        return m_fov; 
+    }
+
 private:
     float m_fov, m_aspect, m_near, m_far;
 };

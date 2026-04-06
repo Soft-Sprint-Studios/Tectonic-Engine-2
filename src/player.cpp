@@ -25,8 +25,11 @@
 #include "player.h"
 #include "physics.h"
 #include "console.h"
+#include "cvar.h"
 #include "concmd.h"
 #include <glm/gtx/string_cast.hpp>
+
+CVar cl_sensitivity("sensitivity", "1.0", CVAR_SAVE);
 
 CON_COMMAND(noclip, "Toggles player noclip mode")
 {
@@ -91,7 +94,7 @@ void Player::Think(float deltaTime)
         return;
     }
 
-    float mouseSensitivity = 0.15f;
+    float mouseSensitivity = 0.15f * cl_sensitivity.GetFloat();
     m_camera->yaw += m_input->GetMouseDeltaX() * mouseSensitivity;
     m_camera->pitch -= m_input->GetMouseDeltaY() * mouseSensitivity;
 
