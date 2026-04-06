@@ -41,6 +41,7 @@ CVar r_debug_vertexlight_directional("r_debug_vertexlight_directional", "0", CVA
 CVar r_fov("fov", "75.0", CVAR_SAVE);
 CVar r_skybox("r_skybox", "1", CVAR_SAVE);
 CVar r_wireframe("r_wireframe", "0", CVAR_NONE);
+CVar r_fullbright("r_fullbright", "0", CVAR_NONE);
 
 Renderer::Renderer() : m_windowRef(nullptr)
 {
@@ -132,6 +133,7 @@ void Renderer::Render(Camera& camera)
     m_worldShader.SetMat4("u_view", camera.GetViewMatrix());
     m_worldShader.SetMat4("u_model", glm::mat4(1.0f));
     m_worldShader.SetVec3("u_viewPos", camera.position);
+    m_worldShader.SetInt("u_fullbright", r_fullbright.GetInt());
 
     m_worldShader.SetInt("u_diffuse", 0);
     m_worldShader.SetInt("u_lightmap", 1);

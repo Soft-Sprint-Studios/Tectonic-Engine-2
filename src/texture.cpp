@@ -29,7 +29,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-CVar texAniso("r_textureAnisotropy", "16.0", CVAR_SAVE);
+CVar r_textureAnisotropy("r_textureAnisotropy", "16.0", CVAR_SAVE);
+CVar r_textureMipmapping("r_textureMipmapping", "1", CVAR_SAVE);
 
 Texture::Texture()
 {
@@ -78,12 +79,15 @@ void Texture::Create(int width, int height, unsigned char* data)
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, r_textureMipmapping.GetInt() ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_width, m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, texAniso.GetFloat());
+    if (r_textureMipmapping.GetInt())
+    {
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, r_textureAnisotropy.GetFloat());
 
     glBindTexture(GL_TEXTURE_2D, 0);
 }

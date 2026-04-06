@@ -24,10 +24,15 @@
 #include "sound.h"
 #include "filesystem.h"
 #include "console.h"
+#include "cvar.h"
 #include <vector>
+#include <algorithm>
 
 #define MINIMP3_IMPLEMENTATION
 #include "minimp3_ex.h"
+
+CVar s_volume("s_volume", "1.0", CVAR_SAVE);
+CVar s_mute("s_mute", "0", CVAR_SAVE);
 
 namespace Sound
 {
@@ -136,6 +141,10 @@ namespace Sound
 
     void Update(const glm::vec3& listenerPos, const glm::vec3& listenerForward)
     {
+        float vol = std::clamp(s_volume.GetFloat(), 0.0f, 5.0f);
+        float gain = (s_mute.GetInt() > 0) ? 0.0f : vol;
+        alListenerf(AL_GAIN, gain);
+
         alListenerfv(AL_POSITION, &listenerPos.x);
         float orientation[] = { listenerForward.x, listenerForward.y, listenerForward.z, 0.0f, 1.0f, 0.0f };
         alListenerfv(AL_ORIENTATION, orientation);
