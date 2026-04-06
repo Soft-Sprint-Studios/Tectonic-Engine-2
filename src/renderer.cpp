@@ -33,6 +33,11 @@ CVar r_vsync("r_vsync", "1", CVAR_SAVE);
 CVar r_multisample("r_multisample", "1", CVAR_SAVE);
 CVar r_multisample_samples("r_multisample_samples", "4", CVAR_SAVE);
 
+CVar r_debug_lightmaps("r_debug_lightmaps", "0", CVAR_NONE);
+CVar r_debug_lightmaps_directional("r_debug_lightmaps_directional", "0", CVAR_NONE);
+CVar r_debug_vertexlight("r_debug_vertexlight", "0", CVAR_NONE);
+CVar r_debug_vertexlight_directional("r_debug_vertexlight_directional", "0", CVAR_NONE);
+
 Renderer::Renderer() : m_windowRef(nullptr)
 {
 }
@@ -124,6 +129,18 @@ void Renderer::Render(Camera& camera)
     m_worldShader.SetInt("u_lightmap", 1);
     m_worldShader.SetInt("u_normal", 2);
     m_worldShader.SetInt("u_specular", 3);
+
+    // Determine debug mode
+    int debugMode = 0;
+    if (r_debug_lightmaps.GetInt()) 
+        debugMode = 1;
+    else if (r_debug_lightmaps_directional.GetInt()) 
+        debugMode = 2;
+    else if (r_debug_vertexlight.GetInt()) 
+        debugMode = 3;
+    else if (r_debug_vertexlight_directional.GetInt()) 
+        debugMode = 4;
+    m_worldShader.SetInt("u_debugMode", debugMode);
 
     // Draw BSP
     if (m_bspRenderer)

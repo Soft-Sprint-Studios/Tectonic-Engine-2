@@ -18,6 +18,7 @@ uniform sampler2D u_specular;
 uniform bool u_useBump;
 uniform bool u_isModel;
 uniform vec3 u_viewPos;
+uniform int u_debugMode;
 
 out vec4 FragColor;
 
@@ -93,4 +94,50 @@ void main()
 
     vec3 finalDiffuse = albedo.rgb * diffuseLight * 2.0;
     FragColor = vec4(finalDiffuse + specularLight, albedo.a);
+
+     // Debug Tools
+    if (u_debugMode == 1) // r_debug_lightmaps
+    {
+        if (!u_isModel) 
+        {
+            FragColor = vec4(texture(u_lightmap, LmCoord1).rgb, 1.0);
+        }
+        else 
+        {
+            FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        }
+    }
+    else if (u_debugMode == 2) // r_debug_lightmaps_directional
+    {
+        if (!u_isModel) 
+        {
+            FragColor = vec4(diffuseLight * 2.0, 1.0);
+        }
+        else 
+        {
+            FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        }
+    }
+    else if (u_debugMode == 3) // r_debug_vertexlight
+    {
+        if (u_isModel) 
+        {
+            FragColor = vec4(Color, 1.0);
+        }
+        else 
+        {
+            FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        }
+    }
+    else if (u_debugMode == 4) // r_debug_vertexlight_directional
+    {
+        if (u_isModel) 
+        {
+            FragColor = vec4(diffuseLight, 1.0);
+        }
+        else 
+        {
+            FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        }
+    }
 }
