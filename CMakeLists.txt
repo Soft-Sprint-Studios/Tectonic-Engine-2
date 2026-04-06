@@ -76,6 +76,10 @@ else()
     )
 endif()
 
+if(MSVC AND WIN32 AND NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
+    target_link_options(TectonicEngine2 PRIVATE "/SAFESEH:NO")
+endif()
+
 # ---- DLL COPY ----
 if (WIN32)
     add_custom_command(TARGET TectonicEngine2 POST_BUILD
