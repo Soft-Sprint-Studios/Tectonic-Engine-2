@@ -161,6 +161,14 @@ namespace BSP
     {
         int32_t lumpCount;
     };
+
+    struct Model
+    {
+        glm::vec3 mins, maxs;
+        glm::vec3 origin;
+        int32_t headnode;
+        int32_t firstface, numfaces;
+    };
 #pragma pack(pop)
 
     // Engine specific
@@ -203,6 +211,7 @@ namespace BSP
     {
         std::string className;
         std::unordered_map<std::string, std::string> keyvalues;
+        CollisionData brushCollision;
     };
 
     struct MapData 

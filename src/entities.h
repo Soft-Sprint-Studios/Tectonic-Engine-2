@@ -22,12 +22,15 @@
  * SOFTWARE.
  */
 #pragma once
+#include "bsploader.h"
 #include <string>
 #include <vector>
 #include <memory>
 #include <unordered_map>
 #include <functional>
 #include <glm/glm.hpp>
+
+class btCollisionObject;
 
 struct EntityIO
 {
@@ -47,6 +50,10 @@ public:
     virtual void Think(float deltaTime);
     virtual void AcceptInput(const std::string& inputName, const std::string& parameter);
 
+    virtual void Touch(Entity* other) {}
+    virtual void EndTouch(Entity* other) {}
+    virtual void OnPress(Entity* activator) {}
+
     void FireOutput(const std::string& outputName);
 
     glm::vec3 GetOrigin() const;
@@ -63,6 +70,7 @@ protected:
     glm::vec3 m_origin{ 0.0f, 0.0f, 0.0f };
     std::string m_className;
     std::string m_targetName;
+    btCollisionObject* m_physObject = nullptr;
 
     std::unordered_map<std::string, std::string> m_keyvalues;
     std::vector<std::pair<std::string, EntityIO>> m_outputs;
@@ -85,7 +93,7 @@ public:
     static void UpdateAll(float deltaTime);
     static void Shutdown();
 
-    static std::shared_ptr<Entity> SpawnEntity(const std::string& className, const std::unordered_map<std::string, std::string>& keyvalues);
+    static std::shared_ptr<Entity> SpawnEntity(const std::string& className, const BSP::EntityData& entData);
 
     static std::shared_ptr<Entity> FindEntityByClass(const std::string& className);
     static std::shared_ptr<Entity> FindEntityByName(const std::string& name);

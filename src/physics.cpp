@@ -21,8 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#include "bsploader.h"
 #include "physics.h"
 #include "console.h"
+#include "entities.h"
 
 #include <BulletCollision/BroadphaseCollision/btDbvtBroadphase.h>
 #include <BulletCollision/CollisionDispatch/btDefaultCollisionConfiguration.h>
@@ -32,6 +34,9 @@
 #include <BulletCollision/CollisionShapes/btCapsuleShape.h>
 #include <BulletDynamics/Vehicle/btRaycastVehicle.h>
 #include <LinearMath/btDefaultMotionState.h>
+#include <BulletCollision/CollisionShapes/btCompoundShape.h>
+#include <set>
+#include <algorithm>
 
 namespace Physics
 {
@@ -45,6 +50,7 @@ namespace Physics
     static btBvhTriangleMeshShape* s_bspShape;
     static btRigidBody* s_bspBody;
     static std::vector<btTriangleMesh*> s_modelMeshes;
+    static std::set<std::pair<const btCollisionObject*, const btCollisionObject*>> s_lastFramePairs;
 
     void Init()
     {
@@ -61,6 +67,46 @@ namespace Physics
     void Update(float deltaTime)
     {
         s_dynamicsWorld->stepSimulation(deltaTime, 10);
+
+        // Touch / EndTouch API
+        std::set<std::pair<const btCollisionObject*, const btCollisionObject*>> currentFramePairs;
+        int numManifolds = s_dispatcher->getNumManifolds();
+        for (int i = 0; i < numManifolds; i++)
+        {
+            btPersistentManifold* contactManifold = s_dispatcher->getManifoldByIndexInternal(i);
+            const btCollisionObject* obA = contactManifold->getBody0();
+            const btCollisionObject* obB = contactManifold->getBody1();
+
+            if (obA->getUserPointer() && obB->getUserPointer())
+            {
+                currentFramePairs.insert(std::minmax(obA, obB));
+            }
+        }
+
+        // OnTouch API
+        for (const auto& pair : currentFramePairs)
+        {
+            if (s_lastFramePairs.find(pair) == s_lastFramePairs.end())
+            {
+                Entity* entA = static_cast<Entity*>(pair.first->getUserPointer());
+                Entity* entB = static_cast<Entity*>(pair.second->getUserPointer());
+                entA->Touch(entB);
+                entB->Touch(entA);
+            }
+        }
+
+        // OnEndTouch API
+        for (const auto& pair : s_lastFramePairs)
+        {
+            if (currentFramePairs.find(pair) == currentFramePairs.end())
+            {
+                Entity* entA = static_cast<Entity*>(pair.first->getUserPointer());
+                Entity* entB = static_cast<Entity*>(pair.second->getUserPointer());
+                entA->EndTouch(entB);
+                entB->EndTouch(entA);
+            }
+        }
+        s_lastFramePairs = currentFramePairs;
     }
 
     void Shutdown()
@@ -186,7 +232,39 @@ namespace Physics
         s_dynamicsWorld->addRigidBody(body, COL_WORLD, COL_ALL);
     }
 
-    btKinematicCharacterController* CreateCharacter(const glm::vec3& position)
+    btCollisionObject* CreateGhostObject(const BSP::CollisionData& collisionData, const glm::vec3& origin)
+    {
+        if (collisionData.vertices.empty()) 
+            return nullptr;
+
+        btTriangleMesh* mesh = new btTriangleMesh();
+        s_modelMeshes.push_back(mesh);
+
+        for (size_t i = 0; i < collisionData.indices.size(); i += 3)
+        {
+            const auto& v0_glm = collisionData.vertices[collisionData.indices[i]];
+            const auto& v1_glm = collisionData.vertices[collisionData.indices[i + 1]];
+            const auto& v2_glm = collisionData.vertices[collisionData.indices[i + 2]];
+            mesh->addTriangle(btVector3(v0_glm.x, v0_glm.y, v0_glm.z), btVector3(v1_glm.x, v1_glm.y, v1_glm.z), btVector3(v2_glm.x, v2_glm.y, v2_glm.z));
+        }
+
+        btBvhTriangleMeshShape* shape = new btBvhTriangleMeshShape(mesh, true);
+
+        btGhostObject* ghost = new btPairCachingGhostObject();
+        ghost->setCollisionShape(shape);
+        ghost->setCollisionFlags(btCollisionObject::CF_NO_CONTACT_RESPONSE);
+
+        btTransform trans;
+        trans.setIdentity();
+        glm::vec3 physOrigin = glm::vec3(origin.x, origin.z, -origin.y) * 0.03125f;
+        trans.setOrigin({ physOrigin.x, physOrigin.y, physOrigin.z });
+        ghost->setWorldTransform(trans);
+
+        s_dynamicsWorld->addCollisionObject(ghost, COL_WORLD, COL_PLAYER);
+        return ghost;
+    }
+
+    btKinematicCharacterController* CreateCharacter(const glm::vec3& position, void* userPtr)
     {
         btScalar characterHeight = 1.75f;
         btScalar characterRadius = 0.4f;
@@ -201,6 +279,7 @@ namespace Physics
         ghostObject->setWorldTransform(startTransform);
         ghostObject->setCollisionShape(capsule);
         ghostObject->setCollisionFlags(btCollisionObject::CF_CHARACTER_OBJECT);
+        ghostObject->setUserPointer(userPtr);
 
         s_dynamicsWorld->getBroadphase()->getOverlappingPairCache()->setInternalGhostPairCallback(new btGhostPairCallback());
         s_dynamicsWorld->addCollisionObject(ghostObject, COL_PLAYER, COL_WORLD);

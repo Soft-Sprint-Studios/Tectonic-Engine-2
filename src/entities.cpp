@@ -24,6 +24,8 @@
 #include "entities.h"
 #include "console.h"
 #include "timing.h"
+#include "physics.h"
+#include "bsploader.h"
 #include <sstream>
 #include <vector>
 
@@ -191,7 +193,7 @@ void EntityManager::Shutdown()
     s_delayedInputs.clear();
 }
 
-std::shared_ptr<Entity> EntityManager::SpawnEntity(const std::string& className, const std::unordered_map<std::string, std::string>& keyvalues)
+std::shared_ptr<Entity> EntityManager::SpawnEntity(const std::string& className, const BSP::EntityData& entData)
 {
     // Do we have worldspawn or lights? Ignore!
     if (className == "worldspawn" || className == "light" || className == "light_spot" || className == "light_environment")
@@ -210,8 +212,8 @@ std::shared_ptr<Entity> EntityManager::SpawnEntity(const std::string& className,
     std::shared_ptr<Entity> ent = it->second();
     ent->m_className = className;
 
-    auto originIt = keyvalues.find("origin");
-    if (originIt != keyvalues.end())
+    auto originIt = entData.keyvalues.find("origin");
+    if (originIt != entData.keyvalues.end())
     {
         std::stringstream ss(originIt->second);
         glm::vec3 pos;
@@ -219,7 +221,17 @@ std::shared_ptr<Entity> EntityManager::SpawnEntity(const std::string& className,
         ent->SetOrigin(pos);
     }
 
-    ent->Spawn(keyvalues);
+    // If brush entity, create physics object
+    if (!entData.brushCollision.vertices.empty())
+    {
+        ent->m_physObject = Physics::CreateGhostObject(entData.brushCollision, ent->GetOrigin());
+        if (ent->m_physObject)
+        {
+            ent->m_physObject->setUserPointer(ent.get());
+        }
+    }
+
+    ent->Spawn(entData.keyvalues);
     s_entities.push_back(ent);
 
     return ent;

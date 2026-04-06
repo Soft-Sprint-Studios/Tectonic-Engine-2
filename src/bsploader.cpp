@@ -70,6 +70,7 @@ namespace BSP
         const Face* d_faces = nullptr;
         const Plane* d_planes = nullptr;
         const Edge* d_edges = nullptr;
+        const Model* d_models = nullptr;
         const int32_t* d_surfedges = nullptr;
         const TexInfo* d_texinfos = nullptr;
         const TexData* d_texdatas = nullptr;
@@ -113,6 +114,7 @@ namespace BSP
             d_faces = GetLump<Face>(LUMP_FACES);
             d_planes = GetLump<Plane>(LUMP_PLANES);
             d_edges = GetLump<Edge>(LUMP_EDGES);
+            d_models = GetLump<Model>(LUMP_MODELS);
             d_surfedges = GetLump<int32_t>(LUMP_SURFEDGES);
             d_texinfos = GetLump<TexInfo>(LUMP_TEXINFO);
             d_texdatas = GetLump<TexData>(LUMP_TEXDATA);
@@ -217,6 +219,46 @@ namespace BSP
 
                 dc.count = (uint32_t)m_map.renderVertices.size() - dc.start;
                 if (dc.count > 0) m_map.drawCalls.push_back(dc);
+            }
+
+            // Process brush models for entities
+            for (auto& ent : m_map.entities)
+            {
+                auto modelIt = ent.keyvalues.find("model");
+                if (modelIt != ent.keyvalues.end() && modelIt->second[0] == '*')
+                {
+                    int modelIdx = std::stoi(modelIt->second.substr(1));
+                    const Model& model = d_models[modelIdx];
+
+                    std::unordered_map<uint32_t, uint32_t> vertRemap;
+
+                    for (int i = 0; i < model.numfaces; ++i)
+                    {
+                        const Face& face = d_faces[model.firstface + i];
+                        std::vector<uint32_t> faceIndices;
+
+                        for (int j = 0; j < face.numedges; ++j)
+                        {
+                            int32_t se = d_surfedges[face.firstedge + j];
+                            uint32_t vIdx = (se >= 0) ? d_edges[se].v[0] : d_edges[-se].v[1];
+
+                            if (vertRemap.find(vIdx) == vertRemap.end())
+                            {
+                                vertRemap[vIdx] = (uint32_t)ent.brushCollision.vertices.size();
+                                const auto& v = d_verts[vIdx];
+                                ent.brushCollision.vertices.push_back(glm::vec3(v.x, v.z, -v.y) * 0.03125f);
+                            }
+                            faceIndices.push_back(vertRemap[vIdx]);
+                        }
+
+                        for (size_t k = 1; k < faceIndices.size() - 1; ++k)
+                        {
+                            ent.brushCollision.indices.push_back(faceIndices[0]);
+                            ent.brushCollision.indices.push_back(faceIndices[k + 1]);
+                            ent.brushCollision.indices.push_back(faceIndices[k]);
+                        }
+                    }
+                }
             }
         }
 

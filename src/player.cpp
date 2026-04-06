@@ -21,6 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#include "physics.h"
 #include "player.h"
 #include "physics.h"
 #include "console.h"
@@ -70,12 +71,10 @@ void Player::LinkInput(Input* input)
 
 void Player::Spawn(const std::unordered_map<std::string, std::string>& keyvalues)
 {
-    Console::Log("Player::Spawn at " + glm::to_string(m_origin));
-
     glm::vec3 physicsOrigin = { m_origin.x, m_origin.z, -m_origin.y };
     physicsOrigin *= 0.03125f;
 
-    m_character = Physics::CreateCharacter(physicsOrigin);
+    m_character = Physics::CreateCharacter(physicsOrigin, this);
 
     // Force immediate warp to the spawn position to clear penetration state
     btTransform startTrans;
@@ -97,6 +96,28 @@ void Player::Think(float deltaTime)
     m_camera->pitch -= m_input->GetMouseDeltaY() * mouseSensitivity;
 
     m_camera->pitch = glm::clamp(m_camera->pitch, -89.0f, 89.0f);
+
+    // OnPress api
+    if (m_input->GetKeyDown(SDL_SCANCODE_E))
+    {
+        btVector3 rayFrom(m_camera->position.x, m_camera->position.y, m_camera->position.z);
+        glm::vec3 forward = m_camera->GetForward() * 2.0f;
+        btVector3 rayTo(rayFrom.x() + forward.x, rayFrom.y() + forward.y, rayFrom.z() + forward.z);
+
+        btCollisionWorld::ClosestRayResultCallback rayCallback(rayFrom, rayTo);
+        rayCallback.m_collisionFilterGroup = Physics::CollisionGroups::COL_PLAYER;
+        rayCallback.m_collisionFilterMask = Physics::CollisionGroups::COL_WORLD;
+        Physics::GetDynamicsWorld()->rayTest(rayFrom, rayTo, rayCallback);
+
+        if (rayCallback.hasHit())
+        {
+            if (rayCallback.m_collisionObject->getUserPointer())
+            {
+                Entity* hitEnt = static_cast<Entity*>(rayCallback.m_collisionObject->getUserPointer());
+                hitEnt->OnPress(this);
+            }
+        }
+    }
 
     glm::vec3 forward = m_camera->GetForward();
     glm::vec3 flatForward = glm::normalize(glm::vec3(forward.x, 0.0f, forward.z));

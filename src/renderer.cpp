@@ -100,7 +100,7 @@ bool Renderer::LoadMap(const std::string& path)
 
     for (const auto& entData : map.entities)
     {
-        EntityManager::SpawnEntity(entData.className, entData.keyvalues);
+        EntityManager::SpawnEntity(entData.className, entData);
     }
 
     return true;

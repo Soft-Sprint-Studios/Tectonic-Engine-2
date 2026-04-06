@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 #pragma once
+#include "bsploader.h"
 #include <glm/glm.hpp>
 #include <vector>
 #include <cstdint>
@@ -49,7 +50,10 @@ namespace Physics
     btBvhTriangleMeshShape* CreateStaticMeshShape(const std::vector<glm::vec3>& vertices, const std::vector<uint32_t>& indices);
     void AddStaticBody(btCollisionShape* shape, const glm::mat4& transform);
 
-    btKinematicCharacterController* CreateCharacter(const glm::vec3& position);
+    btCollisionObject* CreateGhostObject(const BSP::CollisionData& collisionData, const glm::vec3& origin);
+    void RegisterTouchingEntity(void* ent);
+
+    btKinematicCharacterController* CreateCharacter(const glm::vec3& position, void* userPtr);
 
     btDiscreteDynamicsWorld* GetDynamicsWorld();
 }
