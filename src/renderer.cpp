@@ -152,16 +152,18 @@ void Renderer::Render(Camera& camera)
         debugMode = 4;
     m_worldShader.SetInt("u_debugMode", debugMode);
 
+    Frustum frustum = camera.GetFrustum();
+
     // Draw BSP
     if (m_bspRenderer)
     {
-        m_bspRenderer->Draw(m_worldShader);
+        m_bspRenderer->Draw(m_worldShader, frustum);
     }
 
     // Draw models
     if (m_modelRenderer)
     {
-        m_modelRenderer->Draw(m_worldShader);
+        m_modelRenderer->Draw(m_worldShader, frustum);
     }
 
     // Draw sky

@@ -50,6 +50,8 @@ struct PropInstanceData
     glm::mat4 transform;
     uint32_t colorVbo[3] = { 0, 0, 0 };
     bool isBumped = false;
+    glm::vec3 worldMins;
+    glm::vec3 worldMaxs;
 };
 
 class R_Models
@@ -59,7 +61,7 @@ public:
     ~R_Models();
 
     bool Init(const BSP::MapData& mapData);
-    void Draw(const Shader& shader);
+    void Draw(const Shader& shader, const Frustum& frustum);
     void Shutdown();
 
 private:
@@ -68,6 +70,8 @@ private:
         std::vector<ModelMesh> meshes;
         std::vector<PropInstanceData> instances;
         btCollisionShape* physicsShape = nullptr;
+        glm::vec3 localMins = glm::vec3(1e10f);
+        glm::vec3 localMaxs = glm::vec3(-1e10f);
     };
 
     std::unordered_map<std::string, PropGroup> m_propGroups;

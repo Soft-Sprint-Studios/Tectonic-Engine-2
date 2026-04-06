@@ -21,6 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#include "camera.h"
 #include "r_models.h"
 #include "filesystem.h"
 #include "materials.h"
@@ -62,6 +63,10 @@ bool R_Models::Init(const BSP::MapData& mapData)
 
         PropInstanceData inst;
         inst.transform = m_visual;
+
+        auto& group = m_propGroups[prop.modelPath];
+        inst.worldMins = prop.position + (group.localMins * 0.03125f);
+        inst.worldMaxs = prop.position + (group.localMaxs * 0.03125f);
 
         // If this instance has baked vertex colors
         for (int b = 0; b < 3; b++)
@@ -154,7 +159,10 @@ void R_Models::LoadModel(const std::string& path)
                     {
                         float p[3];
                         cgltf_accessor_read_float(acc, v, p, 3);
-                        physicsPositions.push_back(glm::vec3(p[0], p[1], p[2]) * 0.03125f);
+                        glm::vec3 pos(p[0], p[1], p[2]);
+                        group.localMins = glm::min(group.localMins, pos);
+                        group.localMaxs = glm::max(group.localMaxs, pos);
+                        physicsPositions.push_back(pos * 0.03125f);
                     }
                 }
                 else if (attr.type == cgltf_attribute_type_texcoord)
@@ -200,7 +208,7 @@ void R_Models::LoadModel(const std::string& path)
     cgltf_free(data);
 }
 
-void R_Models::Draw(const Shader& shader)
+void R_Models::Draw(const Shader& shader, const Frustum& frustum)
 {
     shader.SetInt("u_isModel", 1);
 
@@ -218,6 +226,9 @@ void R_Models::Draw(const Shader& shader)
 
             for (const auto& inst : group.instances)
             {
+                if (!frustum.IsBoxVisible(inst.worldMins, inst.worldMaxs))
+                    continue;
+
                 shader.SetMat4("u_model", inst.transform);
 
                 if (inst.isBumped && mesh.normalMap)

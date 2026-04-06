@@ -190,6 +190,8 @@ namespace BSP
         uint32_t start;
         uint32_t count;
         bool isBumped;
+        glm::vec3 mins;
+        glm::vec3 maxs;
     };
 
     struct StaticPropInstance

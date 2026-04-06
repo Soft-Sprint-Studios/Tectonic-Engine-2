@@ -210,6 +210,8 @@ namespace BSP
                 DrawCall dc;
                 dc.textureName = texName;
                 dc.start = (uint32_t)m_map.renderVertices.size();
+                dc.mins = glm::vec3(1e10f);
+                dc.maxs = glm::vec3(-1e10f);
 
                 // Determine if this entire batch is bumped based on the first face
                 const Face& firstFace = d_faces[faceIndices[0]];
@@ -221,8 +223,15 @@ namespace BSP
                     ProcessFace(faceIdx);
                 }
 
+                for (size_t i = dc.start; i < m_map.renderVertices.size(); i++) 
+                {
+                    dc.mins = glm::min(dc.mins, m_map.renderVertices[i].position);
+                    dc.maxs = glm::max(dc.maxs, m_map.renderVertices[i].position);
+                }
+
                 dc.count = (uint32_t)m_map.renderVertices.size() - dc.start;
-                if (dc.count > 0) m_map.drawCalls.push_back(dc);
+                if (dc.count > 0) 
+                    m_map.drawCalls.push_back(dc);
             }
 
             // Process brush models for entities

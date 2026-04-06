@@ -21,6 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#include "camera.h"
 #include "r_bsp.h"
 #include "materials.h"
 #include <glad/glad.h>
@@ -92,13 +93,15 @@ bool R_BSP::Init(const BSP::MapData& map)
         draw.isBumped = dc.isBumped;
         draw.start = dc.start;
         draw.count = dc.count;
+        draw.mins = dc.mins;
+        draw.maxs = dc.maxs;
         m_drawCalls.push_back(draw);
     }
 
     return true;
 }
 
-void R_BSP::Draw(const Shader& shader)
+void R_BSP::Draw(const Shader& shader, const Frustum& frustum)
 {
     if (m_vao == 0)
     {
@@ -114,6 +117,9 @@ void R_BSP::Draw(const Shader& shader)
 
     for (auto& dc : m_drawCalls)
     {
+        if (!frustum.IsBoxVisible(dc.mins, dc.maxs))
+            continue;
+
         shader.SetInt("u_useBump", dc.isBumped);
         shader.SetInt("u_isModel", 0);
 

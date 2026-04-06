@@ -37,6 +37,8 @@ struct BSPDrawCall
 
     uint32_t start;
     uint32_t count;
+    glm::vec3 mins;
+    glm::vec3 maxs;
 };
 
 class R_BSP
@@ -46,7 +48,7 @@ public:
     ~R_BSP();
 
     bool Init(const BSP::MapData& mapData);
-    void Draw(const Shader& shader);
+    void Draw(const Shader& shader, const Frustum& frustum);
     void Shutdown();
 
 private:
