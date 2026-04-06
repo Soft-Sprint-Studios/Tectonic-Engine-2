@@ -1,4 +1,5 @@
 *.pdb
 
 .vs/
-build/
+buildx64/
+CMakeFiles/

@@ -1,0 +1,10 @@
+^C:\USERS\ROXAN\DOWNLOADS\GLM-1.0.3\GLM\GLM\BUILD\CMAKEFILES\7ED089FB4B6C6A7BA2F21E26A22D5462\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/roxan/Downloads/glm-1.0.3/glm/glm -BC:/Users/roxan/Downloads/glm-1.0.3/glm/glm/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/roxan/Downloads/glm-1.0.3/glm/glm/build/Project.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
