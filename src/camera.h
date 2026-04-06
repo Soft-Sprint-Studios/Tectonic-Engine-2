@@ -29,8 +29,10 @@ struct Frustum
 {
     glm::vec4 planes[6];
 
-    bool IsBoxVisible(const glm::vec3& min, const glm::vec3& max) const {
-        for (int i = 0; i < 6; i++) {
+    bool IsBoxVisible(const glm::vec3& min, const glm::vec3& max) const 
+    {
+        for (int i = 0; i < 6; i++) 
+        {
             glm::vec3 p = min;
             if (planes[i].x >= 0) 
                 p.x = max.x;
