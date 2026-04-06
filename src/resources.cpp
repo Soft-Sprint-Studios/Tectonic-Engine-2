@@ -21,15 +21,45 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#pragma once
-#include <string>
+#include "resources.h"
+#include "console.h"
 
-class Renderer;
-class Camera;
-class Input;
+std::unordered_map<std::string, std::shared_ptr<Texture>> Resources::s_textures;
 
-namespace MapSystem
+std::shared_ptr<Texture> Resources::LoadTexture(const std::string& path)
 {
-    void Init(Renderer* renderer, Camera* camera, Input* input);
-    void Load(const std::string& mapName);
+    auto it = s_textures.find(path);
+    if (it != s_textures.end())
+    {
+        return it->second;
+    }
+
+    auto tex = std::make_shared<Texture>();
+    if (tex->Load(path))
+    {
+        s_textures[path] = tex;
+        return tex;
+    }
+
+    return nullptr;
+}
+
+void Resources::UnloadUnused()
+{
+    for (auto it = s_textures.begin(); it != s_textures.end();)
+    {
+        if (it->second.use_count() <= 1)
+        {
+            it = s_textures.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+}
+
+void Resources::Clear()
+{
+    s_textures.clear();
 }

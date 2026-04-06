@@ -22,8 +22,8 @@
  * SOFTWARE.
  */
 #include "engine_api.h"
-#include "material_manager.h"
-#include "resource_manager.h"
+#include "materials.h"
+#include "resources.h"
 #include "filesystem.h"
 #include "timing.h"
 #include "console.h"
@@ -36,7 +36,7 @@
 #include "physics.h"
 #include "entities.h"
 #include "player.h"
-#include "map_system.h"
+#include "maps.h"
 #include "networking.h"
 
 ENGINE_API int Engine_Main(int argc, char** argv)
@@ -60,12 +60,12 @@ ENGINE_API int Engine_Main(int argc, char** argv)
     Physics::Init();
     EntityManager::Init();
 
-    MaterialManager::Init();
-    MaterialManager::LoadDefinitions("materials.def");
+    Materials::Init();
+    Materials::LoadDefinitions("materials.def");
 
     Binds::Init();
 
-    MapSystem::Init(&renderer, &camera, &input);
+    Maps::Init(&renderer, &camera, &input);
 
     if (!renderer.Init(window)) 
     {
@@ -73,7 +73,7 @@ ENGINE_API int Engine_Main(int argc, char** argv)
         return -1;
     }
 
-    MapSystem::Load("test");
+    Maps::Load("test");
 
     bool running = true;
 
@@ -115,7 +115,7 @@ ENGINE_API int Engine_Main(int argc, char** argv)
 
     // Cleanup
     renderer.Shutdown();
-    ResourceManager::Clear();
+    Resources::Clear();
     EntityManager::Shutdown();
     Physics::Shutdown();
     CVar::Save();

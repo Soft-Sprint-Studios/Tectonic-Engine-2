@@ -23,7 +23,7 @@
  */
 #include "r_models.h"
 #include "filesystem.h"
-#include "material_manager.h"
+#include "materials.h"
 #include "console.h"
 #include "physics.h"
 #include <glm/gtc/matrix_transform.hpp>
@@ -185,9 +185,9 @@ void R_Models::LoadModel(const std::string& path)
             }
 
             std::string matName = (prim.material && prim.material->name) ? prim.material->name : "";
-            m.texture = MaterialManager::GetTexture(matName);
-            m.normalMap = MaterialManager::GetNormalMap(matName);
-            m.specularMap = MaterialManager::GetSpecularMap(matName);
+            m.texture = Materials::GetTexture(matName);
+            m.normalMap = Materials::GetNormalMap(matName);
+            m.specularMap = Materials::GetSpecularMap(matName);
 
             currentVertexOffset += vertexCount;
             group.meshes.push_back(m);

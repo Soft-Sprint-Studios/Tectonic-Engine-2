@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#include "material_manager.h"
+#include "materials.h"
 #include "r_sky.h"
 #include "filesystem.h"
 #include "console.h"

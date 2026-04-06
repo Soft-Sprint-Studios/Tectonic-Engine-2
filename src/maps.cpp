@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#include "map_system.h"
+#include "maps.h"
 #include "renderer.h"
 #include "physics.h"
 #include "entities.h"
@@ -30,7 +30,7 @@
 #include "console.h"
 #include "filesystem.h"
 
-namespace MapSystem
+namespace Maps
 {
     static Renderer* s_renderer = nullptr;
     static Camera*   s_camera = nullptr;

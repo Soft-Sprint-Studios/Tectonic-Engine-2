@@ -21,45 +21,25 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#include "resource_manager.h"
-#include "console.h"
+#pragma once
+#include "texture.h"
+#include <unordered_map>
+#include <string>
+#include <memory>
 
-std::unordered_map<std::string, std::shared_ptr<Texture>> ResourceManager::s_textures;
-
-std::shared_ptr<Texture> ResourceManager::LoadTexture(const std::string& path)
+class Materials
 {
-    auto it = s_textures.find(path);
-    if (it != s_textures.end())
-    {
-        return it->second;
-    }
+public:
+    static void Init();
+    static void LoadDefinitions(const std::string& path);
+    static std::shared_ptr<Texture> GetTexture(const std::string& name);
+    static std::shared_ptr<Texture> GetNormalMap(const std::string& name);
+    static std::shared_ptr<Texture> GetSpecularMap(const std::string& name);
 
-    auto tex = std::make_shared<Texture>();
-    if (tex->Load(path))
-    {
-        s_textures[path] = tex;
-        return tex;
-    }
-
-    return nullptr;
-}
-
-void ResourceManager::UnloadUnused()
-{
-    for (auto it = s_textures.begin(); it != s_textures.end();)
-    {
-        if (it->second.use_count() <= 1)
-        {
-            it = s_textures.erase(it);
-        }
-        else
-        {
-            ++it;
-        }
-    }
-}
-
-void ResourceManager::Clear()
-{
-    s_textures.clear();
-}
+private:
+    static void CreateFallbackTexture();
+    static std::unordered_map<std::string, std::shared_ptr<Texture>> m_textures;
+    static std::unordered_map<std::string, std::shared_ptr<Texture>> m_normals;
+    static std::unordered_map<std::string, std::shared_ptr<Texture>> m_speculars;
+    static std::shared_ptr<Texture> m_fallback;
+};

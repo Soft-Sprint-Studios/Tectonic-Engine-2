@@ -21,8 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#include "material_manager.h"
-#include "resource_manager.h"
+#include "materials.h"
+#include "resources.h"
 #include "filesystem.h"
 #include "console.h"
 #include <sstream>
@@ -30,20 +30,20 @@
 #include <algorithm>
 #include <cctype>
 
-std::unordered_map<std::string, std::shared_ptr<Texture>> MaterialManager::m_textures;
-std::unordered_map<std::string, std::shared_ptr<Texture>> MaterialManager::m_normals;
-std::unordered_map<std::string, std::shared_ptr<Texture>> MaterialManager::m_speculars;
-std::shared_ptr<Texture> MaterialManager::m_fallback;
+std::unordered_map<std::string, std::shared_ptr<Texture>> Materials::m_textures;
+std::unordered_map<std::string, std::shared_ptr<Texture>> Materials::m_normals;
+std::unordered_map<std::string, std::shared_ptr<Texture>> Materials::m_speculars;
+std::shared_ptr<Texture> Materials::m_fallback;
 
-void MaterialManager::Init()
+void Materials::Init()
 {
     CreateFallbackTexture();
 }
 
-void MaterialManager::CreateFallbackTexture()
+void Materials::CreateFallbackTexture()
 {
-    const int size = 64;
-    const int checkSize = 8;
+    const int size = 32;
+    const int checkSize = 4;
     std::vector<uint8_t> data(size * size * 4);
 
     for (int y = 0; y < size; y++)
@@ -64,7 +64,7 @@ void MaterialManager::CreateFallbackTexture()
     m_fallback->Create(size, size, data.data());
 }
 
-void MaterialManager::LoadDefinitions(const std::string& path)
+void Materials::LoadDefinitions(const std::string& path)
 {
     std::string content = Filesystem::ReadText(path);
 
@@ -93,7 +93,7 @@ void MaterialManager::LoadDefinitions(const std::string& path)
                     ss >> token;
 
                     std::string fileName = "textures/" + token.substr(1, token.size() - 2);
-                    auto tex = ResourceManager::LoadTexture(fileName);
+                    auto tex = Resources::LoadTexture(fileName);
 
                     if (tex)
                     {
@@ -106,7 +106,7 @@ void MaterialManager::LoadDefinitions(const std::string& path)
                     ss >> token;
 
                     std::string fileName = "textures/" + token.substr(1, token.size() - 2);
-                    auto tex = ResourceManager::LoadTexture(fileName);
+                    auto tex = Resources::LoadTexture(fileName);
 
                     if (tex)
                     {
@@ -119,17 +119,19 @@ void MaterialManager::LoadDefinitions(const std::string& path)
                     ss >> token;
 
                     std::string fileName = "textures/" + token.substr(1, token.size() - 2);
-                    auto tex = ResourceManager::LoadTexture(fileName);
+                    auto tex = Resources::LoadTexture(fileName);
 
-                    if (tex) 
+                    if (tex)
+                    {
                         m_speculars[matName] = tex;
+                    }
                 }
             }
         }
     }
 }
 
-std::shared_ptr<Texture> MaterialManager::GetTexture(const std::string& name)
+std::shared_ptr<Texture> Materials::GetTexture(const std::string& name)
 {
     std::string searchName = name;
     std::transform(searchName.begin(), searchName.end(), searchName.begin(), ::tolower);
@@ -149,7 +151,7 @@ std::shared_ptr<Texture> MaterialManager::GetTexture(const std::string& name)
     return m_fallback;
 }
 
-std::shared_ptr<Texture> MaterialManager::GetNormalMap(const std::string& name)
+std::shared_ptr<Texture> Materials::GetNormalMap(const std::string& name)
 {
     std::string searchName = name;
     std::transform(searchName.begin(), searchName.end(), searchName.begin(), ::tolower);
@@ -168,7 +170,7 @@ std::shared_ptr<Texture> MaterialManager::GetNormalMap(const std::string& name)
     return m_fallback;
 }
 
-std::shared_ptr<Texture> MaterialManager::GetSpecularMap(const std::string& name)
+std::shared_ptr<Texture> Materials::GetSpecularMap(const std::string& name)
 {
     std::string searchName = name;
     std::transform(searchName.begin(), searchName.end(), searchName.begin(), ::tolower);

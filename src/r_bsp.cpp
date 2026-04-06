@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 #include "r_bsp.h"
-#include "material_manager.h"
+#include "materials.h"
 #include <glad/glad.h>
 
 R_BSP::R_BSP()
@@ -86,9 +86,9 @@ bool R_BSP::Init(const BSP::MapData& map)
     for (auto& dc : map.drawCalls)
     {
         BSPDrawCall draw;
-        draw.texture = MaterialManager::GetTexture(dc.textureName);
-        draw.normalMap = MaterialManager::GetNormalMap(dc.textureName);
-        draw.specularMap = MaterialManager::GetSpecularMap(dc.textureName);
+        draw.texture = Materials::GetTexture(dc.textureName);
+        draw.normalMap = Materials::GetNormalMap(dc.textureName);
+        draw.specularMap = Materials::GetSpecularMap(dc.textureName);
         draw.isBumped = dc.isBumped;
         draw.start = dc.start;
         draw.count = dc.count;
