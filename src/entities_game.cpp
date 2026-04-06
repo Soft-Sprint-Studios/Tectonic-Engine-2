@@ -35,7 +35,7 @@ public:
     void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
     {
         Entity::Spawn(keyvalues);
-        m_wait = GetFloat("wait", 1.0f);
+        m_wait = GetFloat("wait", 0.0f);
         m_nextFireTime = 0.0f;
     }
 
@@ -83,7 +83,7 @@ public:
     }
 
 protected:
-    float m_wait = 1.0f;
+    float m_wait = 0.0f;
     float m_nextFireTime = 0.0f;
     bool m_disabled = false;
 };
@@ -115,7 +115,7 @@ public:
     {
         Entity::Spawn(keyvalues);
 
-        m_delay = GetFloat("wait", 3.0f);
+        m_delay = GetFloat("wait", 0.0f);
     }
 
     void OnPress(Entity* activator) override
@@ -137,7 +137,7 @@ public:
     }
 
 private:
-    float m_delay = 3.0f;
+    float m_delay = 0.0f;
     float m_nextUseTime = 0.0f;
 };
 
