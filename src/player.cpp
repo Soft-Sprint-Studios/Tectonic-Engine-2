@@ -77,6 +77,13 @@ void Player::Spawn(const std::unordered_map<std::string, std::string>& keyvalues
     physicsOrigin.y += 1.0f;
 
     m_character = Physics::CreateCharacter(physicsOrigin);
+
+    // Force immediate warp to the spawn position to clear penetration state
+    btTransform startTrans;
+    startTrans.setIdentity();
+    startTrans.setOrigin(btVector3(physicsOrigin.x, physicsOrigin.y, physicsOrigin.z));
+    m_character->getGhostObject()->setWorldTransform(startTrans);
+    m_character->reset(Physics::GetDynamicsWorld());
 }
 
 void Player::Think(float deltaTime)
