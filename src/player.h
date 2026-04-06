@@ -46,6 +46,11 @@ public:
         return m_noclip; 
     }
 
+    bool IsPlayer() const override 
+    { 
+        return true; 
+    }
+
 private:
     Camera* m_camera = nullptr;
     Input* m_input = nullptr;

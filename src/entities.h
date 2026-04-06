@@ -50,9 +50,17 @@ public:
     virtual void Think(float deltaTime);
     virtual void AcceptInput(const std::string& inputName, const std::string& parameter);
 
-    virtual void Touch(Entity* other) {}
-    virtual void EndTouch(Entity* other) {}
-    virtual void OnPress(Entity* activator) {}
+    virtual void Touch(Entity* other);
+    virtual void EndTouch(Entity* other);
+    virtual void OnPress(Entity* activator);
+
+    virtual bool IsPlayer() const 
+    { 
+        return false; 
+    }
+
+    bool HasSpawnFlag(int bit) const;
+    void SetSpawnFlag(int bit, bool state);
 
     void FireOutput(const std::string& outputName);
 
@@ -70,6 +78,7 @@ protected:
     glm::vec3 m_origin{ 0.0f, 0.0f, 0.0f };
     std::string m_className;
     std::string m_targetName;
+    int m_spawnflags = 0;
     btCollisionObject* m_physObject = nullptr;
 
     std::unordered_map<std::string, std::string> m_keyvalues;

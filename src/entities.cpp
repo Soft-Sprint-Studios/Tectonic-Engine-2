@@ -36,6 +36,7 @@ void Entity::Spawn(const std::unordered_map<std::string, std::string>& keyvalues
 {
     m_keyvalues = keyvalues;
     m_targetName = GetValue("targetname");
+    m_spawnflags = GetInt("spawnflags", 0);
 
     // Parse Outputs: "target,input,parameter,delay,timesToFire"
     for (auto const& [key, val] : keyvalues)
@@ -72,6 +73,33 @@ void Entity::Think(float deltaTime)
 
 void Entity::AcceptInput(const std::string& inputName, const std::string& parameter)
 {
+}
+
+void Entity::Touch(Entity* other)
+{
+}
+
+void Entity::EndTouch(Entity* other)
+{
+}
+
+void Entity::OnPress(Entity* activator)
+{
+}
+
+bool Entity::HasSpawnFlag(int bit) const
+{
+    return (m_spawnflags & bit) != 0;
+}
+
+void Entity::SetSpawnFlag(int bit, bool state)
+{
+    if (state) 
+        m_spawnflags |= bit;
+    else 
+        m_spawnflags &= ~bit;
+
+    m_keyvalues["spawnflags"] = std::to_string(m_spawnflags);
 }
 
 void Entity::FireOutput(const std::string& outputName)
