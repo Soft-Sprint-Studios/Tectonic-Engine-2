@@ -54,7 +54,7 @@ bool R_Models::Init(const BSP::MapData& mapData)
 
         glm::mat4 m_physics = m_visual;
 
-        m_visual = glm::scale(m_visual, glm::vec3(0.03125f));
+        m_visual = glm::scale(m_visual, glm::vec3(BSP::MAPSCALE));
 
         if (m_propGroups.find(prop.modelPath) == m_propGroups.end())
         {
@@ -65,8 +65,8 @@ bool R_Models::Init(const BSP::MapData& mapData)
         inst.transform = m_visual;
 
         auto& group = m_propGroups[prop.modelPath];
-        inst.worldMins = prop.position + (group.localMins * 0.03125f);
-        inst.worldMaxs = prop.position + (group.localMaxs * 0.03125f);
+        inst.worldMins = prop.position + (group.localMins * BSP::MAPSCALE);
+        inst.worldMaxs = prop.position + (group.localMaxs * BSP::MAPSCALE);
 
         // If this instance has baked vertex colors
         for (int b = 0; b < 3; b++)
@@ -162,7 +162,7 @@ void R_Models::LoadModel(const std::string& path)
                         glm::vec3 pos(p[0], p[1], p[2]);
                         group.localMins = glm::min(group.localMins, pos);
                         group.localMaxs = glm::max(group.localMaxs, pos);
-                        physicsPositions.push_back(pos * 0.03125f);
+                        physicsPositions.push_back(pos * BSP::MAPSCALE);
                     }
                 }
                 else if (attr.type == cgltf_attribute_type_texcoord)

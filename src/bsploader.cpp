@@ -181,7 +181,7 @@ namespace BSP
             {
                 const auto& v = d_verts[i];
                 // Z-up to Y-up and 1/32 scale conversion
-                m_map.collision.vertices[i] = glm::vec3(v.x, v.z, -v.y) * 0.03125f;
+                m_map.collision.vertices[i] = glm::vec3(v.x, v.z, -v.y) * MAPSCALE;
             }
 
             // Batch faces by texture
@@ -259,7 +259,7 @@ namespace BSP
                             {
                                 vertRemap[vIdx] = (uint32_t)ent.brushCollision.vertices.size();
                                 const auto& v = d_verts[vIdx];
-                                ent.brushCollision.vertices.push_back(glm::vec3(v.x, v.z, -v.y) * 0.03125f);
+                                ent.brushCollision.vertices.push_back(glm::vec3(v.x, v.z, -v.y) * MAPSCALE);
                             }
                             faceIndices.push_back(vertRemap[vIdx]);
                         }
@@ -341,7 +341,7 @@ namespace BSP
                         {
                             StaticPropInstance inst;
                             inst.modelPath = modelPaths[propType];
-                            inst.position = glm::vec3(origin->x, origin->z, -origin->y) * 0.03125f;
+                            inst.position = glm::vec3(origin->x, origin->z, -origin->y) * MAPSCALE;
                             inst.angles = *angles;
 
                             m_map.staticProps.push_back(inst);
@@ -544,7 +544,7 @@ namespace BSP
 
                 const auto& pos = d_verts[vIdx];
                 Vertex v;
-                v.position = glm::vec3(pos.x, pos.z, -pos.y) * 0.03125f;
+                v.position = glm::vec3(pos.x, pos.z, -pos.y) * MAPSCALE;
 
                 const Plane& plane = d_planes[face.planenum];
                 v.normal = glm::vec3(plane.normal.x, plane.normal.z, -plane.normal.y);
@@ -635,7 +635,7 @@ namespace BSP
                     pos += dv.vec * dv.dist;
 
                     Vertex& vert = grid[y * size + x];
-                    vert.position = glm::vec3(pos.x, pos.z, -pos.y) * 0.03125f;
+                    vert.position = glm::vec3(pos.x, pos.z, -pos.y) * MAPSCALE;
 
                     const Plane& plane = d_planes[face.planenum];
                     vert.normal = glm::vec3(plane.normal.x, plane.normal.z, -plane.normal.y);

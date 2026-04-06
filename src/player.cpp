@@ -75,7 +75,7 @@ void Player::LinkInput(Input* input)
 void Player::Spawn(const std::unordered_map<std::string, std::string>& keyvalues)
 {
     glm::vec3 physicsOrigin = { m_origin.x, m_origin.z, -m_origin.y };
-    physicsOrigin *= 0.03125f;
+    physicsOrigin *= BSP::MAPSCALE;
 
     m_character = Physics::CreateCharacter(physicsOrigin, this);
 

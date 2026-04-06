@@ -21,6 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#include "bsploader.h"
 #include "entities.h"
 #include "sound.h"
 #include "timing.h"
@@ -156,9 +157,9 @@ public:
         m_soundName = GetValue("message");
         m_volume = GetFloat("health", 10.0f) / 10.0f;
         m_pitch = GetFloat("pitch", 100.0f) / 100.0f;
-        float radius = GetFloat("radius", 1250.0f) * 0.03125f;
+        float radius = GetFloat("radius", 1250.0f) * BSP::MAPSCALE;
 
-        m_source.SetPosition(m_origin * 0.03125f);
+        m_source.SetPosition(m_origin * BSP::MAPSCALE);
         m_source.SetVolume(m_volume);
         m_source.SetPitch(m_pitch);
         m_source.SetRadius(radius * 0.1f, radius);

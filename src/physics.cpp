@@ -256,7 +256,7 @@ namespace Physics
 
         btTransform trans;
         trans.setIdentity();
-        glm::vec3 physOrigin = glm::vec3(origin.x, origin.z, -origin.y) * 0.03125f;
+        glm::vec3 physOrigin = glm::vec3(origin.x, origin.z, -origin.y) * BSP::MAPSCALE;
         trans.setOrigin({ physOrigin.x, physOrigin.y, physOrigin.z });
         ghost->setWorldTransform(trans);
 

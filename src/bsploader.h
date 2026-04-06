@@ -38,6 +38,8 @@ namespace BSP
     constexpr int32_t VBSP_VERSION_MIN = 19;
     constexpr int32_t HEADER_LUMPS = 64;
 
+    constexpr float MAPSCALE = 0.03125f;
+
     enum LumpType
     {
         LUMP_ENTITIES = 0,
