@@ -1,0 +1,268 @@
+#include "r_models.h"
+#include "filesystem.h"
+#include "material_manager.h"
+#include "console.h"
+#include "physics.h"
+#include <glm/gtc/matrix_transform.hpp>
+#include <glad/glad.h>
+
+#define CGLTF_IMPLEMENTATION
+#include <cgltf.h>
+
+R_Models::R_Models()
+{
+}
+
+R_Models::~R_Models()
+{
+    Shutdown();
+}
+
+bool R_Models::Init(const BSP::MapData& mapData)
+{
+    for(const auto & prop : mapData.staticProps)
+    {
+        // 1. Build Visual Transform (Includes Scaling)
+        glm::mat4 m_visual = glm::translate(glm::mat4(1.0f), prop.position);
+        m_visual = glm::rotate(m_visual, glm::radians(prop.angles.y - 90.0f), glm::vec3(0, 1, 0));
+        m_visual = glm::rotate(m_visual, glm::radians(-prop.angles.x), glm::vec3(1, 0, 0));
+        m_visual = glm::rotate(m_visual, glm::radians(prop.angles.z), glm::vec3(0, 0, 1));
+
+        glm::mat4 m_physics = m_visual;
+
+        m_visual = glm::scale(m_visual, glm::vec3(0.03125f));
+
+        if (m_propGroups.find(prop.modelPath) == m_propGroups.end())
+        {
+            LoadModel(prop.modelPath);
+        }
+
+        PropInstanceData inst;
+        inst.transform = m_visual;
+
+        // If this instance has baked vertex colors
+        for (int b = 0; b < 3; b++)
+        {
+            if (!prop.vertexColors[b].empty())
+            {
+                glGenBuffers(1, &inst.colorVbo[b]);
+                glBindBuffer(GL_ARRAY_BUFFER, inst.colorVbo[b]);
+                glBufferData(GL_ARRAY_BUFFER, prop.vertexColors[b].size() * sizeof(glm::vec3), prop.vertexColors[b].data(), GL_STATIC_DRAW);
+            }
+        }
+        inst.isBumped = prop.hasBumpedLighting;
+
+        m_propGroups[prop.modelPath].instances.push_back(inst);
+
+        if (m_propGroups[prop.modelPath].physicsShape)
+        {
+            Physics::AddStaticBody(m_propGroups[prop.modelPath].physicsShape, m_physics);
+        }
+    }
+
+    return true;
+}
+
+void R_Models::LoadModel(const std::string& path)
+{
+    cgltf_options options = {};
+    cgltf_data* data = nullptr;
+
+    std::string fullPath = Filesystem::GetFullPath(path);
+    cgltf_result result = cgltf_parse_file(&options, fullPath.c_str(), &data);
+
+    if (result != cgltf_result_success)
+    {
+        Console::Error("Failed to parse GLB at: " + fullPath);
+        return;
+    }
+
+    result = cgltf_load_buffers(&options, data, fullPath.c_str());
+    if (result != cgltf_result_success)
+    {
+        Console::Error("Failed to load buffers for: " + fullPath);
+        cgltf_free(data);
+        return;
+    }
+
+    PropGroup group;
+    uint32_t currentVertexOffset = 0;
+
+    std::vector<glm::vec3> physicsPositions;
+    std::vector<uint32_t> physicsIndices;
+
+    for (cgltf_size i = 0; i < data->meshes_count; ++i)
+    {
+        const cgltf_mesh& mesh = data->meshes[i];
+
+        for (cgltf_size j = 0; j < mesh.primitives_count; ++j)
+        {
+            const cgltf_primitive& prim = mesh.primitives[j];
+            ModelMesh m = {};
+            m.vertexOffset = currentVertexOffset;
+            uint32_t vertexCount = 0;
+
+            glGenVertexArrays(1, &m.vao);
+            glBindVertexArray(m.vao);
+
+            for (cgltf_size k = 0; k < prim.attributes_count; ++k)
+            {
+                const cgltf_attribute& attr = prim.attributes[k];
+                const cgltf_accessor* acc = attr.data;
+                const cgltf_buffer_view* view = acc->buffer_view;
+
+                uint8_t* bufferPtr = (uint8_t*)view->buffer->data + view->offset + acc->offset;
+
+                GLuint vbo;
+                glGenBuffers(1, &vbo);
+                glBindBuffer(GL_ARRAY_BUFFER, vbo);
+                glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)view->size, bufferPtr, GL_STATIC_DRAW);
+                m.vbos.push_back(vbo);
+
+                GLsizei stride = acc->stride ? (GLsizei)acc->stride : 0;
+
+                if (attr.type == cgltf_attribute_type_position)
+                {
+                    vertexCount = (uint32_t)acc->count;
+                    glEnableVertexAttribArray(0);
+                    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, 0);
+
+                    for (cgltf_size v = 0; v < acc->count; v++)
+                    {
+                        float p[3];
+                        cgltf_accessor_read_float(acc, v, p, 3);
+                        physicsPositions.push_back(glm::vec3(p[0], p[1], p[2]) * 0.03125f);
+                    }
+                }
+                else if (attr.type == cgltf_attribute_type_texcoord)
+                {
+                    glEnableVertexAttribArray(1);
+                    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride, 0);
+                }
+            }
+
+            if (prim.indices)
+            {
+                const cgltf_accessor* acc = prim.indices;
+                const cgltf_buffer_view* view = acc->buffer_view;
+                uint8_t* bufferPtr = (uint8_t*)view->buffer->data + view->offset + acc->offset;
+
+                glGenBuffers(1, &m.ebo);
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m.ebo);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptr)view->size, bufferPtr, GL_STATIC_DRAW);
+
+                m.indexCount = (uint32_t)acc->count;
+                m.indexType = (acc->component_type == cgltf_component_type_r_16u) ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
+
+                uint32_t baseIdx = (uint32_t)physicsPositions.size() - vertexCount;
+                for (cgltf_size idx = 0; idx < prim.indices->count; idx++)
+                {
+                    physicsIndices.push_back(baseIdx + (uint32_t)cgltf_accessor_read_index(prim.indices, idx));
+                }
+            }
+
+            std::string matName = (prim.material && prim.material->name) ? prim.material->name : "";
+            m.texture = MaterialManager::GetTexture(matName);
+            m.normalMap = MaterialManager::GetNormalMap(matName);
+            m.specularMap = MaterialManager::GetSpecularMap(matName);
+
+            currentVertexOffset += vertexCount;
+            group.meshes.push_back(m);
+        }
+    }
+
+    group.physicsShape = Physics::CreateStaticMeshShape(physicsPositions, physicsIndices);
+
+    m_propGroups[path] = group;
+    cgltf_free(data);
+}
+
+void R_Models::Draw(const Shader& shader)
+{
+    shader.SetInt("u_isModel", 1);
+
+    for (auto& [path, group] : m_propGroups)
+    {
+        for (auto& mesh : group.meshes)
+        {
+            if (mesh.indexCount == 0)
+                continue;
+
+            if (mesh.texture)
+                mesh.texture->Bind(0);
+
+            glBindVertexArray(mesh.vao);
+
+            for (const auto& inst : group.instances)
+            {
+                shader.SetMat4("u_model", inst.transform);
+
+                if (inst.isBumped && mesh.normalMap)
+                {
+                    mesh.normalMap->Bind(2);
+                    shader.SetInt("u_useBump", 1);
+                }
+                else
+                {
+                    shader.SetInt("u_useBump", 0);
+                }
+
+                if (inst.isBumped && mesh.specularMap)
+                {
+                    mesh.specularMap->Bind(3);
+                }
+
+                // Vertex Lighting
+                for (int b = 0; b < 3; b++)
+                {
+                    if (inst.colorVbo[b] != 0)
+                    {
+                        glEnableVertexAttribArray(6 + b);
+                        glBindBuffer(GL_ARRAY_BUFFER, inst.colorVbo[b]);
+                        glVertexAttribPointer(6 + b, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)(uintptr_t)(mesh.vertexOffset * sizeof(glm::vec3)));
+                    }
+                    else
+                    {
+                        glDisableVertexAttribArray(6 + b);
+                        glVertexAttrib3f(6 + b, 1.0f, 1.0f, 1.0f);
+                    }
+                }
+
+                glDrawElements(GL_TRIANGLES, mesh.indexCount, mesh.indexType, 0);
+            }
+        }
+    }
+
+    glBindVertexArray(0);
+    shader.SetInt("u_isModel", 0);
+}
+
+void R_Models::Shutdown()
+{
+    for (auto& [path, group] : m_propGroups)
+    {
+        for (auto& mesh : group.meshes)
+        {
+            if (mesh.vao != 0)
+                glDeleteVertexArrays(1, &mesh.vao);
+            if (!mesh.vbos.empty())
+                glDeleteBuffers((GLsizei)mesh.vbos.size(), mesh.vbos.data());
+            if (mesh.ebo != 0)
+                glDeleteBuffers(1, &mesh.ebo);
+        }
+        for (auto& inst : group.instances)
+        {
+            for (int b = 0; b < 3; b++)
+            {
+                if (inst.colorVbo[b] != 0)
+                    glDeleteBuffers(1, &inst.colorVbo[b]);
+            }
+        }
+
+        if (group.physicsShape)
+        {
+            delete group.physicsShape;
+        }
+    }
+    m_propGroups.clear();
+}

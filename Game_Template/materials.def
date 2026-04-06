@@ -1,0 +1,16 @@
+"dev/dev_measuregeneric01"
+{
+    diffuse = "dev_measuregeneric01.png"
+}
+
+"dev/dev_measuregeneric01b"
+{
+    diffuse = "dev_measuregeneric01b.png"
+}
+
+"dev/dev_bumptest"
+{
+    diffuse = "dev_bumptest.png"
+    normal = "dev_bumptest_normal.png"
+    specular = "dev_bumptest_specular.png"
+}

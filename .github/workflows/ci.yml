@@ -1,0 +1,33 @@
+name: CMake Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Setup CMake
+      uses: jwlawson/actions-setup-cmake@v2
+      with:
+        cmake-version: '3.24.0'
+
+    - name: Setup compiler
+      if: matrix.os == 'windows-latest'
+      uses: actions/setup-msbuild@v1
+
+    - name: Configure CMake
+      run: cmake -S . -B build -G "${{ matrix.os == 'windows-latest' && 'Visual Studio 17 2022' || 'Unix Makefiles' }}"
+
+    - name: Build
+      run: cmake --build build --config Release -- -j$(nproc)
