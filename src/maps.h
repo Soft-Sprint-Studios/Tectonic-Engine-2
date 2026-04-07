@@ -22,11 +22,10 @@
  * SOFTWARE.
  */
 #pragma once
+#include "renderer.h"'
+#include "camera.h"
+#include "input.h"
 #include <string>
-
-class Renderer;
-class Camera;
-class Input;
 
 namespace Maps
 {
