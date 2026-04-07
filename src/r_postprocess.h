@@ -50,6 +50,11 @@ private:
     GLuint m_quadVAO;
     GLuint m_quadVBO;
     Shader m_shader;
+    Shader m_histogramShader;
+    Shader m_averageShader;
+    GLuint m_histogramBuffer = 0;
+    GLuint m_lumBuffer = 0;
+
     int m_width, m_height;
 
     void SetupBuffers();

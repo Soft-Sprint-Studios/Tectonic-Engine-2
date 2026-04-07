@@ -8,6 +8,12 @@ uniform float u_vignetteStrength;
 uniform float u_chromaStrength;
 uniform float u_grainStrength;
 uniform float u_bwStrength;
+uniform int u_postprocess_enabled;
+
+layout(std430, binding = 2) buffer LumData 
+{
+    float u_exposure;
+};
 
 float random(vec2 st) {
     return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
@@ -15,6 +21,12 @@ float random(vec2 st) {
 
 void main()
 {
+    if (u_postprocess_enabled == 0)
+    {
+        FragColor = texture(screenTexture, TexCoords);
+        return;
+    }
+
     // Chromatic Aberration
     vec2 redOffset = u_chromaStrength * (TexCoords - 0.5);
     vec2 greenOffset = -u_chromaStrength * (TexCoords - 0.5) * 0.5;
@@ -22,6 +34,8 @@ void main()
     float g = texture(screenTexture, TexCoords - greenOffset).g;
     float b = texture(screenTexture, TexCoords).b;
     vec3 hdrColor = vec3(r, g, b);
+
+    hdrColor *= u_exposure;
 
     // Black and White
     float luminance = dot(hdrColor, vec3(0.299, 0.587, 0.114));

@@ -34,6 +34,7 @@ public:
     ~Shader();
 
     bool Load(const std::string& vertPath, const std::string& fragPath);
+    bool LoadCompute(const std::string& path);
     void Bind() const;
     void Unbind() const;
 

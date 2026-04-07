@@ -27,6 +27,14 @@
 #include "postprocess.h"
 #include "timing.h"
 
+CVar r_postprocess("r_postprocess", "1", CVAR_SAVE);
+CVar r_autoexposure("r_autoexposure", "1", CVAR_SAVE);
+
+CVar r_exposure_speed("r_exposure_speed", "1.5", CVAR_SAVE);
+CVar r_exposure_target("r_exposure_target", "0.12", CVAR_SAVE);
+CVar r_exposure_min("r_exposure_min", "0.85", CVAR_SAVE);
+CVar r_exposure_max("r_exposure_max", "1.8", CVAR_SAVE);
+
 R_PostProcess::R_PostProcess()
     : m_fbo(0), m_texture(0), m_rbo(0),
     m_msFbo(0), m_msTexture(0), m_msRbo(0),
@@ -49,6 +57,18 @@ bool R_PostProcess::Init(int width, int height)
         Console::Error("PostProcess: Failed to load shaders");
         return false;
     }
+
+    m_histogramShader.LoadCompute("shaders/lum_histogram.comp");
+    m_averageShader.LoadCompute("shaders/lum_average.comp");
+
+    glGenBuffers(1, &m_histogramBuffer);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_histogramBuffer);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, 256 * sizeof(uint32_t), NULL, GL_DYNAMIC_COPY);
+
+    glGenBuffers(1, &m_lumBuffer);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_lumBuffer);
+    float initialExposure = 1.0f;
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(float), &initialExposure, GL_DYNAMIC_COPY);
 
     SetupBuffers();
 
@@ -112,7 +132,7 @@ void R_PostProcess::SetupBuffers()
 
     glGenTextures(1, &m_texture);
     glBindTexture(GL_TEXTURE_2D, m_texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, m_width, m_height, 0, GL_RGB, GL_FLOAT, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, m_width, m_height, 0, GL_RGBA, GL_FLOAT, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -199,8 +219,43 @@ void R_PostProcess::End()
 
 void R_PostProcess::Draw()
 {
+    if (CVar::Find("r_autoexposure")->GetInt() > 0) {
+        // Clear histogram
+        uint32_t zeros[256] = { 0 };
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_histogramBuffer);
+        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(zeros), zeros);
+
+        // Build histogram
+        m_histogramShader.Bind();
+        glBindImageTexture(0, m_texture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, m_histogramBuffer);
+        glDispatchCompute((m_width + 15) / 16, (m_height + 15) / 16, 1);
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+        // Adapt exposure
+        m_averageShader.Bind();
+        m_averageShader.SetFloat("u_deltaTime", Time::DeltaTime());
+        m_averageShader.SetFloat("u_speed", CVar::Find("r_exposure_speed")->GetFloat());
+        m_averageShader.SetFloat("u_targetLum", CVar::Find("r_exposure_target")->GetFloat());
+        m_averageShader.SetFloat("u_minExp", CVar::Find("r_exposure_min")->GetFloat());
+        m_averageShader.SetFloat("u_maxExp", CVar::Find("r_exposure_max")->GetFloat());
+
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, m_histogramBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, m_lumBuffer);
+        glDispatchCompute(1, 1, 1);
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    }
+    else
+    {
+        float defaultExp = 1.0f;
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_lumBuffer);
+        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(float), &defaultExp);
+    }
+
     m_shader.Bind();
     m_shader.SetInt("screenTexture", 0);
+
+    m_shader.SetInt("u_postprocess_enabled", CVar::Find("r_postprocess")->GetInt());
 
     const auto& ppSettings = PostProcess::GetCurrentSettings();
     m_shader.SetFloat("u_time", (float)Time::TotalTime());
@@ -244,6 +299,11 @@ void R_PostProcess::Shutdown()
         glDeleteVertexArrays(1, &m_quadVAO);
     if (m_quadVBO != 0) 
         glDeleteBuffers(1, &m_quadVBO);
+
+    if (m_histogramBuffer != 0)
+        glDeleteBuffers(1, &m_histogramBuffer);
+    if (m_lumBuffer != 0)
+        glDeleteBuffers(1, &m_lumBuffer);
 
     m_fbo = m_msFbo = 0;
 }

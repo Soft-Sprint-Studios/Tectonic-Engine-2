@@ -1,0 +1,36 @@
+layout(local_size_x = 1) in;
+layout(std430, binding = 1) buffer Histogram 
+{ 
+    uint bins[256]; 
+};
+layout(std430, binding = 2) buffer LumData 
+{ 
+    float u_exposure; 
+};
+
+uniform float u_deltaTime;
+uniform float u_speed;
+uniform float u_targetLum;
+uniform float u_minExp;
+uniform float u_maxExp;
+
+void main() 
+{
+    float count = 0.0;
+    float weightedSum = 0.0;
+    for(int i = 0; i < 256; i++) 
+    {
+        float binVal = float(bins[i]);
+        weightedSum += binVal * float(i);
+        count += binVal;
+    }
+
+    float avgBin = weightedSum / max(count, 1.0);
+    float logLum = (avgBin / 254.0) * 12.0 - 10.0;
+    float sceneLum = exp2(logLum);
+
+    float targetExp = u_targetLum / max(sceneLum, 0.0001);
+    targetExp = clamp(targetExp, u_minExp, u_maxExp);
+
+    u_exposure += (targetExp - u_exposure) * (1.0 - exp(-u_deltaTime * u_speed));
+}

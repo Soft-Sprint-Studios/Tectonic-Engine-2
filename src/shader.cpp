@@ -72,6 +72,33 @@ bool Shader::Load(const std::string& vertPath, const std::string& fragPath)
     return true;
 }
 
+bool Shader::LoadCompute(const std::string& path)
+{
+    std::string code = Filesystem::ReadText(path);
+    if (code.empty())
+    {
+        return false;
+    }
+
+    GLuint cs = CompileShader(GL_COMPUTE_SHADER, code);
+    m_program = glCreateProgram();
+    glAttachShader(m_program, cs);
+    glLinkProgram(m_program);
+
+    GLint success;
+    glGetProgramiv(m_program, GL_LINK_STATUS, &success);
+    if (!success)
+    {
+        char infoLog[512];
+        glGetProgramInfoLog(m_program, 512, NULL, infoLog);
+        Console::Error("Compute Shader Link Error: " + std::string(infoLog));
+        return false;
+    }
+
+    glDeleteShader(cs);
+    return true;
+}
+
 GLuint Shader::CompileShader(GLenum type, const std::string& source)
 {
     GLuint shader = glCreateShader(type);
