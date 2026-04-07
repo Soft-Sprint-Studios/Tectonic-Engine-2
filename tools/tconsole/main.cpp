@@ -341,6 +341,8 @@ void server_loop() {
         {
             std::lock_guard<std::mutex> lock(queue_mutex);
             message_queue.push_back("[TConsole] Engine disconnected.");
+            g_cvars.clear();
+            g_commands.clear();
         }
         Fl::awake();
         closesocket(client_socket);
