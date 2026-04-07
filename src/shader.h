@@ -33,7 +33,7 @@ public:
     Shader();
     ~Shader();
 
-    bool Load(const std::string& vertPath, const std::string& fragPath, const std::string& geomPath = "");
+    bool Load(const std::string& vertPath, const std::string& fragPath);
     void Bind() const;
     void Unbind() const;
 
