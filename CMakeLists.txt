@@ -5,10 +5,6 @@ if(MSVC)
     add_compile_options(/we4013)
 endif()
 
-if(UNIX)
-    add_compile_options(-Wno-backslash-newline-escape)
-endif()
-
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
