@@ -162,3 +162,8 @@ void Shader::SetFloat(const std::string& name, float value) const
 {
     glUniform1f(GetUniformLocation(name), value);
 }
+
+void Shader::SetBool(const std::string& name, bool value) const
+{
+    glUniform1i(GetUniformLocation(name), (int)value);
+}

@@ -83,6 +83,11 @@ public:
     float GetFloat(const std::string& key, float defaultVal = 0.0f) const;
     glm::vec3 GetVector(const std::string& key, const glm::vec3& defaultVal = glm::vec3(0.0f)) const;
 
+    btCollisionObject* GetPhysObject() const 
+    { 
+        return m_physObject; 
+    }
+
 protected:
     glm::vec3 m_origin{ 0.0f, 0.0f, 0.0f };
     std::string m_className;

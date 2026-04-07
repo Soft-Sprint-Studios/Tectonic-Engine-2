@@ -83,6 +83,11 @@ namespace Filesystem
         return std::filesystem::exists(GetFullPath(relativePath));
     }
 
+    void CreateDirectory(const std::string& relativePath)
+    {
+        std::filesystem::create_directory(GetFullPath(relativePath));
+    }
+
     std::vector<std::string> ListFiles(const std::string& relativePath, const std::string& extension)
     {
         std::vector<std::string> results;

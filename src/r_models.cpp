@@ -27,6 +27,7 @@
 #include "materials.h"
 #include "console.h"
 #include "physics.h"
+#include "cubemap.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glad/glad.h>
 
@@ -236,20 +237,12 @@ void R_Models::Draw(const Shader& shader, const Frustum& frustum)
 
                 shader.SetMat4("u_model", inst.transform);
 
-                if (inst.isBumped && mesh.normalMap)
-                {
-                    mesh.normalMap->Bind(2);
-                    shader.SetInt("u_useBump", 1);
-                }
-                else
-                {
-                    shader.SetInt("u_useBump", 0);
-                }
+                bool canBump = inst.isBumped && mesh.normalMap;
+                shader.SetInt("u_useBump", canBump ? 1 : 0);
 
-                if (inst.isBumped && mesh.specularMap)
-                {
-                    mesh.specularMap->Bind(3);
-                }
+                (mesh.texture ? mesh.texture : Materials::GetTexture(""))->Bind(0);
+                (canBump ? mesh.normalMap : Materials::GetFlatNormal())->Bind(2);
+                (canBump && mesh.specularMap ? mesh.specularMap : Materials::GetWhiteTexture())->Bind(3);
 
                 // Vertex Lighting
                 for (int b = 0; b < 3; b++)

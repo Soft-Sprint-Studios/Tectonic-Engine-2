@@ -27,6 +27,7 @@
 #include "bsploader.h"
 #include "physics.h"
 #include "entities.h"
+#include "cubemap.h"
 #include <glm/glm.hpp>
 
 CVar r_vsync("r_vsync", "1", CVAR_SAVE);
@@ -85,6 +86,8 @@ bool Renderer::LoadMap(const std::string& path)
         return false;
     }
 
+    Cubemap::LoadForMap(path.substr(5, path.find_last_of('.') - 5));
+
     if (!m_bspRenderer->Init(map))
     {
         Console::Error("BSP renderer failed to initialize.");
@@ -111,23 +114,8 @@ bool Renderer::LoadMap(const std::string& path)
     return true;
 }
 
-void Renderer::Render(Camera& camera)
+void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude)
 {
-    int w, h;
-    SDL_GetWindowSize(m_windowRef->Get(), &w, &h);
-
-    camera.SetFOV(r_fov.GetFloat());
-    camera.SetAspectRatio((float)w / (float)h);
-
-    if (r_wireframe.GetInt() > 0)
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-    m_postProcess->Begin();
-    glViewport(0, 0, w, h);
-
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     m_worldShader.Bind();
     m_worldShader.SetMat4("u_projection", camera.GetProjectionMatrix());
     m_worldShader.SetMat4("u_view", camera.GetViewMatrix());
@@ -139,16 +127,29 @@ void Renderer::Render(Camera& camera)
     m_worldShader.SetInt("u_lightmap", 1);
     m_worldShader.SetInt("u_normal", 2);
     m_worldShader.SetInt("u_specular", 3);
+    m_worldShader.SetInt("u_cubemap", 4);
+
+    m_worldShader.SetBool("u_useCubemap", false);
+    const Cubemap::CubemapProbe* probe = Cubemap::FindClosest(camera.position);
+    if (probe && probe->textureID != 0 && probe->textureID != cubemapToExclude)
+    {
+        m_worldShader.SetBool("u_useCubemap", true);
+        m_worldShader.SetVec3("u_cubemapOrigin", probe->origin);
+        m_worldShader.SetVec3("u_cubemapMins", probe->mins);
+        m_worldShader.SetVec3("u_cubemapMaxs", probe->maxs);
+        glActiveTexture(GL_TEXTURE4);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, probe->textureID);
+    }
 
     // Determine debug mode
     int debugMode = 0;
-    if (r_debug_lightmaps.GetInt()) 
+    if (r_debug_lightmaps.GetInt())
         debugMode = 1;
-    else if (r_debug_lightmaps_directional.GetInt()) 
+    else if (r_debug_lightmaps_directional.GetInt())
         debugMode = 2;
-    else if (r_debug_vertexlight.GetInt()) 
+    else if (r_debug_vertexlight.GetInt())
         debugMode = 3;
-    else if (r_debug_vertexlight_directional.GetInt()) 
+    else if (r_debug_vertexlight_directional.GetInt())
         debugMode = 4;
     m_worldShader.SetInt("u_debugMode", debugMode);
 
@@ -166,11 +167,33 @@ void Renderer::Render(Camera& camera)
         m_modelRenderer->Draw(m_worldShader, frustum);
     }
 
+    m_worldShader.SetBool("u_useCubemap", false);
+
     // Draw sky
     if (m_skyRenderer && r_skybox.GetInt() > 0)
     {
         m_skyRenderer->Draw(camera);
     }
+}
+
+void Renderer::Render(Camera& camera)
+{
+    int w, h;
+    SDL_GetWindowSize(m_windowRef->Get(), &w, &h);
+
+    camera.SetFOV(r_fov.GetFloat());
+    camera.SetAspectRatio((float)w / (float)h);
+
+    if (r_wireframe.GetInt() > 0)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+    m_postProcess->Begin();
+    glViewport(0, 0, w, h);
+
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    DrawWorld(camera, 0);
 
     m_postProcess->End();
 
@@ -182,6 +205,13 @@ void Renderer::Render(Camera& camera)
     glEnable(GL_DEPTH_TEST);
 
     m_windowRef->Swap();
+}
+
+void Renderer::RenderWorld(Camera& camera, GLuint cubemapToExclude)
+{
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    DrawWorld(camera, cubemapToExclude);
 }
 
 void Renderer::OnWindowResize(int w, int h)

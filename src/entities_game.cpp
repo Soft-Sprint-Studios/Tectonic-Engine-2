@@ -146,6 +146,28 @@ private:
 LINK_ENTITY_TO_CLASS("func_button", FuncButton)
 
 // ==========================================
+// env_cubemap_box
+// ==========================================
+class EnvCubemapBox : public Entity
+{
+public:
+    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    {
+        Entity::Spawn(keyvalues);
+    }
+
+    bool IsVisible() const override 
+    { 
+        return false; 
+    }
+    bool IsCollidable() const override 
+    { 
+        return false; 
+    }
+};
+LINK_ENTITY_TO_CLASS("env_cubemap_box", EnvCubemapBox)
+
+// ==========================================
 // sound
 // ==========================================
 class SoundEntity : public Entity

@@ -35,6 +35,8 @@ public:
     static std::shared_ptr<Texture> GetTexture(const std::string& name);
     static std::shared_ptr<Texture> GetNormalMap(const std::string& name);
     static std::shared_ptr<Texture> GetSpecularMap(const std::string& name);
+    static std::shared_ptr<Texture> GetFlatNormal();
+    static std::shared_ptr<Texture> GetWhiteTexture();
 
 private:
     static void CreateFallbackTexture();
@@ -42,4 +44,6 @@ private:
     static std::unordered_map<std::string, std::shared_ptr<Texture>> m_normals;
     static std::unordered_map<std::string, std::shared_ptr<Texture>> m_speculars;
     static std::shared_ptr<Texture> m_fallback;
+    static std::shared_ptr<Texture> m_flatNormal;
+    static std::shared_ptr<Texture> m_white;
 };

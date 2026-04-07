@@ -30,12 +30,14 @@
 #include "console.h"
 #include "filesystem.h"
 #include "discord.h"
+#include "cubemap.h"
 
 namespace Maps
 {
     static Renderer* s_renderer = nullptr;
     static Camera*   s_camera = nullptr;
     static Input*    s_input = nullptr;
+    static std::string s_currentMapName = "";
 
     void Init(Renderer* renderer, Camera* camera, Input* input)
     {
@@ -49,6 +51,7 @@ namespace Maps
         if (!s_renderer) 
             return;
 
+        s_currentMapName = mapName;
         Console::Log("Changing map to: " + mapName);
 
         EntityManager::Shutdown();
@@ -57,6 +60,7 @@ namespace Maps
         Physics::Init();
         EntityManager::Init();
 
+        Cubemap::LoadForMap(mapName);
         std::string path = "maps/" + mapName + ".bsp";
         if (s_renderer->LoadMap(path))
         {
@@ -71,6 +75,21 @@ namespace Maps
                 player->LinkInput(s_input);
             }
         }
+    }
+
+    std::string GetCurrentMapName()
+    {
+        return s_currentMapName;
+    }
+
+    CON_COMMAND(buildcubemaps, "Builds cubemaps for the current map.")
+    {
+        if (s_currentMapName.empty())
+        {
+            Console::Error("No map is currently loaded.");
+            return;
+        }
+        Cubemap::BuildCubemaps(s_currentMapName, s_renderer);
     }
 
     CON_COMMAND(map, "Loads a map: map <mapname>")

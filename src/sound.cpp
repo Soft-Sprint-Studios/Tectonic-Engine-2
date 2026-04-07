@@ -175,7 +175,6 @@ namespace Sound
         if (buffer != 0)
         {
             s_bufferCache[fullPath] = buffer;
-            Console::Log("Sound: Loaded " + fullPath);
         }
         else
         {

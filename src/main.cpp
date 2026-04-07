@@ -40,6 +40,7 @@
 #include "networking.h"
 #include "sound.h"
 #include "discord.h"
+#include "cubemap.h"
 
 ENGINE_API int Engine_Main(int argc, char** argv)
 {
@@ -47,6 +48,7 @@ ENGINE_API int Engine_Main(int argc, char** argv)
     Filesystem::Init();
     Console::Init();
     Discord::Init();
+    Cubemap::Init();
     Sound::Init();
     Networking::Init();
     CVar::Init();
@@ -122,7 +124,7 @@ ENGINE_API int Engine_Main(int argc, char** argv)
     // Cleanup
     renderer.Shutdown();
     Sound::Shutdown();
-
+    Cubemap::Shutdown();
     Resources::Clear();
     EntityManager::Shutdown();
     Physics::Shutdown();

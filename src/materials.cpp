@@ -34,6 +34,8 @@ std::unordered_map<std::string, std::shared_ptr<Texture>> Materials::m_textures;
 std::unordered_map<std::string, std::shared_ptr<Texture>> Materials::m_normals;
 std::unordered_map<std::string, std::shared_ptr<Texture>> Materials::m_speculars;
 std::shared_ptr<Texture> Materials::m_fallback;
+std::shared_ptr<Texture> Materials::m_flatNormal;
+std::shared_ptr<Texture> Materials::m_white;
 
 void Materials::Init()
 {
@@ -62,6 +64,14 @@ void Materials::CreateFallbackTexture()
 
     m_fallback = std::make_shared<Texture>();
     m_fallback->Create(size, size, data.data());
+
+    uint8_t whiteData[] = { 255, 255, 255, 255 };
+    m_white = std::make_shared<Texture>();
+    m_white->Create(1, 1, whiteData);
+
+    uint8_t normalData[] = { 128, 128, 255, 255 };
+    m_flatNormal = std::make_shared<Texture>();
+    m_flatNormal->Create(1, 1, normalData);
 }
 
 void Materials::LoadDefinitions(const std::string& path)
@@ -187,4 +197,13 @@ std::shared_ptr<Texture> Materials::GetSpecularMap(const std::string& name)
     }
 
     return m_fallback;
+}
+
+std::shared_ptr<Texture> Materials::GetFlatNormal() 
+{
+    return m_flatNormal; 
+}
+std::shared_ptr<Texture> Materials::GetWhiteTexture() 
+{ 
+    return m_white; 
 }

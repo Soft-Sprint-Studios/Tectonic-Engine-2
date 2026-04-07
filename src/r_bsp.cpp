@@ -120,23 +120,12 @@ void R_BSP::Draw(const Shader& shader, const Frustum& frustum)
         if (!frustum.IsBoxVisible(dc.mins, dc.maxs))
             continue;
 
-        shader.SetInt("u_useBump", dc.isBumped);
+        shader.SetInt("u_useBump", dc.isBumped ? 1 : 0);
         shader.SetInt("u_isModel", 0);
 
-        if (dc.texture)
-        {
-            dc.texture->Bind(0);
-        }
-
-        if (dc.isBumped && dc.normalMap)
-        {
-            dc.normalMap->Bind(2);
-        }
-
-        if (dc.isBumped && dc.specularMap)
-        {
-            dc.specularMap->Bind(3);
-        }
+        (dc.texture ? dc.texture : Materials::GetTexture(""))->Bind(0);
+        (dc.isBumped && dc.normalMap ? dc.normalMap : Materials::GetFlatNormal())->Bind(2);
+        (dc.isBumped && dc.specularMap ? dc.specularMap : Materials::GetWhiteTexture())->Bind(3);
 
         glDrawArrays(GL_TRIANGLES, dc.start, dc.count);
     }

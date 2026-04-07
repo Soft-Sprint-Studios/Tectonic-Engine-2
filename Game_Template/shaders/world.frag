@@ -13,6 +13,11 @@ uniform sampler2D u_diffuse;
 uniform sampler2D u_normal;
 uniform sampler2D u_lightmap;
 uniform sampler2D u_specular;
+uniform samplerCube u_cubemap;
+uniform bool u_useCubemap;
+uniform vec3 u_cubemapOrigin;
+uniform vec3 u_cubemapMins;
+uniform vec3 u_cubemapMaxs;
 uniform bool u_useBump;
 uniform bool u_isModel;
 uniform vec3 u_viewPos;
@@ -24,6 +29,24 @@ out vec4 FragColor;
 const vec3 basis0 = vec3(0.81649658, 0.0, 0.57735027);
 const vec3 basis1 = vec3(-0.40824829, 0.70710678, 0.57735027);
 const vec3 basis2 = vec3(-0.40824829, -0.70710678, 0.57735027);
+
+vec3 ParallaxCorrect(vec3 R, vec3 fragPos, vec3 boxMin, vec3 boxMax, vec3 probePos) 
+{
+    vec3 invR = 1.0 / R;
+    vec3 t1 = (boxMin - fragPos) * invR;
+    vec3 t2 = (boxMax - fragPos) * invR;
+    vec3 tmin = min(t1, t2);
+    vec3 tmax = max(t1, t2);
+    float t_near = max(max(tmin.x, tmin.y), tmin.z);
+    float t_far = min(min(tmax.x, tmax.y), tmax.z);
+    if (t_near > t_far || t_far < 0.0) 
+    {
+        return R;
+    }
+    float intersection_t = t_far;
+    vec3 intersectPos = fragPos + R * intersection_t;
+    return normalize(intersectPos - probePos);
+}
 
 void main()
 {
@@ -93,6 +116,26 @@ void main()
     }
 
     vec3 finalDiffuse = albedo.rgb * diffuseLight * 2.0;
+    if (u_useCubemap)
+    {
+        vec3 N = norm;
+
+        if (u_useBump)
+        {
+            vec3 tNorm = texture(u_normal, TexCoord).rgb * 2.0 - 1.0;
+            N = normalize(norm + tNorm * 0.4);
+        }
+
+        vec3 R = reflect(-viewDir, N);
+
+        vec3 lookup = ParallaxCorrect(R, FragPos, u_cubemapMins, u_cubemapMaxs, u_cubemapOrigin);
+
+        vec3 envMap = texture(u_cubemap, lookup).rgb;
+
+        float brightness = dot(diffuseLight, vec3(0.2126, 0.7152, 0.0722));
+        specularLight += envMap * specMask * brightness;
+    }
+
     if (u_fullbright == 1)
     {
         FragColor = vec4(albedo.rgb, albedo.a);
@@ -102,7 +145,7 @@ void main()
         FragColor = vec4(finalDiffuse + specularLight, albedo.a);
     }
 
-     // Debug Tools
+    // Debug Tools
     if (u_debugMode == 1) // r_debug_lightmaps
     {
         if (!u_isModel) 

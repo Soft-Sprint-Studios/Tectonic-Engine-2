@@ -29,6 +29,7 @@
 #include "r_bsp.h"
 #include "r_models.h"
 #include "r_sky.h"
+#include "cubemap.h"
 #include <memory>
 
 class Renderer
@@ -41,9 +42,11 @@ public:
     bool LoadMap(const std::string& path);
     void Shutdown();
     void Render(Camera& camera);
+    void RenderWorld(Camera& camera, GLuint cubemapToExclude = 0);
     void OnWindowResize(int w, int h);
 
 private:
+    void DrawWorld(Camera& camera, GLuint cubemapToExclude);
     Window* m_windowRef;
     Shader m_worldShader;
 

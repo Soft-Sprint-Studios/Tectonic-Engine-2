@@ -22,14 +22,30 @@
  * SOFTWARE.
  */
 #pragma once
-#include "renderer.h"
-#include "camera.h"
-#include "input.h"
 #include <string>
+#include <vector>
+#include <glm/glm.hpp>
+#include <glad/glad.h>
 
-namespace Maps
+class Renderer;
+
+namespace Cubemap
 {
-    void Init(Renderer* renderer, Camera* camera, Input* input);
-    void Load(const std::string& mapName);
-    std::string GetCurrentMapName();
+    struct CubemapProbe
+    {
+        GLuint textureID = 0;
+        glm::vec3 origin{0.0f};
+        glm::vec3 mins{0.0f};
+        glm::vec3 maxs{0.0f};
+    };
+
+    void Init();
+    void Shutdown();
+    void Clear();
+
+    void LoadForMap(const std::string& mapName);
+    void BuildCubemaps(const std::string& mapName, Renderer* renderer);
+
+    const CubemapProbe* FindClosest(const glm::vec3& position);
+    const std::vector<CubemapProbe>& GetProbes();
 }
