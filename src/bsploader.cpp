@@ -299,7 +299,7 @@ namespace BSP
                     for (int j = 0; j < dictCount; j++)
                     {
                         char name[128];
-                        memcpy(name, sprpPtr, 128);
+                        std::memcpy(name, sprpPtr, 128);
                         std::string path = name;
 
                         // want glb not mdl

@@ -65,7 +65,7 @@ namespace Sound
         while (ptr + 8 <= end)
         {
             char chunkId[5] = {0};
-            memcpy(chunkId, ptr, 4);
+            std::memcpy(chunkId, ptr, 4);
             uint32_t chunkSize = *(uint32_t*)(ptr + 4);
             ptr += 8;
 
