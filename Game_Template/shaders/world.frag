@@ -1,5 +1,3 @@
-#version 460 core
-
 in vec2 TexCoord;
 in vec2 LmCoord1;
 in vec2 LmCoord2;

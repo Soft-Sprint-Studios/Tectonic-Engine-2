@@ -85,8 +85,12 @@ bool Shader::Load(const std::string& vertPath, const std::string& fragPath, cons
 GLuint Shader::CompileShader(GLenum type, const std::string& source)
 {
     GLuint shader = glCreateShader(type);
+    const char* version = "#version 460 core\n";
+    const char* lineReset = "#line 1\n";
     const char* src = source.c_str();
-    glShaderSource(shader, 1, &src, NULL);
+
+    const char* sources[] = { version, lineReset, src };
+    glShaderSource(shader, 3, sources, NULL);
     glCompileShader(shader);
 
     GLint success;
