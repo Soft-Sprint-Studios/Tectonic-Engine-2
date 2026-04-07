@@ -376,7 +376,7 @@ namespace BSP
                 std::string path((const char*)(pakData + offset + 30), nameLen);
                 std::string name = path.substr(path.find_last_of("/\\") + 1);
 
-                // Collect both standard VHV and our custom VHD files
+                // Collect both standard VHV and VHD files
                 if (*(uint16_t*)(pakData + offset + 8) == 0 &&
                     (name.find(".vhv") != std::string::npos || name.find(".vhd") != std::string::npos))
                 {
@@ -460,6 +460,7 @@ namespace BSP
                             for (int b = 0; b < 3; b++)
                             {
                                 int baseIdx = (v * 3 + b) * 4;
+                                // They are stored in BGRA for some reason..
                                 float blue = colors[baseIdx + 0] / 255.0f;
                                 float green = colors[baseIdx + 1] / 255.0f;
                                 float red = colors[baseIdx + 2] / 255.0f;
@@ -515,12 +516,12 @@ namespace BSP
             outX = m_atlasX;
             outY = m_atlasY;
 
-            const ColorRGBExp32* src = (const ColorRGBExp32*)(d_lighting + offset);
+            const Color* src = (const Color*)(d_lighting + offset);
             for (int y = 0; y < h; y++)
             {
                 for (int x = 0; x < w; x++)
                 {
-                    ColorRGBExp32 c = src[y * w + x];
+                    Color c = src[y * w + x];
                     float power = std::pow(2.0f, c.exponent);
                     int dest = ((outY + y) * m_map.lightmapAtlasWidth + (outX + x)) * 3;
                     m_map.lightmapAtlas[dest + 0] = (c.r / 255.0f) * power;

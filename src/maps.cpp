@@ -29,6 +29,7 @@
 #include "concmd.h"
 #include "console.h"
 #include "filesystem.h"
+#include "discord.h"
 
 namespace Maps
 {
@@ -59,6 +60,8 @@ namespace Maps
         std::string path = "maps/" + mapName + ".bsp";
         if (s_renderer->LoadMap(path))
         {
+            Discord::UpdatePresence("Playing Singleplayer", "Map: " + mapName);
+
             // Link the new player entity
             auto ent = EntityManager::FindEntityByClass("info_player_start");
             if (ent)

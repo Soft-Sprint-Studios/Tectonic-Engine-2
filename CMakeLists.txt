@@ -18,6 +18,7 @@ set(CGLTF_PATH ${CMAKE_SOURCE_DIR}/libs/cgltf)
 set(FLTK_PATH ${CMAKE_SOURCE_DIR}/libs/fltk-1.4.4)
 set(OPENAL_PATH ${CMAKE_SOURCE_DIR}/libs/openal-soft-1.24.3)
 set(MINIMP3_PATH ${CMAKE_SOURCE_DIR}/libs/minimp3)
+set(DISCORDRPC_PATH ${CMAKE_SOURCE_DIR}/libs/DiscordRPC)
 
 # ---- Detect 32/64-bit ----
 if(WIN32)
@@ -49,6 +50,7 @@ target_include_directories(TectonicEngine2 PRIVATE
     ${CGLTF_PATH}/include
     ${OPENAL_PATH}/include
     ${MINIMP3_PATH}/include
+    ${DISCORDRPC_PATH}/include
     src
 )
 
@@ -63,6 +65,7 @@ if(WIN32)
         ${BULLET_PATH}/lib/${ARCH_FOLDER}/BulletDynamics.lib
         ${BULLET_PATH}/lib/${ARCH_FOLDER}/LinearMath.lib
         ${OPENAL_PATH}/lib/${ARCH_FOLDER}/OpenAL32.lib
+        ${DISCORDRPC_PATH}/lib/${ARCH_FOLDER}/discord-rpc.lib
         OpenGL::GL
     )
 else()

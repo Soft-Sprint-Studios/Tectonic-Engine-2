@@ -111,7 +111,7 @@ namespace BSP
         int32_t width, height, view_width, view_height;
     };
 
-    struct ColorRGBExp32 
+    struct Color
     { 
         uint8_t r, g, b; 
         int8_t exponent; 

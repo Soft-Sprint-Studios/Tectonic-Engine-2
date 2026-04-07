@@ -39,12 +39,14 @@
 #include "maps.h"
 #include "networking.h"
 #include "sound.h"
+#include "discord.h"
 
 ENGINE_API int Engine_Main(int argc, char** argv)
 {
     // Core Systems Init
     Filesystem::Init();
     Console::Init();
+    Discord::Init();
     Sound::Init();
     Networking::Init();
     CVar::Init();
@@ -84,6 +86,7 @@ ENGINE_API int Engine_Main(int argc, char** argv)
         // Update Time and Console
         Time::Update();
         Console::Update();
+        Discord::Update();
         Sound::Update(camera.position, camera.GetForward());
         Networking::Update();
         Physics::Update(Time::DeltaTime());
@@ -125,6 +128,7 @@ ENGINE_API int Engine_Main(int argc, char** argv)
     Physics::Shutdown();
     CVar::Save();
     Console::Shutdown();
+    Discord::Shutdown();
     Networking::Shutdown();
     window.Shutdown();
 
