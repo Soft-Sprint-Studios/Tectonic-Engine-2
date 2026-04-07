@@ -5,6 +5,10 @@ if(MSVC)
     add_compile_options(/we4013)
 endif()
 
+if(UNIX)
+    add_compile_options(-Wno-backslash-newline-escape)
+endif()
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -133,4 +137,23 @@ if(WIN32)
     set_target_properties(TConsole PROPERTIES WIN32_EXECUTABLE TRUE)
     target_link_directories(TConsole PRIVATE ${FLTK_PATH}/lib/${ARCH_FOLDER})
     target_link_libraries(TConsole PRIVATE fltk ws2_32 comctl32 gdiplus)
+else()
+    target_link_directories(TConsole PRIVATE ${FLTK_PATH}/lib/linux)
+
+    target_link_libraries(TConsole PRIVATE
+        fltk
+        fltk_gl
+        fltk_images
+        X11
+        Xext
+        Xinerama
+        Xft
+        fontconfig
+        Xrender
+        Xfixes
+        Xcursor
+        dl
+        pthread
+        m
+    )
 endif()
