@@ -1,4 +1,4 @@
-name: CMake Build Windows
+name: CMake Build
 
 permissions:
   contents: read
@@ -82,3 +82,45 @@ jobs:
         with:
           name: windows-x86-relwithdebinfo
           path: build/RelWithDebInfo
+
+  build-linux-x64-release:
+    name: Build - Linux x64 (Release)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential cmake libgl1-mesa-dev libx11-dev libopenal-dev
+
+      - name: Configure CMake
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build with CMake
+        run: cmake --build build --config Release
+
+      - name: Upload Linux x64 Release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-x64-release
+          path: build
+
+  build-linux-x64-relwithdebinfo:
+    name: Build - Linux x64 (RelWithDebInfo)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential cmake libgl1-mesa-dev libx11-dev libopenal-dev
+
+      - name: Configure CMake
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
+
+      - name: Build with CMake
+        run: cmake --build build --config RelWithDebInfo
+
+      - name: Upload Linux x64 RelWithDebInfo artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-x64-relwithdebinfo
+          path: build

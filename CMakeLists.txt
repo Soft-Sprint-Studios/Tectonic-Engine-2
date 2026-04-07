@@ -24,9 +24,11 @@ set(DISCORDRPC_PATH ${CMAKE_SOURCE_DIR}/libs/DiscordRPC)
 if(WIN32)
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)
         set(ARCH_FOLDER "x64")
-    else    ()
+    else()
         set(ARCH_FOLDER "x86")
     endif()
+elseif(UNIX)
+    set(ARCH_FOLDER "linux")
 endif()
 
 # ---- SOURCE FILES ----
@@ -68,14 +70,26 @@ if(WIN32)
         ${DISCORDRPC_PATH}/lib/${ARCH_FOLDER}/discord-rpc.lib
         OpenGL::GL
     )
-else()
+elseif(UNIX)
+    target_link_directories(TectonicEngine2 PRIVATE
+        ${SDL3_PATH}/lib/linux
+        ${BULLET_PATH}/lib/linux
+        ${OPENAL_PATH}/lib/linux
+        ${DISCORDRPC_PATH}/lib/linux
+    )
+
     target_link_libraries(TectonicEngine2 PRIVATE
         SDL3
         Bullet3Dynamics
         BulletCollision
         BulletDynamics
         LinearMath
+        OpenAL
+        discord-rpc
         OpenGL::GL
+        dl
+        pthread
+        m 
     )
 endif()
 
