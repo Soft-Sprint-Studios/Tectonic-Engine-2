@@ -27,6 +27,7 @@
 #include "cvar.h"
 #include <vector>
 #include <algorithm>
+#include <cstring>
 
 #define MINIMP3_IMPLEMENTATION
 #include "minimp3_ex.h"

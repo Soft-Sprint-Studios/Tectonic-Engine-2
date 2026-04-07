@@ -28,6 +28,7 @@
 #include <cmath>
 #include <algorithm>
 #include <map>
+#include <cstring>
 
 namespace BSP
 {
