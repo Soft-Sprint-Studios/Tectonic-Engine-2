@@ -97,8 +97,7 @@ jobs:
             cmake \
             libgl1-mesa-dev \
             libx11-dev \
-            libopenal-dev \
-            libsdl3-dev
+            libopenal-dev
 
       - name: Configure CMake
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
@@ -126,8 +125,7 @@ jobs:
             cmake \
             libgl1-mesa-dev \
             libx11-dev \
-            libopenal-dev \
-            libsdl3-dev
+            libopenal-dev
 
       - name: Configure CMake
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
