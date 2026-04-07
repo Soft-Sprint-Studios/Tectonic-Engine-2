@@ -97,6 +97,13 @@ jobs:
             cmake \
             libgl1-mesa-dev \
             libx11-dev \
+            libxext-dev \
+            libxinerama-dev \
+            libxft-dev \
+            libxrender-dev \
+            libxfixes-dev \
+            libxcursor-dev \
+            libfontconfig1-dev \
             libopenal-dev
 
       - name: Configure CMake
@@ -125,6 +132,13 @@ jobs:
             cmake \
             libgl1-mesa-dev \
             libx11-dev \
+            libxext-dev \
+            libxinerama-dev \
+            libxft-dev \
+            libxrender-dev \
+            libxfixes-dev \
+            libxcursor-dev \
+            libfontconfig1-dev \
             libopenal-dev
 
       - name: Configure CMake
