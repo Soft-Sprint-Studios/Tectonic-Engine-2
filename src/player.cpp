@@ -100,6 +100,23 @@ void Player::Think(float deltaTime)
 
     m_camera->pitch = glm::clamp(m_camera->pitch, -89.0f, 89.0f);
 
+    if (m_input->GetKeyDown(SDL_SCANCODE_SPACE) && m_character->onGround() && !m_noclip)
+    {
+        m_character->jump(btVector3(0, 7.0f, 0));
+    }
+
+    bool wantCrouch = m_input->GetKey(SDL_SCANCODE_LCTRL);
+    if (wantCrouch && !m_isCrouching)
+    {
+        m_isCrouching = true;
+        m_character->getGhostObject()->getCollisionShape()->setLocalScaling(btVector3(1, 0.5f, 1));
+    }
+    else if (!wantCrouch && m_isCrouching)
+    {
+        m_isCrouching = false;
+        m_character->getGhostObject()->getCollisionShape()->setLocalScaling(btVector3(1, 1.0f, 1));
+    }
+
     // OnPress api
     if (m_input->GetKeyDown(SDL_SCANCODE_E))
     {
@@ -127,7 +144,12 @@ void Player::Think(float deltaTime)
     glm::vec3 right = glm::normalize(glm::cross(flatForward, glm::vec3(0, 1, 0)));
 
     glm::vec3 wishDir(0.0f);
-    float baseSpeed = 5.0f;
+    float baseSpeed = 10.0f;
+
+    if (m_isCrouching && !m_noclip)
+    {
+        baseSpeed = 5.0f;
+    }
 
     glm::vec3 moveForward = m_noclip ? forward : flatForward;
 
@@ -159,11 +181,14 @@ void Player::Think(float deltaTime)
     else
     {
         glm::vec3 displacement = wishDir * deltaTime;
-        m_character->setWalkDirection(btVector3(displacement.x, displacement.y, displacement.z));
+        m_character->setWalkDirection(btVector3(displacement.x, 0.0f, displacement.z));
+
+        float targetHeight = m_isCrouching ? 0.7f : 1.5f;
+        m_viewHeight = glm::mix(m_viewHeight, targetHeight, deltaTime * 12.0f);
 
         btTransform currentTransform = m_character->getGhostObject()->getWorldTransform();
         btVector3 bulletPos = currentTransform.getOrigin();
-        m_camera->position = glm::vec3(bulletPos.getX(), bulletPos.getY() + 1.5f, bulletPos.getZ());
+        m_camera->position = glm::vec3(bulletPos.getX(), bulletPos.getY() + m_viewHeight, bulletPos.getZ());
     }
 }
 

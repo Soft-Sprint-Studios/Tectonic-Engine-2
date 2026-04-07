@@ -182,7 +182,7 @@ namespace Physics
         }
 
         s_bspShape = new btBvhTriangleMeshShape(s_bspMesh, true);
-        s_bspShape->setMargin(0.005f);
+        s_bspShape->setMargin(0.04f);
 
         btTransform groundTransform;
         groundTransform.setIdentity();

@@ -51,6 +51,9 @@ public:
         return true; 
     }
 
+    float m_viewHeight = 1.5f;
+    bool m_isCrouching = false;
+
 private:
     Camera* m_camera = nullptr;
     Input* m_input = nullptr;
