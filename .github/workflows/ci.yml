@@ -90,13 +90,21 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y build-essential cmake libgl1-mesa-dev libx11-dev libopenal-dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            libgl1-mesa-dev \
+            libx11-dev \
+            libopenal-dev \
+            libsdl3-dev
 
       - name: Configure CMake
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 
       - name: Build with CMake
-        run: cmake --build build --config Release
+        run: cmake --build build
 
       - name: Upload Linux x64 Release artifacts
         uses: actions/upload-artifact@v4
@@ -111,13 +119,21 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y build-essential cmake libgl1-mesa-dev libx11-dev libopenal-dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            libgl1-mesa-dev \
+            libx11-dev \
+            libopenal-dev \
+            libsdl3-dev
 
       - name: Configure CMake
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
 
       - name: Build with CMake
-        run: cmake --build build --config RelWithDebInfo
+        run: cmake --build build
 
       - name: Upload Linux x64 RelWithDebInfo artifacts
         uses: actions/upload-artifact@v4

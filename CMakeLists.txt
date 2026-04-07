@@ -71,20 +71,21 @@ if(WIN32)
         OpenGL::GL
     )
 elseif(UNIX)
+    find_package(OpenAL REQUIRED)
+    find_package(SDL3 REQUIRED)
+
     target_link_directories(TectonicEngine2 PRIVATE
-        ${SDL3_PATH}/lib/linux
         ${BULLET_PATH}/lib/linux
-        ${OPENAL_PATH}/lib/linux
         ${DISCORDRPC_PATH}/lib/linux
     )
 
     target_link_libraries(TectonicEngine2 PRIVATE
-        SDL3
+        SDL3::SDL3
+        OpenAL::OpenAL
         Bullet3Dynamics
         BulletCollision
         BulletDynamics
         LinearMath
-        OpenAL
         discord-rpc
         OpenGL::GL
         dl
