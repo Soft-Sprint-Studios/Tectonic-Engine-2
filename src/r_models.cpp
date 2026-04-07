@@ -170,6 +170,11 @@ void R_Models::LoadModel(const std::string& path)
                     glEnableVertexAttribArray(1);
                     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride, 0);
                 }
+                else if (attr.type == cgltf_attribute_type_normal)
+                {
+                    glEnableVertexAttribArray(9);
+                    glVertexAttribPointer(9, 3, GL_FLOAT, GL_FALSE, stride, 0);
+                }
             }
 
             if (prim.indices)
