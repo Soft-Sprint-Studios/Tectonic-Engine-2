@@ -19,6 +19,7 @@ uniform bool u_useBump;
 uniform bool u_isModel;
 uniform vec3 u_viewPos;
 uniform int u_debugMode;
+uniform int u_fullbright;
 
 out vec4 FragColor;
 
@@ -29,7 +30,8 @@ const vec3 basis2 = vec3(-0.40824829, -0.70710678, 0.57735027);
 void main()
 {
     vec4 albedo = texture(u_diffuse, TexCoord);
-    if(albedo.a < 0.1) discard;
+    if(albedo.a < 0.1) 
+        discard;
 
     vec3 specMask = texture(u_specular, TexCoord).rgb;
     vec3 norm = normalize(Normal);
@@ -93,7 +95,14 @@ void main()
     }
 
     vec3 finalDiffuse = albedo.rgb * diffuseLight * 2.0;
-    FragColor = vec4(finalDiffuse + specularLight, albedo.a);
+    if (u_fullbright == 1)
+    {
+        FragColor = vec4(albedo.rgb, albedo.a);
+    }
+    else
+    {
+        FragColor = vec4(finalDiffuse + specularLight, albedo.a);
+    }
 
      // Debug Tools
     if (u_debugMode == 1) // r_debug_lightmaps

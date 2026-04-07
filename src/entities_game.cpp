@@ -26,6 +26,7 @@
 #include "sound.h"
 #include "timing.h"
 #include "console.h"
+#include "postprocess.h"
 
 // ==========================================
 // trigger_multiple
@@ -216,3 +217,90 @@ private:
 };
 
 LINK_ENTITY_TO_CLASS("sound", SoundEntity)
+
+// ==========================================
+// postprocess_controller
+// ==========================================
+class PostProcessController : public Entity
+{
+public:
+    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    {
+        Entity::Spawn(keyvalues);
+        m_vignette = GetFloat("vignette", 0.0f);
+        m_chroma = GetFloat("chroma", 0.0f);
+        m_grain = GetFloat("grain", 0.0f);
+        m_bw = GetFloat("bw", 0.0f);
+
+        if (!HasSpawnFlag(1))
+        {
+            ApplySettings();
+            m_enabled = true;
+        }
+    }
+
+    void AcceptInput(const std::string& inputName, const std::string& parameter) override
+    {
+        if (inputName == "Enable")
+        {
+            ApplySettings();
+            m_enabled = true;
+        }
+        else if (inputName == "Disable")
+        {
+            PostProcess::SetVignette(0.0f);
+            PostProcess::SetChroma(0.0f);
+            PostProcess::SetGrain(0.0f);
+            PostProcess::SetBW(0.0f);
+            m_enabled = false;
+        }
+        else if (inputName == "Toggle")
+        {
+            if (m_enabled) 
+                AcceptInput("Disable", "");
+            else 
+                AcceptInput("Enable", "");
+        }
+        else if (inputName == "SetVignette")
+        {
+            m_vignette = std::stof(parameter);
+            if (m_enabled) 
+                PostProcess::SetVignette(m_vignette);
+        }
+        else if (inputName == "SetChroma")
+        {
+            m_chroma = std::stof(parameter);
+            if (m_enabled) 
+                PostProcess::SetChroma(m_chroma);
+        }
+        else if (inputName == "SetGrain")
+        {
+            m_grain = std::stof(parameter);
+            if (m_enabled) 
+                PostProcess::SetGrain(m_grain);
+        }
+        else if (inputName == "SetBW")
+        {
+            m_bw = std::stof(parameter);
+            if (m_enabled) 
+                PostProcess::SetBW(m_bw);
+        }
+    }
+
+private:
+    void ApplySettings()
+    {
+        PostProcess::SetVignette(m_vignette);
+        PostProcess::SetChroma(m_chroma);
+        PostProcess::SetGrain(m_grain);
+        PostProcess::SetBW(m_bw);
+    }
+
+    float m_vignette = 0.0f;
+    float m_chroma = 0.0f;
+    float m_grain = 0.0f;
+    float m_bw = 0.0f;
+    bool m_enabled = false;
+};
+
+LINK_ENTITY_TO_CLASS("postprocess_controller", PostProcessController)

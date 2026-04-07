@@ -24,6 +24,8 @@
 #include "r_postprocess.h"
 #include "console.h"
 #include "cvar.h"
+#include "postprocess.h"
+#include "timing.h"
 
 R_PostProcess::R_PostProcess()
     : m_fbo(0), m_texture(0), m_rbo(0),
@@ -199,6 +201,13 @@ void R_PostProcess::Draw()
 {
     m_shader.Bind();
     m_shader.SetInt("screenTexture", 0);
+
+    const auto& ppSettings = PostProcess::GetCurrentSettings();
+    m_shader.SetFloat("u_time", (float)Time::TotalTime());
+    m_shader.SetFloat("u_vignetteStrength", ppSettings.vignetteStrength);
+    m_shader.SetFloat("u_chromaStrength", ppSettings.chromaStrength);
+    m_shader.SetFloat("u_grainStrength", ppSettings.grainStrength);
+    m_shader.SetFloat("u_bwStrength", ppSettings.bwStrength);
 
     glBindVertexArray(m_quadVAO);
     glActiveTexture(GL_TEXTURE0);
