@@ -188,6 +188,13 @@ void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude)
     }
 }
 
+void Renderer::RenderWorld(Camera& camera, GLuint cubemapToExclude)
+{
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    DrawWorld(camera, cubemapToExclude);
+}
+
 void Renderer::Render(Camera& camera)
 {
     int w, h;
@@ -202,10 +209,7 @@ void Renderer::Render(Camera& camera)
     m_postProcess->Begin();
     glViewport(0, 0, w, h);
 
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    DrawWorld(camera, 0);
+    RenderWorld(camera, 0);
 
     m_postProcess->End();
 
@@ -217,13 +221,6 @@ void Renderer::Render(Camera& camera)
     glEnable(GL_DEPTH_TEST);
 
     m_windowRef->Swap();
-}
-
-void Renderer::RenderWorld(Camera& camera, GLuint cubemapToExclude)
-{
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    DrawWorld(camera, cubemapToExclude);
 }
 
 void Renderer::OnWindowResize(int w, int h)
