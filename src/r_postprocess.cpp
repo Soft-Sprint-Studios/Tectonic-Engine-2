@@ -219,7 +219,8 @@ void R_PostProcess::End()
 
 void R_PostProcess::Draw()
 {
-    if (CVar::Find("r_autoexposure")->GetInt() > 0) {
+    if (CVar::Find("r_autoexposure")->GetInt() > 0) 
+    {
         // Clear histogram
         uint32_t zeros[256] = { 0 };
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_histogramBuffer);

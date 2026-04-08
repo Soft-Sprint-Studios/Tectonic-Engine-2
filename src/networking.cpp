@@ -71,7 +71,8 @@ namespace Networking
     void Ping(const std::string& host)
     {
         // Run in thread to not block engine
-        std::thread([host]() {
+        std::thread([host]() 
+        {
             addrinfo hints = {}, *res;
             hints.ai_family = AF_INET;
             hints.ai_socktype = SOCK_STREAM;
@@ -84,9 +85,12 @@ namespace Networking
             }
 
             socket_t s = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-            if (connect(s, res->ai_addr, (int)res->ai_addrlen) == SOCKET_ERROR) {
+            if (connect(s, res->ai_addr, (int)res->ai_addrlen) == SOCKET_ERROR) 
+            {
                 Console::Error("Ping: Connection failed to " + host);
-            } else {
+            } 
+            else 
+            {
                 float endTime = Time::TotalTime();
                 int ms = (int)((endTime - startTime) * 1000.0f);
                 Console::Log("Ping to " + host + ": " + std::to_string(ms) + "ms (TCP)");
@@ -99,16 +103,20 @@ namespace Networking
 
     void Download(const std::string& url, const std::string& savePath)
     {
-        std::thread([url, savePath]() {
+        std::thread([url, savePath]() 
+        {
             std::string host, path;
             size_t start = url.find("://");
             size_t hostStart = (start == std::string::npos) ? 0 : start + 3;
             size_t pathStart = url.find('/', hostStart);
 
-            if (pathStart == std::string::npos) {
+            if (pathStart == std::string::npos) 
+            {
                 host = url.substr(hostStart);
                 path = "/";
-            } else {
+            } 
+            else 
+            {
                 host = url.substr(hostStart, pathStart - hostStart);
                 path = url.substr(pathStart);
             }
@@ -117,13 +125,15 @@ namespace Networking
             hints.ai_family = AF_INET;
             hints.ai_socktype = SOCK_STREAM;
 
-            if (getaddrinfo(host.c_str(), "80", &hints, &res) != 0) {
+            if (getaddrinfo(host.c_str(), "80", &hints, &res) != 0) 
+            {
                 Console::Error("Download: Host resolve failed");
                 return;
             }
 
             socket_t s = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-            if (connect(s, res->ai_addr, (int)res->ai_addrlen) == SOCKET_ERROR) {
+            if (connect(s, res->ai_addr, (int)res->ai_addrlen) == SOCKET_ERROR) 
+            {
                 Console::Error("Download: Connect failed");
                 return;
             }
@@ -136,20 +146,25 @@ namespace Networking
             std::vector<char> response;
             char buffer[4096];
             int bytes;
-            while ((bytes = recv(s, buffer, sizeof(buffer), 0)) > 0) {
+            while ((bytes = recv(s, buffer, sizeof(buffer), 0)) > 0) 
+            {
                 response.insert(response.end(), buffer, buffer + bytes);
             }
 
             auto it = std::search(response.begin(), response.end(), "\r\n\r\n", "\r\n\r\n" + 4);
-            if (it != response.end()) {
+            if (it != response.end()) 
+            {
                 std::vector<uint8_t> body(it + 4, response.end());
 
                 FILE* f = fopen(Filesystem::GetFullPath(savePath).c_str(), "wb");
-                if (f) {
+                if (f) 
+                {
                     fwrite(body.data(), 1, body.size(), f);
                     fclose(f);
                     Console::Log("Download finished: " + savePath + " (" + std::to_string(body.size()) + " bytes)");
-                } else {
+                } 
+                else 
+                {
                     Console::Error("Download: Failed to write to disk");
                 }
             }
