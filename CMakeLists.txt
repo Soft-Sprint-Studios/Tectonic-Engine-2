@@ -117,7 +117,7 @@ elseif(UNIX)
     add_custom_command(TARGET TectonicEngine2 POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${SENTRY_PATH}/lib/linux/libsentry.so"
-        "${SENTRY_PATH}/lib/linux/libcrashpad_handler"
+        "${SENTRY_PATH}/lib/linux/crashpad_handler"
         $<TARGET_FILE_DIR:TectonicEngine2>
     )
 endif()
