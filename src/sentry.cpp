@@ -53,7 +53,7 @@ namespace Sentry
             sentry_options_set_handler_path(options, "crashpad_handler");
         #endif
 
-        int result = sentry_init(options);
+        sentry_init(options);
     }
 
     void Shutdown()
