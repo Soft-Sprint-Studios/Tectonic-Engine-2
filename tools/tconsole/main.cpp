@@ -37,7 +37,7 @@
 #include <algorithm>
 #include <cstring>
 
-#ifdef PLATFORM_WINDOWS
+#ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #pragma comment(lib, "ws2_32.lib")
@@ -273,7 +273,7 @@ void on_about_cb(Fl_Widget*, void*) {
 }
 
 void server_loop() {
-#ifdef PLATFORM_WINDOWS
+#ifdef _WIN32
     WSADATA wsaData;
     WSAStartup(MAKEWORD(2, 2), &wsaData);
 #endif
@@ -349,7 +349,7 @@ void server_loop() {
         client_socket = INVALID_SOCKET;
     }
 
-#ifdef PLATFORM_WINDOWS
+#ifdef _WIN32
     WSACleanup();
 #endif
 }

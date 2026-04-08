@@ -138,10 +138,6 @@ endif()
 add_executable(TConsole ${CMAKE_SOURCE_DIR}/tools/tconsole/main.cpp)
 target_compile_features(TConsole PRIVATE cxx_std_17)
 
-if(WIN32)
-    target_compile_definitions(TConsole PRIVATE PLATFORM_WINDOWS)
-endif()
-
 target_include_directories(TConsole PRIVATE ${FLTK_PATH}/include)
 
 if(WIN32)
