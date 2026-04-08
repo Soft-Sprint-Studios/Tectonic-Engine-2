@@ -247,9 +247,14 @@ void input_callback(Fl_Widget*, void*) {
 
 void on_window_close(Fl_Widget*, void*) {
     should_exit = true;
-    if (server_socket != INVALID_SOCKET) {
-        closesocket(server_socket);
-        server_socket = INVALID_SOCKET;
+    if (client_socket != INVALID_SOCKET) {
+#ifdef _WIN32
+        shutdown(client_socket, SD_BOTH);
+#else
+        shutdown(client_socket, SHUT_RDWR);
+#endif
+        closesocket(client_socket);
+        client_socket = INVALID_SOCKET;
     }
     if (server_thread.joinable()) {
         server_thread.join();
