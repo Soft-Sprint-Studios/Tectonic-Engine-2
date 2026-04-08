@@ -233,5 +233,10 @@ namespace BSP
         int lightmapAtlasHeight = 4096;
     };
 
+    inline glm::vec3 ToEngineSpace(const glm::vec3& v)
+    {
+        return glm::vec3(v.x, v.z, -v.y) * MAPSCALE;
+    }
+
     MapData Load(const std::string& path);
 }

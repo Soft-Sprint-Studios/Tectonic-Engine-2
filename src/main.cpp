@@ -41,6 +41,7 @@
 #include "sound.h"
 #include "discord.h"
 #include "cubemap.h"
+#include "particles.h"
 
 ENGINE_API int Engine_Main(int argc, char** argv)
 {
@@ -69,6 +70,9 @@ ENGINE_API int Engine_Main(int argc, char** argv)
     Materials::Init();
     Materials::LoadDefinitions("materials.def");
 
+    Particles::Init();
+    Particles::LoadDefinitions("particles.def");
+
     Binds::Init();
 
     Maps::Init(&renderer, &camera, &input);
@@ -91,9 +95,11 @@ ENGINE_API int Engine_Main(int argc, char** argv)
         Discord::Update();
         Sound::Update(camera.position, camera.GetForward());
         Networking::Update();
-        Physics::Update(Time::DeltaTime());
 
         float dt = Time::DeltaTime();
+
+        Particles::Update(dt);
+        Physics::Update(dt);
 
         // Input Handling
         input.BeginFrame();

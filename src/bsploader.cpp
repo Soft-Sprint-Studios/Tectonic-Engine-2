@@ -182,7 +182,7 @@ namespace BSP
             {
                 const auto& v = d_verts[i];
                 // Z-up to Y-up and 1/32 scale conversion
-                m_map.collision.vertices[i] = glm::vec3(v.x, v.z, -v.y) * MAPSCALE;
+                m_map.collision.vertices[i] = ToEngineSpace(v);
             }
 
             // Batch faces by texture
@@ -342,7 +342,7 @@ namespace BSP
                         {
                             StaticPropInstance inst;
                             inst.modelPath = modelPaths[propType];
-                            inst.position = glm::vec3(origin->x, origin->z, -origin->y) * MAPSCALE;
+                            inst.position = ToEngineSpace(*origin);
                             inst.angles = *angles;
 
                             m_map.staticProps.push_back(inst);
@@ -546,7 +546,7 @@ namespace BSP
 
                 const auto& pos = d_verts[vIdx];
                 Vertex v;
-                v.position = glm::vec3(pos.x, pos.z, -pos.y) * MAPSCALE;
+                v.position = ToEngineSpace(pos);
 
                 const Plane& plane = d_planes[face.planenum];
                 v.normal = glm::vec3(plane.normal.x, plane.normal.z, -plane.normal.y);
@@ -637,7 +637,7 @@ namespace BSP
                     pos += dv.vec * dv.dist;
 
                     Vertex& vert = grid[y * size + x];
-                    vert.position = glm::vec3(pos.x, pos.z, -pos.y) * MAPSCALE;
+                    vert.position = ToEngineSpace(pos);
 
                     const Plane& plane = d_planes[face.planenum];
                     vert.normal = glm::vec3(plane.normal.x, plane.normal.z, -plane.normal.y);

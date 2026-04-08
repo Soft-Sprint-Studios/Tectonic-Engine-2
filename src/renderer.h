@@ -29,6 +29,7 @@
 #include "r_bsp.h"
 #include "r_models.h"
 #include "r_sky.h"
+#include "r_particles.h"
 #include "cubemap.h"
 #include <memory>
 
@@ -55,4 +56,5 @@ private:
     std::unique_ptr<R_BSP> m_bspRenderer;
     std::unique_ptr<R_Models> m_modelRenderer;
     std::unique_ptr<R_Sky> m_skyRenderer;
+    std::unique_ptr<R_Particles> m_particleRenderer;
 };

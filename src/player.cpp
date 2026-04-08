@@ -74,15 +74,12 @@ void Player::LinkInput(Input* input)
 
 void Player::Spawn(const std::unordered_map<std::string, std::string>& keyvalues)
 {
-    glm::vec3 physicsOrigin = { m_origin.x, m_origin.z, -m_origin.y };
-    physicsOrigin *= BSP::MAPSCALE;
-
-    m_character = Physics::CreateCharacter(physicsOrigin, this);
+    m_character = Physics::CreateCharacter(m_origin, this);
 
     // Force immediate warp to the spawn position to clear penetration state
     btTransform startTrans;
     startTrans.setIdentity();
-    startTrans.setOrigin(btVector3(physicsOrigin.x, physicsOrigin.y, physicsOrigin.z));
+    startTrans.setOrigin(btVector3(m_origin.x, m_origin.y, m_origin.z));
     m_character->getGhostObject()->setWorldTransform(startTrans);
     m_character->reset(Physics::GetDynamicsWorld());
 }
@@ -102,7 +99,7 @@ void Player::Think(float deltaTime)
 
     if (m_input->GetKeyDown(SDL_SCANCODE_SPACE) && m_character->onGround() && !m_noclip)
     {
-        m_character->jump(btVector3(0, 7.0f, 0));
+        m_character->jump(btVector3(0, 5.0f, 0));
     }
 
     bool wantCrouch = m_input->GetKey(SDL_SCANCODE_LCTRL);

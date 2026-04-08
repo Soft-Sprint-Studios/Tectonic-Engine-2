@@ -27,6 +27,7 @@
 #include "timing.h"
 #include "console.h"
 #include "postprocess.h"
+#include "particles.h"
 
 // ==========================================
 // trigger_multiple
@@ -326,3 +327,41 @@ private:
 };
 
 LINK_ENTITY_TO_CLASS("postprocess_controller", PostProcessController)
+
+class ParticleEntity : public Entity
+{
+public:
+    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    {
+        Entity::Spawn(keyvalues);
+        m_effect = GetValue("effect_name");
+        m_sys = Particles::CreateSystem(m_effect, m_origin);
+        if (m_sys) 
+        {
+            glm::vec3 angles = GetVector("angles");
+            m_sys->SetAngles(angles);
+            m_sys->SetActive(!HasSpawnFlag(1));
+        }
+    }
+
+    void AcceptInput(const std::string& input, const std::string& param) override
+    {
+        if (!m_sys) 
+            return;
+        if (input == "Start") 
+            m_sys->SetActive(true);
+        if (input == "Stop") 
+            m_sys->SetActive(false);
+    }
+
+    bool IsVisible() const override 
+    { 
+        return false; 
+    }
+
+private:
+    std::string m_effect;
+    std::shared_ptr<ParticleSystem> m_sys;
+};
+
+LINK_ENTITY_TO_CLASS("particle_system", ParticleEntity)

@@ -256,8 +256,7 @@ namespace Physics
 
         btTransform trans;
         trans.setIdentity();
-        glm::vec3 physOrigin = glm::vec3(origin.x, origin.z, -origin.y) * BSP::MAPSCALE;
-        trans.setOrigin({ physOrigin.x, physOrigin.y, physOrigin.z });
+        trans.setOrigin({ origin.x, origin.y, origin.z });
         ghost->setWorldTransform(trans);
 
         s_dynamicsWorld->addCollisionObject(ghost, COL_WORLD, COL_PLAYER);

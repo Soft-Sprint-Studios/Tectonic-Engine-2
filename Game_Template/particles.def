@@ -1,0 +1,14 @@
+"fire_torch"
+{
+    texture     "particles/fire"
+    lifetime    0.8
+    size        0.1 0.4
+    gravity     -0.1
+    rate        45
+    additive    1
+
+    speed       1.5 2.5
+    spread      15.0
+    
+    color       1.0 0.8 0.2 1.0   1.0 0.2 0.0 0.0
+}

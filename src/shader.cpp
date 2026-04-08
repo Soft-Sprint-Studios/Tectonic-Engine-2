@@ -38,11 +38,10 @@ Shader::~Shader()
     }
 }
 
-bool Shader::Load(const std::string& vertPath, const std::string& fragPath)
+bool Shader::Load(const std::string& vertPath, const std::string& fragPath, const std::string& geomPath)
 {
     std::string vCode = Filesystem::ReadText(vertPath);
     std::string fCode = Filesystem::ReadText(fragPath);
-
     if (vCode.empty() || fCode.empty())
     {
         return false;
@@ -50,10 +49,21 @@ bool Shader::Load(const std::string& vertPath, const std::string& fragPath)
 
     GLuint vs = CompileShader(GL_VERTEX_SHADER, vCode);
     GLuint fs = CompileShader(GL_FRAGMENT_SHADER, fCode);
+    GLuint gs = 0;
 
     m_program = glCreateProgram();
     glAttachShader(m_program, vs);
     glAttachShader(m_program, fs);
+
+    if (!geomPath.empty())
+    {
+        std::string gCode = Filesystem::ReadText(geomPath);
+        if (!gCode.empty())
+        {
+            gs = CompileShader(GL_GEOMETRY_SHADER, gCode);
+            glAttachShader(m_program, gs);
+        }
+    }
 
     glLinkProgram(m_program);
 
@@ -69,6 +79,11 @@ bool Shader::Load(const std::string& vertPath, const std::string& fragPath)
 
     glDeleteShader(vs);
     glDeleteShader(fs);
+    if (gs != 0)
+    {
+        glDeleteShader(gs);
+    }
+
     return true;
 }
 

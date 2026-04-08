@@ -248,9 +248,11 @@ std::shared_ptr<Entity> EntityManager::SpawnEntity(const std::string& className,
     if (originIt != entData.keyvalues.end())
     {
         std::stringstream ss(originIt->second);
-        glm::vec3 pos;
-        ss >> pos.x >> pos.y >> pos.z;
-        ent->SetOrigin(pos);
+        glm::vec3 rawPos;
+        if (ss >> rawPos.x >> rawPos.y >> rawPos.z)
+        {
+            ent->SetOrigin(BSP::ToEngineSpace(rawPos));
+        }
     }
 
     // If brush entity, create physics object

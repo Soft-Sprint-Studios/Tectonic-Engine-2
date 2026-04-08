@@ -74,6 +74,7 @@ bool Renderer::Init(Window& window)
     m_bspRenderer = std::make_unique<R_BSP>();
     m_modelRenderer = std::make_unique<R_Models>();
     m_skyRenderer = std::make_unique<R_Sky>();
+    m_particleRenderer = std::make_unique<R_Particles>();
 
     return true;
 }
@@ -102,6 +103,11 @@ bool Renderer::LoadMap(const std::string& path)
     if (!m_skyRenderer->Init(map.skyName))
     {
         Console::Warn("Skybox renderer failed to initialize.");
+    }
+
+    if (!m_particleRenderer->Init())
+    {
+        Console::Error("Particle renderer failed to initialize.");
     }
 
     Physics::AddBSPCollision(map.collision.vertices, map.collision.indices);
@@ -173,6 +179,12 @@ void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude)
     if (m_skyRenderer && r_skybox.GetInt() > 0)
     {
         m_skyRenderer->Draw(camera);
+    }
+
+    // Draw particles
+    if (m_particleRenderer)
+    {
+        m_particleRenderer->Draw(camera);
     }
 }
 
@@ -246,5 +258,11 @@ void Renderer::Shutdown()
     {
         m_skyRenderer->Shutdown();
         m_skyRenderer.reset();
+    }
+
+    if (m_particleRenderer)
+    {
+        m_particleRenderer->Shutdown();
+        m_particleRenderer.reset();
     }
 }
