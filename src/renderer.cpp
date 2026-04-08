@@ -76,6 +76,9 @@ bool Renderer::Init(Window& window)
     m_skyRenderer = std::make_unique<R_Sky>();
     m_particleRenderer = std::make_unique<R_Particles>();
 
+    m_lightRenderer = std::make_unique<R_Lights>();
+    m_lightRenderer->Init();
+
     return true;
 }
 
@@ -135,11 +138,11 @@ void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude)
     m_worldShader.SetInt("u_specular", 3);
     m_worldShader.SetInt("u_cubemap", 4);
 
-    m_worldShader.SetBool("u_useCubemap", false);
+    m_worldShader.SetInt("u_useCubemap", 0);
     const Cubemap::CubemapProbe* probe = Cubemap::FindClosest(camera.position);
     if (probe && probe->textureID != 0 && probe->textureID != cubemapToExclude)
     {
-        m_worldShader.SetBool("u_useCubemap", true);
+        m_worldShader.SetInt("u_useCubemap", 1);
         m_worldShader.SetVec3("u_cubemapOrigin", probe->origin);
         m_worldShader.SetVec3("u_cubemapMins", probe->mins);
         m_worldShader.SetVec3("u_cubemapMaxs", probe->maxs);
@@ -159,6 +162,11 @@ void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude)
         debugMode = 4;
     m_worldShader.SetInt("u_debugMode", debugMode);
 
+    if (m_lightRenderer)
+    {
+        m_lightRenderer->Bind(m_worldShader);
+    }
+
     Frustum frustum = camera.GetFrustum();
 
     // Draw BSP
@@ -173,7 +181,7 @@ void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude)
         m_modelRenderer->Draw(m_worldShader, frustum);
     }
 
-    m_worldShader.SetBool("u_useCubemap", false);
+    m_worldShader.SetInt("u_useCubemap", 0);
 
     // Draw sky
     if (m_skyRenderer && r_skybox.GetInt() > 0)
@@ -197,6 +205,11 @@ void Renderer::RenderWorld(Camera& camera, GLuint cubemapToExclude)
 
 void Renderer::Render(Camera& camera)
 {
+    if (m_lightRenderer)
+    {
+        m_lightRenderer->RenderShadowMaps(m_bspRenderer.get(), m_modelRenderer.get());
+    }
+
     int w, h;
     SDL_GetWindowSize(m_windowRef->Get(), &w, &h);
 
@@ -261,5 +274,11 @@ void Renderer::Shutdown()
     {
         m_particleRenderer->Shutdown();
         m_particleRenderer.reset();
+    }
+
+    if (m_lightRenderer)
+    {
+        m_lightRenderer->Shutdown();
+        m_lightRenderer.reset();
     }
 }

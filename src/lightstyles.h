@@ -22,31 +22,22 @@
  * SOFTWARE.
  */
 #pragma once
-#include <glad/glad.h>
-#include <glm/glm.hpp>
 #include <string>
-#include <unordered_map>
+#include <vector>
+#include <map>
 
-class Shader
+struct LightStyle
 {
-public:
-    Shader();
-    ~Shader();
-
-    bool Load(const std::string& vertPath, const std::string& fragPath, const std::string& geomPath = "");
-    bool LoadCompute(const std::string& path);
-    void Bind() const;
-    void Unbind() const;
-
-    void SetMat4(const std::string& name, const glm::mat4& mat) const;
-    void SetVec3(const std::string& name, const glm::vec3& vec) const;
-    void SetInt(const std::string& name, int value) const;
-    void SetFloat(const std::string& name, float value) const;
-
-private:
-    GLint GetUniformLocation(const std::string& name) const;
-
-    GLuint m_program;
-    mutable std::unordered_map<std::string, GLint> m_uniformLocationCache;
-    GLuint CompileShader(GLenum type, const std::string& source);
+    std::string pattern;
+    float frameRate = 10.0f;
+    bool interpolate = true;
 };
+
+namespace LightStyles
+{
+    void Init();
+    void Update(float currentTime);
+    
+    float GetModifier(int index);
+    void SetStyle(int index, const std::string& pattern, float frameRate = 10.0f, bool interpolate = true);
+}

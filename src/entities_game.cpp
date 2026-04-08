@@ -28,6 +28,10 @@
 #include "console.h"
 #include "postprocess.h"
 #include "particles.h"
+#include "dynamic_light.h"
+#include "lightstyles.h"
+#include <sstream>
+#include <glm/gtc/matrix_transform.hpp>
 
 // ==========================================
 // trigger_multiple
@@ -365,3 +369,155 @@ private:
 };
 
 LINK_ENTITY_TO_CLASS("particle_system", ParticleEntity)
+
+// ==========================================
+// light_dynamic_point
+// ==========================================
+class LightDynamicPoint : public Entity
+{
+public:
+    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    {
+        Entity::Spawn(keyvalues);
+
+        glm::vec4 colorData = GetVector4("_light", glm::vec4(255.0f, 255.0f, 255.0f, 200.0f));
+        m_baseColor = glm::vec3(colorData.x, colorData.y, colorData.z) / 255.0f;
+        m_baseColor *= (colorData.w / 255.0f) * 2.0f;
+
+        float radius = GetFloat("distance", 500.0f) * BSP::MAPSCALE;
+
+        m_light = DynamicLights::CreatePointLight(m_origin, m_baseColor, radius);
+        if (m_light)
+        {
+            m_light->SetActive(!HasSpawnFlag(1));
+            auto& def = const_cast<DynamicLightDef&>(m_light->GetDef());
+            def.castsShadows = HasSpawnFlag(2);
+            def.isStaticShadow = HasSpawnFlag(4);
+            def.shadowRes = GetInt("shadow_res", 512);
+        }
+    }
+
+    void Think(float deltaTime) override
+    {
+        Entity::Think(deltaTime);
+        if (m_light)
+        {
+            m_light->SetPosition(m_origin);
+
+            int styleIndex = GetInt("style", 0);
+            float mod = LightStyles::GetModifier(styleIndex);
+
+            m_light->GetDef().color = m_baseColor * mod;
+        }
+    }
+
+    void AcceptInput(const std::string& input, const std::string& param) override
+    {
+        if (!m_light)
+        {
+            return;
+        }
+
+        if (input == "Enable")
+        {
+            m_light->SetActive(true);
+        }
+        else if (input == "Disable")
+        {
+            m_light->SetActive(false);
+        }
+        else if (input == "Toggle")
+        {
+            m_light->SetActive(!m_light->IsActive());
+        }
+    }
+
+    bool IsVisible() const override
+    {
+        return false;
+    }
+    bool IsCollidable() const override
+    {
+        return false;
+    }
+
+protected:
+    glm::vec4 GetVector4(const std::string& key, const glm::vec4& defaultVal = glm::vec4(0.0f)) const
+    {
+        auto it = m_keyvalues.find(key);
+        if (it == m_keyvalues.end())
+        {
+            return defaultVal;
+        }
+        glm::vec4 result;
+        std::stringstream ss(it->second);
+        if (ss >> result.x >> result.y >> result.z >> result.w)
+        {
+            return result;
+        }
+        return defaultVal;
+    }
+
+    std::shared_ptr<DynamicLight> m_light;
+    glm::vec3 m_baseColor;
+};
+
+LINK_ENTITY_TO_CLASS("light_dynamic_point", LightDynamicPoint)
+
+// ==========================================
+// light_dynamic_spot
+// ==========================================
+class LightDynamicSpot : public LightDynamicPoint
+{
+public:
+    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    {
+        Entity::Spawn(keyvalues);
+
+        glm::vec4 colorData = GetVector4("_light", glm::vec4(255.0f, 255.0f, 255.0f, 200.0f));
+        m_baseColor = glm::vec3(colorData.x, colorData.y, colorData.z) / 255.0f;
+        m_baseColor *= (colorData.w / 255.0f) * 2.0f;
+
+        float radius = GetFloat("distance", 1000.0f) * BSP::MAPSCALE;
+        float inner = GetFloat("_inner_cone", 30.0f);
+        float outer = GetFloat("_cone", 45.0f);
+
+        glm::vec3 angles = GetVector("angles");
+        glm::mat4 rot = glm::mat4(1.0f);
+        rot = glm::rotate(rot, glm::radians(angles.y - 90.0f), glm::vec3(0, 1, 0));
+        rot = glm::rotate(rot, glm::radians(-angles.x), glm::vec3(1, 0, 0));
+        rot = glm::rotate(rot, glm::radians(angles.z), glm::vec3(0, 0, 1));
+
+        m_direction = glm::normalize(glm::vec3(rot * glm::vec4(0, 0, -1, 0.0f)));
+
+        m_light = DynamicLights::CreateSpotLight(m_origin, m_direction, m_baseColor, radius, inner, outer);
+        if (m_light)
+        {
+            m_light->SetActive(!HasSpawnFlag(1));
+            auto& def = const_cast<DynamicLightDef&>(m_light->GetDef());
+            def.castsShadows = HasSpawnFlag(2);
+            def.isStaticShadow = HasSpawnFlag(4);
+            def.shadowRes = GetInt("shadow_res", 512);
+        }
+    }
+
+    void Think(float deltaTime) override
+    {
+        Entity::Think(deltaTime);
+        if (m_light)
+        {
+            m_light->SetPosition(m_origin);
+
+            int styleIndex = GetInt("style", 0);
+            float mod = LightStyles::GetModifier(styleIndex);
+
+            m_light->GetDef().color = m_baseColor * mod;
+        }
+    }
+
+private:
+    glm::vec3 m_direction;
+    glm::vec3 m_baseColor;
+};
+
+LINK_ENTITY_TO_CLASS("light_dynamic_spot", LightDynamicSpot)

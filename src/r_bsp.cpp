@@ -101,7 +101,7 @@ bool R_BSP::Init(const BSP::MapData& map)
     return true;
 }
 
-void R_BSP::Draw(const Shader& shader, const Frustum& frustum)
+void R_BSP::Draw(const Shader& shader, const Frustum& frustum, bool depthOnly)
 {
     if (m_vao == 0)
     {
@@ -117,15 +117,19 @@ void R_BSP::Draw(const Shader& shader, const Frustum& frustum)
 
     for (auto& dc : m_drawCalls)
     {
-        if (!frustum.IsBoxVisible(dc.mins, dc.maxs))
+        if (frustum.valid && !frustum.IsBoxVisible(dc.mins, dc.maxs))
+        {
             continue;
+        }
 
-        shader.SetInt("u_useBump", dc.isBumped ? 1 : 0);
-        shader.SetInt("u_isModel", 0);
-
-        (dc.texture ? dc.texture : Materials::GetTexture(""))->Bind(0);
-        (dc.isBumped && dc.normalMap ? dc.normalMap : Materials::GetFlatNormal())->Bind(2);
-        (dc.isBumped && dc.specularMap ? dc.specularMap : Materials::GetWhiteTexture())->Bind(3);
+        if (!depthOnly)
+        {
+            shader.SetInt("u_useBump", dc.isBumped ? 1 : 0);
+            shader.SetInt("u_isModel", 0);
+            (dc.texture ? dc.texture : Materials::GetTexture(""))->Bind(0);
+            (dc.isBumped && dc.normalMap ? dc.normalMap : Materials::GetFlatNormal())->Bind(2);
+            (dc.isBumped && dc.specularMap ? dc.specularMap : Materials::GetWhiteTexture())->Bind(3);
+        }
 
         glDrawArrays(GL_TRIANGLES, dc.start, dc.count);
     }

@@ -30,6 +30,7 @@
 #include "r_models.h"
 #include "r_sky.h"
 #include "r_particles.h"
+#include "r_lights.h"
 #include "cubemap.h"
 #include <memory>
 
@@ -57,4 +58,5 @@ private:
     std::unique_ptr<R_Models> m_modelRenderer;
     std::unique_ptr<R_Sky> m_skyRenderer;
     std::unique_ptr<R_Particles> m_particleRenderer;
+    std::unique_ptr<R_Lights> m_lightRenderer;
 };

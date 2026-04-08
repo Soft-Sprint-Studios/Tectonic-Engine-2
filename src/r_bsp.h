@@ -48,7 +48,7 @@ public:
     ~R_BSP();
 
     bool Init(const BSP::MapData& mapData);
-    void Draw(const Shader& shader, const Frustum& frustum);
+    void Draw(const Shader& shader, const Frustum& frustum, bool depthOnly = false);
     void Shutdown();
 
 private:

@@ -22,59 +22,32 @@
  * SOFTWARE.
  */
 #pragma once
-#include "bsploader.h"
+#include "dynamic_light.h"
 #include "shader.h"
-#include "texture.h"
-#include <vector>
-#include <string>
-#include <unordered_map>
+#include "camera.h"
+#include <glad/glad.h>
 #include <memory>
-#include <glm/glm.hpp>
-#include <btBulletDynamicsCommon.h>
 
-struct ModelMesh
-{
-    uint32_t vao;
-    std::vector<uint32_t> vbos;
-    uint32_t ebo;
-    uint32_t indexCount;
-    uint32_t indexType;
-    std::shared_ptr<Texture> texture;
-    std::shared_ptr<Texture> normalMap;
-    std::shared_ptr<Texture> specularMap;
-    uint32_t vertexOffset;
-};
+class R_BSP;
+class R_Models;
 
-struct PropInstanceData
-{
-    glm::mat4 transform;
-    uint32_t colorVbo[3] = { 0, 0, 0 };
-    bool isBumped = false;
-    glm::vec3 worldMins;
-    glm::vec3 worldMaxs;
-};
-
-class R_Models
+class R_Lights
 {
 public:
-    R_Models();
-    ~R_Models();
+    R_Lights();
+    ~R_Lights();
 
-    bool Init(const BSP::MapData& mapData);
-    void Draw(const Shader& shader, const Frustum& frustum, bool depthOnly = false);
+    bool Init();
+    void RenderShadowMaps(R_BSP* bsp, R_Models* models);
+    void Bind(const Shader& shader);
     void Shutdown();
 
 private:
-    struct PropGroup
-    {
-        std::vector<ModelMesh> meshes;
-        std::vector<PropInstanceData> instances;
-        btCollisionShape* physicsShape = nullptr;
-        glm::vec3 localMins = glm::vec3(1e10f);
-        glm::vec3 localMaxs = glm::vec3(-1e10f);
-    };
+    void SetupShadowMap(std::shared_ptr<DynamicLight> light);
 
-    std::unordered_map<std::string, PropGroup> m_propGroups;
+    Shader m_shadowSpotShader;
+    Shader m_shadowPointShader;
 
-    void LoadModel(const std::string& path);
+    GLuint m_SpotShadow;
+    GLuint m_PointShadow;
 };

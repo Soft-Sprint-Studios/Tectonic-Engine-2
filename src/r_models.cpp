@@ -214,49 +214,56 @@ void R_Models::LoadModel(const std::string& path)
     cgltf_free(data);
 }
 
-void R_Models::Draw(const Shader& shader, const Frustum& frustum)
+void R_Models::Draw(const Shader& shader, const Frustum& frustum, bool depthOnly)
 {
-    shader.SetInt("u_isModel", 1);
+    if (!depthOnly)
+    {
+        shader.SetInt("u_isModel", 1);
+    }
 
     for (auto& [path, group] : m_propGroups)
     {
         for (auto& mesh : group.meshes)
         {
             if (mesh.indexCount == 0)
+            {
                 continue;
-
-            if (mesh.texture)
-                mesh.texture->Bind(0);
+            }
 
             glBindVertexArray(mesh.vao);
 
             for (const auto& inst : group.instances)
             {
-                if (!frustum.IsBoxVisible(inst.worldMins, inst.worldMaxs))
+                if (frustum.valid && !frustum.IsBoxVisible(inst.worldMins, inst.worldMaxs))
+                {
                     continue;
+                }
 
                 shader.SetMat4("u_model", inst.transform);
 
-                bool canBump = inst.isBumped && mesh.normalMap;
-                shader.SetInt("u_useBump", canBump ? 1 : 0);
-
-                (mesh.texture ? mesh.texture : Materials::GetTexture(""))->Bind(0);
-                (canBump ? mesh.normalMap : Materials::GetFlatNormal())->Bind(2);
-                (canBump && mesh.specularMap ? mesh.specularMap : Materials::GetWhiteTexture())->Bind(3);
-
-                // Vertex Lighting
-                for (int b = 0; b < 3; b++)
+                if (!depthOnly)
                 {
-                    if (inst.colorVbo[b] != 0)
+                    bool canBump = inst.isBumped && mesh.normalMap;
+                    shader.SetInt("u_useBump", canBump ? 1 : 0);
+
+                    (mesh.texture ? mesh.texture : Materials::GetTexture(""))->Bind(0);
+                    (canBump ? mesh.normalMap : Materials::GetFlatNormal())->Bind(2);
+                    (canBump && mesh.specularMap ? mesh.specularMap : Materials::GetWhiteTexture())->Bind(3);
+
+                    // Vertex Lighting
+                    for (int b = 0; b < 3; b++)
                     {
-                        glEnableVertexAttribArray(6 + b);
-                        glBindBuffer(GL_ARRAY_BUFFER, inst.colorVbo[b]);
-                        glVertexAttribPointer(6 + b, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)(uintptr_t)(mesh.vertexOffset * sizeof(glm::vec3)));
-                    }
-                    else
-                    {
-                        glDisableVertexAttribArray(6 + b);
-                        glVertexAttrib3f(6 + b, 1.0f, 1.0f, 1.0f);
+                        if (inst.colorVbo[b] != 0)
+                        {
+                            glEnableVertexAttribArray(6 + b);
+                            glBindBuffer(GL_ARRAY_BUFFER, inst.colorVbo[b]);
+                            glVertexAttribPointer(6 + b, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)(uintptr_t)(mesh.vertexOffset * sizeof(glm::vec3)));
+                        }
+                        else
+                        {
+                            glDisableVertexAttribArray(6 + b);
+                            glVertexAttrib3f(6 + b, 1.0f, 1.0f, 1.0f);
+                        }
                     }
                 }
 
@@ -266,7 +273,11 @@ void R_Models::Draw(const Shader& shader, const Frustum& frustum)
     }
 
     glBindVertexArray(0);
-    shader.SetInt("u_isModel", 0);
+
+    if (!depthOnly)
+    {
+        shader.SetInt("u_isModel", 0);
+    }
 }
 
 void R_Models::Shutdown()

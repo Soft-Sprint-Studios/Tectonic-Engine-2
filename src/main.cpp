@@ -43,6 +43,8 @@
 #include "sentry.h"
 #include "cubemap.h"
 #include "particles.h"
+#include "dynamic_light.h"
+#include "lightstyles.h"
 
 ENGINE_API int Engine_Main(int argc, char** argv)
 {
@@ -75,6 +77,9 @@ ENGINE_API int Engine_Main(int argc, char** argv)
     Particles::Init();
     Particles::LoadDefinitions("particles.def");
 
+    DynamicLights::Init();
+    LightStyles::Init();
+
     Binds::Init();
 
     Maps::Init(&renderer, &camera, &input);
@@ -101,6 +106,8 @@ ENGINE_API int Engine_Main(int argc, char** argv)
         float dt = Time::DeltaTime();
 
         Particles::Update(dt);
+        DynamicLights::Update();
+        LightStyles::Update(Time::TotalTime());
         Physics::Update(dt);
 
         // Input Handling
@@ -133,6 +140,7 @@ ENGINE_API int Engine_Main(int argc, char** argv)
     renderer.Shutdown();
     Sound::Shutdown();
     Cubemap::Shutdown();
+    DynamicLights::Shutdown();
     Resources::Clear();
     EntityManager::Shutdown();
     Physics::Shutdown();

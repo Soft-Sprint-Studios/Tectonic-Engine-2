@@ -25,11 +25,12 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-struct Frustum 
+struct Frustum
 {
     glm::vec4 planes[6];
+    bool valid = false;
 
-    bool IsBoxVisible(const glm::vec3& min, const glm::vec3& max) const 
+    bool IsBoxVisible(const glm::vec3& min, const glm::vec3& max) const
     {
         for (int i = 0; i < 6; i++) 
         {
@@ -107,11 +108,12 @@ public:
         f.planes[4] = glm::vec4(m[0][3] + m[0][2], m[1][3] + m[1][2], m[2][3] + m[2][2], m[3][3] + m[3][2]); // Near
         f.planes[5] = glm::vec4(m[0][3] - m[0][2], m[1][3] - m[1][2], m[2][3] - m[2][2], m[3][3] - m[3][2]); // Far
 
-        for (int i = 0; i < 6; i++) 
+        for (int i = 0; i < 6; i++)
         {
             float length = glm::length(glm::vec3(f.planes[i]));
             f.planes[i] /= length;
         }
+        f.valid = true;
         return f;
     }
 
