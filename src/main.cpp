@@ -40,6 +40,7 @@
 #include "networking.h"
 #include "sound.h"
 #include "discord.h"
+#include "sentry.h"
 #include "cubemap.h"
 #include "particles.h"
 
@@ -48,6 +49,7 @@ ENGINE_API int Engine_Main(int argc, char** argv)
     // Core Systems Init
     Filesystem::Init();
     Console::Init();
+    Sentry::Init();
     Discord::Init();
     Cubemap::Init();
     Sound::Init();
@@ -136,6 +138,7 @@ ENGINE_API int Engine_Main(int argc, char** argv)
     Physics::Shutdown();
     CVar::Save();
     Console::Shutdown();
+    Sentry::Shutdown();
     Discord::Shutdown();
     Networking::Shutdown();
     window.Shutdown();

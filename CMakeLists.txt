@@ -19,6 +19,7 @@ set(FLTK_PATH ${CMAKE_SOURCE_DIR}/libs/fltk-1.4.4)
 set(OPENAL_PATH ${CMAKE_SOURCE_DIR}/libs/openal-soft-1.24.3)
 set(MINIMP3_PATH ${CMAKE_SOURCE_DIR}/libs/minimp3)
 set(DISCORDRPC_PATH ${CMAKE_SOURCE_DIR}/libs/DiscordRPC)
+set(SENTRY_PATH ${CMAKE_SOURCE_DIR}/libs/sentry)
 
 # ---- Detect 32/64-bit ----
 if(WIN32)
@@ -53,6 +54,7 @@ target_include_directories(TectonicEngine2 PRIVATE
     ${OPENAL_PATH}/include
     ${MINIMP3_PATH}/include
     ${DISCORDRPC_PATH}/include
+    ${SENTRY_PATH}/include
     src
 )
 
@@ -68,6 +70,7 @@ if(WIN32)
         ${BULLET_PATH}/lib/${ARCH_FOLDER}/LinearMath.lib
         ${OPENAL_PATH}/lib/${ARCH_FOLDER}/OpenAL32.lib
         ${DISCORDRPC_PATH}/lib/${ARCH_FOLDER}/discord-rpc.lib
+        ${SENTRY_PATH}/lib/${ARCH_FOLDER}/sentry.lib
         OpenGL::GL
     )
 elseif(UNIX)
@@ -77,6 +80,7 @@ elseif(UNIX)
         ${SDL3_PATH}/lib/linux
         ${BULLET_PATH}/lib/linux
         ${DISCORDRPC_PATH}/lib/linux
+        ${SENTRY_PATH}/lib/linux
     )
 
     target_link_libraries(TectonicEngine2 PRIVATE
@@ -87,6 +91,7 @@ elseif(UNIX)
         BulletDynamics
         LinearMath
         discord-rpc
+        sentry
         OpenGL::GL
         dl
         pthread
@@ -103,6 +108,16 @@ if (WIN32)
     add_custom_command(TARGET TectonicEngine2 POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${SDL3_PATH}/lib/${ARCH_FOLDER}/SDL3.dll"
+        "${SENTRY_PATH}/lib/${ARCH_FOLDER}/sentry.dll"
+        "${SENTRY_PATH}/lib/${ARCH_FOLDER}/crashpad_wer.dll"
+        "${SENTRY_PATH}/lib/${ARCH_FOLDER}/crashpad_handler.exe"
+        $<TARGET_FILE_DIR:TectonicEngine2>
+    )
+elseif(UNIX)
+    add_custom_command(TARGET TectonicEngine2 POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${SENTRY_PATH}/lib/linux/libsentry.so"
+        "${SENTRY_PATH}/lib/linux/libcrashpad_handler"
         $<TARGET_FILE_DIR:TectonicEngine2>
     )
 endif()
