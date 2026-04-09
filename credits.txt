@@ -1,0 +1,3 @@
+Main credits:
+Pathos engine: https://github.com/TheOverfloater/pathos-public
+Source-parsers https://github.com/tasbox-org/source-parsers (referenced for bsp loader)

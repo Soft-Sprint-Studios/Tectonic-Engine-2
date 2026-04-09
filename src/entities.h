@@ -63,6 +63,7 @@ public:
     { 
         return true; 
     }
+
     virtual bool IsCollidable() const 
     {
         return true; 

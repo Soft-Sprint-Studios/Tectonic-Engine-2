@@ -45,6 +45,7 @@
 #include "particles.h"
 #include "dynamic_light.h"
 #include "lightstyles.h"
+#include "build_date.h"
 
 ENGINE_API int Engine_Main(int argc, char** argv)
 {
@@ -59,11 +60,12 @@ ENGINE_API int Engine_Main(int argc, char** argv)
     CVar::Init();
 
     Window window;
-    if (!window.Init("Tectonic Engine 2", 1280, 720)) {
+    if (!window.Init("Tectonic Engine 2", 1280, 720)) 
+    {
         return -1;
     }
 
-    // 3. Engine Systems Init
+    // Engine Systems Init
     Input input;
     Renderer renderer;
     Camera camera;
@@ -81,6 +83,11 @@ ENGINE_API int Engine_Main(int argc, char** argv)
     LightStyles::Init();
 
     Binds::Init();
+
+    Console::Log("Tectonic Engine 2 Initialized");
+    std::string fullBuildStr = std::string(Build::GetCompileDate()) + " " + std::string(Build::GetCompileTime());
+    Console::Log("Build Date: " + fullBuildStr);
+    Console::Log("Build Number: " + std::to_string(Build::GetBuildNumber()));
 
     Maps::Init(&renderer, &camera, &input);
 
