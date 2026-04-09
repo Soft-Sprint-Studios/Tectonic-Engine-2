@@ -46,12 +46,14 @@
 #include "dynamic_light.h"
 #include "lightstyles.h"
 #include "build_date.h"
+#include "gamedef.h"
 
 ENGINE_API int Engine_Main(int argc, char** argv)
 {
     // Core Systems Init
     Filesystem::Init();
     Console::Init();
+    Gamedef::Init();
     Sentry::Init();
     Discord::Init();
     Cubemap::Init();
@@ -97,7 +99,7 @@ ENGINE_API int Engine_Main(int argc, char** argv)
         return -1;
     }
 
-    Maps::Load("test");
+    Maps::Load(Gamedef::GetStartingMap());
 
     bool running = true;
 
