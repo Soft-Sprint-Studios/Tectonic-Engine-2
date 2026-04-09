@@ -21,6 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#include "concmd.h"
 #include "shader.h"
 #include "filesystem.h"
 #include "console.h"
@@ -28,10 +29,13 @@
 
 Shader::Shader() : m_program(0)
 {
+    GetRegistry().insert(this);
 }
 
 Shader::~Shader()
 {
+    GetRegistry().erase(this);
+
     if (m_program != 0)
     {
         glDeleteProgram(m_program);
@@ -40,6 +44,12 @@ Shader::~Shader()
 
 bool Shader::Load(const std::string& vertPath, const std::string& fragPath, const std::string& geomPath)
 {
+    // We must store these for reloading shaders
+    m_vertPath = vertPath;
+    m_fragPath = fragPath;
+    m_geomPath = geomPath;
+    m_computePath = "";
+
     std::string vCode = Filesystem::ReadText(vertPath);
     std::string fCode = Filesystem::ReadText(fragPath);
     if (vCode.empty() || fCode.empty())
@@ -89,6 +99,10 @@ bool Shader::Load(const std::string& vertPath, const std::string& fragPath, cons
 
 bool Shader::LoadCompute(const std::string& path)
 {
+    // We must store these for reloading shaders
+    m_computePath = path;
+    m_vertPath = m_fragPath = m_geomPath = "";
+
     std::string code = Filesystem::ReadText(path);
     if (code.empty())
     {
@@ -136,6 +150,35 @@ GLuint Shader::CompileShader(GLenum type, const std::string& source)
     return shader;
 }
 
+bool Shader::Reload()
+{
+    if (m_program != 0)
+    {
+        glDeleteProgram(m_program);
+        m_program = 0;
+    }
+    m_uniformLocationCache.clear();
+
+    if (!m_computePath.empty())
+    {
+        return LoadCompute(m_computePath);
+    }
+    else if (!m_vertPath.empty())
+    {
+        return Load(m_vertPath, m_fragPath, m_geomPath);
+    }
+
+    return false;
+}
+
+void Shader::ReloadAll()
+{
+    for (Shader* shader : GetRegistry())
+    {
+        shader->Reload();
+    }
+}
+
 void Shader::Bind() const
 {
     glUseProgram(m_program);
@@ -176,4 +219,16 @@ void Shader::SetInt(const std::string& name, int value) const
 void Shader::SetFloat(const std::string& name, float value) const
 {
     glUniform1f(GetUniformLocation(name), value);
+}
+
+std::set<Shader*>& Shader::GetRegistry()
+{
+    static std::set<Shader*> s_registry;
+    return s_registry;
+}
+
+CON_COMMAND(shaders_reload, "Reloads all shaders from disk.")
+{
+    Shader::ReloadAll();
+    Console::Log("All shaders reloaded.");
 }

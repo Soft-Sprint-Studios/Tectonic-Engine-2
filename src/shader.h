@@ -26,6 +26,7 @@
 #include <glm/glm.hpp>
 #include <string>
 #include <unordered_map>
+#include <set>
 
 class Shader
 {
@@ -35,6 +36,10 @@ public:
 
     bool Load(const std::string& vertPath, const std::string& fragPath, const std::string& geomPath = "");
     bool LoadCompute(const std::string& path);
+
+    static void ReloadAll();
+    static std::set<Shader*>& GetRegistry();
+
     void Bind() const;
     void Unbind() const;
 
@@ -48,5 +53,9 @@ private:
 
     GLuint m_program;
     mutable std::unordered_map<std::string, GLint> m_uniformLocationCache;
+    std::string m_vertPath, m_fragPath, m_geomPath;
+    std::string m_computePath;
     GLuint CompileShader(GLenum type, const std::string& source);
+
+    bool Reload();
 };
