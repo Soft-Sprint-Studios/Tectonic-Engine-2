@@ -46,7 +46,7 @@ namespace Gamedef
             if (line.empty()) 
                 continue;
 
-            if (line.find("start_map") != std::string::npos)
+            if (line.find("startmap") != std::string::npos)
             {
                 size_t firstQuote = line.find('\"');
                 size_t secondQuote = line.find('\"', firstQuote + 1);
