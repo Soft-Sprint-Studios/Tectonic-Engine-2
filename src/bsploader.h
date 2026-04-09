@@ -130,24 +130,39 @@ namespace BSP
         float dist, alpha;
     };
 
-    struct DispNeighbor 
+    struct DispNeighbor
     {
-        uint16_t iNeighbor;
-        uint8_t neighborOrientation, span, neighborSpan;
+        uint16_t neighborIndex;
+        unsigned char neighborOrientation;
+        unsigned char span;
+        unsigned char neighborSpan;
+        unsigned char pad;
     };
 
-    struct DispInfo 
+    struct DispCornerNeighbors
+    {
+        uint16_t neighborIndices[4];
+        unsigned char nNeighbors;
+        unsigned char pad;
+    };
+
+    struct DispInfo
     {
         glm::vec3 startPosition;
-        int32_t dispVertStart, dispTriStart, power, minTess;
+        int32_t dispVertStart;
+        int32_t dispTriStart;
+        int32_t power;
+        int32_t minTess;
         float smoothingAngle;
         int32_t contents;
         uint16_t mapFace;
-        int32_t lightmapAlphaStart, lightmapSamplePositionStart;
-        DispNeighbor edgeNeighbors[4][2];
-        uint16_t cornerNeighbors[4][4];
-        uint8_t nCornerNeighbors[4];
+        uint16_t padding1;
+        int32_t lightmapAlphaStart;
+        int32_t lightmapSamplePositionStart;
+        DispNeighbor edgeNeighbors[4];
+        DispCornerNeighbors cornerNeighbors[4];
         uint32_t allowedVerts[10];
+        char padding2[24];
     };
 
     struct GameLump
