@@ -69,14 +69,15 @@ namespace LightStyles
                 continue;
             }
 
-            float frame = currentTime * style.frameRate;
-            int len = (int)style.pattern.length();
-
             auto GetVal = [&](int i) -> float
             {
+                int len = (int)style.pattern.length();
                 char c = style.pattern[i % len];
-                return (float)(std::clamp(c, 'a', 'z') - 'a') / 12.0f;
+                float letterIdx = (float)(std::clamp(c, 'a', 'z') - 'a');
+                return (letterIdx * 22.0f) / 256.0f;
             };
+
+            float frame = currentTime * style.frameRate;
 
             if (style.interpolate)
             {
