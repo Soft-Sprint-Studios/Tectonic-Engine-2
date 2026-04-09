@@ -1,13 +1,13 @@
-in vec2 TexCoord;
-in vec2 LmCoord1;
-in vec2 LmCoord2;
-in vec2 LmCoord3;
-in vec2 LmCoord4;
-in vec3 Color;
-in vec3 Color2;
-in vec3 Color3;
+in centroid vec2 TexCoord;
+in centroid vec2 LmCoord1;
+in centroid vec2 LmCoord2;
+in centroid vec2 LmCoord3;
+in centroid vec2 LmCoord4;
+in centroid vec3 Color;
+in centroid vec3 Color2;
+in centroid vec3 Color3;
 in vec3 FragPos;
-in vec3 Normal;
+in centroid vec3 Normal;
 
 uniform sampler2D u_diffuse;
 uniform sampler2D u_normal;

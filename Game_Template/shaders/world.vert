@@ -13,16 +13,16 @@ uniform mat4 u_model;
 uniform mat4 u_view;
 uniform mat4 u_projection;
 
-out vec2 TexCoord;
-out vec2 LmCoord1;
-out vec2 LmCoord2;
-out vec2 LmCoord3;
-out vec2 LmCoord4;
-out vec3 Color;
-out vec3 Color2;
-out vec3 Color3;
+out centroid vec2 TexCoord;
+out centroid vec2 LmCoord1;
+out centroid vec2 LmCoord2;
+out centroid vec2 LmCoord3;
+out centroid vec2 LmCoord4;
+out centroid vec3 Color;
+out centroid vec3 Color2;
+out centroid vec3 Color3;
 out vec3 FragPos;
-out vec3 Normal;
+out centroid vec3 Normal;
 
 void main()
 {

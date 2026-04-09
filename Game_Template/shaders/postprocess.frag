@@ -64,7 +64,7 @@ void main()
     float grain = (random(TexCoords + u_time) - 0.5) * u_grainStrength;
     hdrColor += grain;
 
-	float depth = texture(depthTexture, TexCoords).r;
+    float depth = texture(depthTexture, TexCoords).r;
 
     if (u_fogAffectsSky == 1 || depth < 0.9999)
     {
