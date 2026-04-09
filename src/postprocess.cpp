@@ -48,6 +48,15 @@ namespace PostProcess
         s_currentSettings.bwStrength = std::clamp(strength, 0.0f, 1.0f);
     }
 
+    void SetFog(bool enabled, const glm::vec3& color, float start, float end, bool affectsSky)
+    {
+        s_currentSettings.fogEnabled = enabled;
+        s_currentSettings.fogColor = color;
+        s_currentSettings.fogStart = start;
+        s_currentSettings.fogEnd = end;
+        s_currentSettings.fogAffectsSky = affectsSky;
+    }
+
     const Settings& GetCurrentSettings()
     {
         return s_currentSettings;

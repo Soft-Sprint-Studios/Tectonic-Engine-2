@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 #pragma once
+#include "camera.h"
 #include "shader.h"
 #include <glad/glad.h>
 
@@ -34,14 +35,14 @@ public:
     bool Init(int width, int height);
     void Begin();
     void End();
-    void Draw();
+    void Draw(const Camera& camera);
     void Rescale(int width, int height);
     void Shutdown();
 
 private:
     GLuint m_fbo;
     GLuint m_texture;
-    GLuint m_rbo;
+    GLuint m_depthTexture;
 
     GLuint m_msFbo;
     GLuint m_msTexture;

@@ -36,7 +36,7 @@ CVar r_exposure_min("r_exposure_min", "0.85", CVAR_SAVE);
 CVar r_exposure_max("r_exposure_max", "1.8", CVAR_SAVE);
 
 R_PostProcess::R_PostProcess()
-    : m_fbo(0), m_texture(0), m_rbo(0),
+    : m_fbo(0), m_texture(0), m_depthTexture(0),
     m_msFbo(0), m_msTexture(0), m_msRbo(0),
     m_quadVAO(0), m_quadVBO(0), m_width(0), m_height(0)
 {
@@ -104,7 +104,7 @@ void R_PostProcess::SetupBuffers()
     {
         glDeleteFramebuffers(1, &m_fbo);
         glDeleteTextures(1, &m_texture);
-        glDeleteRenderbuffers(1, &m_rbo);
+        glDeleteTextures(1, &m_depthTexture);
     }
     if (m_msFbo != 0)
     {
@@ -139,13 +139,16 @@ void R_PostProcess::SetupBuffers()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_texture, 0);
 
-    if (!useMSAA)
-    {
-        glGenRenderbuffers(1, &m_rbo);
-        glBindRenderbuffer(GL_RENDERBUFFER, m_rbo);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, m_width, m_height);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_rbo);
-    }
+    glGenTextures(1, &m_depthTexture);
+    glBindTexture(GL_TEXTURE_2D, m_depthTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, m_width, m_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depthTexture, 0);
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
@@ -212,12 +215,13 @@ void R_PostProcess::End()
         glBindFramebuffer(GL_READ_FRAMEBUFFER, m_msFbo);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_fbo);
         glBlitFramebuffer(0, 0, m_width, m_height, 0, 0, m_width, m_height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+        glBlitFramebuffer(0, 0, m_width, m_height, 0, 0, m_width, m_height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void R_PostProcess::Draw()
+void R_PostProcess::Draw(const Camera& camera)
 {
     if (CVar::Find("r_autoexposure")->GetInt() > 0) 
     {
@@ -255,6 +259,7 @@ void R_PostProcess::Draw()
 
     m_shader.Bind();
     m_shader.SetInt("screenTexture", 0);
+    m_shader.SetInt("depthTexture", 1);
 
     m_shader.SetInt("u_postprocess_enabled", CVar::Find("r_postprocess")->GetInt());
 
@@ -264,10 +269,18 @@ void R_PostProcess::Draw()
     m_shader.SetFloat("u_chromaStrength", ppSettings.chromaStrength);
     m_shader.SetFloat("u_grainStrength", ppSettings.grainStrength);
     m_shader.SetFloat("u_bwStrength", ppSettings.bwStrength);
+    m_shader.SetInt("u_fogEnabled", ppSettings.fogEnabled);
+    m_shader.SetVec3("u_fogColor", ppSettings.fogColor);
+    m_shader.SetFloat("u_fogStart", ppSettings.fogStart);
+    m_shader.SetFloat("u_fogEnd", ppSettings.fogEnd);
+    m_shader.SetInt("u_fogAffectsSky", ppSettings.fogAffectsSky ? 1 : 0);
+    m_shader.SetMat4("u_invProjection", glm::inverse(camera.GetProjectionMatrix()));
 
     glBindVertexArray(m_quadVAO);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_texture);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, m_depthTexture);
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
@@ -286,8 +299,8 @@ void R_PostProcess::Shutdown()
         glDeleteFramebuffers(1, &m_fbo);
     if (m_texture != 0) 
         glDeleteTextures(1, &m_texture);
-    if (m_rbo != 0) 
-        glDeleteRenderbuffers(1, &m_rbo);
+    if (m_depthTexture != 0)
+        glDeleteTextures(1, &m_depthTexture);
 
     if (m_msFbo != 0) 
         glDeleteFramebuffers(1, &m_msFbo);

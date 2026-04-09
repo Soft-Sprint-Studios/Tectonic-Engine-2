@@ -258,6 +258,10 @@ public:
         m_chroma = GetFloat("chroma", 0.0f);
         m_grain = GetFloat("grain", 0.0f);
         m_bw = GetFloat("bw", 0.0f);
+        m_fogColor = GetVector("fog_color", glm::vec3(128.0f)) / 255.0f;
+        m_fogStart = GetFloat("fog_start", 50.0f);
+        m_fogEnd = GetFloat("fog_end", 200.0f);
+        m_fogAffectsSky = GetInt("fog_affects_sky", 1) != 0;
 
         if (!HasSpawnFlag(1))
         {
@@ -312,6 +316,16 @@ public:
             if (m_enabled) 
                 PostProcess::SetBW(m_bw);
         }
+        else if (inputName == "EnableFog")
+        {
+            if (m_enabled) 
+                PostProcess::SetFog(true, m_fogColor, m_fogStart, m_fogEnd, m_fogAffectsSky);
+        }
+        else if (inputName == "DisableFog")
+        {
+            if (m_enabled) 
+                PostProcess::SetFog(true, m_fogColor, m_fogStart, m_fogEnd, m_fogAffectsSky);
+        }
     }
 
 private:
@@ -321,12 +335,16 @@ private:
         PostProcess::SetChroma(m_chroma);
         PostProcess::SetGrain(m_grain);
         PostProcess::SetBW(m_bw);
+        PostProcess::SetFog(true, m_fogColor, m_fogStart, m_fogEnd, m_fogAffectsSky);
     }
 
     float m_vignette = 0.0f;
     float m_chroma = 0.0f;
     float m_grain = 0.0f;
     float m_bw = 0.0f;
+    glm::vec3 m_fogColor;
+    float m_fogStart, m_fogEnd;
+    bool m_fogAffectsSky;
     bool m_enabled = false;
 };
 

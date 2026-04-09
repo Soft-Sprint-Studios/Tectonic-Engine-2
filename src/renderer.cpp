@@ -230,7 +230,7 @@ void Renderer::Render(Camera& camera)
 
     // Draw postprocessing
     glDisable(GL_DEPTH_TEST);
-    m_postProcess->Draw();
+    m_postProcess->Draw(camera);
     glEnable(GL_DEPTH_TEST);
 
     m_windowRef->Swap();
