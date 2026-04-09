@@ -47,7 +47,8 @@ namespace Particles
     void LoadDefinitions(const std::string& path)
     {
         std::string content = Filesystem::ReadText(path);
-        if (content.empty()) return;
+        if (content.empty()) 
+            return;
 
         std::stringstream ss(content);
         std::string token;

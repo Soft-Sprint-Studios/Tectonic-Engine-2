@@ -86,7 +86,7 @@ void Materials::LoadDefinitions(const std::string& path)
     std::stringstream ss(content);
     std::string token;
 
-    while (ss >> token)
+    while (ss >> token)  // {
     {
         if (token.front() == '\"')
         {
