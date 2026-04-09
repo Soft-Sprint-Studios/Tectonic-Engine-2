@@ -327,8 +327,8 @@ namespace BSP
                     case 4:  stride = 56; break;
                     case 5:  stride = 60; break;
                     case 6:  stride = 72; break;
-                    case 10: stride = 76; break;
-                    case 11: stride = 80; break;
+                    case 10: stride = 72; break;
+                    case 11: stride = 76; break;
                     default: stride = 56; break;
                     }
 
