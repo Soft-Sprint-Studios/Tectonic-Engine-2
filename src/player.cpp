@@ -30,7 +30,7 @@
 #include "dynamic_light.h"
 #include <glm/gtx/string_cast.hpp>
 
-CVar cl_sensitivity("sensitivity", "1.0", CVAR_SAVE);
+CVar sensitivity("sensitivity", "1.0", CVAR_SAVE);
 
 CON_COMMAND(noclip, "Toggles player noclip mode")
 {
@@ -97,7 +97,7 @@ void Player::Think(float deltaTime)
         return;
     }
 
-    float mouseSensitivity = 0.15f * cl_sensitivity.GetFloat();
+    float mouseSensitivity = 0.15f * sensitivity.GetFloat();
     m_camera->yaw += m_input->GetMouseDeltaX() * mouseSensitivity;
     m_camera->pitch -= m_input->GetMouseDeltaY() * mouseSensitivity;
 
