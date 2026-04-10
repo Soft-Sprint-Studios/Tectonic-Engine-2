@@ -27,6 +27,7 @@
 #include "console.h"
 #include "cvar.h"
 #include "concmd.h"
+#include "dynamic_light.h"
 #include <glm/gtx/string_cast.hpp>
 
 CVar cl_sensitivity("sensitivity", "1.0", CVAR_SAVE);
@@ -82,6 +83,14 @@ void Player::Spawn(const std::unordered_map<std::string, std::string>& keyvalues
     startTrans.setOrigin(btVector3(m_origin.x, m_origin.y, m_origin.z));
     m_character->getGhostObject()->setWorldTransform(startTrans);
     m_character->reset(Physics::GetDynamicsWorld());
+
+    // Initialize flashlight
+    m_flashlight = DynamicLights::CreateSpotLight(m_origin, glm::vec3(0, 0, 1), glm::vec3(1.0f, 1.0f, 0.9f), 4.0f, 15.0f, 30.0f);
+    if (m_flashlight)
+    {
+        m_flashlight->SetActive(false);
+        m_flashlight->GetDef().castsShadows = false;
+    }
 }
 
 void Player::Think(float deltaTime)
@@ -96,6 +105,18 @@ void Player::Think(float deltaTime)
     m_camera->pitch -= m_input->GetMouseDeltaY() * mouseSensitivity;
 
     m_camera->pitch = glm::clamp(m_camera->pitch, -89.0f, 89.0f);
+
+    if (m_input->GetKeyDown(SDL_SCANCODE_F) && m_flashlight)
+    {
+        m_flashlightOn = !m_flashlightOn;
+        m_flashlight->SetActive(m_flashlightOn);
+    }
+
+    if (m_flashlightOn && m_flashlight)
+    {
+        m_flashlight->SetPosition(m_camera->position);
+        m_flashlight->SetDirection(m_camera->GetForward());
+    }
 
     if (m_input->GetKeyDown(SDL_SCANCODE_SPACE) && m_character->onGround() && !m_noclip)
     {

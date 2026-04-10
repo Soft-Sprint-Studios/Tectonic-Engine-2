@@ -25,6 +25,7 @@
 #include "camera.h"
 #include "input.h"
 #include "entities.h"
+#include "dynamic_light.h"
 
 #include <BulletDynamics/Character/btKinematicCharacterController.h>
 
@@ -50,6 +51,9 @@ public:
     { 
         return true; 
     }
+
+    std::shared_ptr<DynamicLight> m_flashlight;
+    bool m_flashlightOn = false;
 
     float m_viewHeight = 1.5f;
     bool m_isCrouching = false;
