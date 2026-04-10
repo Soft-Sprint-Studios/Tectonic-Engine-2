@@ -9,6 +9,7 @@ uniform float u_vignetteStrength;
 uniform float u_chromaStrength;
 uniform float u_grainStrength;
 uniform float u_bwStrength;
+uniform float u_Gamma;
 uniform int u_postprocess_enabled;
 uniform mat4 u_invProjection;
 uniform int u_fogEnabled;
@@ -38,7 +39,8 @@ void main()
 {
     if (u_postprocess_enabled == 0)
     {
-        FragColor = texture(screenTexture, TexCoords);
+	    vec3 rawColor = texture(screenTexture, TexCoords).rgb;
+        FragColor = vec4(pow(rawColor, vec3(1.0/u_Gamma)), 1.0);
         return;
     }
 
@@ -73,5 +75,7 @@ void main()
         hdrColor = mix(hdrColor, u_fogColor, fogFactor);
     }
 
+    // Gamma correct
+    hdrColor = pow(hdrColor, vec3(1.0 / u_Gamma));
     FragColor = vec4(hdrColor, 1.0);
 }

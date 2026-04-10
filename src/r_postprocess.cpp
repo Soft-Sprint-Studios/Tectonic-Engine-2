@@ -28,6 +28,7 @@
 #include "timing.h"
 
 CVar r_postprocess("r_postprocess", "1", CVAR_SAVE);
+CVar r_gamma("r_gamma", "1.7", CVAR_SAVE);
 CVar r_autoexposure("r_autoexposure", "1", CVAR_SAVE);
 
 CVar r_exposure_speed("r_exposure_speed", "1.5", CVAR_SAVE);
@@ -240,10 +241,10 @@ void R_PostProcess::Draw(const Camera& camera)
         // Adapt exposure
         m_averageShader.Bind();
         m_averageShader.SetFloat("u_deltaTime", Time::DeltaTime());
-        m_averageShader.SetFloat("u_speed", CVar::Find("r_exposure_speed")->GetFloat());
-        m_averageShader.SetFloat("u_targetLum", CVar::Find("r_exposure_target")->GetFloat());
-        m_averageShader.SetFloat("u_minExp", CVar::Find("r_exposure_min")->GetFloat());
-        m_averageShader.SetFloat("u_maxExp", CVar::Find("r_exposure_max")->GetFloat());
+        m_averageShader.SetFloat("u_speed", r_exposure_speed.GetFloat());
+        m_averageShader.SetFloat("u_targetLum", r_exposure_target.GetFloat());
+        m_averageShader.SetFloat("u_minExp", r_exposure_min.GetFloat());
+        m_averageShader.SetFloat("u_maxExp", r_exposure_max.GetFloat());
 
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, m_histogramBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, m_lumBuffer);
@@ -261,7 +262,7 @@ void R_PostProcess::Draw(const Camera& camera)
     m_shader.SetInt("screenTexture", 0);
     m_shader.SetInt("depthTexture", 1);
 
-    m_shader.SetInt("u_postprocess_enabled", CVar::Find("r_postprocess")->GetInt());
+    m_shader.SetInt("u_postprocess_enabled", r_autoexposure.GetInt());
 
     const auto& ppSettings = PostProcess::GetCurrentSettings();
     m_shader.SetFloat("u_time", (float)Time::TotalTime());
@@ -274,6 +275,7 @@ void R_PostProcess::Draw(const Camera& camera)
     m_shader.SetFloat("u_fogStart", ppSettings.fogStart);
     m_shader.SetFloat("u_fogEnd", ppSettings.fogEnd);
     m_shader.SetInt("u_fogAffectsSky", ppSettings.fogAffectsSky ? 1 : 0);
+    m_shader.SetFloat("u_Gamma", r_gamma.GetFloat());
     m_shader.SetMat4("u_invProjection", glm::inverse(camera.GetProjectionMatrix()));
 
     glBindVertexArray(m_quadVAO);
