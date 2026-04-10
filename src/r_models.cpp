@@ -176,6 +176,11 @@ void R_Models::LoadModel(const std::string& path)
                     glEnableVertexAttribArray(9);
                     glVertexAttribPointer(9, 3, GL_FLOAT, GL_FALSE, stride, 0);
                 }
+                else if (attr.type == cgltf_attribute_type_tangent)
+                {
+                    glEnableVertexAttribArray(10);
+                    glVertexAttribPointer(10, 3, GL_FLOAT, GL_FALSE, stride, 0);
+                }
             }
 
             if (prim.indices)
@@ -265,6 +270,8 @@ void R_Models::Draw(const Shader& shader, const Frustum& frustum, bool depthOnly
                             glVertexAttrib3f(6 + b, 1.0f, 1.0f, 1.0f);
                         }
                     }
+
+                    glVertexAttrib3f(11, 0.0f, 0.0f, 0.0f);
                 }
 
                 glDrawElements(GL_TRIANGLES, mesh.indexCount, mesh.indexType, 0);

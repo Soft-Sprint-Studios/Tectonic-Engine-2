@@ -128,7 +128,8 @@ public:
             const char* current_text = value();
             int current_len = (int)strlen(current_text);
 
-            if (current_len == 0) return 1;
+            if (current_len == 0) 
+                return 1;
 
             std::vector<std::string> matches;
             for (const auto& cvar : g_cvars) {
@@ -142,7 +143,8 @@ public:
                 }
             }
 
-            if (matches.empty()) return 1;
+            if (matches.empty()) 
+                return 1;
 
             if (matches.size() == 1) {
                 value(matches[0].c_str());
@@ -247,6 +249,17 @@ void input_callback(Fl_Widget*, void*) {
 
 void on_window_close(Fl_Widget*, void*) {
     should_exit = true;
+
+    if (server_socket != INVALID_SOCKET) {
+#ifdef _WIN32
+        shutdown(server_socket, SD_BOTH);
+#else
+        shutdown(server_socket, SHUT_RDWR);
+#endif
+        closesocket(server_socket);
+        server_socket = INVALID_SOCKET;
+    }
+
     if (client_socket != INVALID_SOCKET) {
 #ifdef _WIN32
         shutdown(client_socket, SD_BOTH);
@@ -256,9 +269,11 @@ void on_window_close(Fl_Widget*, void*) {
         closesocket(client_socket);
         client_socket = INVALID_SOCKET;
     }
+
     if (server_thread.joinable()) {
         server_thread.join();
     }
+
     window->hide();
 }
 
@@ -284,7 +299,8 @@ void server_loop() {
 #endif
 
     server_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (server_socket == INVALID_SOCKET) return;
+    if (server_socket == INVALID_SOCKET) 
+        return;
 
     int opt = 1;
     setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (const char*)&opt, sizeof(opt));
@@ -307,7 +323,8 @@ void server_loop() {
         client_socket = accept(server_socket, (sockaddr*)&client_addr, &client_len);
 
         if (client_socket == INVALID_SOCKET) {
-            if (should_exit) break;
+            if (should_exit) 
+                break;
             continue;
         }
 

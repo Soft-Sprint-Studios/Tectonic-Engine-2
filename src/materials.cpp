@@ -203,6 +203,7 @@ std::shared_ptr<Texture> Materials::GetFlatNormal()
 {
     return m_flatNormal; 
 }
+
 std::shared_ptr<Texture> Materials::GetWhiteTexture() 
 { 
     return m_white; 

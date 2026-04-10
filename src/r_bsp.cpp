@@ -68,6 +68,10 @@ bool R_BSP::Init(const BSP::MapData& map)
     glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, color));
     glEnableVertexAttribArray(9);
     glVertexAttribPointer(9, 3, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, normal));
+    glEnableVertexAttribArray(10);
+    glVertexAttribPointer(10, 3, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, tangent));
+    glEnableVertexAttribArray(11);
+    glVertexAttribPointer(11, 3, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, bitangent));
 
     glBindVertexArray(0);
 

@@ -8,6 +8,8 @@ layout (location = 6) in vec3 aColor;
 layout (location = 7) in vec3 aColor2;
 layout (location = 8) in vec3 aColor3;
 layout (location = 9) in vec3 aNormal;
+layout (location = 10) in vec3 aTangent;
+layout (location = 11) in vec3 aBitangent;
 
 uniform mat4 u_model;
 uniform mat4 u_view;
@@ -22,12 +24,19 @@ out centroid vec3 Color;
 out centroid vec3 Color2;
 out centroid vec3 Color3;
 out vec3 FragPos;
-out centroid vec3 Normal;
+out centroid mat3 TBN;
 
 void main()
 {
     FragPos = vec3(u_model * vec4(aPos, 1.0));
-    Normal = mat3(transpose(inverse(u_model))) * aNormal;
+    mat3 normalMatrix = mat3(transpose(inverse(u_model)));
+    vec3 T = normalize(normalMatrix * aTangent);
+    vec3 B = normalize(normalMatrix * aBitangent);
+    vec3 N = normalize(normalMatrix * aNormal);
+    T = normalize(T - dot(T, N) * N);
+    B = normalize(cross(N, T)); 
+    
+    TBN = mat3(T, B, N);
     
     TexCoord = aTexCoord;
     LmCoord1 = aLmCoord1;

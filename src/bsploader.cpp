@@ -551,6 +551,12 @@ namespace BSP
                 const Plane& plane = d_planes[face.planenum];
                 v.normal = glm::vec3(plane.normal.x, plane.normal.z, -plane.normal.y);
 
+                glm::vec3 s_axis = glm::vec3(tex.textureVecs[0][0], tex.textureVecs[0][1], tex.textureVecs[0][2]);
+                glm::vec3 t_axis = glm::vec3(tex.textureVecs[1][0], tex.textureVecs[1][1], tex.textureVecs[1][2]);
+
+                v.tangent = glm::normalize(glm::vec3(s_axis.x, s_axis.z, -s_axis.y));
+                v.bitangent = glm::normalize(glm::vec3(t_axis.x, t_axis.z, -t_axis.y));
+
                 // Albedo UVs
                 float u = glm::dot(pos, glm::vec3(tex.textureVecs[0][0], tex.textureVecs[0][1], tex.textureVecs[0][2])) + tex.textureVecs[0][3];
                 float v_uv = glm::dot(pos, glm::vec3(tex.textureVecs[1][0], tex.textureVecs[1][1], tex.textureVecs[1][2])) + tex.textureVecs[1][3];
@@ -641,6 +647,12 @@ namespace BSP
 
                     const Plane& plane = d_planes[face.planenum];
                     vert.normal = glm::vec3(plane.normal.x, plane.normal.z, -plane.normal.y);
+
+                    glm::vec3 s_axis = glm::vec3(tex.textureVecs[0][0], tex.textureVecs[0][1], tex.textureVecs[0][2]);
+                    glm::vec3 t_axis = glm::vec3(tex.textureVecs[1][0], tex.textureVecs[1][1], tex.textureVecs[1][2]);
+
+                    vert.tangent = glm::normalize(glm::vec3(s_axis.x, s_axis.z, -s_axis.y));
+                    vert.bitangent = glm::normalize(glm::vec3(t_axis.x, t_axis.z, -t_axis.y));
 
                     // Albedo UVs
                     float tu = glm::dot(pos, glm::vec3(tex.textureVecs[0][0], tex.textureVecs[0][1], tex.textureVecs[0][2])) + tex.textureVecs[0][3];

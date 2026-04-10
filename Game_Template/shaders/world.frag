@@ -7,7 +7,7 @@ in centroid vec3 Color;
 in centroid vec3 Color2;
 in centroid vec3 Color3;
 in vec3 FragPos;
-in centroid vec3 Normal;
+in centroid mat3 TBN;
 
 uniform sampler2D u_diffuse;
 uniform sampler2D u_normal;
@@ -139,77 +139,76 @@ void main()
     }
 
     vec3 specMask = texture(u_specular, TexCoord).rgb;
-    vec3 baseNorm = normalize(Normal);
+    vec3 baseNorm = normalize(TBN[2]);
     vec3 viewDir = normalize(u_viewPos - FragPos);
     float shine = 32.0;
 
     vec3 N = baseNorm;
+
+	vec3 tangentNormal = vec3(0.0, 0.0, 1.0);
     if (u_useBump)
     {
-        vec3 tNorm = texture(u_normal, TexCoord).rgb * 2.0 - 1.0;
-        N = normalize(baseNorm + tNorm * 0.4);
+        tangentNormal = texture(u_normal, TexCoord).rgb * 2.0 - 1.0;
+        N = normalize(TBN * tangentNormal);
     }
-    
-    vec3 reflectViewDir = reflect(-viewDir, N);
+
+	vec3 reflectViewDir = reflect(-viewDir, baseNorm);
 
     vec3 diffuseLight = vec3(0.0);
     vec3 specularLight = vec3(0.0);
 
     // Baked Lighting Phase
-    if (u_isModel)
+    if (u_useBump)
     {
-        if (u_useBump)
-        {
-            float w1 = max(0.0, dot(N, basis0));
-            float w2 = max(0.0, dot(N, basis1));
-            float w3 = max(0.0, dot(N, basis2));
-            float totalWeight = (w1*w1 + w2*w2 + w3*w3);
-            diffuseLight = (Color * w1*w1 + Color2 * w2*w2 + Color3 * w3*w3) / max(totalWeight, 0.001);
+        float w1 = clamp(dot(tangentNormal, basis0), 0.0, 1.0);
+        float w2 = clamp(dot(tangentNormal, basis1), 0.0, 1.0);
+        float w3 = clamp(dot(tangentNormal, basis2), 0.0, 1.0);
 
-            float s1 = pow(max(dot(reflectViewDir, basis0), 0.0), shine);
-            float s2 = pow(max(dot(reflectViewDir, basis1), 0.0), shine);
-            float s3 = pow(max(dot(reflectViewDir, basis2), 0.0), shine);
-            specularLight = (Color * s1 + Color2 * s2 + Color3 * s3) * 0.3 * specMask;
+        if (u_isModel)
+        {
+            diffuseLight = Color * w1 + Color2 * w2 + Color3 * w3;
         }
         else
-        {
-            diffuseLight = Color;
-        }
-    }
-    else
-    {
-        if (u_useBump)
         {
             vec3 l1 = texture(u_lightmap, LmCoord2).rgb;
             vec3 l2 = texture(u_lightmap, LmCoord3).rgb;
             vec3 l3 = texture(u_lightmap, LmCoord4).rgb;
-            
-            float w1 = max(0.0, dot(N, basis0));
-            float w2 = max(0.0, dot(N, basis1));
-            float w3 = max(0.0, dot(N, basis2));
-            
-            float totalWeight = (w1*w1 + w2*w2 + w3*w3);
-            diffuseLight = (l1 * w1*w1 + l2 * w2*w2 + l3 * w3*w3) / max(totalWeight, 0.001);
+            diffuseLight = l1 * w1 + l2 * w2 + l3 * w3;
+        }
 
-            float s1 = pow(max(dot(reflectViewDir, basis0), 0.0), shine);
-            float s2 = pow(max(dot(reflectViewDir, basis1), 0.0), shine);
-            float s3 = pow(max(dot(reflectViewDir, basis2), 0.0), shine);
-            specularLight = (l1 * s1 + l2 * s2 + l3 * s3) * 0.4 * specMask;
-        }
-        else
-        {
-            diffuseLight = texture(u_lightmap, LmCoord1).rgb;
-        }
+        vec3 light1 = u_isModel ? Color : texture(u_lightmap, LmCoord2).rgb;
+        vec3 light2 = u_isModel ? Color2 : texture(u_lightmap, LmCoord3).rgb;
+        vec3 light3 = u_isModel ? Color3 : texture(u_lightmap, LmCoord4).rgb;
+
+        vec3 H1 = normalize(TBN * basis0 + viewDir);
+        vec3 H2 = normalize(TBN * basis1 + viewDir);
+        vec3 H3 = normalize(TBN * basis2 + viewDir);
+
+        float s1 = pow(max(dot(N, H1), 0.0), shine);
+        float s2 = pow(max(dot(N, H2), 0.0), shine);
+        float s3 = pow(max(dot(N, H3), 0.0), shine);
+
+        specularLight = (light1 * s1 + light2 * s2 + light3 * s3) * specMask;
+    }
+    else
+    {
+        diffuseLight = u_isModel ? Color : texture(u_lightmap, LmCoord1).rgb;
     }
 
     // Environmental Lighting Phase
     if (u_useCubemap)
     {
         vec3 lookup = ParallaxCorrect(reflectViewDir, FragPos, u_cubemapMins, u_cubemapMaxs, u_cubemapOrigin);
+
+        if (u_useBump)
+        {
+            lookup = normalize(lookup + TBN * (tangentNormal * 0.2));
+        }
+
         vec3 envMap = texture(u_cubemap, lookup).rgb;
 
         float brightness = dot(diffuseLight, vec3(0.2126, 0.7152, 0.0722));
-        specularLight += envMap * specMask * brightness;
+        specularLight += (envMap * specMask * brightness) * 10.0;
     }
 
     // Dynamic Lighting Phase
@@ -252,10 +251,13 @@ void main()
 
         vec3 lightEnergy = u_spotLights[i].color * intensity * attenuation * (1.0 - shadow);
 
-        float diff = max(dot(N, L), 0.0);
+        float diff = max(dot(baseNorm, L), 0.0);
+        if (u_useBump) 
+            diff *= clamp(dot(N, L) * 1.4, 0.5, 1.5);
         
-        vec3 reflectL = reflect(-L, N);
-        float spec = pow(max(dot(viewDir, reflectL), 0.0), shine);
+        vec3 H = normalize(L + viewDir);
+        vec3 specN = u_useBump ? normalize(baseNorm + TBN * (tangentNormal * 0.4)) : N;
+        float spec = pow(max(dot(specN, H), 0.0), shine);
 
         dynDiffuse += lightEnergy * diff;
         dynSpecular += lightEnergy * spec * specMask * 0.5;
@@ -294,10 +296,13 @@ void main()
 
         vec3 lightEnergy = u_pointLights[i].color * attenuation * (1.0 - shadow);
 
-        float diff = max(dot(N, L), 0.0);
+        float diff = max(dot(baseNorm, L), 0.0);
+        if (u_useBump) 
+            diff *= clamp(dot(N, L) * 1.4, 0.5, 1.5);
         
-        vec3 reflectL = reflect(-L, N);
-        float spec = pow(max(dot(viewDir, reflectL), 0.0), shine);
+        vec3 H = normalize(L + viewDir);
+        vec3 specN = u_useBump ? normalize(baseNorm + TBN * (tangentNormal * 0.4)) : N;
+        float spec = pow(max(dot(specN, H), 0.0), shine);
 
         dynDiffuse += lightEnergy * diff;
         dynSpecular += lightEnergy * spec * specMask * 0.5;
@@ -332,7 +337,15 @@ void main()
     {
         if (!u_isModel) 
         {
-            FragColor = vec4(diffuseLight * 2.0, 1.0);
+            float w1 = max(dot(tangentNormal, basis0), 0.0);
+            float w2 = max(dot(tangentNormal, basis1), 0.0);
+            float w3 = max(dot(tangentNormal, basis2), 0.0);
+
+            vec3 l1 = texture(u_lightmap, LmCoord2).rgb;
+            vec3 l2 = texture(u_lightmap, LmCoord3).rgb;
+            vec3 l3 = texture(u_lightmap, LmCoord4).rgb;
+
+            FragColor = vec4(l1 * w1 + l2 * w2 + l3 * w3, 1.0);
         }
         else 
         {
@@ -354,7 +367,11 @@ void main()
     {
         if (u_isModel) 
         {
-            FragColor = vec4(diffuseLight, 1.0);
+            float w1 = max(dot(tangentNormal, basis0), 0.0);
+            float w2 = max(dot(tangentNormal, basis1), 0.0);
+            float w3 = max(dot(tangentNormal, basis2), 0.0);
+
+            FragColor = vec4(Color * w1 + Color2 * w2 + Color3 * w3, 1.0);
         }
         else 
         {

@@ -193,6 +193,8 @@ namespace BSP
     {
         glm::vec3 position;
         glm::vec3 normal;
+        glm::vec3 tangent;
+        glm::vec3 bitangent;
         glm::vec2 uv;
         glm::vec2 lm_uv;
         glm::vec2 lm_uv2;
