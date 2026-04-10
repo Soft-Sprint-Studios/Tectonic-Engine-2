@@ -174,10 +174,10 @@ std::shared_ptr<Texture> Materials::GetNormalMap(const std::string& name)
 
     if (!searchName.empty())
     {
-        Console::Warn("Texture definition missing: [" + name + "] - using fallback.");
+        return m_flatNormal;
     }
 
-    return m_fallback;
+    return m_flatNormal;
 }
 
 std::shared_ptr<Texture> Materials::GetSpecularMap(const std::string& name)
@@ -193,10 +193,10 @@ std::shared_ptr<Texture> Materials::GetSpecularMap(const std::string& name)
 
     if (!searchName.empty())
     {
-        Console::Warn("Texture definition missing: [" + name + "] - using fallback.");
+        return m_white;
     }
 
-    return m_fallback;
+    return m_white;
 }
 
 std::shared_ptr<Texture> Materials::GetFlatNormal() 
