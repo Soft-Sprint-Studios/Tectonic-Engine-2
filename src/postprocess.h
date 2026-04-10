@@ -36,7 +36,7 @@ namespace PostProcess
         glm::vec3 fogColor{ 0.5f, 0.6f, 0.7f };
         float fogStart = 50.0f;
         float fogEnd = 200.0f;
-        bool fogAffectsSky = true;
+        bool fogAffectsSky = false;
     };
 
     void SetVignette(float strength);
