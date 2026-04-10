@@ -37,8 +37,7 @@ R_Particles::~R_Particles()
 
 bool R_Particles::Init()
 {
-    if (!m_shader.Load("shaders/particle.vert", "shaders/particle.frag", "shaders/particle.geom")) 
-        return false;
+    m_shader.Load("shaders/particle.vert", "shaders/particle.frag", "shaders/particle.geom");
 
     glGenVertexArrays(1, &m_vao);
     glGenBuffers(1, &m_vbo);

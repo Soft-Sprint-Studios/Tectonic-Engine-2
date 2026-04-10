@@ -30,6 +30,7 @@
 #include "particles.h"
 #include "dynamic_light.h"
 #include "lightstyles.h"
+#include "sprite.h"
 #include <sstream>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -539,3 +540,50 @@ private:
 };
 
 LINK_ENTITY_TO_CLASS("light_dynamic_spot", LightDynamicSpot)
+
+class SpriteEmitter : public Entity
+{
+public:
+    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    {
+        Entity::Spawn(keyvalues);
+
+        std::string texturePath = GetValue("texture");
+        m_sprite = Sprites::CreateSprite(m_origin, texturePath);
+
+        if (m_sprite)
+        {
+            auto& def = m_sprite->GetDef();
+            def.cylindrical = (GetInt("rendermode") == 1);
+            def.scale = glm::vec2(GetFloat("scale", 1.0f));
+
+            glm::vec3 color = GetVector("rendercolor", { 255, 255, 255 });
+            float alpha = GetFloat("renderamt", 255.0f);
+            def.color = glm::vec4(color / 255.0f, alpha / 255.0f);
+
+            m_sprite->SetActive(!HasSpawnFlag(1));
+        }
+    }
+
+    void AcceptInput(const std::string& input, const std::string& param) override
+    {
+        if (!m_sprite) 
+            return;
+        if (input == "ShowSprite") 
+            m_sprite->SetActive(true);
+        if (input == "HideSprite") 
+            m_sprite->SetActive(false);
+        if (input == "ToggleSprite") 
+            m_sprite->SetActive(!m_sprite->IsActive());
+    }
+
+    bool IsVisible() const override 
+    { 
+        return false; 
+    }
+
+private:
+    std::shared_ptr<Sprite> m_sprite;
+};
+
+LINK_ENTITY_TO_CLASS("sprite", SpriteEmitter)

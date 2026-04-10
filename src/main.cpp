@@ -47,6 +47,7 @@
 #include "lightstyles.h"
 #include "build_date.h"
 #include "gamedef.h"
+#include "sprite.h"
 
 ENGINE_API int Engine_Main(int argc, char** argv)
 {
@@ -83,6 +84,7 @@ ENGINE_API int Engine_Main(int argc, char** argv)
 
     DynamicLights::Init();
     LightStyles::Init();
+    Sprites::Init();
 
     Binds::Init();
 
@@ -117,6 +119,7 @@ ENGINE_API int Engine_Main(int argc, char** argv)
         Particles::Update(dt);
         DynamicLights::Update();
         LightStyles::Update(Time::TotalTime());
+        Sprites::Update();
         Physics::Update(dt);
 
         // Input Handling

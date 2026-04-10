@@ -22,43 +22,46 @@
  * SOFTWARE.
  */
 #pragma once
-#include "window.h"
-#include "shader.h"
-#include "camera.h"
-#include "r_postprocess.h"
-#include "r_bsp.h"
-#include "r_models.h"
-#include "r_sky.h"
-#include "r_particles.h"
-#include "r_lights.h"
-#include "r_sprites.h"
-#include "cubemap.h"
+#include <glm/glm.hpp>
+#include <string>
 #include <memory>
+#include <vector>
 
-class Renderer
+struct SpriteDef
+{
+    std::string textureName;
+    glm::vec2 scale{ 1.0f, 1.0f };
+    glm::vec4 color{ 1.0f, 1.0f, 1.0f, 1.0f };
+    bool cylindrical = false;
+};
+
+class Sprite
 {
 public:
-    Renderer();
-    ~Renderer();
+    Sprite(const SpriteDef& def, const glm::vec3& position);
 
-    bool Init(Window& window);
-    bool LoadMap(const std::string& path);
-    void Shutdown();
-    void Render(Camera& camera);
-    void RenderWorld(Camera& camera, GLuint cubemapToExclude = 0);
-    void OnWindowResize(int w, int h);
+    void SetActive(bool active);
+    void SetPosition(const glm::vec3& position);
+    void SetColor(const glm::vec4& color);
+    void SetScale(const glm::vec2& scale);
+
+    bool IsActive() const;
+    SpriteDef& GetDef();
+    const glm::vec3& GetPosition() const;
 
 private:
-    void DrawWorld(Camera& camera, GLuint cubemapToExclude);
-    Window* m_windowRef;
-    Shader m_worldShader;
-
-    // Sub-renderers
-    std::unique_ptr<R_PostProcess> m_postProcess;
-    std::unique_ptr<R_BSP> m_bspRenderer;
-    std::unique_ptr<R_Models> m_modelRenderer;
-    std::unique_ptr<R_Sky> m_skyRenderer;
-    std::unique_ptr<R_Particles> m_particleRenderer;
-    std::unique_ptr<R_Lights> m_lightRenderer;
-    std::unique_ptr<R_Sprites> m_spriteRenderer;
+    SpriteDef m_def;
+    glm::vec3 m_position;
+    bool m_active;
 };
+
+namespace Sprites
+{
+    void Init();
+    void Update();
+    void Shutdown();
+    void Clear();
+
+    std::shared_ptr<Sprite> CreateSprite(const glm::vec3& position, const std::string& texture);
+    const std::vector<std::shared_ptr<Sprite>>& GetActiveSprites();
+}

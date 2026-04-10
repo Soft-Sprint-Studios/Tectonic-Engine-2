@@ -39,15 +39,8 @@ R_Lights::~R_Lights()
 
 bool R_Lights::Init()
 {
-    if (!m_shadowSpotShader.Load("shaders/shadow_spot.vert", "shaders/shadow_spot.frag"))
-    {
-        return false;
-    }
-
-    if (!m_shadowPointShader.Load("shaders/shadow_point.vert", "shaders/shadow_point.frag", "shaders/shadow_point.geom"))
-    {
-        return false;
-    }
+    m_shadowSpotShader.Load("shaders/shadow_spot.vert", "shaders/shadow_spot.frag");
+    m_shadowPointShader.Load("shaders/shadow_point.vert", "shaders/shadow_point.frag", "shaders/shadow_point.geom");
 
     float white = 1.0f;
 

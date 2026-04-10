@@ -57,11 +57,7 @@ bool Renderer::Init(Window& window)
 {
     m_windowRef = &window;
 
-    if (!m_worldShader.Load("shaders/world.vert", "shaders/world.frag"))
-    {
-        Console::Error("World: Failed to load shaders");
-        return false;
-    }
+    m_worldShader.Load("shaders/world.vert", "shaders/world.frag");
 
     // Global GL State
     glEnable(GL_DEPTH_TEST);
@@ -75,9 +71,8 @@ bool Renderer::Init(Window& window)
     m_modelRenderer = std::make_unique<R_Models>();
     m_skyRenderer = std::make_unique<R_Sky>();
     m_particleRenderer = std::make_unique<R_Particles>();
-
     m_lightRenderer = std::make_unique<R_Lights>();
-    m_lightRenderer->Init();
+    m_spriteRenderer = std::make_unique<R_Sprites>();
 
     return true;
 }
@@ -92,26 +87,12 @@ bool Renderer::LoadMap(const std::string& path)
 
     Cubemap::LoadForMap(path.substr(5, path.find_last_of('.') - 5));
 
-    if (!m_bspRenderer->Init(map))
-    {
-        Console::Error("BSP renderer failed to initialize.");
-        return false;
-    }
-
-    if (!m_modelRenderer->Init(map))
-    {
-        Console::Warn("Static Prop renderer failed to initialize.");
-    }
-
-    if (!m_skyRenderer->Init(map.skyName))
-    {
-        Console::Warn("Skybox renderer failed to initialize.");
-    }
-
-    if (!m_particleRenderer->Init())
-    {
-        Console::Error("Particle renderer failed to initialize.");
-    }
+    m_bspRenderer->Init(map);
+    m_modelRenderer->Init(map);
+    m_skyRenderer->Init(map.skyName);
+    m_particleRenderer->Init();
+    m_lightRenderer->Init();
+    m_spriteRenderer->Init();
 
     Physics::AddBSPCollision(map.collision.vertices, map.collision.indices);
 
@@ -193,6 +174,11 @@ void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude)
     if (m_particleRenderer)
     {
         m_particleRenderer->Draw(camera);
+    }
+
+    if (m_spriteRenderer)
+    {
+        m_spriteRenderer->Draw(camera, Sprites::GetActiveSprites());
     }
 }
 
@@ -280,5 +266,11 @@ void Renderer::Shutdown()
     {
         m_lightRenderer->Shutdown();
         m_lightRenderer.reset();
+    }
+
+    if (m_spriteRenderer)
+    {
+        m_spriteRenderer->Shutdown();
+        m_spriteRenderer.reset();
     }
 }

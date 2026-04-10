@@ -37,11 +37,7 @@ R_Sky::~R_Sky()
 
 bool R_Sky::Init(const std::string& skyName)
 {
-    if (!m_shader.Load("shaders/sky.vert", "shaders/sky.frag"))
-    {
-        Console::Error("Sky: Failed to load shaders");
-        return false;
-    }
+    m_shader.Load("shaders/sky.vert", "shaders/sky.frag");
 
     float skyboxVertices[] = {
         -1.0f,  1.0f, -1.0f, -1.0f, -1.0f, -1.0f,  1.0f, -1.0f, -1.0f,  1.0f, -1.0f, -1.0f,  1.0f,  1.0f, -1.0f, -1.0f,  1.0f, -1.0f,

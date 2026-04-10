@@ -53,11 +53,7 @@ bool R_PostProcess::Init(int width, int height)
     m_width = width;
     m_height = height;
 
-    if (!m_shader.Load("shaders/postprocess.vert", "shaders/postprocess.frag"))
-    {
-        Console::Error("PostProcess: Failed to load shaders");
-        return false;
-    }
+    m_shader.Load("shaders/postprocess.vert", "shaders/postprocess.frag");
 
     m_histogramShader.LoadCompute("shaders/lum_histogram.comp");
     m_averageShader.LoadCompute("shaders/lum_average.comp");
