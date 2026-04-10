@@ -26,7 +26,7 @@
 
 std::unordered_map<std::string, std::shared_ptr<Texture>> Resources::s_textures;
 
-std::shared_ptr<Texture> Resources::LoadTexture(const std::string& path)
+std::shared_ptr<Texture> Resources::LoadTexture(const std::string& path, bool srgb)
 {
     auto it = s_textures.find(path);
     if (it != s_textures.end())
@@ -35,7 +35,7 @@ std::shared_ptr<Texture> Resources::LoadTexture(const std::string& path)
     }
 
     auto tex = std::make_shared<Texture>();
-    if (tex->Load(path))
+    if (tex->Load(path, srgb))
     {
         s_textures[path] = tex;
         return tex;

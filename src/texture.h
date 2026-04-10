@@ -31,8 +31,8 @@ public:
     Texture();
     ~Texture();
 
-    bool Load(const std::string& path);
-    void Create(int width, int height, unsigned char* data);
+    bool Load(const std::string& path, bool srgb = true);
+    void Create(int width, int height, unsigned char* data, bool srgb = true);
     void Bind(unsigned int unit = 0) const;
     void Release();
 
@@ -44,11 +44,6 @@ public:
     int GetHeight() const
     {
         return m_height;
-    }
-
-    GLuint GetID() const 
-    { 
-        return m_id; 
     }
 
 private:

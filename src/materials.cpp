@@ -63,15 +63,15 @@ void Materials::CreateFallbackTexture()
     }
 
     m_fallback = std::make_shared<Texture>();
-    m_fallback->Create(size, size, data.data());
+    m_fallback->Create(size, size, data.data(), true);
 
     uint8_t whiteData[] = { 255, 255, 255, 255 };
     m_white = std::make_shared<Texture>();
-    m_white->Create(1, 1, whiteData);
+    m_white->Create(1, 1, whiteData, true);
 
     uint8_t normalData[] = { 128, 128, 255, 255 };
     m_flatNormal = std::make_shared<Texture>();
-    m_flatNormal->Create(1, 1, normalData);
+    m_flatNormal->Create(1, 1, normalData, false);
 }
 
 void Materials::LoadDefinitions(const std::string& path)
@@ -103,7 +103,7 @@ void Materials::LoadDefinitions(const std::string& path)
                     ss >> token;
 
                     std::string fileName = "textures/" + token.substr(1, token.size() - 2);
-                    auto tex = Resources::LoadTexture(fileName);
+                    auto tex = Resources::LoadTexture(fileName, true);
 
                     if (tex)
                     {
@@ -116,7 +116,7 @@ void Materials::LoadDefinitions(const std::string& path)
                     ss >> token;
 
                     std::string fileName = "textures/" + token.substr(1, token.size() - 2);
-                    auto tex = Resources::LoadTexture(fileName);
+                    auto tex = Resources::LoadTexture(fileName, false);
 
                     if (tex)
                     {
@@ -129,7 +129,7 @@ void Materials::LoadDefinitions(const std::string& path)
                     ss >> token;
 
                     std::string fileName = "textures/" + token.substr(1, token.size() - 2);
-                    auto tex = Resources::LoadTexture(fileName);
+                    auto tex = Resources::LoadTexture(fileName, false);
 
                     if (tex)
                     {

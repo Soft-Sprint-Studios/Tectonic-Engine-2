@@ -30,7 +30,7 @@
 class Resources
 {
 public:
-    static std::shared_ptr<Texture> LoadTexture(const std::string& path);
+    static std::shared_ptr<Texture> LoadTexture(const std::string& path, bool srgb = true);
     static void UnloadUnused();
     static void Clear();
 

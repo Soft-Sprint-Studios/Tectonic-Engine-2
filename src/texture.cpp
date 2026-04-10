@@ -44,7 +44,7 @@ Texture::~Texture()
     Release();
 }
 
-bool Texture::Load(const std::string& path)
+bool Texture::Load(const std::string& path, bool srgb)
 {
     std::string fullPath = Filesystem::GetFullPath(path);
     stbi_set_flip_vertically_on_load(true);
@@ -57,13 +57,13 @@ bool Texture::Load(const std::string& path)
         return false;
     }
 
-    Create(m_width, m_height, data);
+    Create(m_width, m_height, data, srgb);
     stbi_image_free(data);
 
     return true;
 }
 
-void Texture::Create(int width, int height, unsigned char* data)
+void Texture::Create(int width, int height, unsigned char* data, bool srgb)
 {
     m_width = width;
     m_height = height;
@@ -81,7 +81,8 @@ void Texture::Create(int width, int height, unsigned char* data)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, m_width, m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    GLint internalFormat = srgb ? GL_SRGB8_ALPHA8 : GL_RGBA8;
+    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, m_width, m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, r_textureAnisotropy.GetFloat());
 
