@@ -164,11 +164,14 @@ namespace BSP
                             std::string key = line.substr(kStart, kEnd - kStart);
                             std::string val = line.substr(vStart, vEnd - vStart);
                             ent.keyvalues[key] = val;
-                            if (key == "classname") ent.className = val;
-                            if (key == "skyname") m_map.skyName = val;
+                            if (key == "classname") 
+                                ent.className = val;
+                            if (key == "skyname") 
+                                m_map.skyName = val;
                         }
                     }
-                    if (!ent.className.empty()) m_map.entities.push_back(ent);
+                    if (!ent.className.empty()) 
+                        m_map.entities.push_back(ent);
                 }
             }
         }
