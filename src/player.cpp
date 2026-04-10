@@ -49,8 +49,6 @@ Player::Player()
 
 Player::~Player()
 {
-    // Why does this cause a crash when exiting?
-    /*
     if (m_character)
     {
         Physics::GetDynamicsWorld()->removeAction(m_character);
@@ -60,7 +58,6 @@ Player::~Player()
         delete m_character;
         m_character = nullptr;
     }
-    */
 }
 
 void Player::LinkCamera(Camera* cam)
