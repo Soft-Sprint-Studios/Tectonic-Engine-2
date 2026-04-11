@@ -340,6 +340,13 @@ namespace BSP
                         glm::vec3* origin = (glm::vec3*)sprpPtr;
                         glm::vec3* angles = (glm::vec3*)(sprpPtr + 12);
                         uint16_t propType = *(uint16_t*)(sprpPtr + 24);
+                        float uniformScale = 1.0f;
+
+                        // If we have scale for model read it
+                        if (entries[i].version >= 11)
+                        {
+                            uniformScale = *(float*)(sprpPtr + 72);
+                        }
 
                         if (propType < modelPaths.size())
                         {
@@ -347,6 +354,7 @@ namespace BSP
                             inst.modelPath = modelPaths[propType];
                             inst.position = ToEngineSpace(*origin);
                             inst.angles = *angles;
+                            inst.scale = uniformScale;
 
                             m_map.staticProps.push_back(inst);
                         }

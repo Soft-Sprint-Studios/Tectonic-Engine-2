@@ -55,7 +55,7 @@ bool R_Models::Init(const BSP::MapData& mapData)
 
         glm::mat4 m_physics = m_visual;
 
-        m_visual = glm::scale(m_visual, glm::vec3(BSP::MAPSCALE));
+        m_visual = glm::scale(m_visual, glm::vec3(prop.scale * BSP::MAPSCALE));
 
         if (m_propGroups.find(prop.modelPath) == m_propGroups.end())
         {
@@ -85,7 +85,7 @@ bool R_Models::Init(const BSP::MapData& mapData)
 
         if (m_propGroups[prop.modelPath].physicsShape)
         {
-            Physics::AddStaticBody(m_propGroups[prop.modelPath].physicsShape, m_physics);
+            Physics::AddStaticBody(m_propGroups[prop.modelPath].physicsShape, m_physics, glm::vec3(prop.scale));
         }
     }
 

@@ -219,10 +219,12 @@ namespace Physics
         return shape;
     }
 
-    void AddStaticBody(btCollisionShape* shape, const glm::mat4& transform)
+    void AddStaticBody(btCollisionShape* shape, const glm::mat4& transform, const glm::vec3& scale)
     {
-        if (!shape) 
+        if (!shape)
             return;
+
+        shape->setLocalScaling(btVector3(scale.x, scale.y, scale.z));
 
         btTransform btTrans;
         btTrans.setFromOpenGLMatrix(&transform[0][0]);

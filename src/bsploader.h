@@ -218,6 +218,7 @@ namespace BSP
         std::string modelPath;
         glm::vec3 position;
         glm::vec3 angles;
+        float scale = 1.0f;
         std::vector<glm::vec3> vertexColors[3];
         bool hasBumpedLighting = false;
     };
