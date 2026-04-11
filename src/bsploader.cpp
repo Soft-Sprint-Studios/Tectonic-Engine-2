@@ -708,17 +708,11 @@ namespace BSP
                         lu -= (float)face.lightmapTextureMinsInLuxels[0];
                         lv -= (float)face.lightmapTextureMinsInLuxels[1];
 
+                        // We must do this here to fix flipped lightmap for some reason
+                        lv = (float)face.lightmapTextureSizeInLuxels[1] - lv;
+
                         const Plane& plane = d_planes[face.planenum];
                         glm::vec3 n = plane.normal;
-
-                        if (n.z < -0.5f)
-                        {
-                            lu = (float)face.lightmapTextureSizeInLuxels[0] - lu;
-                        }
-                        else if (std::abs(n.z) < 0.5f)
-                        {
-                            lv = (float)face.lightmapTextureSizeInLuxels[1] - lv;
-                        }
 
                         int flatIdx = (numMaps == 4) ? 3 : 0;
                         vert.lm_uv = glm::vec2((axs[flatIdx] + lu + 0.5f) / m_map.lightmapAtlasWidth, (ays[flatIdx] + lv + 0.5f) / m_map.lightmapAtlasHeight);
