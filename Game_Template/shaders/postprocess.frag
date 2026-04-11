@@ -68,7 +68,7 @@ void main()
 
     float depth = texture(depthTexture, TexCoords).r;
 
-    if (u_fogAffectsSky == 1 || depth < 0.9999)
+    if (u_fogEnabled == 1 && (u_fogAffectsSky == 1 || depth < 0.9999))
     {
         float linearDepth = -LinearizeDepth(depth);
         float fogFactor = smoothstep(u_fogStart, u_fogEnd, linearDepth);
