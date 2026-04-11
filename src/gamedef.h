@@ -28,4 +28,5 @@ namespace Gamedef
 {
     void Init();
     std::string GetStartingMap();
+    std::string GetGameName();
 }

@@ -29,6 +29,7 @@
 namespace Gamedef
 {
     static std::string s_startingMap = "";
+    static std::string s_gameName = "Tectonic Engine 2";
 
     void Init()
     {
@@ -55,11 +56,26 @@ namespace Gamedef
                     s_startingMap = line.substr(firstQuote + 1, secondQuote - firstQuote - 1);
                 }
             }
+
+            if (line.find("gamename") != std::string::npos)
+            {
+                size_t firstQuote = line.find('\"');
+                size_t secondQuote = line.find('\"', firstQuote + 1);
+                if (firstQuote != std::string::npos && secondQuote != std::string::npos)
+                {
+                    s_gameName = line.substr(firstQuote + 1, secondQuote - firstQuote - 1);
+                }
+            }
         }
     }
 
     std::string GetStartingMap()
     {
         return s_startingMap;
+    }
+
+    std::string GetGameName()
+    {
+        return s_gameName;
     }
 }

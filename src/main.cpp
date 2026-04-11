@@ -63,10 +63,7 @@ ENGINE_API int Engine_Main(int argc, char** argv)
     CVar::Init();
 
     Window window;
-    if (!window.Init("Tectonic Engine 2", 1280, 720)) 
-    {
-        return -1;
-    }
+    window.Init(Gamedef::GetGameName().c_str(), 1280, 720);
 
     // Engine Systems Init
     Input input;
