@@ -94,15 +94,41 @@ bool R_Models::Init(const BSP::MapData& mapData)
 
 void R_Models::LoadModel(const std::string& path)
 {
+    std::string targetPath = path;
+
+    if (!Filesystem::Exists(targetPath))
+    {
+        if (targetPath == "models/error.glb")
+        {
+            return;
+        }
+
+        Console::Warn("Model not found: " + targetPath);
+        targetPath = "models/error.glb";
+
+        if (m_propGroups.find(targetPath) != m_propGroups.end())
+        {
+            m_propGroups[path] = m_propGroups[targetPath];
+            m_propGroups[path].instances.clear();
+            return;
+        }
+    }
+
     cgltf_options options = {};
     cgltf_data* data = nullptr;
 
-    std::string fullPath = Filesystem::GetFullPath(path);
+    std::string fullPath = Filesystem::GetFullPath(targetPath);
     cgltf_result result = cgltf_parse_file(&options, fullPath.c_str(), &data);
 
     if (result != cgltf_result_success)
     {
         Console::Error("Failed to parse GLB at: " + fullPath);
+        if (targetPath != "models/error.glb")
+        {
+            LoadModel("models/error.glb");
+            m_propGroups[path] = m_propGroups["models/error.glb"];
+            m_propGroups[path].instances.clear();
+        }
         return;
     }
 
