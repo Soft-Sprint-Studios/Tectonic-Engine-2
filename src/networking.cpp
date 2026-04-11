@@ -79,7 +79,8 @@ namespace Networking
 
             float startTime = Time::TotalTime();
 
-            if (getaddrinfo(host.c_str(), "80", &hints, &res) != 0) {
+            if (getaddrinfo(host.c_str(), "80", &hints, &res) != 0) 
+            {
                 Console::Error("Ping: Failed to resolve " + host);
                 return;
             }
