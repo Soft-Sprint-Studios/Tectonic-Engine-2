@@ -37,6 +37,9 @@ R_Sky::~R_Sky()
 
 bool R_Sky::Init(const std::string& skyName)
 {
+    if (m_cubemapTexture != 0) 
+        glDeleteTextures(1, &m_cubemapTexture);
+
     m_shader.Load("shaders/sky.vert", "shaders/sky.frag");
 
     float skyboxVertices[] = {

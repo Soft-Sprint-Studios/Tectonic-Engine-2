@@ -45,6 +45,7 @@ R_Models::~R_Models()
 
 bool R_Models::Init(const BSP::MapData& mapData)
 {
+    Shutdown();
     for(const auto & prop : mapData.staticProps)
     {
         // 1. Build Visual Transform (Includes Scaling)

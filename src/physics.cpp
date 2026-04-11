@@ -136,6 +136,7 @@ namespace Physics
             s_modelMeshes.clear();
         }
 
+        s_lastFramePairs.clear();
         delete s_dynamicsWorld; 
         s_dynamicsWorld = nullptr;
         delete s_solver; 

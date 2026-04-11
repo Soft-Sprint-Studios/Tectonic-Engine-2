@@ -40,6 +40,7 @@ R_BSP::~R_BSP()
 
 bool R_BSP::Init(const BSP::MapData& map)
 {
+    Shutdown();
     if (!map.loaded)
     {
         return false;

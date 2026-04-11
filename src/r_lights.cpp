@@ -39,6 +39,7 @@ R_Lights::~R_Lights()
 
 bool R_Lights::Init()
 {
+    Shutdown();
     m_shadowSpotShader.Load("shaders/shadow_spot.vert", "shaders/shadow_spot.frag");
     m_shadowPointShader.Load("shaders/shadow_point.vert", "shaders/shadow_point.frag", "shaders/shadow_point.geom");
 

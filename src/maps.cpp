@@ -32,6 +32,7 @@
 #include "discord.h"
 #include "cubemap.h"
 #include "dynamic_light.h"
+#include "particles.h"
 
 namespace Maps
 {
@@ -58,6 +59,8 @@ namespace Maps
         EntityManager::Shutdown();
         Physics::Shutdown();
         DynamicLights::Clear();
+        Particles::Shutdown();
+        Sprites::Clear();
 
         Physics::Init();
         EntityManager::Init();
