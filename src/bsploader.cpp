@@ -203,13 +203,13 @@ namespace BSP
                 const Face& face = d_faces[faceIdx];
                 const TexInfo& tex = d_texinfos[face.texinfo];
 
-                if (tex.flags & 0x0008) // If we are water
+                if (tex.flags & SURF_WATER) // If we are water
                 {
                     waterFaces.push_back(faceIdx);
                     continue;
                 }
 
-                if (tex.flags & 0x0080 || tex.flags & 0x0004 || tex.flags & 0x0002)
+                if (tex.flags & SURF_NODRAW || tex.flags & SURF_SKY || tex.flags & SURF_SKY2D)
                     continue; // Skip nodraw/triggers
 
                 const TexData& td = d_texdatas[tex.texdata];
@@ -229,7 +229,7 @@ namespace BSP
                 // Determine if this entire batch is bumped based on the first face
                 const Face& firstFace = d_faces[faceIndices[0]];
                 const TexInfo& firstTex = d_texinfos[firstFace.texinfo];
-                dc.isBumped = (firstTex.flags & 0x0800) != 0;
+                dc.isBumped = (firstTex.flags & SURF_BUMPED) != 0;
 
                 for (int faceIdx : faceIndices)
                 {
@@ -526,7 +526,7 @@ namespace BSP
             int lw = face.lightmapTextureSizeInLuxels[0] + 1;
             int lh = face.lightmapTextureSizeInLuxels[1] + 1;
 
-            bool isBumped = (tex.flags & 0x0800) != 0;
+            bool isBumped = (tex.flags & SURF_BUMPED) != 0;
             int numMaps = isBumped ? 4 : 1;
             bool hasLM = (face.lightofs >= 0 && (face.lightofs + (lw * lh * 4 * numMaps)) <= m_lightingLength);
 

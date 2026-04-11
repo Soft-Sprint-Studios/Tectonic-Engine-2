@@ -38,7 +38,13 @@ namespace BSP
     constexpr int32_t VBSP_VERSION_MIN = 19;
     constexpr int32_t HEADER_LUMPS = 64;
 
-    constexpr float MAPSCALE = 0.03125f;
+    constexpr float MAPSCALE = 1.0f / 32.0f;
+
+    constexpr int32_t SURF_SKY2D = 0x0002; // Skybox
+    constexpr int32_t SURF_SKY = 0x0004; // Also skybox?
+    constexpr int32_t SURF_WATER = 0x0008; // Seems to be water
+    constexpr int32_t SURF_NODRAW = 0x0080; // Nodraw
+    constexpr int32_t SURF_BUMPED = 0x0800; // Bumped lightmaps
 
     enum LumpType
     {
