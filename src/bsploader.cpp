@@ -194,11 +194,20 @@ namespace BSP
 
             const Model& worldModel = d_models[0];
 
+            m_map.drawCalls.clear();
+            std::vector<int> waterFaces;
+
             for (int i = 0; i < worldModel.numfaces; i++)
             {
                 int faceIdx = worldModel.firstface + i;
                 const Face& face = d_faces[faceIdx];
                 const TexInfo& tex = d_texinfos[face.texinfo];
+
+                if (tex.flags & 0x0008) // If we are water
+                {
+                    waterFaces.push_back(faceIdx);
+                    continue;
+                }
 
                 if (tex.flags & 0x0080 || tex.flags & 0x0004 || tex.flags & 0x0002)
                     continue; // Skip nodraw/triggers
@@ -236,6 +245,28 @@ namespace BSP
                 dc.count = (uint32_t)m_map.renderVertices.size() - dc.start;
                 if (dc.count > 0) 
                     m_map.drawCalls.push_back(dc);
+            }
+
+            // Process water brush
+            m_map.waterSurfaces.clear();
+            if (!waterFaces.empty())
+            {
+                WaterSurface s;
+                s.start = (uint32_t)m_map.renderVertices.size();
+                s.height = 0;
+
+                for (int faceIdx : waterFaces)
+                {
+                    ProcessFace(faceIdx);
+                }
+
+                s.count = (uint32_t)m_map.renderVertices.size() - s.start;
+
+                for (uint32_t v = s.start; v < m_map.renderVertices.size(); ++v)
+                    s.height += m_map.renderVertices[v].position.y;
+                s.height /= s.count;
+
+                m_map.waterSurfaces.push_back(s);
             }
 
             // Process brush models for entities

@@ -51,6 +51,11 @@ public:
     void Draw(const Shader& shader, const Frustum& frustum, bool depthOnly = false);
     void Shutdown();
 
+    GLuint GetVAO() const 
+    { 
+        return m_vao; 
+    }
+
 private:
     GLuint m_vao;
     GLuint m_vbo;

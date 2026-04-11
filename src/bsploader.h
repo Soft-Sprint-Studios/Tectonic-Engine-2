@@ -236,10 +236,17 @@ namespace BSP
         CollisionData brushCollision;
     };
 
+    struct WaterSurface 
+    {
+        uint32_t start, count;
+        float height;
+    };
+
     struct MapData 
     {
         std::vector<Vertex> renderVertices;
         std::vector<DrawCall> drawCalls;
+        std::vector<WaterSurface> waterSurfaces;
         std::vector<StaticPropInstance> staticProps;
         CollisionData collision;
         std::vector<EntityData> entities;

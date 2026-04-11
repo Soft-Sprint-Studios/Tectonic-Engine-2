@@ -22,47 +22,42 @@
  * SOFTWARE.
  */
 #pragma once
-#include "window.h"
 #include "shader.h"
+#include "texture.h"
 #include "camera.h"
-#include "r_postprocess.h"
-#include "r_bsp.h"
-#include "r_models.h"
-#include "r_sky.h"
-#include "r_particles.h"
-#include "r_lights.h"
-#include "r_sprites.h"
-#include "r_waters.h"
-#include "r_waters.h"
-#include "cubemap.h"
+#include <vector>
 #include <memory>
+#include <glm/glm.hpp>
+#include <glad/glad.h>
 
-class Renderer
+struct WaterSurface
+{
+    uint32_t start;
+    uint32_t count;
+    float height;
+};
+
+class R_Waters
 {
 public:
-    Renderer();
-    ~Renderer();
-
-    bool Init(Window& window);
-    bool LoadMap(const std::string& path);
+    void Init(int width, int height, int downsample);
+    void AddSurface(const WaterSurface& surface);
+    void ClearSurfaces();
+    void RenderReflection(class Renderer* renderer, const Camera& mainCam);
+    void Draw(const Camera& camera, GLuint vao);
     void Shutdown();
-    void Render(Camera& camera);
-    void RenderWorld(Camera& camera, GLuint cubemapToExclude = 0, bool drawWater = true);
-    void OnWindowResize(int w, int h);
 
 private:
-    bool m_drawingWater = false;
-    void DrawWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater);
-    Window* m_windowRef;
-    Shader m_worldShader;
-
-    // Sub-renderers
-    std::unique_ptr<R_PostProcess> m_postProcess;
-    std::unique_ptr<R_BSP> m_bspRenderer;
-    std::unique_ptr<R_Models> m_modelRenderer;
-    std::unique_ptr<R_Sky> m_skyRenderer;
-    std::unique_ptr<R_Particles> m_particleRenderer;
-    std::unique_ptr<R_Lights> m_lightRenderer;
-    std::unique_ptr<R_Sprites> m_spriteRenderer;
-    std::unique_ptr<R_Waters> m_waterRenderer;
+    Shader m_shader;
+    std::vector<WaterSurface> m_surfaces;
+    std::vector<GLint> m_starts;
+    std::vector<GLsizei> m_counts;
+    GLuint m_reflectFBO = 0;
+    GLuint m_reflectTex = 0;
+    GLuint m_reflectRBO = 0;
+    glm::mat4 m_reflectView;
+    glm::mat4 m_reflectProj;
+    std::shared_ptr<Texture> m_normalMap;
+    std::shared_ptr<Texture> m_dudvMap;
+    int m_width, m_height;
 };

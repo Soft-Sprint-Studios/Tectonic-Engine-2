@@ -43,6 +43,7 @@ CVar r_fov("fov", "75.0", CVAR_SAVE);
 CVar r_skybox("r_skybox", "1", CVAR_SAVE);
 CVar r_wireframe("r_wireframe", "0", CVAR_NONE);
 CVar r_fullbright("r_fullbright", "0", CVAR_NONE);
+CVar r_water_downsample("r_water_downsample", "2", CVAR_SAVE);
 
 Renderer::Renderer() : m_windowRef(nullptr)
 {
@@ -74,6 +75,9 @@ bool Renderer::Init(Window& window)
     m_lightRenderer = std::make_unique<R_Lights>();
     m_spriteRenderer = std::make_unique<R_Sprites>();
 
+    m_waterRenderer = std::make_unique<R_Waters>();
+    m_waterRenderer->Init(1280, 720, r_water_downsample.GetInt());
+
     return true;
 }
 
@@ -94,6 +98,12 @@ bool Renderer::LoadMap(const std::string& path)
     m_lightRenderer->Init();
     m_spriteRenderer->Init();
 
+    m_waterRenderer->ClearSurfaces();
+    for (const auto& s : map.waterSurfaces)
+    {
+        m_waterRenderer->AddSurface({ s.start, s.count, s.height });
+    }
+
     Physics::AddBSPCollision(map.collision.vertices, map.collision.indices);
 
     for (const auto& entData : map.entities)
@@ -104,7 +114,7 @@ bool Renderer::LoadMap(const std::string& path)
     return true;
 }
 
-void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude)
+void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater)
 {
     m_worldShader.Bind();
     m_worldShader.SetMat4("u_projection", camera.GetProjectionMatrix());
@@ -162,6 +172,12 @@ void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude)
         m_modelRenderer->Draw(m_worldShader, frustum);
     }
 
+    // Draw water
+    if (m_waterRenderer && drawWater)
+    {
+        m_waterRenderer->Draw(camera, m_bspRenderer->GetVAO());
+    }
+
     m_worldShader.SetInt("u_useCubemap", 0);
 
     // Draw sky
@@ -176,17 +192,18 @@ void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude)
         m_particleRenderer->Draw(camera);
     }
 
+    // Draw sprites
     if (m_spriteRenderer)
     {
         m_spriteRenderer->Draw(camera, Sprites::GetActiveSprites());
     }
 }
 
-void Renderer::RenderWorld(Camera& camera, GLuint cubemapToExclude)
+void Renderer::RenderWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater)
 {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    DrawWorld(camera, cubemapToExclude);
+    DrawWorld(camera, cubemapToExclude, drawWater);
 }
 
 void Renderer::Render(Camera& camera)
@@ -204,6 +221,11 @@ void Renderer::Render(Camera& camera)
 
     if (r_wireframe.GetInt() > 0)
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+    if (m_waterRenderer)
+    {
+        m_waterRenderer->RenderReflection(this, camera);
+    }
 
     m_postProcess->Begin();
     glViewport(0, 0, w, h);
@@ -272,5 +294,11 @@ void Renderer::Shutdown()
     {
         m_spriteRenderer->Shutdown();
         m_spriteRenderer.reset();
+    }
+
+    if (m_waterRenderer)
+    {
+        m_waterRenderer->Shutdown();
+        m_waterRenderer.reset();
     }
 }
