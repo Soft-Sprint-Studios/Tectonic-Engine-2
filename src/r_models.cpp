@@ -66,8 +66,28 @@ bool R_Models::Init(const BSP::MapData& mapData)
         inst.transform = m_visual;
 
         auto& group = m_propGroups[prop.modelPath];
-        inst.worldMins = prop.position + (group.localMins * BSP::MAPSCALE);
-        inst.worldMaxs = prop.position + (group.localMaxs * BSP::MAPSCALE);
+
+        glm::vec3 corners[8] = 
+        {
+            group.localMins,
+            { group.localMaxs.x, group.localMins.y, group.localMins.z },
+            { group.localMins.x, group.localMaxs.y, group.localMins.z },
+            { group.localMins.x, group.localMins.y, group.localMaxs.z },
+            { group.localMaxs.x, group.localMaxs.y, group.localMins.z },
+            { group.localMins.x, group.localMaxs.y, group.localMaxs.z },
+            { group.localMaxs.x, group.localMins.y, group.localMaxs.z },
+            group.localMaxs
+        };
+
+        inst.worldMins = glm::vec3(FLT_MAX);
+        inst.worldMaxs = glm::vec3(-FLT_MAX);
+
+        for (int i = 0; i < 8; i++)
+        {
+            glm::vec3 worldCorner = glm::vec3(m_visual * glm::vec4(corners[i], 1.0f));
+            inst.worldMins = glm::min(inst.worldMins, worldCorner);
+            inst.worldMaxs = glm::max(inst.worldMaxs, worldCorner);
+        }
 
         // If this instance has baked vertex colors
         for (int b = 0; b < 3; b++)
