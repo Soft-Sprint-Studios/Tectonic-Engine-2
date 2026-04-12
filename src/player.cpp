@@ -31,6 +31,13 @@
 #include <glm/gtx/string_cast.hpp>
 
 CVar sensitivity("sensitivity", "1.0", CVAR_SAVE);
+CVar g_walk_speed("g_walk_speed", "3.64", CVAR_SAVE);
+CVar g_crouch_speed("g_crouch_speed", "1.82", CVAR_SAVE);
+CVar g_noclip_speed("g_noclip_speed", "4.0", CVAR_SAVE);
+CVar g_jump_force("g_jump_force", "5.0", CVAR_SAVE);
+CVar g_view_height("g_view_height", "1.5", CVAR_SAVE);
+CVar g_crouch_height("g_crouch_height", "0.7", CVAR_SAVE);
+CVar g_view_interp("g_view_interp", "12.0", CVAR_SAVE);
 
 CON_COMMAND(noclip, "Toggles player noclip mode")
 {
@@ -117,7 +124,7 @@ void Player::Think(float deltaTime)
 
     if (m_input->GetKeyDown(SDL_SCANCODE_SPACE) && m_character->onGround() && !m_noclip)
     {
-        m_character->jump(btVector3(0, 5.0f, 0));
+        m_character->jump(btVector3(0, g_jump_force.GetFloat(), 0));
     }
 
     bool wantCrouch = m_input->GetKey(SDL_SCANCODE_LCTRL);
@@ -159,11 +166,11 @@ void Player::Think(float deltaTime)
     glm::vec3 right = glm::normalize(glm::cross(flatForward, glm::vec3(0, 1, 0)));
 
     glm::vec3 wishDir(0.0f);
-    float baseSpeed = 3.64f;
+    float baseSpeed = g_walk_speed.GetFloat();
 
     if (m_isCrouching && !m_noclip)
     {
-        baseSpeed = 1.82f;
+        baseSpeed = g_crouch_speed.GetFloat();
     }
 
     glm::vec3 moveForward = m_noclip ? forward : flatForward;
@@ -185,7 +192,7 @@ void Player::Think(float deltaTime)
     // If we are in noclip then move directly
     if (m_noclip)
     {
-        m_camera->position += wishDir * deltaTime;
+        m_camera->position += wishDir * g_noclip_speed.GetFloat() * deltaTime;
 
         btTransform trans;
         trans.setIdentity();
@@ -199,8 +206,8 @@ void Player::Think(float deltaTime)
         glm::vec3 walkDisplacement = wishDir * physicsStep;
         m_character->setWalkDirection(btVector3(walkDisplacement.x, 0.0f, walkDisplacement.z));
 
-        float targetHeight = m_isCrouching ? 0.7f : 1.5f;
-        float interpFactor = 1.0f - exp(-12.0f * deltaTime);
+        float targetHeight = m_isCrouching ? g_crouch_height.GetFloat() : g_view_height.GetFloat();
+        float interpFactor = 1.0f - exp(-g_view_interp.GetFloat() * deltaTime);
         m_viewHeight = glm::mix(m_viewHeight, targetHeight, interpFactor);
 
         btTransform currentTransform = m_character->getGhostObject()->getWorldTransform();
