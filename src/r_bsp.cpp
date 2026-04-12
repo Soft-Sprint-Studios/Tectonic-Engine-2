@@ -73,6 +73,8 @@ bool R_BSP::Init(const BSP::MapData& map)
     glVertexAttribPointer(10, 3, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, tangent));
     glEnableVertexAttribArray(11);
     glVertexAttribPointer(11, 3, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, bitangent));
+    glEnableVertexAttribArray(12);
+    glVertexAttribPointer(12, 2, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, lm_uv5));
 
     glBindVertexArray(0);
 
@@ -84,7 +86,7 @@ bool R_BSP::Init(const BSP::MapData& map)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, map.lightmapAtlasWidth, map.lightmapAtlasHeight, 0, GL_RGB, GL_FLOAT, map.lightmapAtlas.data());
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, map.lightmapAtlasWidth, map.lightmapAtlasHeight, 0, GL_RGBA, GL_FLOAT, map.lightmapAtlas.data());
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 

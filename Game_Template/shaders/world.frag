@@ -3,9 +3,10 @@ in centroid vec2 LmCoord1;
 in centroid vec2 LmCoord2;
 in centroid vec2 LmCoord3;
 in centroid vec2 LmCoord4;
-in centroid vec3 Color;
-in centroid vec3 Color2;
-in centroid vec3 Color3;
+in centroid vec2 LmCoord5;
+in centroid vec4 Color;
+in centroid vec4 Color2;
+in centroid vec4 Color3;
 in vec3 FragPos;
 in centroid mat3 TBN;
 
@@ -166,7 +167,7 @@ void main()
 
         if (u_isModel)
         {
-            diffuseLight = Color * w1 + Color2 * w2 + Color3 * w3;
+            diffuseLight = Color.rgb * w1 + Color2.rgb * w2 + Color3.rgb * w3;
         }
         else
         {
@@ -176,9 +177,9 @@ void main()
             diffuseLight = l1 * w1 + l2 * w2 + l3 * w3;
         }
 
-        vec3 light1 = u_isModel ? Color : texture(u_lightmap, LmCoord2).rgb;
-        vec3 light2 = u_isModel ? Color2 : texture(u_lightmap, LmCoord3).rgb;
-        vec3 light3 = u_isModel ? Color3 : texture(u_lightmap, LmCoord4).rgb;
+        vec3 light1 = u_isModel ? Color.rgb : texture(u_lightmap, LmCoord2).rgb;
+        vec3 light2 = u_isModel ? Color2.rgb : texture(u_lightmap, LmCoord3).rgb;
+        vec3 light3 = u_isModel ? Color3.rgb : texture(u_lightmap, LmCoord4).rgb;
 
         vec3 H1 = normalize(TBN * basis0 + viewDir);
         vec3 H2 = normalize(TBN * basis1 + viewDir);
@@ -192,7 +193,7 @@ void main()
     }
     else
     {
-        diffuseLight = u_isModel ? Color : texture(u_lightmap, LmCoord1).rgb;
+        diffuseLight = u_isModel ? Color.rgb : texture(u_lightmap, LmCoord1).rgb;
     }
 
     // Environmental Lighting Phase
@@ -356,7 +357,7 @@ void main()
     {
         if (u_isModel) 
         {
-            FragColor = vec4(Color, 1.0);
+            FragColor = vec4(Color.rgb, 1.0);
         }
         else 
         {
@@ -371,7 +372,7 @@ void main()
             float w2 = max(dot(tangentNormal, basis1), 0.0);
             float w3 = max(dot(tangentNormal, basis2), 0.0);
 
-            FragColor = vec4(Color * w1 + Color2 * w2 + Color3 * w3, 1.0);
+            FragColor = vec4(Color.rgb * w1 + Color2.rgb * w2 + Color3.rgb * w3, 1.0);
         }
         else 
         {

@@ -4,12 +4,13 @@ layout (location = 2) in vec2 aLmCoord1;
 layout (location = 3) in vec2 aLmCoord2;
 layout (location = 4) in vec2 aLmCoord3;
 layout (location = 5) in vec2 aLmCoord4;
-layout (location = 6) in vec3 aColor;
-layout (location = 7) in vec3 aColor2;
-layout (location = 8) in vec3 aColor3;
+layout (location = 6) in vec4 aColor;
+layout (location = 7) in vec4 aColor2;
+layout (location = 8) in vec4 aColor3;
 layout (location = 9) in vec3 aNormal;
 layout (location = 10) in vec3 aTangent;
 layout (location = 11) in vec3 aBitangent;
+layout (location = 12) in vec2 aLmCoord5;
 
 uniform mat4 u_model;
 uniform mat4 u_view;
@@ -20,9 +21,10 @@ out centroid vec2 LmCoord1;
 out centroid vec2 LmCoord2;
 out centroid vec2 LmCoord3;
 out centroid vec2 LmCoord4;
-out centroid vec3 Color;
-out centroid vec3 Color2;
-out centroid vec3 Color3;
+out centroid vec2 LmCoord5;
+out centroid vec4 Color;
+out centroid vec4 Color2;
+out centroid vec4 Color3;
 out vec3 FragPos;
 out centroid mat3 TBN;
 
@@ -43,6 +45,7 @@ void main()
     LmCoord2 = aLmCoord2;
     LmCoord3 = aLmCoord3;
     LmCoord4 = aLmCoord4;
+    LmCoord5 = aLmCoord5;
     
     Color = aColor;
     Color2 = aColor2;

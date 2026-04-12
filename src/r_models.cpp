@@ -97,7 +97,7 @@ bool R_Models::Init(const BSP::MapData& mapData)
             {
                 glGenBuffers(1, &inst.colorVbo[b]);
                 glBindBuffer(GL_ARRAY_BUFFER, inst.colorVbo[b]);
-                glBufferData(GL_ARRAY_BUFFER, prop.vertexColors[b].size() * sizeof(glm::vec3), prop.vertexColors[b].data(), GL_STATIC_DRAW);
+                glBufferData(GL_ARRAY_BUFFER, prop.vertexColors[b].size() * sizeof(glm::vec4), prop.vertexColors[b].data(), GL_STATIC_DRAW);
             }
         }
         inst.isBumped = prop.hasBumpedLighting;
@@ -309,12 +309,12 @@ void R_Models::Draw(const Shader& shader, const Frustum& frustum, bool depthOnly
                         {
                             glEnableVertexAttribArray(6 + b);
                             glBindBuffer(GL_ARRAY_BUFFER, inst.colorVbo[b]);
-                            glVertexAttribPointer(6 + b, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)(uintptr_t)(mesh.vertexOffset * sizeof(glm::vec3)));
+                            glVertexAttribPointer(6 + b, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4), (void*)(uintptr_t)(mesh.vertexOffset * sizeof(glm::vec4)));
                         }
                         else
                         {
                             glDisableVertexAttribArray(6 + b);
-                            glVertexAttrib3f(6 + b, 1.0f, 1.0f, 1.0f);
+                            glVertexAttrib4f(6 + b, 1.0f, 1.0f, 1.0f, 1.0f);
                         }
                     }
 

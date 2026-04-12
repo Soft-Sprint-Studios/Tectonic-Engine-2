@@ -139,7 +139,7 @@ namespace BSP
 
             m_map.lightmapAtlasWidth = 4096;
             m_map.lightmapAtlasHeight = 4096;
-            m_map.lightmapAtlas.assign(m_map.lightmapAtlasWidth * m_map.lightmapAtlasHeight * 3, 1.0f);
+            m_map.lightmapAtlas.assign(m_map.lightmapAtlasWidth * m_map.lightmapAtlasHeight * 4, 1.0f);
         }
 
         void ParseEntities()
@@ -421,7 +421,7 @@ namespace BSP
 
                 // Collect both standard VHV and VHD files
                 if (*(uint16_t*)(pakData + offset + 8) == 0 &&
-                    (name.find(".vhv") != std::string::npos || name.find(".vhd") != std::string::npos))
+                    name.find(".vhv") != std::string::npos)
                 {
                     vhvFiles[name] = pakData + offset + 30 + nameLen + extraLen;
                 }
@@ -433,86 +433,52 @@ namespace BSP
 
             for (size_t i = 0; i < m_map.staticProps.size(); i++)
             {
-                std::string vhvName = "sp_hdr_" + std::to_string(i) + ".vhv";
-                if (vhvFiles.find(vhvName) == vhvFiles.end()) vhvName = "sp_" + std::to_string(i) + ".vhv";
+                std::string vhvName = (m_header->version >= 21) ? "sp_hdr_" + std::to_string(i) + ".vhv" : "sp_" + std::to_string(i) + ".vhv";
+                if (vhvFiles.find(vhvName) == vhvFiles.end() && m_header->version >= 21) vhvName = "sp_" + std::to_string(i) + ".vhv";
 
                 if (vhvFiles.count(vhvName))
                 {
                     const uint8_t* vhvData = vhvFiles[vhvName];
+                    int32_t vertexSize = *(int32_t*)(vhvData + 12);
                     int32_t totalVerts = *(int32_t*)(vhvData + 16);
                     int32_t numMeshes = *(int32_t*)(vhvData + 20);
 
-                    if (*(int32_t*)vhvData != 2)
+                    if (*(int32_t*)vhvData != 2) 
                         continue;
 
-                    m_map.staticProps[i].vertexColors[0].assign(totalVerts, glm::vec3(1.0f));
+                    int numStreams = (vertexSize >= 12) ? 3 : 1;
+                    m_map.staticProps[i].hasBumpedLighting = (numStreams == 3);
+
+                    for (int s = 0; s < numStreams; s++)
+                        m_map.staticProps[i].vertexColors[s].assign(totalVerts, glm::vec4(1.0f));
+
                     uint32_t colorIdx = 0;
                     for (int m = 0; m < numMeshes; m++)
                     {
                         const uint8_t* meshPtr = vhvData + VHV_FILE_HEADER_SIZE + (m * VHV_MESH_HEADER_SIZE);
                         uint32_t count = *(uint32_t*)(meshPtr + 4);
                         uint32_t rawOfs = *(uint32_t*)(meshPtr + 8);
-                        if (count == 0 || rawOfs == 0)
+                        if (count == 0 || rawOfs == 0) 
                             continue;
 
                         const uint8_t* colors = (rawOfs < VHV_FILE_HEADER_SIZE) ?
-                            (vhvData + VHV_FILE_HEADER_SIZE + (numMeshes * VHV_MESH_HEADER_SIZE) + rawOfs) :
-                            (vhvData + rawOfs);
+                            (vhvData + VHV_FILE_HEADER_SIZE + (numMeshes * VHV_MESH_HEADER_SIZE) + rawOfs) : (vhvData + rawOfs);
 
                         for (uint32_t v = 0; v < count && colorIdx < (uint32_t)totalVerts; v++)
                         {
-                            // They are stored in BGRA for some reason..
-                            float b = colors[v * 4 + 0] / 255.0f;
-                            float g = colors[v * 4 + 1] / 255.0f;
-                            float r = colors[v * 4 + 2] / 255.0f;
-                            m_map.staticProps[i].vertexColors[0][colorIdx++] = glm::vec3(r, g, b);
-                        }
-                    }
-                }
-
-                std::string vhdName = "sp_hdr_" + std::to_string(i) + ".vhd";
-                if (vhvFiles.find(vhdName) == vhvFiles.end()) vhdName = "sp_" + std::to_string(i) + ".vhd";
-
-                if (vhvFiles.count(vhdName))
-                {
-                    const uint8_t* vhdData = vhvFiles[vhdName];
-                    if (*(int32_t*)vhdData != 2)
-                        continue;
-
-                    int32_t totalVerts = *(int32_t*)(vhdData + 16);
-                    int32_t numMeshes = *(int32_t*)(vhdData + 20);
-
-                    for (int b = 0; b < 3; b++)
-                    {
-                        m_map.staticProps[i].vertexColors[b].assign(totalVerts, glm::vec3(0.0f));
-                    }
-
-                    uint32_t colorIdx = 0;
-                    for (int m = 0; m < numMeshes; m++)
-                    {
-                        const uint8_t* meshPtr = vhdData + VHV_FILE_HEADER_SIZE + (m * VHV_MESH_HEADER_SIZE);
-                        uint32_t count = *(uint32_t*)(meshPtr + 4);
-                        uint32_t rawOfs = *(uint32_t*)(meshPtr + 8);
-                        if (count == 0 || rawOfs == 0)
-                            continue;
-
-                        const uint8_t* colors = vhdData + rawOfs;
-
-                        for (uint32_t v = 0; v < count && colorIdx < (uint32_t)totalVerts; v++)
-                        {
-                            for (int b = 0; b < 3; b++)
+                            for (int s = 0; s < numStreams; s++)
                             {
-                                int baseIdx = (v * 3 + b) * 4;
+                                int offset = (v * numStreams + s) * 4;
                                 // They are stored in BGRA for some reason..
-                                float blue = colors[baseIdx + 0] / 255.0f;
-                                float green = colors[baseIdx + 1] / 255.0f;
-                                float red = colors[baseIdx + 2] / 255.0f;
-                                m_map.staticProps[i].vertexColors[b][colorIdx] = glm::vec3(red, green, blue);
+                                float b = colors[offset + 0] / 255.0f;
+                                float g = colors[offset + 1] / 255.0f;
+                                float r = colors[offset + 2] / 255.0f;
+                                float a = colors[offset + 3] / 255.0f;
+                                m_map.staticProps[i].vertexColors[s][colorIdx] = glm::vec4(r, g, b, a);
                             }
                             colorIdx++;
                         }
                     }
-                    m_map.staticProps[i].hasBumpedLighting = true;
                 }
             }
         }
@@ -528,14 +494,18 @@ namespace BSP
 
             bool isBumped = (tex.flags & SURF_BUMPED) != 0;
             int numMaps = isBumped ? 4 : 1;
-            bool hasLM = (face.lightofs >= 0 && (face.lightofs + (lw * lh * 4 * numMaps)) <= m_lightingLength);
 
-            int axs[4] = { 0 }, ays[4] = { 0 };
+            bool hasAlphaStream = isBumped && (m_header->version >= 21);
+            int totalMaps = numMaps + (hasAlphaStream ? 1 : 0);
+
+            bool hasLM = (face.lightofs >= 0 && (face.lightofs + (lw * lh * 4 * totalMaps)) <= m_lightingLength);
+
+            int axs[5] = { 0 }, ays[5] = { 0 };
             if (hasLM)
             {
-                for (int m = 0; m < numMaps; m++)
+                for (int m = 0; m < totalMaps; m++)
                 {
-                    PackLightmap(face.lightofs + (m * lw * lh * 4), lw, lh, axs[m], ays[m]);
+                    PackLightmap(face.lightofs + (m * lw * lh * 4), lw, lh, axs[m], ays[m], (m == 4));
                 }
             }
 
@@ -545,7 +515,7 @@ namespace BSP
                 LoadBrush(face, tex, td, axs, ays, hasLM, numMaps);
         }
 
-        void PackLightmap(int offset, int w, int h, int& outX, int& outY)
+        void PackLightmap(int offset, int w, int h, int& outX, int& outY, bool isRawAlpha = false)
         {
             if (m_atlasX + w > m_map.lightmapAtlasWidth)
             {
@@ -559,17 +529,30 @@ namespace BSP
             outX = m_atlasX;
             outY = m_atlasY;
 
-            const Color* src = (const Color*)(d_lighting + offset);
+            const uint8_t* src = d_lighting + offset;
             for (int y = 0; y < h; y++)
             {
                 for (int x = 0; x < w; x++)
                 {
-                    Color c = src[y * w + x];
-                    float power = std::pow(2.0f, c.exponent);
-                    int dest = ((outY + y) * m_map.lightmapAtlasWidth + (outX + x)) * 3;
-                    m_map.lightmapAtlas[dest + 0] = (c.r / 255.0f) * power;
-                    m_map.lightmapAtlas[dest + 1] = (c.g / 255.0f) * power;
-                    m_map.lightmapAtlas[dest + 2] = (c.b / 255.0f) * power;
+                    int dest = ((outY + y) * m_map.lightmapAtlasWidth + (outX + x)) * 4;
+                    int pixelIdx = (y * w + x) * 4;
+
+                    if (isRawAlpha)
+                    {
+                        m_map.lightmapAtlas[dest + 0] = src[pixelIdx + 0] / 255.0f;
+                        m_map.lightmapAtlas[dest + 1] = src[pixelIdx + 1] / 255.0f;
+                        m_map.lightmapAtlas[dest + 2] = src[pixelIdx + 2] / 255.0f;
+                        m_map.lightmapAtlas[dest + 3] = src[pixelIdx + 3] / 255.0f;
+                    }
+                    else
+                    {
+                        const Color* c = (const Color*)(src + pixelIdx);
+                        float power = std::pow(2.0f, c->exponent);
+                        m_map.lightmapAtlas[dest + 0] = (c->r / 255.0f) * power;
+                        m_map.lightmapAtlas[dest + 1] = (c->g / 255.0f) * power;
+                        m_map.lightmapAtlas[dest + 2] = (c->b / 255.0f) * power;
+                        m_map.lightmapAtlas[dest + 3] = 1.0f;
+                    }
                 }
             }
             m_atlasX += w;
@@ -619,6 +602,10 @@ namespace BSP
                         v.lm_uv2 = glm::vec2((axs[0] + lu + 0.5f) / m_map.lightmapAtlasWidth, (ays[0] + lv + 0.5f) / m_map.lightmapAtlasHeight);
                         v.lm_uv3 = glm::vec2((axs[1] + lu + 0.5f) / m_map.lightmapAtlasWidth, (ays[1] + lv + 0.5f) / m_map.lightmapAtlasHeight);
                         v.lm_uv4 = glm::vec2((axs[2] + lu + 0.5f) / m_map.lightmapAtlasWidth, (ays[2] + lv + 0.5f) / m_map.lightmapAtlasHeight);
+                        if (m_header->version >= 21)
+                        {
+                            v.lm_uv5 = glm::vec2((axs[4] + lu + 0.5f) / m_map.lightmapAtlasWidth, (ays[4] + lv + 0.5f) / m_map.lightmapAtlasHeight);
+                        }
                     }
                 }
 
@@ -722,6 +709,10 @@ namespace BSP
                             vert.lm_uv2 = glm::vec2((axs[0] + lu + 0.5f) / m_map.lightmapAtlasWidth, (ays[0] + lv + 0.5f) / m_map.lightmapAtlasHeight);
                             vert.lm_uv3 = glm::vec2((axs[1] + lu + 0.5f) / m_map.lightmapAtlasWidth, (ays[1] + lv + 0.5f) / m_map.lightmapAtlasHeight);
                             vert.lm_uv4 = glm::vec2((axs[2] + lu + 0.5f) / m_map.lightmapAtlasWidth, (ays[2] + lv + 0.5f) / m_map.lightmapAtlasHeight);
+                            if (m_header->version >= 21)
+                            {
+                                vert.lm_uv5 = glm::vec2((axs[4] + lu + 0.5f) / m_map.lightmapAtlasWidth, (ays[4] + lv + 0.5f) / m_map.lightmapAtlasHeight);
+                            }
                         }
                     }
                     float alpha = dv.alpha / 255.0f;

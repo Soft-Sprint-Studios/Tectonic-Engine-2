@@ -206,6 +206,7 @@ namespace BSP
         glm::vec2 lm_uv2;
         glm::vec2 lm_uv3;
         glm::vec2 lm_uv4;
+        glm::vec2 lm_uv5;
         glm::vec3 color;
     };
 
@@ -225,7 +226,7 @@ namespace BSP
         glm::vec3 position;
         glm::vec3 angles;
         float scale = 1.0f;
-        std::vector<glm::vec3> vertexColors[3];
+        std::vector<glm::vec4> vertexColors[3];
         bool hasBumpedLighting = false;
     };
 
