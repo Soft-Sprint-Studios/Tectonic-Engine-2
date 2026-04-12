@@ -419,7 +419,7 @@ namespace BSP
                 std::string path((const char*)(pakData + offset + 30), nameLen);
                 std::string name = path.substr(path.find_last_of("/\\") + 1);
 
-                // Collect both standard VHV and VHD files
+                // Collect both VHV
                 if (*(uint16_t*)(pakData + offset + 8) == 0 &&
                     name.find(".vhv") != std::string::npos)
                 {
