@@ -34,6 +34,7 @@ CVar sensitivity("sensitivity", "1.0", CVAR_SAVE);
 CVar g_walk_speed("g_walk_speed", "3.64", CVAR_SAVE);
 CVar g_crouch_speed("g_crouch_speed", "1.82", CVAR_SAVE);
 CVar g_noclip_speed("g_noclip_speed", "4.0", CVAR_SAVE);
+CVar g_sprint_speed("g_sprint_speed", "5.0", CVAR_SAVE);
 CVar g_jump_force("g_jump_force", "5.0", CVAR_SAVE);
 CVar g_view_height("g_view_height", "1.5", CVAR_SAVE);
 CVar g_crouch_height("g_crouch_height", "0.7", CVAR_SAVE);
@@ -166,7 +167,8 @@ void Player::Think(float deltaTime)
     glm::vec3 right = glm::normalize(glm::cross(flatForward, glm::vec3(0, 1, 0)));
 
     glm::vec3 wishDir(0.0f);
-    float baseSpeed = g_walk_speed.GetFloat();
+    bool isSprinting = m_input->GetKey(SDL_SCANCODE_LSHIFT) && !m_isCrouching;
+    float baseSpeed = isSprinting ? g_sprint_speed.GetFloat() : g_walk_speed.GetFloat();
 
     if (m_isCrouching && !m_noclip)
     {
@@ -192,7 +194,11 @@ void Player::Think(float deltaTime)
     // If we are in noclip then move directly
     if (m_noclip)
     {
-        m_camera->position += wishDir * g_noclip_speed.GetFloat() * deltaTime;
+        float noclipSpeed = g_noclip_speed.GetFloat();
+        if (isSprinting) 
+            noclipSpeed *= 2.0f;
+
+        m_camera->position += wishDir * noclipSpeed * deltaTime;
 
         btTransform trans;
         trans.setIdentity();
