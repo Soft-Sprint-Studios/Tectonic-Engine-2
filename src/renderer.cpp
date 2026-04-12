@@ -43,7 +43,6 @@ CVar r_fov("fov", "75.0", CVAR_SAVE);
 CVar r_skybox("r_skybox", "1", CVAR_SAVE);
 CVar r_wireframe("r_wireframe", "0", CVAR_NONE);
 CVar r_fullbright("r_fullbright", "0", CVAR_NONE);
-CVar r_water_downsample("r_water_downsample", "2", CVAR_SAVE);
 
 Renderer::Renderer() : m_windowRef(nullptr)
 {
@@ -76,7 +75,7 @@ bool Renderer::Init(Window& window)
     m_spriteRenderer = std::make_unique<R_Sprites>();
 
     m_waterRenderer = std::make_unique<R_Waters>();
-    m_waterRenderer->Init(1280, 720, r_water_downsample.GetInt());
+    m_waterRenderer->Init(1280, 720);
 
     return true;
 }

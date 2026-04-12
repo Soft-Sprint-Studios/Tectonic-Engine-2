@@ -40,7 +40,7 @@ struct WaterSurface
 class R_Waters
 {
 public:
-    void Init(int width, int height, int downsample);
+    void Init(int width, int height);
     void AddSurface(const WaterSurface& surface);
     void ClearSurfaces();
     void RenderReflection(class Renderer* renderer, const Camera& mainCam);

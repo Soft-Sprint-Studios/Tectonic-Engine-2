@@ -28,10 +28,14 @@
 #include "cvar.h"
 #include <algorithm>
 
-void R_Waters::Init(int width, int height, int downsample)
+CVar r_water_downsample("r_water_downsample", "2", CVAR_SAVE);
+
+void R_Waters::Init(int width, int height)
 {
-    m_width = width; m_height = height;
-    int ds = std::max(1, downsample);
+    m_width = width;
+    m_height = height;
+
+    int ds = std::max(1, r_water_downsample.GetInt());
     int fboW = width / ds;
     int fboH = height / ds;
 
@@ -89,7 +93,7 @@ void R_Waters::RenderReflection(Renderer* renderer, const Camera& mainCam)
     m_reflectProj = reflectCam.GetProjectionMatrix();
 
     glBindFramebuffer(GL_FRAMEBUFFER, m_reflectFBO);
-    int ds = std::max(1, CVar::Find("r_water_downsample")->GetInt());
+    int ds = std::max(1, r_water_downsample.GetInt());
     glViewport(0, 0, m_width / ds, m_height / ds);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
