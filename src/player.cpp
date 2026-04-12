@@ -159,11 +159,11 @@ void Player::Think(float deltaTime)
     glm::vec3 right = glm::normalize(glm::cross(flatForward, glm::vec3(0, 1, 0)));
 
     glm::vec3 wishDir(0.0f);
-    float baseSpeed = 10.0f;
+    float baseSpeed = 3.64f;
 
     if (m_isCrouching && !m_noclip)
     {
-        baseSpeed = 5.0f;
+        baseSpeed = 1.82f;
     }
 
     glm::vec3 moveForward = m_noclip ? forward : flatForward;
@@ -195,11 +195,13 @@ void Player::Think(float deltaTime)
     }
     else
     {
-        glm::vec3 displacement = wishDir * deltaTime;
-        m_character->setWalkDirection(btVector3(displacement.x, 0.0f, displacement.z));
+        float physicsStep = 1.0f / 60.0f;
+        glm::vec3 walkDisplacement = wishDir * physicsStep;
+        m_character->setWalkDirection(btVector3(walkDisplacement.x, 0.0f, walkDisplacement.z));
 
         float targetHeight = m_isCrouching ? 0.7f : 1.5f;
-        m_viewHeight = glm::mix(m_viewHeight, targetHeight, deltaTime * 12.0f);
+        float interpFactor = 1.0f - exp(-12.0f * deltaTime);
+        m_viewHeight = glm::mix(m_viewHeight, targetHeight, interpFactor);
 
         btTransform currentTransform = m_character->getGhostObject()->getWorldTransform();
         btVector3 bulletPos = currentTransform.getOrigin();

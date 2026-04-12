@@ -23,6 +23,7 @@
  */
 #include "timing.h"
 #include <SDL3/SDL.h>
+#include <algorithm>
 
 namespace Time
 {
@@ -48,7 +49,8 @@ namespace Time
         s_lastTicks = currentTicks;
 
         // Convert nanoseconds to float seconds
-        s_deltaTime = (float)((double)deltaNS / 1000000000.0);
+        float rawDelta = (float)((double)deltaNS / 1000000000.0);
+        s_deltaTime = std::clamp(rawDelta, 0.0001f, 0.066f);
         s_totalTime = (float)((double)(currentTicks - s_startTicks) / 1000000000.0);
 
         // FPS Calculation

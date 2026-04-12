@@ -191,8 +191,8 @@ void R_Lights::RenderShadowMaps(R_BSP* bsp, R_Models* models)
             pointFrustum.valid = false;
 
             m_shadowPointShader.SetMat4("u_model", glm::mat4(1.0f));
-            bsp->Draw(m_shadowPointShader, pointFrustum, true);
 
+            bsp->Draw(m_shadowPointShader, pointFrustum, true);
             models->Draw(m_shadowPointShader, pointFrustum, true);
         }
 
