@@ -28,7 +28,9 @@
 #include <stb_image.h>
 #include <glm/gtc/type_ptr.hpp>
 
-R_Sky::R_Sky() : m_vao(0), m_vbo(0), m_cubemapTexture(0) {}
+R_Sky::R_Sky() : m_vao(0), m_vbo(0), m_cubemapTexture(0) 
+{
+}
 
 R_Sky::~R_Sky() 
 { 
@@ -42,7 +44,8 @@ bool R_Sky::Init(const std::string& skyName)
 
     m_shader.Load("shaders/sky.vert", "shaders/sky.frag");
 
-    float skyboxVertices[] = {
+    float skyboxVertices[] = 
+    {
         -1.0f,  1.0f, -1.0f, -1.0f, -1.0f, -1.0f,  1.0f, -1.0f, -1.0f,  1.0f, -1.0f, -1.0f,  1.0f,  1.0f, -1.0f, -1.0f,  1.0f, -1.0f,
         -1.0f, -1.0f,  1.0f, -1.0f, -1.0f, -1.0f, -1.0f,  1.0f, -1.0f, -1.0f,  1.0f, -1.0f, -1.0f,  1.0f,  1.0f, -1.0f, -1.0f,  1.0f,
          1.0f, -1.0f, -1.0f,  1.0f, -1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f, -1.0f,  1.0f, -1.0f, -1.0f,
@@ -92,7 +95,7 @@ void R_Sky::LoadCubemap(const std::string& skyName)
         else
         {
             Console::Warn("Skybox: face [" + faces[i] + "] missing - using fallback color.");
-            uint8_t pink[3] = { 255, 0, 255 };
+            uint8_t pink[3] = { 0, 0, 0 };
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, pink);
         }
     }
