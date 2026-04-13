@@ -1,0 +1,326 @@
+//=============================================================================
+// Tectonic Engine 2 - Game Definition File (.fgd)
+//=============================================================================
+
+@mapsize(-32768, 32768)
+
+//-------------------------------------------------------------------------
+// Base Classes
+//-------------------------------------------------------------------------
+
+@BaseClass = Targetname
+[
+	targetname(target_source) : "Name" : : "The name that other entities refer to this entity by."
+]
+
+@BaseClass = Angles
+[ 
+	angles(angle) : "Pitch Yaw Roll (Y Z X)" : "0 0 0" : "Orientation in the world."
+]
+
+//-------------------------------------------------------------------------
+// Worldspawn
+//-------------------------------------------------------------------------
+
+@SolidClass = worldspawn : "The world entity."
+[
+	skyname(string) : "SkyBox Texture Name" : "sky_day01_01" : "The cubemap to use for the skybox."
+]
+
+//-------------------------------------------------------------------------
+// Player
+//-------------------------------------------------------------------------
+
+@PointClass base(Targetname, Angles) studio("models/editor/playerstart.mdl") = info_player_start :
+	"This entity indicates where the player will spawn."
+[
+]
+
+//-------------------------------------------------------------------------
+// Baked Lighting (Parsed by VBSP/VRAD)
+//-------------------------------------------------------------------------
+
+@PointClass base(Targetname) light() iconsprite("editor/light.vmt") = light :
+	"An invisible omnidirectional lightsource (Baked)."
+[
+	_light(color255) : "Brightness" : "255 255 255 200" : "Color and intensity of the light."
+	_lightHDR(color255) : "BrightnessHDR" : "-1 -1 -1 1"
+	_lightscaleHDR(float) : "BrightnessScaleHDR" : "1" : "Amount to scale the light by when compiling for HDR."
+	_constant_attn(string)	: "Constant" : "0"
+	_linear_attn(string)	: "Linear" : "0"
+	_quadratic_attn(string)	: "Quadratic" : "1"
+	_fifty_percent_distance(string) : "50 percent falloff distance" : "0": "Distance at which brightness should fall off to 50%. If set, overrides linear constant and quadratic paramaters."
+	_zero_percent_distance(string) : "0 percent falloff distance" : "0": "Distance at which brightness should fall off to negligible (1/256)%. Must set _fifty_percent_distance to use."
+	_hardfalloff(integer) : "hard falloff" : 0 : "If set, causes lights to fall to exactly zero beyond the zero percent distance. May cause unrealistic lightijng if not used carefully."
+]
+
+@PointClass base(Angles) iconsprite("editor/light_env.vmt") = light_environment : 
+	"Sets the color and angle of the baked sun and sky light."
+[
+	_light(color255) : "Brightness" : "255 255 255 200" : "Direct sun color."
+	_ambient(color255) : "Ambient" : "255 255 255 20" : "Sky/Shadow color."
+	pitch(integer) : "Pitch" : 0 : "The downward pitch of the sun (0 to -90)."
+]
+
+@PointClass base(Targetname, Angles) lightprop("models/editor/spot.mdl") lightcone() = light_spot :
+	"An invisible and directional spotlight (Baked)."
+[
+	_light(color255) : "Brightness" : "255 255 255 200"
+	_inner_cone(integer) : "Inner (bright) angle" : 30
+	_cone(integer) : "Outer (fading) angle" : 45
+	_lightHDR(color255) : "BrightnessHDR" : "-1 -1 -1 1"
+	_lightscaleHDR(float) : "BrightnessScaleHDR" : "1" : "Amount to scale the light by when compiling for HDR."
+	_constant_attn(string)	: "Constant" : "0"
+	_linear_attn(string)	: "Linear" : "0"
+	_quadratic_attn(string)	: "Quadratic" : "1"
+	_fifty_percent_distance(string) : "50 percent falloff distance" : "0": "Distance at which brightness should fall off to 50%. If set, overrides linear constant and quadratic paramaters."
+	_zero_percent_distance(string) : "0 percent falloff distance" : "0": "Distance at which brightness should fall off to negligible (1/256)%. Must set _fifty_percent_distance to use."
+	_hardfalloff(integer) : "hard falloff" : 0 : "If set, causes lights to fall to exactly zero beyond the zero percent distance. May cause unrealistic lightijng if not used carefully."
+]
+
+//-------------------------------------------------------------------------
+// Dynamic Lights
+//-------------------------------------------------------------------------
+
+@PointClass base(Targetname) iconsprite("editor/light.vmt") = light_dynamic_point :
+	"A dynamic point light."
+[
+	_light(color255) : "Light Color" : "255 255 255 200" : "Light color and intensity."
+	distance(float) : "Maximum Distance" : 500 : "Radius of the light."
+	volumetric_intensity(float) : "Volumetric Intensity" : 0 : "Multiplier for the volumetric fog (0 = off)."
+    volumetric_steps(float) : "Volumetric Steps" : 32 : "Raymarch steps inside the light volume."
+    
+    spawnflags(flags) =
+	[
+		1 : "Start Disabled" : 0
+		2 : "Cast Shadows" : 0
+		4 : "Static Shadows (Render Once)" : 0
+	]
+	style(choices) : "Appearance" : 0 =
+	[
+		0 : "Normal"
+		1 : "Flicker A"
+		2 : "Slow Strong Pulse"
+		3 : "Candle A"
+		4 : "Fast Strobe"
+		5 : "Gentle Pulse"
+		6 : "Flicker B"
+        7 : "Candle B"
+        8 : "Candle C"
+        9 : "Slow Strobe"
+        10 : "Fluorescent Flicker"
+        11 : "Slow Pulse No Black"
+		12 : "Underwater light mutation"
+	]
+    shadow_res(integer) : "Shadow Map Resolution" : 512
+]
+
+@PointClass base(Targetname, Angles) lightprop("models/editor/spot.mdl") lightcone() = light_dynamic_spot :
+	"A dynamic spotlight."
+[
+	_light(color255) : "Light Color" : "255 255 255 200" : "Light color and intensity."
+	distance(float) : "Maximum Distance" : 1000 : "Length of the spotlight."
+	_inner_cone(float) : "Inner Angle" : 30 : "Inner cone angle."
+	_cone(float) : "Outer Angle" : 45 : "Outer cone angle."
+    volumetric_intensity(float) : "Volumetric Intensity" : 0 : "Multiplier for the volumetric fog (0 = off)."
+    volumetric_steps(float) : "Volumetric Steps" : 32 : "Raymarch steps inside the light volume."
+
+    spawnflags(flags) =
+	[
+		1 : "Start Disabled" : 0
+		2 : "Cast Shadows" : 0
+		4 : "Static Shadows (Render Once)" : 0
+	]
+	style(choices) : "Appearance" : 0 =
+	[
+		0 : "Normal"
+		1 : "Flicker A"
+		2 : "Slow Strong Pulse"
+		3 : "Candle A"
+		4 : "Fast Strobe"
+		5 : "Gentle Pulse"
+		6 : "Flicker B"
+        7 : "Candle B"
+        8 : "Candle C"
+        9 : "Slow Strobe"
+        10 : "Fluorescent Flicker"
+        11 : "Slow Pulse No Black"
+		12 : "Underwater light mutation"
+	]
+    shadow_res(integer) : "Shadow Map Resolution" : 512
+]
+
+//-------------------------------------------------------------------------
+// Static Props (Baked Models)
+//-------------------------------------------------------------------------
+
+@PointClass base(Angles) color(255 255 0) studioprop() = prop_static :
+	"A model that doesn't move and has baked lighting."
+[
+	model(studio) : "World Model" : "" : "The GLB/Model file to use."
+	skin(integer) : "Skin" : 0 : "Skin index."
+	
+	solid(choices) : "Collisions" : 6 =
+	[
+		0: "Not Solid"
+		2: "Use Bounding Box"
+		6: "Use VPhysics"
+	]
+
+	disableshadows(choices) : "Disable Shadows" : 0 =
+	[
+		0 : "No"
+		1 : "Yes"
+	]
+
+	screenspacefade(choices) : "Screen Space Fade" : 0 =
+	[
+		0 : "No"
+		1 : "Yes"
+	]
+
+	fademindist(float) : "Start Fade Dist/Pixels" : -1 : "Distance at which the prop starts to fade (<0 = use fademaxdist)."
+	fademaxdist(float) : "End Fade Dist/Pixels" : 0 : "Maximum distance at which the prop is visible (0 = don't fade out)."
+	fadescale(float) : "Fade Scale" : 1
+	uniformscale(float) : "Uniform Scale" : 1
+
+	lightingorigin(target_destination) : "Lighting Origin" : "" : "Select an info_lighting to sample lighting from."
+	disablevertexlighting(choices) : "Disable Vertex lighting" : 0 =
+	[
+		0 : "No"
+		1 : "Yes"
+	]
+	disableselfshadowing(choices) : "Disable Self-Shadowing" : 0 =
+	[
+		0 : "No"
+		1 : "Yes"
+	]
+	ignorenormals(choices) : "Ignore surface normal for computing vertex lighting" : 0 =
+	[
+		0 : "No"
+		1 : "Yes"
+	]
+]
+
+//-------------------------------------------------------------------------
+// Game Entities
+//-------------------------------------------------------------------------
+
+@SolidClass base(Targetname) = trigger_multiple : 
+	"A trigger volume that can be fired multiple times."
+[
+	wait(float) : "Delay Before Reset" : "1" : "Time in seconds before the trigger can be activated again. Set to -1 to fire only once."
+	
+	input Enable(void) : "Enable the trigger."
+	input Disable(void) : "Disable the trigger."
+	input Toggle(void) : "Toggle the trigger state."
+
+	output OnTrigger(void) : "Fired when a player enters the trigger."
+]
+
+@SolidClass base(Targetname) = trigger_once : 
+	"A trigger volume that removes itself/disables after one use."
+[
+	input Enable(void) : "Enable the trigger."
+	input Disable(void) : "Disable the trigger."
+	input Toggle(void) : "Toggle the trigger state."
+
+	output OnTrigger(void) : "Fired when a player enters the trigger."
+]
+
+@SolidClass base(Targetname) = func_button : 
+	"A brush based entity that fires outputs when pressed."
+[
+	wait(float) : "Delay Before Reset" : "3" : "Amount of time before the button can be pressed again."
+	
+	output OnPressed(void) : "Fired when the button is pressed by a player."
+]
+
+@PointClass base(Targetname) iconsprite("editor/ambient_generic.vmt") = sound : 
+	"A positional 3D sound entity."
+[
+	message(string) : "Sound Name" : "" : "File path relative to sounds/ folder (e.g. ambient/wind.wav)"
+	health(float) : "Volume (0-10)" : "10" : "Volume from 0 to 10."
+	pitch(float) : "Pitch (0-100)" : "100" : "Pitch (default 100)."
+	radius(float) : "Radius" : "1250" : "The distance at which the sound becomes silent."
+
+	spawnflags(flags) =
+	[
+		1 : "Start Silent" : 0
+		2 : "Looping" : 0
+	]
+
+	input PlaySound(void) : "Starts the sound."
+	input StopSound(void) : "Stops the sound."
+	input ToggleSound(void) : "Toggles Play/Stop."
+	input EnableLoop(void) : "Sets the sound to loop."
+	input DisableLoop(void) : "Sets the sound to play once."
+	input ToggleLoop(void) : "Toggles the looping state."
+]
+
+@PointClass base(Targetname) studio("models/editor/camera.mdl") = postprocess_controller : "Controls global post-processing effects."
+[
+	vignette(float) : "Vignette Strength" : "0.0" : "How strong the vignette effect is. Range 0.0 to 1.0."
+	chroma(float) : "Chromatic Aberration Strength" : "0.0" : "How strong the chromatic aberration is. Good values are around 0.001 to 0.01."
+	grain(float) : "Film Grain Strength" : "0.0" : "How strong the film grain is. Good values are around 0.02 to 0.1."
+	bw(float) : "Black and White Strength" : "0.0" : "Percentage of grayscale to apply. Range 0.0 to 1.0."
+	fog_color(color255) : "Fog Color" : "128 144 179" : "The color of the fog. The engine will use this when fog is enabled by this entity."
+	fog_start(float) : "Fog Start Distance" : "50.0" : "Distance in world units where the fog begins to appear."
+	fog_end(float) : "Fog End Distance" : "200.0" : "Distance in world units where the fog is at its maximum density."
+	fog_affects_sky(choices) : "Fog Affects Sky" : 1 : "Whether the fog should also cover the skybox." =
+	[
+		0 : "No"
+		1 : "Yes"
+	]
+
+	spawnflags(flags) =
+	[
+		1 : "Start Disabled" : 0
+	]
+
+	input Enable(void) : "Enables the post-processing effects with its settings. Also enables fog."
+	input Disable(void) : "Disables all post-processing effects, including fog."
+	input Toggle(void) : "Toggles the post-processing effects on and off."
+	input SetVignette(float) : "Sets a new vignette strength."
+	input SetChroma(float) : "Sets a new chromatic aberration strength."
+	input SetGrain(float) : "Sets a new film grain strength."
+	input SetBW(float) : "Sets a new black and white strength percentage."
+	input EnableFog(void) : "Enables the fog effect using this entity's settings. The controller must be enabled first."
+	input DisableFog(void) : "Disables the fog effect. Other effects remain active."
+]
+
+@PointClass base(Targetname, Angles) lightprop("models/editor/spot.mdl") lightcone() = particle_system : "Particle System Emitter"
+[
+	effect_name(string) : "Effect Name" : "" : "Name of the effect defined in particles.def"
+	spawnflags(flags) =
+	[
+		1 : "Start Inactive" : 0
+	]
+
+	input Start(void) : "Start emitting particles."
+	input Stop(void) : "Stop emitting particles."
+]
+
+@PointClass base(Targetname) sprite() = sprite : "Sprite Entity"
+[
+    texture(string) : "Sprite Texture" : "" : "File path of the texture (e.g. textures/sprites/glow.png)."
+    scale(float) : "Scale" : "1.0"
+    rendercolor(color255) : "Color (R G B)" : "255 255 255"
+    renderamt(integer) : "Alpha (0-255)" : 255
+    rendermode(choices) : "Render Mode" : 0 =
+    [
+        0 : "Spherical"
+        1 : "Cylindrical"
+    ]
+    spawnflags(flags) =
+    [
+        1 : "Start Hidden" : 0
+    ]
+    input ShowSprite(void) : "Show the sprite."
+    input HideSprite(void) : "Hide the sprite."
+    input ToggleSprite(void) : "Toggle visibility."
+]
+
+@SolidClass base(Targetname) = env_cubemap_box : "An environment cubemap probe. The cubemap is captured from the center of this brush's volume. Models will use the nearest cubemap for reflections. The volume of this brush is used for parallax correction."
+[
+]
