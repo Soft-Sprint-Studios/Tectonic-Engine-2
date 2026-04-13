@@ -22,45 +22,37 @@
  * SOFTWARE.
  */
 #pragma once
-#include "r_bloom.h"
-#include "camera.h"
 #include "shader.h"
 #include <glad/glad.h>
-#include <memory>
+#include <vector>
+#include <glm/glm.hpp>
 
-class R_PostProcess
+class R_Bloom
 {
 public:
-    R_PostProcess();
-    ~R_PostProcess();
+    R_Bloom();
+    ~R_Bloom();
 
     bool Init(int width, int height);
-    void Begin();
-    void End();
-    void Draw(const Camera& camera);
-    void Rescale(int width, int height);
     void Shutdown();
+    void Rescale(int width, int height);
+    void Bind(const Shader& shader);
+    void Render(GLuint sourceTexture, GLuint quadVAO, int screenW, int screenH);
+    GLuint GetResultTexture() const;
 
 private:
-    GLuint m_fbo;
-    GLuint m_texture;
-    GLuint m_depthTexture;
+    struct Mip
+    {
+        glm::ivec2 size;
+        GLuint texture = 0;
+        GLuint fbo = 0;
+    };
 
-    GLuint m_msFbo;
-    GLuint m_msTexture;
-    GLuint m_msRbo;
+    void CreateChain(int width, int height);
+    void DeleteChain();
 
-    GLuint m_quadVAO;
-    GLuint m_quadVBO;
-    Shader m_shader;
-    Shader m_histogramShader;
-    Shader m_averageShader;
-    GLuint m_histogramBuffer = 0;
-    GLuint m_lumBuffer = 0;
-
-    int m_width, m_height;
-    void SetupBuffers();
-
-    // Postprocess subrenderers
-    std::unique_ptr<R_Bloom> m_bloom;
+    Shader m_downsampleShader;
+    Shader m_upsampleShader;
+    
+    std::vector<Mip> m_mipChain;
 };

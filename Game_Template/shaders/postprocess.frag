@@ -3,6 +3,7 @@ in vec2 TexCoords;
 
 uniform sampler2D screenTexture;
 uniform sampler2D depthTexture;
+uniform sampler2D bloomTexture;
 uniform float u_time;
 
 uniform float u_vignetteStrength;
@@ -17,6 +18,8 @@ uniform vec3 u_fogColor;
 uniform float u_fogStart;
 uniform float u_fogEnd;
 uniform int u_fogAffectsSky;
+uniform int u_bloom_enabled;
+uniform float u_bloom_intensity;
 
 layout(std430, binding = 2) buffer LumData 
 {
@@ -65,6 +68,12 @@ void main()
     // Film Grain
     float grain = (random(TexCoords + u_time) - 0.5) * u_grainStrength;
     hdrColor += grain;
+
+    // Bloom
+    if (u_bloom_enabled == 1)
+    {
+        hdrColor += texture(bloomTexture, TexCoords).rgb * u_bloom_intensity;
+    }
 
     float depth = texture(depthTexture, TexCoords).r;
 

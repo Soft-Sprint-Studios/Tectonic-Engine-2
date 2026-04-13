@@ -26,6 +26,7 @@
 #include "cvar.h"
 #include "postprocess.h"
 #include "timing.h"
+#include "r_bloom.h"
 
 CVar r_postprocess("r_postprocess", "1", CVAR_SAVE);
 CVar r_gamma("r_gamma", "1.7", CVAR_SAVE);
@@ -57,6 +58,9 @@ bool R_PostProcess::Init(int width, int height)
 
     m_histogramShader.LoadCompute("shaders/lum_histogram.comp");
     m_averageShader.LoadCompute("shaders/lum_average.comp");
+
+    m_bloom = std::make_unique<R_Bloom>();
+    m_bloom->Init(m_width, m_height);
 
     glGenBuffers(1, &m_histogramBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_histogramBuffer);
@@ -254,9 +258,12 @@ void R_PostProcess::Draw(const Camera& camera)
         glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(float), &defaultExp);
     }
 
+    m_bloom->Render(m_texture, m_quadVAO, m_width, m_height);
+
     m_shader.Bind();
     m_shader.SetInt("screenTexture", 0);
     m_shader.SetInt("depthTexture", 1);
+    m_bloom->Bind(m_shader);
 
     m_shader.SetInt("u_postprocess_enabled", r_autoexposure.GetInt());
 
@@ -288,11 +295,18 @@ void R_PostProcess::Rescale(int width, int height)
 {
     m_width = width;
     m_height = height;
+    m_bloom->Rescale(width, height);
     SetupBuffers();
 }
 
 void R_PostProcess::Shutdown()
 {
+    if (m_bloom)
+    {
+        m_bloom->Shutdown();
+        m_bloom.reset();
+    }
+
     if (m_fbo != 0) 
         glDeleteFramebuffers(1, &m_fbo);
     if (m_texture != 0) 
