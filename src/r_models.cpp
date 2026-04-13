@@ -46,29 +46,28 @@ R_Models::~R_Models()
 bool R_Models::Init(const BSP::MapData& mapData)
 {
     Shutdown();
-    for(const auto & prop : mapData.staticProps)
+
+    std::unordered_map<std::string, std::vector<const BSP::StaticPropInstance*>> groupedProps;
+    for (const auto& prop : mapData.staticProps)
     {
-        // 1. Build Visual Transform (Includes Scaling)
-        glm::mat4 m_visual = glm::translate(glm::mat4(1.0f), prop.position);
-        m_visual = glm::rotate(m_visual, glm::radians(prop.angles.y - 90.0f), glm::vec3(0, 1, 0));
-        m_visual = glm::rotate(m_visual, glm::radians(-prop.angles.x), glm::vec3(1, 0, 0));
-        m_visual = glm::rotate(m_visual, glm::radians(prop.angles.z), glm::vec3(0, 0, 1));
+        groupedProps[prop.modelPath].push_back(&prop);
+    }
 
-        glm::mat4 m_physics = m_visual;
+    for (const auto& [path, props] : groupedProps)
+    {
+        LoadModel(path);
 
-        m_visual = glm::scale(m_visual, glm::vec3(prop.scale * BSP::MAPSCALE));
+        auto& group = m_propGroups[path];
+        group.instanceCount = (uint32_t)props.size();
+        group.worldMins = glm::vec3(FLT_MAX);
+        group.worldMaxs = glm::vec3(-FLT_MAX);
 
-        if (m_propGroups.find(prop.modelPath) == m_propGroups.end())
-        {
-            LoadModel(prop.modelPath);
-        }
+        std::vector<glm::mat4> transforms;
+        transforms.reserve(group.instanceCount);
 
-        PropInstanceData inst;
-        inst.transform = m_visual;
+        std::vector<glm::vec4> packedColors(group.instanceCount * group.totalVertices * 3, glm::vec4(1.0f));
 
-        auto& group = m_propGroups[prop.modelPath];
-
-        glm::vec3 corners[8] = 
+        glm::vec3 corners[8] =
         {
             group.localMins,
             { group.localMaxs.x, group.localMins.y, group.localMins.z },
@@ -80,34 +79,51 @@ bool R_Models::Init(const BSP::MapData& mapData)
             group.localMaxs
         };
 
-        inst.worldMins = glm::vec3(FLT_MAX);
-        inst.worldMaxs = glm::vec3(-FLT_MAX);
-
-        for (int i = 0; i < 8; i++)
+        for (size_t i = 0; i < props.size(); ++i)
         {
-            glm::vec3 worldCorner = glm::vec3(m_visual * glm::vec4(corners[i], 1.0f));
-            inst.worldMins = glm::min(inst.worldMins, worldCorner);
-            inst.worldMaxs = glm::max(inst.worldMaxs, worldCorner);
-        }
+            const auto* prop = props[i];
 
-        // If this instance has baked vertex colors
-        for (int b = 0; b < 3; b++)
-        {
-            if (!prop.vertexColors[b].empty())
+            glm::mat4 m_visual = glm::translate(glm::mat4(1.0f), prop->position);
+            m_visual = glm::rotate(m_visual, glm::radians(prop->angles.y - 90.0f), glm::vec3(0, 1, 0));
+            m_visual = glm::rotate(m_visual, glm::radians(-prop->angles.x), glm::vec3(1, 0, 0));
+            m_visual = glm::rotate(m_visual, glm::radians(prop->angles.z), glm::vec3(0, 0, 1));
+
+            glm::mat4 m_physics = m_visual;
+            m_visual = glm::scale(m_visual, glm::vec3(prop->scale * BSP::MAPSCALE));
+
+            transforms.push_back(m_visual);
+
+            for (int c = 0; c < 8; c++)
             {
-                glGenBuffers(1, &inst.colorVbo[b]);
-                glBindBuffer(GL_ARRAY_BUFFER, inst.colorVbo[b]);
-                glBufferData(GL_ARRAY_BUFFER, prop.vertexColors[b].size() * sizeof(glm::vec4), prop.vertexColors[b].data(), GL_STATIC_DRAW);
+                glm::vec3 worldCorner = glm::vec3(m_visual * glm::vec4(corners[c], 1.0f));
+                group.worldMins = glm::min(group.worldMins, worldCorner);
+                group.worldMaxs = glm::max(group.worldMaxs, worldCorner);
+            }
+
+            if (group.physicsShape)
+            {
+                Physics::AddStaticBody(group.physicsShape, m_physics, glm::vec3(prop->scale));
+            }
+
+            for (int stream = 0; stream < 3; ++stream)
+            {
+                if (!prop->vertexColors[stream].empty())
+                {
+                    for (size_t v = 0; v < prop->vertexColors[stream].size() && v < group.totalVertices; ++v)
+                    {
+                        packedColors[(i * group.totalVertices + v) * 3 + stream] = prop->vertexColors[stream][v];
+                    }
+                }
             }
         }
-        inst.isBumped = prop.hasBumpedLighting;
 
-        m_propGroups[prop.modelPath].instances.push_back(inst);
+        glGenBuffers(1, &group.transformSSBO);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, group.transformSSBO);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, transforms.size() * sizeof(glm::mat4), transforms.data(), GL_STATIC_DRAW);
 
-        if (m_propGroups[prop.modelPath].physicsShape)
-        {
-            Physics::AddStaticBody(m_propGroups[prop.modelPath].physicsShape, m_physics, glm::vec3(prop.scale));
-        }
+        glGenBuffers(1, &group.colorSSBO);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, group.colorSSBO);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, packedColors.size() * sizeof(glm::vec4), packedColors.data(), GL_STATIC_DRAW);
     }
 
     return true;
@@ -130,7 +146,7 @@ void R_Models::LoadModel(const std::string& path)
         if (m_propGroups.find(targetPath) != m_propGroups.end())
         {
             m_propGroups[path] = m_propGroups[targetPath];
-            m_propGroups[path].instances.clear();
+            m_propGroups[path].instanceCount = 0;
             return;
         }
     }
@@ -148,7 +164,7 @@ void R_Models::LoadModel(const std::string& path)
         {
             LoadModel("models/error.glb");
             m_propGroups[path] = m_propGroups["models/error.glb"];
-            m_propGroups[path].instances.clear();
+            m_propGroups[path].instanceCount = 0;
         }
         return;
     }
@@ -255,11 +271,13 @@ void R_Models::LoadModel(const std::string& path)
             m.normalMap = Materials::GetNormalMap(matName);
             m.specularMap = Materials::GetSpecularMap(matName);
 
+            m.vertexCount = vertexCount;
             currentVertexOffset += vertexCount;
             group.meshes.push_back(m);
         }
     }
 
+    group.totalVertices = currentVertexOffset;
     group.physicsShape = Physics::CreateStaticMeshShape(physicsPositions, physicsIndices);
 
     m_propGroups[path] = group;
@@ -268,6 +286,8 @@ void R_Models::LoadModel(const std::string& path)
 
 void R_Models::Draw(const Shader& shader, const Frustum& frustum, bool depthOnly)
 {
+    shader.SetInt("u_isInstanced", 1);
+
     if (!depthOnly)
     {
         shader.SetInt("u_isModel", 1);
@@ -275,6 +295,24 @@ void R_Models::Draw(const Shader& shader, const Frustum& frustum, bool depthOnly
 
     for (auto& [path, group] : m_propGroups)
     {
+        if (group.instanceCount == 0)
+        {
+            continue;
+        }
+
+        if (frustum.valid && !frustum.IsBoxVisible(group.worldMins, group.worldMaxs))
+        {
+            continue;
+        }
+
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, group.transformSSBO);
+
+        if (!depthOnly)
+        {
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, group.colorSSBO);
+            shader.SetInt("u_totalVertices", group.totalVertices);
+        }
+
         for (auto& mesh : group.meshes)
         {
             if (mesh.indexCount == 0)
@@ -284,49 +322,25 @@ void R_Models::Draw(const Shader& shader, const Frustum& frustum, bool depthOnly
 
             glBindVertexArray(mesh.vao);
 
-            for (const auto& inst : group.instances)
+            if (!depthOnly)
             {
-                if (frustum.valid && !frustum.IsBoxVisible(inst.worldMins, inst.worldMaxs))
-                {
-                    continue;
-                }
+                shader.SetInt("u_vertexOffset", mesh.vertexOffset);
+                bool canBump = mesh.normalMap != nullptr;
+                shader.SetInt("u_useBump", canBump ? 1 : 0);
 
-                shader.SetMat4("u_model", inst.transform);
+                (mesh.texture ? mesh.texture : Materials::GetTexture(""))->Bind(0);
+                (canBump ? mesh.normalMap : Materials::GetFlatNormal())->Bind(2);
+                (canBump && mesh.specularMap ? mesh.specularMap : Materials::GetWhiteTexture())->Bind(3);
 
-                if (!depthOnly)
-                {
-                    bool canBump = inst.isBumped && mesh.normalMap;
-                    shader.SetInt("u_useBump", canBump ? 1 : 0);
-
-                    (mesh.texture ? mesh.texture : Materials::GetTexture(""))->Bind(0);
-                    (canBump ? mesh.normalMap : Materials::GetFlatNormal())->Bind(2);
-                    (canBump && mesh.specularMap ? mesh.specularMap : Materials::GetWhiteTexture())->Bind(3);
-
-                    // Vertex Lighting
-                    for (int b = 0; b < 3; b++)
-                    {
-                        if (inst.colorVbo[b] != 0)
-                        {
-                            glEnableVertexAttribArray(6 + b);
-                            glBindBuffer(GL_ARRAY_BUFFER, inst.colorVbo[b]);
-                            glVertexAttribPointer(6 + b, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4), (void*)(uintptr_t)(mesh.vertexOffset * sizeof(glm::vec4)));
-                        }
-                        else
-                        {
-                            glDisableVertexAttribArray(6 + b);
-                            glVertexAttrib4f(6 + b, 1.0f, 1.0f, 1.0f, 1.0f);
-                        }
-                    }
-
-                    glVertexAttrib3f(11, 0.0f, 0.0f, 0.0f);
-                }
-
-                glDrawElements(GL_TRIANGLES, mesh.indexCount, mesh.indexType, 0);
+                glVertexAttrib3f(11, 0.0f, 0.0f, 0.0f);
             }
+
+            glDrawElementsInstanced(GL_TRIANGLES, mesh.indexCount, mesh.indexType, 0, group.instanceCount);
         }
     }
 
     glBindVertexArray(0);
+    shader.SetInt("u_isInstanced", 0);
 
     if (!depthOnly)
     {
@@ -347,14 +361,12 @@ void R_Models::Shutdown()
             if (mesh.ebo != 0)
                 glDeleteBuffers(1, &mesh.ebo);
         }
-        for (auto& inst : group.instances)
-        {
-            for (int b = 0; b < 3; b++)
-            {
-                if (inst.colorVbo[b] != 0)
-                    glDeleteBuffers(1, &inst.colorVbo[b]);
-            }
-        }
+
+        if (group.transformSSBO != 0)
+            glDeleteBuffers(1, &group.transformSSBO);
+
+        if (group.colorSSBO != 0)
+            glDeleteBuffers(1, &group.colorSSBO);
 
         if (group.physicsShape)
         {

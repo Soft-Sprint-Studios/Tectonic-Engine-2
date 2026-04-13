@@ -22,47 +22,34 @@
  * SOFTWARE.
  */
 #pragma once
-#include "r_bloom.h"
-#include "r_volumetrics.h"
-#include "camera.h"
 #include "shader.h"
+#include "camera.h"
+#include "r_lights.h"
 #include <glad/glad.h>
-#include <memory>
 
-class R_PostProcess
+class R_Volumetrics 
 {
 public:
-    R_PostProcess();
-    ~R_PostProcess();
+    R_Volumetrics();
+    ~R_Volumetrics();
 
     bool Init(int width, int height);
-    void Begin();
-    void End();
-    void Draw(const Camera& camera, class R_Lights* lights);
-    void Rescale(int width, int height);
     void Shutdown();
+    void Rescale(int width, int height);
+    void Render(GLuint depthTexture, const Camera& camera, R_Lights* lights, GLuint quadVAO, int screenW, int screenH);
+    void Bind(const Shader& shader);
 
 private:
-    GLuint m_fbo;
-    GLuint m_texture;
-    GLuint m_depthTexture;
+    void CreateBuffers(int width, int height);
+    void DeleteBuffers();
 
-    GLuint m_msFbo;
-    GLuint m_msTexture;
-    GLuint m_msRbo;
+    GLuint m_fbo = 0;
+    GLuint m_texture = 0;
+    GLuint m_blurFbo[2] = {0, 0};
+    GLuint m_blurTexture[2] = {0, 0};
 
-    GLuint m_quadVAO;
-    GLuint m_quadVBO;
-    Shader m_shader;
-    Shader m_histogramShader;
-    Shader m_averageShader;
-    GLuint m_histogramBuffer = 0;
-    GLuint m_lumBuffer = 0;
-
+    Shader m_volShader;
+    Shader m_blurShader;
+    
     int m_width, m_height;
-    void SetupBuffers();
-
-    // Postprocess subrenderers
-    std::unique_ptr<R_Bloom> m_bloom;
-    std::unique_ptr<R_Volumetrics> m_volumetrics;
 };

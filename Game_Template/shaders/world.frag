@@ -26,15 +26,17 @@ uniform int u_debugMode;
 uniform int u_fullbright;
 
 // Dynamic point lights
-struct PointLight
+struct PointLight 
 {
     vec3 pos; 
     vec3 color; 
     float radius;
+    float volumetricIntensity;
+    int volumetricSteps;
 };
 
 // Dynamic spot lights
-struct SpotLight
+struct SpotLight 
 {
     vec3 pos; 
     vec3 dir; 
@@ -43,6 +45,8 @@ struct SpotLight
     float innerAngle; 
     float outerAngle; 
     mat4 lightSpaceMatrix;
+    float volumetricIntensity;
+    int volumetricSteps;
 };
 
 uniform int u_numPointLights;

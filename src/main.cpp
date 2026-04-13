@@ -48,6 +48,9 @@
 #include "build_date.h"
 #include "gamedef.h"
 #include "sprite.h"
+#include "concmd.h"
+
+bool running = true;
 
 ENGINE_API int Engine_Main(int argc, char** argv)
 {
@@ -99,8 +102,6 @@ ENGINE_API int Engine_Main(int argc, char** argv)
     }
 
     Maps::Load(Gamedef::GetStartingMap());
-
-    bool running = true;
 
     while (running)
     {
@@ -161,4 +162,14 @@ ENGINE_API int Engine_Main(int argc, char** argv)
     window.Shutdown();
 
     return 0;
+}
+
+CON_COMMAND(quit, "Quits the engine")
+{
+    running = false;
+}
+
+CON_COMMAND(exit, "Quits the engine")
+{
+    running = false;
 }

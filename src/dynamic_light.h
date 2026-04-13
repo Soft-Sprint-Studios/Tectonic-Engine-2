@@ -40,6 +40,9 @@ struct DynamicLightDef
     float innerAngle;
     float outerAngle;
 
+    float volumetricIntensity = 0.0f;
+    int volumetricSteps = 32;
+
     bool castsShadows = false;
     bool isStaticShadow = false;
     bool shadowRendered = false;

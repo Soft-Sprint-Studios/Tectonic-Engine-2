@@ -43,15 +43,7 @@ struct ModelMesh
     std::shared_ptr<Texture> normalMap;
     std::shared_ptr<Texture> specularMap;
     uint32_t vertexOffset;
-};
-
-struct PropInstanceData
-{
-    glm::mat4 transform;
-    uint32_t colorVbo[3] = { 0, 0, 0 };
-    bool isBumped = false;
-    glm::vec3 worldMins;
-    glm::vec3 worldMaxs;
+    uint32_t vertexCount;
 };
 
 class R_Models
@@ -68,10 +60,18 @@ private:
     struct PropGroup
     {
         std::vector<ModelMesh> meshes;
-        std::vector<PropInstanceData> instances;
+
+        uint32_t instanceCount = 0;
+        uint32_t totalVertices = 0;
+
+        GLuint transformSSBO = 0;
+        GLuint colorSSBO = 0;
+
         btCollisionShape* physicsShape = nullptr;
         glm::vec3 localMins = glm::vec3(1e10f);
         glm::vec3 localMaxs = glm::vec3(-1e10f);
+        glm::vec3 worldMins = glm::vec3(1e10f);
+        glm::vec3 worldMaxs = glm::vec3(-1e10f);
     };
 
     std::unordered_map<std::string, PropGroup> m_propGroups;

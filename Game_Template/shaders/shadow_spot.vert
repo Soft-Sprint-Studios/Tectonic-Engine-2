@@ -1,8 +1,16 @@
 layout (location = 0) in vec3 aPos;
+
 uniform mat4 u_lightSpaceMatrix;
 uniform mat4 u_model;
+uniform int u_isInstanced;
+
+layout(std430, binding = 4) readonly buffer InstanceTransforms 
+{
+    mat4 transforms[];
+};
 
 void main()
 {
-    gl_Position = u_lightSpaceMatrix * u_model * vec4(aPos, 1.0);
+    mat4 modelMat = u_isInstanced == 1 ? transforms[gl_InstanceID] : u_model;
+    gl_Position = u_lightSpaceMatrix * modelMat * vec4(aPos, 1.0);
 }

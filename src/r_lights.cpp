@@ -237,6 +237,8 @@ void R_Lights::Bind(const Shader& shader)
             shader.SetVec3(b + "pos", light->GetPosition());
             shader.SetVec3(b + "color", def.color);
             shader.SetFloat(b + "radius", def.radius);
+            shader.SetFloat(b + "volumetricIntensity", def.volumetricIntensity);
+            shader.SetInt(b + "volumetricSteps", def.volumetricSteps);
 
             if (def.castsShadows && def.shadowTex != 0)
             {
@@ -253,6 +255,8 @@ void R_Lights::Bind(const Shader& shader)
             shader.SetVec3(b + "dir", light->GetDirection());
             shader.SetVec3(b + "color", def.color);
             shader.SetFloat(b + "radius", def.radius);
+            shader.SetFloat(b + "volumetricIntensity", def.volumetricIntensity);
+            shader.SetInt(b + "volumetricSteps", def.volumetricSteps);
             shader.SetFloat(b + "innerAngle", glm::cos(glm::radians(def.innerAngle)));
             shader.SetFloat(b + "outerAngle", glm::cos(glm::radians(def.outerAngle)));
             shader.SetMat4(b + "lightSpaceMatrix", def.lightSpaceMatrix);

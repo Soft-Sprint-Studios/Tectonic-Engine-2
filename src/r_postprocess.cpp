@@ -62,6 +62,9 @@ bool R_PostProcess::Init(int width, int height)
     m_bloom = std::make_unique<R_Bloom>();
     m_bloom->Init(m_width, m_height);
 
+    m_volumetrics = std::make_unique<R_Volumetrics>();
+    m_volumetrics->Init(m_width, m_height);
+
     glGenBuffers(1, &m_histogramBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_histogramBuffer);
     glBufferData(GL_SHADER_STORAGE_BUFFER, 256 * sizeof(uint32_t), NULL, GL_DYNAMIC_COPY);
@@ -222,9 +225,9 @@ void R_PostProcess::End()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void R_PostProcess::Draw(const Camera& camera)
+void R_PostProcess::Draw(const Camera& camera, R_Lights* lights)
 {
-    if (CVar::Find("r_autoexposure")->GetInt() > 0) 
+    if (CVar::Find("r_autoexposure")->GetInt() > 0)
     {
         // Clear histogram
         uint32_t zeros[256] = { 0 };
@@ -259,11 +262,13 @@ void R_PostProcess::Draw(const Camera& camera)
     }
 
     m_bloom->Render(m_texture, m_quadVAO, m_width, m_height);
+    m_volumetrics->Render(m_depthTexture, camera, lights, m_quadVAO, m_width, m_height);
 
     m_shader.Bind();
     m_shader.SetInt("screenTexture", 0);
     m_shader.SetInt("depthTexture", 1);
     m_bloom->Bind(m_shader);
+    m_volumetrics->Bind(m_shader);
 
     m_shader.SetInt("u_postprocess_enabled", r_autoexposure.GetInt());
 
@@ -296,6 +301,7 @@ void R_PostProcess::Rescale(int width, int height)
     m_width = width;
     m_height = height;
     m_bloom->Rescale(width, height);
+    m_volumetrics->Rescale(width, height);
     SetupBuffers();
 }
 
@@ -305,6 +311,12 @@ void R_PostProcess::Shutdown()
     {
         m_bloom->Shutdown();
         m_bloom.reset();
+    }
+
+    if (m_volumetrics)
+    {
+        m_volumetrics->Shutdown();
+        m_volumetrics.reset();
     }
 
     if (m_fbo != 0) 

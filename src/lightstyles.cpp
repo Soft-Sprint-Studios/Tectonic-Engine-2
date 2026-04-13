@@ -47,6 +47,7 @@ namespace LightStyles
         SetStyle(9, "aaaaaaaazzzzzzzz", 10.0f, true); // Slow Strobe
         SetStyle(10, "mmammmammmaamamaaammmma", 10.0f, true); // Fluorescent Flicker
         SetStyle(11, "abcdefghijklmnopqrrqponmlkjihgfedcba", 10.0f, true); // Slow Pulse No Black
+        SetStyle(12, "mmnnmmnnnmmnn", 10.0f, true); // Underwater light mutation
     }
 
     void SetStyle(int index, const std::string& pattern, float frameRate, bool interpolate)

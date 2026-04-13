@@ -57,8 +57,8 @@ bool Shader::Load(const std::string& vertPath, const std::string& fragPath, cons
         return false;
     }
 
-    GLuint vs = CompileShader(GL_VERTEX_SHADER, vCode);
-    GLuint fs = CompileShader(GL_FRAGMENT_SHADER, fCode);
+    GLuint vs = CompileShader(GL_VERTEX_SHADER, vCode, vertPath);
+    GLuint fs = CompileShader(GL_FRAGMENT_SHADER, fCode, fragPath);
     GLuint gs = 0;
 
     m_program = glCreateProgram();
@@ -70,7 +70,7 @@ bool Shader::Load(const std::string& vertPath, const std::string& fragPath, cons
         std::string gCode = Filesystem::ReadText(geomPath);
         if (!gCode.empty())
         {
-            gs = CompileShader(GL_GEOMETRY_SHADER, gCode);
+            gs = CompileShader(GL_GEOMETRY_SHADER, gCode, geomPath);
             glAttachShader(m_program, gs);
         }
     }
@@ -83,7 +83,8 @@ bool Shader::Load(const std::string& vertPath, const std::string& fragPath, cons
     {
         char infoLog[512];
         glGetProgramInfoLog(m_program, 512, NULL, infoLog);
-        Console::Error("Shader Link Error: " + std::string(infoLog));
+        std::string paths = vertPath + " | " + fragPath;
+        Console::Error("Shader Link Error [" + paths + "]:\n" + std::string(infoLog));
         return false;
     }
 
@@ -109,7 +110,7 @@ bool Shader::LoadCompute(const std::string& path)
         return false;
     }
 
-    GLuint cs = CompileShader(GL_COMPUTE_SHADER, code);
+    GLuint cs = CompileShader(GL_COMPUTE_SHADER, code, path);
     m_program = glCreateProgram();
     glAttachShader(m_program, cs);
     glLinkProgram(m_program);
@@ -120,7 +121,7 @@ bool Shader::LoadCompute(const std::string& path)
     {
         char infoLog[512];
         glGetProgramInfoLog(m_program, 512, NULL, infoLog);
-        Console::Error("Compute Shader Link Error: " + std::string(infoLog));
+        Console::Error("Compute Shader Link Error [" + path + "]:\n" + std::string(infoLog));
         return false;
     }
 
@@ -128,7 +129,7 @@ bool Shader::LoadCompute(const std::string& path)
     return true;
 }
 
-GLuint Shader::CompileShader(GLenum type, const std::string& source)
+GLuint Shader::CompileShader(GLenum type, const std::string& source, const std::string& path)
 {
     GLuint shader = glCreateShader(type);
     const char* version = "#version 460 core\n";
@@ -145,7 +146,9 @@ GLuint Shader::CompileShader(GLenum type, const std::string& source)
     {
         char infoLog[512];
         glGetShaderInfoLog(shader, 512, NULL, infoLog);
-        Console::Error("Shader Compile Error: " + std::string(infoLog));
+        Console::Error("Shader Compile Error in [" + path + "]:\n" + std::string(infoLog));
+        glDeleteShader(shader);
+        return 0;
     }
     return shader;
 }

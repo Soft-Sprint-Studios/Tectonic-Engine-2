@@ -15,6 +15,19 @@ layout (location = 12) in vec2 aLmCoord5;
 uniform mat4 u_model;
 uniform mat4 u_view;
 uniform mat4 u_projection;
+uniform int u_isInstanced;
+uniform int u_totalVertices;
+uniform int u_vertexOffset;
+
+layout(std430, binding = 4) readonly buffer InstanceTransforms 
+{
+    mat4 transforms[];
+};
+
+layout(std430, binding = 5) readonly buffer InstanceColors 
+{
+    vec4 vertColors[];
+};
 
 out centroid vec2 TexCoord;
 out centroid vec2 LmCoord1;
@@ -30,8 +43,10 @@ out centroid mat3 TBN;
 
 void main()
 {
-    FragPos = vec3(u_model * vec4(aPos, 1.0));
-    mat3 normalMatrix = mat3(transpose(inverse(u_model)));
+    mat4 modelMat = u_isInstanced == 1 ? transforms[gl_InstanceID] : u_model;
+
+    FragPos = vec3(modelMat * vec4(aPos, 1.0));
+    mat3 normalMatrix = mat3(transpose(inverse(modelMat)));
     vec3 T = normalize(normalMatrix * aTangent);
     vec3 B = normalize(normalMatrix * aBitangent);
     vec3 N = normalize(normalMatrix * aNormal);
@@ -47,9 +62,21 @@ void main()
     LmCoord4 = aLmCoord4;
     LmCoord5 = aLmCoord5;
     
-    Color = aColor;
-    Color2 = aColor2;
-    Color3 = aColor3;
+    vec4 c1 = aColor;
+    vec4 c2 = aColor2;
+    vec4 c3 = aColor3;
+
+    if (u_isInstanced == 1) 
+    {
+        int baseIdx = (gl_InstanceID * u_totalVertices + u_vertexOffset + gl_VertexID) * 3;
+        c1 = vertColors[baseIdx];
+        c2 = vertColors[baseIdx + 1];
+        c3 = vertColors[baseIdx + 2];
+    }
+
+    Color = c1;
+    Color2 = c2;
+    Color3 = c3;
     
-    gl_Position = u_projection * u_view * u_model * vec4(aPos, 1.0);
+    gl_Position = u_projection * u_view * modelMat * vec4(aPos, 1.0);
 }

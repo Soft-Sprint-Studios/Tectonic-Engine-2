@@ -57,7 +57,7 @@ private:
     mutable std::unordered_map<std::string, GLint> m_uniformLocationCache;
     std::string m_vertPath, m_fragPath, m_geomPath;
     std::string m_computePath;
-    GLuint CompileShader(GLenum type, const std::string& source);
+    GLuint CompileShader(GLenum type, const std::string& source, const std::string& path);
 
     bool Reload();
 };
