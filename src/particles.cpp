@@ -135,7 +135,6 @@ namespace Particles
     void Shutdown()
     {
         s_systems.clear();
-        s_defs.clear();
     }
 }
 
