@@ -503,8 +503,9 @@ public:
 
         glm::vec3 angles = GetVector("angles");
         glm::mat4 rot = glm::mat4(1.0f);
+
+        rot = glm::rotate(rot, glm::radians(angles.y - 90.0f), glm::vec3(0, 1, 0));
         rot = glm::rotate(rot, glm::radians(angles.x), glm::vec3(1, 0, 0));
-        rot = glm::rotate(rot, glm::radians(-angles.x), glm::vec3(1, 0, 0));
         rot = glm::rotate(rot, glm::radians(angles.z), glm::vec3(0, 0, 1));
 
         m_direction = glm::normalize(glm::vec3(rot * glm::vec4(0, 0, -1, 0.0f)));
