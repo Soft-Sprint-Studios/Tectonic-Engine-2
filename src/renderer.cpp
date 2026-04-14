@@ -41,6 +41,9 @@ CVar r_debug_vertexlight_directional("r_debug_vertexlight_directional", "0", CVA
 
 CVar r_fov("fov", "75.0", CVAR_SAVE);
 CVar r_skybox("r_skybox", "1", CVAR_SAVE);
+CVar r_particles ("r_particles", "1", CVAR_SAVE);
+CVar r_water("r_water", "1", CVAR_SAVE);
+CVar r_sprites("r_sprites", "1", CVAR_SAVE);
 CVar r_wireframe("r_wireframe", "0", CVAR_NONE);
 CVar r_fullbright("r_fullbright", "0", CVAR_NONE);
 
@@ -172,7 +175,7 @@ void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater
     }
 
     // Draw water
-    if (m_waterRenderer && drawWater)
+    if (m_waterRenderer && drawWater && r_water.GetInt() > 0)
     {
         m_waterRenderer->Draw(camera, m_bspRenderer->GetVAO());
     }
@@ -184,13 +187,13 @@ void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater
     }
 
     // Draw particles
-    if (m_particleRenderer)
+    if (m_particleRenderer && r_particles.GetInt() > 0)
     {
         m_particleRenderer->Draw(camera);
     }
 
     // Draw sprites
-    if (m_spriteRenderer)
+    if (m_spriteRenderer && r_sprites.GetInt() > 0)
     {
         m_spriteRenderer->Draw(camera, Sprites::GetActiveSprites());
     }

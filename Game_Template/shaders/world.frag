@@ -213,7 +213,7 @@ void main()
         vec3 envMap = texture(u_cubemap, lookup).rgb;
 
         float brightness = dot(diffuseLight, vec3(0.2126, 0.7152, 0.0722));
-        specularLight += (envMap * specMask * brightness) * 10.0;
+        specularLight += (envMap * specMask * brightness);
     }
 
     // Dynamic Lighting Phase

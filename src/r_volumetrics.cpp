@@ -27,6 +27,7 @@
 
 CVar r_volumetrics("r_volumetrics", "1", CVAR_SAVE);
 CVar r_volumetrics_res("r_volumetrics_res", "8", CVAR_SAVE);
+CVar r_volumetrics_blur_passes("r_volumetrics_blur_passes", "6", CVAR_SAVE);
 
 R_Volumetrics::R_Volumetrics() 
 {
@@ -139,8 +140,7 @@ void R_Volumetrics::Render(GLuint depthTexture, const Camera& camera, R_Lights* 
     // Blur pass
     m_blurShader.Bind();
     bool horizontal = true, first_iteration = true;
-    int amount = 6;
-    for (int i = 0; i < amount; i++) 
+    for (int i = 0; i < r_volumetrics_blur_passes.GetInt(); i++) 
     {
         glBindFramebuffer(GL_FRAMEBUFFER, m_blurFbo[horizontal]);
         m_blurShader.SetInt("horizontal", horizontal);
