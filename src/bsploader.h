@@ -65,23 +65,24 @@ namespace BSP
         LUMP_DISP_VERTS = 33,
         LUMP_GAMELUMP = 35,
         LUMP_PAKFILE = 40,
+        LUMP_OVERLAYS = 45,
         LUMP_LIGHTING_HDR = 53
     };
 
 #pragma pack(push, 1)
-    struct Lump 
+    struct Lump
     {
         int32_t offset, length, version, uncompressedSize;
     };
 
-    struct Header 
+    struct Header
     {
         int32_t ident, version;
         Lump lumps[HEADER_LUMPS];
         int32_t mapRevision;
     };
 
-    struct Face 
+    struct Face
     {
         uint16_t planenum;
         uint8_t side, onNode;
@@ -97,19 +98,19 @@ namespace BSP
         uint32_t smoothingGroups;
     };
 
-    struct Edge 
-    { 
+    struct Edge
+    {
         uint16_t v[2];
     };
 
-    struct TexInfo 
+    struct TexInfo
     {
         float textureVecs[2][4];
         float lightmapVecs[2][4];
         int32_t flags, texdata;
     };
 
-    struct TexData 
+    struct TexData
     {
         glm::vec3 reflectivity;
         int32_t nameStringTableID;
@@ -117,9 +118,9 @@ namespace BSP
     };
 
     struct Color
-    { 
-        uint8_t r, g, b; 
-        int8_t exponent; 
+    {
+        uint8_t r, g, b;
+        int8_t exponent;
     };
 
     struct Plane
@@ -191,6 +192,19 @@ namespace BSP
         int32_t headnode;
         int32_t firstface, numfaces;
     };
+
+    struct Overlay
+    {
+        int32_t id;
+        int16_t texinfo;
+        uint16_t faceCountAndRenderOrder;
+        int32_t ofaces[64];
+        float u[2];
+        float v[2];
+        glm::vec3 uvPoints[4];
+        glm::vec3 origin;
+        glm::vec3 basisNormal;
+    };
 #pragma pack(pop)
 
     // Engine specific
@@ -229,26 +243,32 @@ namespace BSP
         bool hasBumpedLighting = false;
     };
 
-    struct CollisionData 
+    struct OverlayBatch
+    {
+        std::vector<Vertex> verts;
+        bool isBumped = false;
+    };
+
+    struct CollisionData
     {
         std::vector<glm::vec3> vertices;
         std::vector<uint32_t> indices;
     };
 
-    struct EntityData 
+    struct EntityData
     {
         std::string className;
         std::unordered_map<std::string, std::string> keyvalues;
         CollisionData brushCollision;
     };
 
-    struct WaterSurface 
+    struct WaterSurface
     {
         uint32_t start, count;
         float height;
     };
 
-    struct MapData 
+    struct MapData
     {
         std::vector<Vertex> renderVertices;
         std::vector<DrawCall> drawCalls;
