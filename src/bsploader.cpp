@@ -568,7 +568,9 @@ namespace BSP
                         glm::vec3 pt = planePoint - (basisNormal * distance);
 
                         // Apply an offset to avoid z-fight
-                        verts[v].position = ToEngineSpace(pt) + overlayNormal * ((0.01f + (f * 0.002f)) * MAPSCALE);
+                        glm::vec3 pushDir = glm::vec3(plane.normal.x, plane.normal.z, -plane.normal.y);
+                        float bias = (0.1f + (f * 0.01f)) * MAPSCALE;
+                        verts[v].position = ToEngineSpace(pt) + pushDir * bias;
                         verts[v].normal = overlayNormal;
                         verts[v].uv = uvs[v];
                         verts[v].color = glm::vec3(1.0f);
