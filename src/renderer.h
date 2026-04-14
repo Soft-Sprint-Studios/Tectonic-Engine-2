@@ -33,7 +33,6 @@
 #include "r_lights.h"
 #include "r_sprites.h"
 #include "r_waters.h"
-#include "r_waters.h"
 #include "cubemap.h"
 #include <memory>
 
