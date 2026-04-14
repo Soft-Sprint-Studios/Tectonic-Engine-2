@@ -50,6 +50,8 @@
 #include "sprite.h"
 #include "concmd.h"
 
+CVar r_max_fps("r_max_fps", "0", CVAR_SAVE);
+
 bool running = true;
 
 ENGINE_API int Engine_Main(int argc, char** argv)
@@ -106,6 +108,7 @@ ENGINE_API int Engine_Main(int argc, char** argv)
     while (running)
     {
         // Update Time and Console
+        uint64_t frameStart = SDL_GetTicksNS();
         Time::Update();
         Console::Update();
         Discord::Update();
@@ -144,6 +147,14 @@ ENGINE_API int Engine_Main(int argc, char** argv)
 
         // Rendering
         renderer.Render(camera);
+
+        if (r_max_fps.GetInt() > 0) 
+        {
+            uint64_t targetNS = 1000000000 / r_max_fps.GetInt();
+            uint64_t elapsed = SDL_GetTicksNS() - frameStart;
+            if (elapsed < targetNS) 
+                SDL_DelayNS(targetNS - elapsed);
+        }
     }
 
     // Cleanup

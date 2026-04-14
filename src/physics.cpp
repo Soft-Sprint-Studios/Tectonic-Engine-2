@@ -25,6 +25,7 @@
 #include "physics.h"
 #include "console.h"
 #include "entities.h"
+#include "cvar.h"
 
 #include <BulletCollision/BroadphaseCollision/btDbvtBroadphase.h>
 #include <BulletCollision/CollisionDispatch/btDefaultCollisionConfiguration.h>
@@ -37,6 +38,8 @@
 #include <BulletCollision/CollisionShapes/btCompoundShape.h>
 #include <set>
 #include <algorithm>
+
+CVar g_gravity("g_gravity", "-9.81", CVAR_SAVE);
 
 namespace Physics
 {
@@ -60,7 +63,7 @@ namespace Physics
         s_solver = new btSequentialImpulseConstraintSolver();
         s_dynamicsWorld = new btDiscreteDynamicsWorld(s_dispatcher, s_broadphase, s_solver, s_collisionConfiguration);
 
-        s_dynamicsWorld->setGravity(btVector3(0, -9.81f, 0));
+        s_dynamicsWorld->setGravity(btVector3(0, g_gravity.GetFloat(), 0));
         s_dynamicsWorld->getBroadphase()->getOverlappingPairCache()->setInternalGhostPairCallback(new btGhostPairCallback());
     }
 
