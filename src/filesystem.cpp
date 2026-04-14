@@ -92,7 +92,8 @@ namespace Filesystem
     {
         std::vector<std::string> results;
         std::string fullPath = GetFullPath(relativePath);
-        if (!std::filesystem::exists(fullPath)) return results;
+        if (!std::filesystem::exists(fullPath)) 
+            return results;
 
         for (const auto& entry : std::filesystem::directory_iterator(fullPath))
         {

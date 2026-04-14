@@ -30,12 +30,6 @@
 
 CVar r_postprocess("r_postprocess", "1", CVAR_SAVE);
 CVar r_gamma("r_gamma", "1.7", CVAR_SAVE);
-CVar r_autoexposure("r_autoexposure", "1", CVAR_SAVE);
-
-CVar r_exposure_speed("r_exposure_speed", "1.5", CVAR_SAVE);
-CVar r_exposure_target("r_exposure_target", "0.12", CVAR_SAVE);
-CVar r_exposure_min("r_exposure_min", "0.85", CVAR_SAVE);
-CVar r_exposure_max("r_exposure_max", "1.8", CVAR_SAVE);
 
 R_PostProcess::R_PostProcess()
     : m_fbo(0), m_texture(0), m_depthTexture(0),
@@ -56,23 +50,14 @@ bool R_PostProcess::Init(int width, int height)
 
     m_shader.Load("shaders/postprocess.vert", "shaders/postprocess.frag");
 
-    m_histogramShader.LoadCompute("shaders/lum_histogram.comp");
-    m_averageShader.LoadCompute("shaders/lum_average.comp");
-
     m_bloom = std::make_unique<R_Bloom>();
     m_bloom->Init(m_width, m_height);
 
     m_volumetrics = std::make_unique<R_Volumetrics>();
     m_volumetrics->Init(m_width, m_height);
 
-    glGenBuffers(1, &m_histogramBuffer);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_histogramBuffer);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, 256 * sizeof(uint32_t), NULL, GL_DYNAMIC_COPY);
-
-    glGenBuffers(1, &m_lumBuffer);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_lumBuffer);
-    float initialExposure = 1.0f;
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(float), &initialExposure, GL_DYNAMIC_COPY);
+    m_autoExposure = std::make_unique<R_AutoExposure>();
+    m_autoExposure->Init();
 
     SetupBuffers();
 
@@ -227,50 +212,19 @@ void R_PostProcess::End()
 
 void R_PostProcess::Draw(const Camera& camera, R_Lights* lights)
 {
-    if (CVar::Find("r_autoexposure")->GetInt() > 0)
-    {
-        // Clear histogram
-        uint32_t zeros[256] = { 0 };
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_histogramBuffer);
-        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(zeros), zeros);
-
-        // Build histogram
-        m_histogramShader.Bind();
-        glBindImageTexture(0, m_texture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, m_histogramBuffer);
-        glDispatchCompute((m_width + 15) / 16, (m_height + 15) / 16, 1);
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-
-        // Adapt exposure
-        m_averageShader.Bind();
-        m_averageShader.SetFloat("u_deltaTime", Time::DeltaTime());
-        m_averageShader.SetFloat("u_speed", r_exposure_speed.GetFloat());
-        m_averageShader.SetFloat("u_targetLum", r_exposure_target.GetFloat());
-        m_averageShader.SetFloat("u_minExp", r_exposure_min.GetFloat());
-        m_averageShader.SetFloat("u_maxExp", r_exposure_max.GetFloat());
-
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, m_histogramBuffer);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, m_lumBuffer);
-        glDispatchCompute(1, 1, 1);
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-    }
-    else
-    {
-        float defaultExp = 1.0f;
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_lumBuffer);
-        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(float), &defaultExp);
-    }
-
+    // Run the subrenderers
+    m_autoExposure->Update(m_texture, m_width, m_height);
     m_bloom->Render(m_texture, m_quadVAO, m_width, m_height);
     m_volumetrics->Render(m_depthTexture, camera, lights, m_quadVAO, m_width, m_height);
 
     m_shader.Bind();
     m_shader.SetInt("screenTexture", 0);
     m_shader.SetInt("depthTexture", 1);
+    m_autoExposure->Bind();
     m_bloom->Bind(m_shader);
     m_volumetrics->Bind(m_shader);
 
-    m_shader.SetInt("u_postprocess_enabled", r_autoexposure.GetInt());
+    m_shader.SetInt("u_postprocess_enabled", r_postprocess.GetInt());
 
     const auto& ppSettings = PostProcess::GetCurrentSettings();
     m_shader.SetFloat("u_time", (float)Time::TotalTime());
@@ -319,6 +273,12 @@ void R_PostProcess::Shutdown()
         m_volumetrics.reset();
     }
 
+    if (m_autoExposure)
+    {
+        m_autoExposure->Shutdown();
+        m_autoExposure.reset();
+    }
+
     if (m_fbo != 0) 
         glDeleteFramebuffers(1, &m_fbo);
     if (m_texture != 0) 
@@ -337,11 +297,6 @@ void R_PostProcess::Shutdown()
         glDeleteVertexArrays(1, &m_quadVAO);
     if (m_quadVBO != 0) 
         glDeleteBuffers(1, &m_quadVBO);
-
-    if (m_histogramBuffer != 0)
-        glDeleteBuffers(1, &m_histogramBuffer);
-    if (m_lumBuffer != 0)
-        glDeleteBuffers(1, &m_lumBuffer);
 
     m_fbo = m_msFbo = 0;
 }

@@ -22,45 +22,23 @@
  * SOFTWARE.
  */
 #pragma once
-#include "r_bloom.h"
-#include "r_volumetrics.h"
-#include "r_autoexposure.h"
-#include "camera.h"
 #include "shader.h"
 #include <glad/glad.h>
-#include <memory>
 
-class R_PostProcess
+class R_AutoExposure
 {
 public:
-    R_PostProcess();
-    ~R_PostProcess();
+    R_AutoExposure();
+    ~R_AutoExposure();
 
-    bool Init(int width, int height);
-    void Begin();
-    void End();
-    void Draw(const Camera& camera, class R_Lights* lights);
-    void Rescale(int width, int height);
+    void Init();
+    void Update(GLuint screenTexture, int width, int height);
+    void Bind();
     void Shutdown();
 
 private:
-    GLuint m_fbo;
-    GLuint m_texture;
-    GLuint m_depthTexture;
-
-    GLuint m_msFbo;
-    GLuint m_msTexture;
-    GLuint m_msRbo;
-
-    GLuint m_quadVAO;
-    GLuint m_quadVBO;
-    Shader m_shader;
-
-    int m_width, m_height;
-    void SetupBuffers();
-
-    // Postprocess subrenderers
-    std::unique_ptr<R_Bloom> m_bloom;
-    std::unique_ptr<R_Volumetrics> m_volumetrics;
-    std::unique_ptr<R_AutoExposure> m_autoExposure;
+    Shader m_histogramShader;
+    Shader m_averageShader;
+    GLuint m_histogramBuffer = 0;
+    GLuint m_lumBuffer = 0;
 };
