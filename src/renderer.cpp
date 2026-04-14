@@ -177,8 +177,6 @@ void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater
         m_waterRenderer->Draw(camera, m_bspRenderer->GetVAO());
     }
 
-    m_worldShader.SetInt("u_useCubemap", 0);
-
     // Draw sky
     if (m_skyRenderer && r_skybox.GetInt() > 0)
     {
