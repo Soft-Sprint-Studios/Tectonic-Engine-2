@@ -10,6 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ---- PATHS ----
 set(SDL3_PATH ${CMAKE_SOURCE_DIR}/libs/SDL3-3.4.4)
+set(SDL_TTF_PATH ${CMAKE_SOURCE_DIR}/libs/SDL3_ttf-3.2.0)
 set(GLM_PATH ${CMAKE_SOURCE_DIR}/libs/GLM)
 set(STB_IMAGE_PATH ${CMAKE_SOURCE_DIR}/libs/stb_image)
 set(GLAD_PATH ${CMAKE_SOURCE_DIR}/libs/glad)
@@ -46,6 +47,7 @@ target_compile_definitions(TectonicEngine2 PRIVATE GLM_ENABLE_EXPERIMENTAL ENGIN
 # ---- INCLUDE DIRECTORIES ----
 target_include_directories(TectonicEngine2 PRIVATE
     ${SDL3_PATH}/include
+    ${SDL_TTF_PATH}/include
     ${GLM_PATH}/include
     ${STB_IMAGE_PATH}/include
     ${GLAD_PATH}/include
@@ -64,6 +66,7 @@ find_package(OpenGL REQUIRED)
 if(WIN32)
     target_link_libraries(TectonicEngine2 PRIVATE
         ${SDL3_PATH}/lib/${ARCH_FOLDER}/SDL3.lib
+        ${SDL_TTF_PATH}/lib/${ARCH_FOLDER}/SDL3_ttf.lib
         ${BULLET_PATH}/lib/${ARCH_FOLDER}/Bullet3Dynamics.lib
         ${BULLET_PATH}/lib/${ARCH_FOLDER}/BulletCollision.lib
         ${BULLET_PATH}/lib/${ARCH_FOLDER}/BulletDynamics.lib
@@ -78,6 +81,7 @@ elseif(UNIX)
 
     target_link_directories(TectonicEngine2 PRIVATE
         ${SDL3_PATH}/lib/linux
+        ${SDL_TTF_PATH}/lib/linux
         ${BULLET_PATH}/lib/linux
         ${DISCORDRPC_PATH}/lib/linux
         ${SENTRY_PATH}/lib/linux
@@ -85,6 +89,7 @@ elseif(UNIX)
 
     target_link_libraries(TectonicEngine2 PRIVATE
         SDL3
+        SDL3_ttf
         OpenAL::OpenAL
         Bullet3Dynamics
         BulletCollision
@@ -108,6 +113,7 @@ if (WIN32)
     add_custom_command(TARGET TectonicEngine2 POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${SDL3_PATH}/lib/${ARCH_FOLDER}/SDL3.dll"
+        "${SDL_TTF_PATH}/lib/${ARCH_FOLDER}/SDL3_ttf.dll"
         "${SENTRY_PATH}/lib/${ARCH_FOLDER}/sentry.dll"
         "${SENTRY_PATH}/lib/${ARCH_FOLDER}/crashpad_wer.dll"
         "${SENTRY_PATH}/lib/${ARCH_FOLDER}/crashpad_handler.exe"

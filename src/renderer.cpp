@@ -80,6 +80,9 @@ bool Renderer::Init(Window& window)
     m_waterRenderer = std::make_unique<R_Waters>();
     m_waterRenderer->Init(1280, 720);
 
+    m_uiRenderer = std::make_unique<R_UI>();
+    m_uiRenderer->Init(m_windowRef);
+
     return true;
 }
 
@@ -241,11 +244,20 @@ void Renderer::Render(Camera& camera)
     m_postProcess->Draw(camera, m_lightRenderer.get());
     glEnable(GL_DEPTH_TEST);
 
+    if (m_uiRenderer)
+    {
+        m_uiRenderer->Render();
+    }
+
     m_windowRef->Swap();
 }
 
 void Renderer::OnWindowResize(int w, int h)
 {
+    if (m_uiRenderer)
+    {
+        m_uiRenderer->OnWindowResize(w, h);
+    }
     if (m_postProcess)
     {
         m_postProcess->Rescale(w, h);
@@ -300,5 +312,11 @@ void Renderer::Shutdown()
     {
         m_waterRenderer->Shutdown();
         m_waterRenderer.reset();
+    }
+
+    if (m_uiRenderer)
+    {
+        m_uiRenderer->Shutdown();
+        m_uiRenderer.reset();
     }
 }

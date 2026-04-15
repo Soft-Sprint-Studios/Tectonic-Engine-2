@@ -51,6 +51,7 @@
 #include "concmd.h"
 
 CVar r_max_fps("r_max_fps", "0", CVAR_SAVE);
+CVar r_show_fps("r_show_fps", "0", CVAR_SAVE);
 
 bool running = true;
 
@@ -144,6 +145,12 @@ ENGINE_API int Engine_Main(int argc, char** argv)
         EntityManager::UpdateAll(dt);
 
         Binds::Update(input);
+
+        if (r_show_fps.GetInt() > 0 && renderer.GetUI())
+        {
+            std::string fpsText = "FPS: " + std::to_string(Time::FPS());
+            renderer.GetUI()->DrawText(fpsText, 10.0f, 10.0f, { 1.0f, 1.0f, 0.0f, 1.0f });
+        }
 
         // Rendering
         renderer.Render(camera);

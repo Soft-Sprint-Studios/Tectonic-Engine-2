@@ -24,51 +24,44 @@
 #pragma once
 #include "window.h"
 #include "shader.h"
-#include "camera.h"
-#include "r_postprocess.h"
-#include "r_bsp.h"
-#include "r_models.h"
-#include "r_sky.h"
-#include "r_particles.h"
-#include "r_lights.h"
-#include "r_sprites.h"
-#include "r_waters.h"
-#include "r_ui.h"
-#include "cubemap.h"
-#include <memory>
+#include <string>
+#include <vector>
+#include <unordered_map>
+#include <glm/glm.hpp>
+#include <SDL3_ttf/SDL_ttf.h>
+#include <glad/glad.h>
 
-class Renderer
+class R_UI
 {
 public:
-    Renderer();
-    ~Renderer();
+    R_UI();
+    ~R_UI();
 
-    bool Init(Window& window);
-    bool LoadMap(const std::string& path);
+    void Init(Window* window);
     void Shutdown();
-    void Render(Camera& camera);
-    void RenderWorld(Camera& camera, GLuint cubemapToExclude = 0, bool drawWater = true);
     void OnWindowResize(int w, int h);
-
-    R_UI* GetUI() const 
-    { 
-        return m_uiRenderer.get(); 
-    }
+    
+    void DrawText(const std::string& text, float x, float y, const glm::vec4& color);
+    void Render();
 
 private:
-    bool m_drawingWater = false;
-    void DrawWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater);
-    Window* m_windowRef;
-    Shader m_worldShader;
+    struct TextDrawCommand
+    {
+        std::string text;
+        float x, y;
+        glm::vec4 color;
+    };
 
-    // Sub-renderers
-    std::unique_ptr<R_PostProcess> m_postProcess;
-    std::unique_ptr<R_BSP> m_bspRenderer;
-    std::unique_ptr<R_Models> m_modelRenderer;
-    std::unique_ptr<R_Sky> m_skyRenderer;
-    std::unique_ptr<R_Particles> m_particleRenderer;
-    std::unique_ptr<R_Lights> m_lightRenderer;
-    std::unique_ptr<R_Sprites> m_spriteRenderer;
-    std::unique_ptr<R_Waters> m_waterRenderer;
-    std::unique_ptr<R_UI> m_uiRenderer;
+    struct CachedText
+    {
+        GLuint textureID;
+        int width, height;
+    };
+
+    Shader m_shader;
+    GLuint m_vao = 0, m_vbo = 0;
+    TTF_Font* m_font = nullptr;
+    glm::mat4 m_projection;
+    std::vector<TextDrawCommand> m_commands;
+    std::unordered_map<std::string, CachedText> m_textCache;
 };
