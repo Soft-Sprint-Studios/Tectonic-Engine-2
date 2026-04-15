@@ -25,6 +25,9 @@ uniform vec3 u_viewPos;
 uniform int u_debugMode;
 uniform int u_fullbright;
 
+uniform int u_mat_specular;
+uniform int u_mat_bumpmap;
+
 // Dynamic point lights
 struct PointLight 
 {
@@ -144,6 +147,8 @@ void main()
     }
 
     vec3 specMask = texture(u_specular, TexCoord).rgb;
+    if (u_mat_specular == 0) 
+        specMask = vec3(0.0);
     vec3 baseNorm = normalize(TBN[2]);
     vec3 viewDir = normalize(u_viewPos - FragPos);
     float shine = 32.0;
@@ -151,7 +156,7 @@ void main()
     vec3 N = baseNorm;
 
 	vec3 tangentNormal = vec3(0.0, 0.0, 1.0);
-    if (u_useBump)
+    if (u_useBump && u_mat_bumpmap == 1)
     {
         tangentNormal = texture(u_normal, TexCoord).rgb * 2.0 - 1.0;
         N = normalize(TBN * tangentNormal);

@@ -25,8 +25,11 @@
 #include "dynamic_light.h"
 #include "r_bsp.h"
 #include "r_models.h"
+#include "cvar.h"
 #include <string>
 #include <glm/gtc/matrix_transform.hpp>
+
+CVar r_shadows("r_shadows", "1", CVAR_SAVE);
 
 R_Lights::R_Lights() : m_SpotShadow(0), m_PointShadow(0)
 {
@@ -120,6 +123,12 @@ void R_Lights::RenderShadowMaps(R_BSP* bsp, R_Models* models)
     for (auto& light : lights)
     {
         auto& def = const_cast<DynamicLightDef&>(light->GetDef());
+
+        if (r_shadows.GetInt() == 0) 
+        {
+            def.shadowRendered = false;
+            continue;
+        }
 
         if (!light->IsActive() || !def.castsShadows)
         {

@@ -47,6 +47,9 @@ CVar r_sprites("r_sprites", "1", CVAR_SAVE);
 CVar r_wireframe("r_wireframe", "0", CVAR_NONE);
 CVar r_fullbright("r_fullbright", "0", CVAR_NONE);
 
+CVar mat_specular("mat_specular", "1", CVAR_SAVE);
+CVar mat_bumpmap("mat_bumpmap", "1", CVAR_SAVE);
+
 Renderer::Renderer() : m_windowRef(nullptr)
 {
 }
@@ -127,6 +130,9 @@ void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater
     m_worldShader.SetMat4("u_model", glm::mat4(1.0f));
     m_worldShader.SetVec3("u_viewPos", camera.position);
     m_worldShader.SetInt("u_fullbright", r_fullbright.GetInt());
+
+    m_worldShader.SetInt("u_mat_specular", mat_specular.GetInt());
+    m_worldShader.SetInt("u_mat_bumpmap", mat_bumpmap.GetInt());
 
     m_worldShader.SetInt("u_diffuse", 0);
     m_worldShader.SetInt("u_lightmap", 1);
