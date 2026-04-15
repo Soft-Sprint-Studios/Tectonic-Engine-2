@@ -788,9 +788,12 @@ namespace BSP
                 m_map.renderVertices.push_back(verts[i + 1]);
                 m_map.renderVertices.push_back(verts[i]);
 
-                m_map.collision.indices.push_back(indices[0]);
-                m_map.collision.indices.push_back(indices[i + 1]);
-                m_map.collision.indices.push_back(indices[i]);
+                if (!(tex.flags & SURF_WATER))
+                {
+                    m_map.collision.indices.push_back(indices[0]);
+                    m_map.collision.indices.push_back(indices[i + 1]);
+                    m_map.collision.indices.push_back(indices[i]);
+                }
             }
         }
 
@@ -910,13 +913,16 @@ namespace BSP
                     m_map.renderVertices.push_back(grid[i2]);
                     m_map.renderVertices.push_back(grid[i3]);
 
-                    m_map.collision.indices.push_back(baseIdx + i0);
-                    m_map.collision.indices.push_back(baseIdx + i1);
-                    m_map.collision.indices.push_back(baseIdx + i2);
+                    if (!(tex.flags & SURF_WATER))
+                    {
+                        m_map.collision.indices.push_back(baseIdx + i0);
+                        m_map.collision.indices.push_back(baseIdx + i1);
+                        m_map.collision.indices.push_back(baseIdx + i2);
 
-                    m_map.collision.indices.push_back(baseIdx + i0);
-                    m_map.collision.indices.push_back(baseIdx + i2);
-                    m_map.collision.indices.push_back(baseIdx + i3);
+                        m_map.collision.indices.push_back(baseIdx + i0);
+                        m_map.collision.indices.push_back(baseIdx + i2);
+                        m_map.collision.indices.push_back(baseIdx + i3);
+                    }
                 }
             }
         }
