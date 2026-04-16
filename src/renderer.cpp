@@ -32,6 +32,7 @@
 #include <stb_image_write.h>
 #include <ctime>
 #include "concmd.h"
+#include <cstring>
 
 CVar r_vsync("r_vsync", "1", CVAR_SAVE);
 CVar r_multisample("r_multisample", "1", CVAR_SAVE);
