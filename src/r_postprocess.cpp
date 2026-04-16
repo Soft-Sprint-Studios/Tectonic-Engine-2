@@ -59,6 +59,9 @@ bool R_PostProcess::Init(int width, int height)
     m_autoExposure = std::make_unique<R_AutoExposure>();
     m_autoExposure->Init();
 
+    m_ssao = std::make_unique<R_SSAO>();
+    m_ssao->Init(m_width, m_height);
+
     SetupBuffers();
 
     // Full-screen quad
@@ -216,6 +219,7 @@ void R_PostProcess::Draw(const Camera& camera, R_Lights* lights)
     m_autoExposure->Update(m_texture, m_width, m_height);
     m_bloom->Render(m_texture, m_quadVAO, m_width, m_height);
     m_volumetrics->Render(m_depthTexture, camera, lights, m_quadVAO, m_width, m_height);
+    m_ssao->Render(m_depthTexture, camera, m_quadVAO, m_width, m_height);
 
     m_shader.Bind();
     m_shader.SetInt("screenTexture", 0);
@@ -223,6 +227,7 @@ void R_PostProcess::Draw(const Camera& camera, R_Lights* lights)
     m_autoExposure->Bind();
     m_bloom->Bind(m_shader);
     m_volumetrics->Bind(m_shader);
+    m_ssao->Bind(m_shader);
 
     m_shader.SetInt("u_postprocess_enabled", r_postprocess.GetInt());
 
@@ -256,6 +261,7 @@ void R_PostProcess::Rescale(int width, int height)
     m_height = height;
     m_bloom->Rescale(width, height);
     m_volumetrics->Rescale(width, height);
+    m_ssao->Rescale(width, height);
     SetupBuffers();
 }
 
@@ -277,6 +283,12 @@ void R_PostProcess::Shutdown()
     {
         m_autoExposure->Shutdown();
         m_autoExposure.reset();
+    }
+
+    if (m_ssao)
+    {
+        m_ssao->Shutdown();
+        m_ssao.reset();
     }
 
     if (m_fbo != 0) 

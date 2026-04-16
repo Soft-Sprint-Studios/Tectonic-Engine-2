@@ -5,6 +5,7 @@ uniform sampler2D screenTexture;
 uniform sampler2D depthTexture;
 uniform sampler2D bloomTexture;
 uniform sampler2D u_volumetricTexture;
+uniform sampler2D u_ssaoTexture;
 uniform float u_time;
 
 uniform float u_vignetteStrength;
@@ -22,6 +23,7 @@ uniform int u_fogAffectsSky;
 uniform int u_bloom_enabled;
 uniform float u_bloom_intensity;
 uniform int u_volumetrics_enabled;
+uniform int u_ssao_enabled;
 
 layout(std430, binding = 2) buffer LumData 
 {
@@ -58,6 +60,12 @@ void main()
     vec3 hdrColor = vec3(r, g, b);
 
     hdrColor *= u_exposure;
+	
+    // SSAO
+    if (u_ssao_enabled == 1)
+    {
+        hdrColor *= texture(u_ssaoTexture, TexCoords).r;
+    }
 
     // Black and White
     float luminance = dot(hdrColor, vec3(0.299, 0.587, 0.114));
