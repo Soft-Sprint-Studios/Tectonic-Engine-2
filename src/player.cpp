@@ -117,10 +117,14 @@ void Player::Think(float deltaTime)
         m_flashlight->SetActive(m_flashlightOn);
     }
 
-    if (m_flashlightOn && m_flashlight)
+    if (m_flashlightOn && m_flashlight) 
     {
         m_flashlight->SetPosition(m_camera->position);
-        m_flashlight->SetDirection(m_camera->GetForward());
+
+        float lerpSpeed = 15.0f;
+        m_smoothedFlashlightDir = glm::mix(m_smoothedFlashlightDir, m_camera->GetForward(), deltaTime * lerpSpeed);
+
+        m_flashlight->SetDirection(normalize(m_smoothedFlashlightDir));
     }
 
     if (m_input->GetKeyDown(SDL_SCANCODE_SPACE) && m_character->onGround() && !m_noclip)

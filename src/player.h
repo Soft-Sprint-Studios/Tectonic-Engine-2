@@ -63,4 +63,5 @@ private:
     Input* m_input = nullptr;
     btKinematicCharacterController* m_character = nullptr;
     bool m_noclip = false;
+    glm::vec3 m_smoothedFlashlightDir;
 };
