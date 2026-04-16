@@ -81,10 +81,6 @@ public:
             m_disabled = !m_disabled;
     }
 
-    bool IsVisible() const override 
-    { 
-        return false; 
-    }
     bool IsCollidable() const override 
     { 
         return false; 
@@ -135,10 +131,6 @@ public:
         m_nextUseTime = (float)Time::TotalTime() + m_delay;
     }
 
-    bool IsVisible() const override
-    {
-        return true;
-    }
     bool IsCollidable() const override
     {
         return true;
@@ -162,15 +154,12 @@ public:
         Entity::Spawn(keyvalues);
     }
 
-    bool IsVisible() const override 
-    { 
-        return false; 
-    }
     bool IsCollidable() const override 
     { 
         return false; 
     }
 };
+
 LINK_ENTITY_TO_CLASS("env_cubemap_box", EnvCubemapBox)
 
 // ==========================================
@@ -377,11 +366,6 @@ public:
             m_sys->SetActive(false);
     }
 
-    bool IsVisible() const override 
-    { 
-        return false; 
-    }
-
 private:
     std::string m_effect;
     std::shared_ptr<ParticleSystem> m_sys;
@@ -453,10 +437,6 @@ public:
         }
     }
 
-    bool IsVisible() const override
-    {
-        return false;
-    }
     bool IsCollidable() const override
     {
         return false;
@@ -580,11 +560,6 @@ public:
             m_sprite->SetActive(false);
         if (input == "ToggleSprite") 
             m_sprite->SetActive(!m_sprite->IsActive());
-    }
-
-    bool IsVisible() const override 
-    { 
-        return false; 
     }
 
 private:

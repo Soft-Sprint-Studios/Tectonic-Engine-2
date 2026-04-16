@@ -59,11 +59,6 @@ public:
         return false; 
     }
 
-    virtual bool IsVisible() const 
-    { 
-        return true; 
-    }
-
     virtual bool IsCollidable() const 
     {
         return true; 
