@@ -222,8 +222,8 @@ void R_PostProcess::Draw(const Camera& camera, R_Lights* lights)
     m_ssao->Render(m_depthTexture, camera, m_quadVAO, m_width, m_height);
 
     m_shader.Bind();
-    m_shader.SetInt("screenTexture", 0);
-    m_shader.SetInt("depthTexture", 1);
+    m_shader.SetInt("u_screenTexture", 0);
+    m_shader.SetInt("u_depthTexture", 1);
     m_autoExposure->Bind();
     m_bloom->Bind(m_shader);
     m_volumetrics->Bind(m_shader);

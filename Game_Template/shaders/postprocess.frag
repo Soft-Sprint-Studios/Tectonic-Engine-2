@@ -1,9 +1,9 @@
 out vec4 FragColor;
 in vec2 TexCoords;
 
-uniform sampler2D screenTexture;
-uniform sampler2D depthTexture;
-uniform sampler2D bloomTexture;
+uniform sampler2D u_screenTexture;
+uniform sampler2D u_depthTexture;
+uniform sampler2D u_bloomTexture;
 uniform sampler2D u_volumetricTexture;
 uniform sampler2D u_ssaoTexture;
 uniform float u_time;
@@ -46,7 +46,7 @@ void main()
 {
     if (u_postprocess_enabled == 0)
     {
-	    vec3 rawColor = texture(screenTexture, TexCoords).rgb;
+	    vec3 rawColor = texture(u_screenTexture, TexCoords).rgb;
         FragColor = vec4(pow(rawColor, vec3(1.0/u_Gamma)), 1.0);
         return;
     }
@@ -54,9 +54,9 @@ void main()
     // Chromatic Aberration
     vec2 redOffset = u_chromaStrength * (TexCoords - 0.5);
     vec2 greenOffset = -u_chromaStrength * (TexCoords - 0.5) * 0.5;
-    float r = texture(screenTexture, TexCoords - redOffset).r;
-    float g = texture(screenTexture, TexCoords - greenOffset).g;
-    float b = texture(screenTexture, TexCoords).b;
+    float r = texture(u_screenTexture, TexCoords - redOffset).r;
+    float g = texture(u_screenTexture, TexCoords - greenOffset).g;
+    float b = texture(u_screenTexture, TexCoords).b;
     vec3 hdrColor = vec3(r, g, b);
 
     hdrColor *= u_exposure;
@@ -82,7 +82,7 @@ void main()
     // Bloom
     if (u_bloom_enabled == 1)
     {
-        hdrColor += texture(bloomTexture, TexCoords).rgb * u_bloom_intensity;
+        hdrColor += texture(u_bloomTexture, TexCoords).rgb * u_bloom_intensity;
     }
 
     // Volumetrics
@@ -91,7 +91,7 @@ void main()
         hdrColor += texture(u_volumetricTexture, TexCoords).rgb;
     }
 
-    float depth = texture(depthTexture, TexCoords).r;
+    float depth = texture(u_depthTexture, TexCoords).r;
 
     if (u_fogEnabled == 1 && (u_fogAffectsSky == 1 || depth < 0.9999))
     {
