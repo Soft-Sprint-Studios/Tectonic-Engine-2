@@ -31,6 +31,7 @@
 #include "dynamic_light.h"
 #include "lightstyles.h"
 #include "sprite.h"
+#include "r_sky.h"
 #include <sstream>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -567,3 +568,39 @@ private:
 };
 
 LINK_ENTITY_TO_CLASS("sprite", SpriteEmitter)
+
+// ==========================================
+// dynamic_sky
+// ==========================================
+class DynamicSky : public Entity
+{
+public:
+    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    {
+        Entity::Spawn(keyvalues);
+
+        R_Sky::s_useDynamic = true;
+        glm::vec3 angles = GetVector("angles", { 45, 0, 0 });
+
+        glm::mat4 rot = glm::mat4(1.0f);
+        rot = glm::rotate(rot, glm::radians(angles.y), glm::vec3(0, 1, 0));
+        rot = glm::rotate(rot, glm::radians(angles.x), glm::vec3(1, 0, 0));
+
+        R_Sky::s_sunDir = glm::normalize(glm::vec3(rot * glm::vec4(0, 0, 1, 0)));
+    }
+
+    void AcceptInput(const std::string& input, const std::string& param) override
+    {
+        if (input == "Enable")
+        {
+            R_Sky::s_useDynamic = true;
+        }
+
+        if (input == "Disable")
+        {
+            R_Sky::s_useDynamic = false;
+        }
+    }
+};
+
+LINK_ENTITY_TO_CLASS("dynamic_sky", DynamicSky)

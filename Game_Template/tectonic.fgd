@@ -24,7 +24,7 @@
 
 @SolidClass = worldspawn : "The world entity."
 [
-	skyname(string) : "SkyBox Texture Name" : "sky_day01_01" : "The cubemap to use for the skybox."
+	skyname(string) : "SkyBox Texture Name" : "" : "The cubemap to use for the skybox."
 ]
 
 //-------------------------------------------------------------------------
@@ -323,4 +323,34 @@
 
 @SolidClass base(Targetname) = env_cubemap_box : "An environment cubemap probe. The cubemap is captured from the center of this brush's volume. Models will use the nearest cubemap for reflections. The volume of this brush is used for parallax correction."
 [
+]
+
+@PointClass base(Targetname) size(-1 -1 0, 1 1 1) color(80 150 225) studio("models/editor/overlay_helper.mdl") sphere(fademindist) sphere(fademaxdist) overlay() = info_overlay : 
+	"An entity that places an overlay on the world." 
+[
+	material(material) : "Material"
+	sides(sidelist) : "Brush faces"
+	RenderOrder(integer) : "Render Order" : 0 : "Higher values render after lower values. This value can be 0-3."
+	StartU(float) : "U Start" : "0.0"
+	EndU(float) : "U End" : "1.0"
+	StartV(float) : "V Start" : "0.0"
+	EndV(float) : "V End" : "1.0"
+	BasisOrigin(Vector) readonly : "Overlay Basis Origin(Read-Only)"
+	BasisU(Vector) readonly : "Overlay Basis U(Read-Only)"
+	BasisV(Vector) readonly : "Overlay Basis V(Read-Only)"
+	BasisNormal(Vector) readonly : "Overlay Basis Normal(Read-Only)"
+	uv0(vector) readonly : "Overlay Point 1(Read-Only)"
+	uv1(vector) readonly : "Overlay Point 2(Read-Only)"
+	uv2(vector) readonly : "Overlay Point 3(Read-Only)"
+	uv3(vector) readonly : "Overlay Point 4(Read-Only)"
+	fademindist(float) : "Start Fade Dist" : -1 : "Distance at which the overlay starts to fade (<0 = use fademaxdist)."
+	fademaxdist(float) : "End Fade Dist" : 0 : "Maximum distance at which the overlay is visible (0 = don't fade out)."
+]
+
+@PointClass base(Targetname, Angles) = dynamic_sky : "Procedural Atmosphere and Cloud Controller"
+[
+	angles(angle) : "Sun Pitch Yaw Roll" : "45 0 0"
+
+	input Enable(void) : "Enable procedural sky"
+	input Disable(void) : "Disable procedural sky and return to cubemap"
 ]

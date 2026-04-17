@@ -38,6 +38,10 @@ public:
     void Draw(const Camera& camera);
     void Shutdown();
 
+    // Dynamic sky data
+    static glm::vec3 s_sunDir;
+    static bool s_useDynamic;
+
 private:
     GLuint m_vao, m_vbo;
     GLuint m_cubemapTexture;

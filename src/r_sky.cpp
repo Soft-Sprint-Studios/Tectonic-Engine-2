@@ -21,12 +21,21 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#include "cvar.h"
+#include "timing.h"
 #include "materials.h"
 #include "r_sky.h"
 #include "filesystem.h"
 #include "console.h"
 #include <stb_image.h>
 #include <glm/gtc/type_ptr.hpp>
+
+// Dynamic sky data
+glm::vec3 R_Sky::s_sunDir = glm::vec3(0.0f, 1.0f, 0.01f);
+bool R_Sky::s_useDynamic = false;
+
+CVar r_sky_steps_primary("r_sky_steps_primary", "8", CVAR_SAVE);
+CVar r_sky_steps_light("r_sky_steps_light", "3", CVAR_SAVE);
 
 R_Sky::R_Sky() : m_vao(0), m_vbo(0), m_cubemapTexture(0) 
 {
@@ -118,6 +127,14 @@ void R_Sky::Draw(const Camera& camera)
     glm::mat4 view = glm::mat4(glm::mat3(camera.GetViewMatrix())); 
     m_shader.SetMat4("view", view);
     m_shader.SetMat4("projection", camera.GetProjectionMatrix());
+
+    // Dynamic sky
+    m_shader.SetInt("u_use_dynamic", s_useDynamic ? 1 : 0);
+    m_shader.SetInt("u_sky_steps_primary", r_sky_steps_primary.GetInt());
+    m_shader.SetInt("u_sky_steps_light", r_sky_steps_light.GetInt());
+    m_shader.SetVec3("u_sunDir", s_sunDir);
+    m_shader.SetVec3("u_cameraPos", camera.position);
+    m_shader.SetFloat("u_time", (float)Time::TotalTime());
 
     glBindVertexArray(m_vao);
     glActiveTexture(GL_TEXTURE0);
