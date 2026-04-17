@@ -24,6 +24,7 @@ uniform bool u_isModel;
 uniform vec3 u_viewPos;
 uniform int u_debugMode;
 uniform int u_fullbright;
+uniform mat4 u_view;
 
 uniform int u_mat_specular;
 uniform int u_mat_bumpmap;
@@ -59,6 +60,12 @@ uniform samplerCube u_pointShadowMaps[4];
 uniform int u_numSpotLights;
 uniform SpotLight u_spotLights[4];
 uniform sampler2D u_spotShadowMaps[4];
+
+uniform sampler2DArray u_csmArray;
+uniform mat4 u_csmMatrices[4];
+uniform float u_csmSplits[5];
+uniform vec3 u_sunColor;
+uniform vec3 u_sunDir;
 
 out vec4 FragColor;
 
@@ -136,6 +143,56 @@ float PointShadowCalc(vec3 fragPos, vec3 lightPos, float far_plane, samplerCube 
     }
     
     return shadow / (samples * samples * samples);
+}
+
+float CalculateSunShadow(vec3 fragPosWorld, vec3 N, vec3 L)
+{
+    float depth = abs((u_view * vec4(fragPosWorld, 1.0)).z);
+    int layer = -1;
+
+    for (int i = 0; i < 4; i++)
+    {
+        if (depth < u_csmSplits[i + 1])
+        {
+            layer = i;
+            break;
+        }
+    }
+
+    if (layer == -1)
+    {
+        return 0.0;
+    }
+
+    float offsetScale = 0.05 * (1.0 - dot(N, L));
+    vec3 offsetPos = fragPosWorld + N * offsetScale;
+    vec4 fragPosLightSpace = u_csmMatrices[layer] * vec4(offsetPos, 1.0);
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    projCoords = projCoords * 0.5 + 0.5;
+
+    if (projCoords.z > 1.0)
+    {
+        return 0.0;
+    }
+
+    float shadow = 0.0;
+
+    vec2 texelSize = 1.0 / vec2(textureSize(u_csmArray, 0));
+
+    for (int x = -1; x <= 1; ++x)
+    {
+        for (int y = -1; y <= 1; ++y)
+        {
+            float pcfDepth = texture(u_csmArray, vec3(projCoords.xy + vec2(x, y) * texelSize, layer)).r;
+
+            if (projCoords.z > pcfDepth)
+            {
+                shadow += 1.0;
+            }
+        }
+    }
+
+    return shadow / 9.0;
 }
 
 void main()
@@ -317,9 +374,29 @@ void main()
         dynDiffuse += lightEnergy * diff;
         dynSpecular += lightEnergy * spec * specMask * 0.5;
     }
+	
+    // CSM pass
+    vec3 sunL = normalize(u_sunDir);
+    
+    float sunMask = 1.0;
+    if (u_isModel)
+    {
+        sunMask = Color.a;
+    }
+    else
+    {
+        if (u_useBump)
+            sunMask = texture(u_lightmap, LmCoord5).r;
+        else
+            sunMask = texture(u_lightmap, LmCoord1).a;
+    }
+
+    float sunShadow = CalculateSunShadow(FragPos, N, sunL);
+
+    vec3 sunFinal = (u_sunColor * max(dot(N, sunL), 0.0) * (1.0 - sunShadow)) * sunMask;
 
     // Final Composition
-    vec3 finalDiffuse = albedo.rgb * (diffuseLight * 2.0 + dynDiffuse);
+    vec3 finalDiffuse = albedo.rgb * (diffuseLight * 2.0 + dynDiffuse + sunFinal);
     vec3 finalSpecular = specularLight + dynSpecular;
 
     if (u_fullbright == 1)

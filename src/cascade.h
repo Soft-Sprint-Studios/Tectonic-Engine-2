@@ -22,37 +22,53 @@
  * SOFTWARE.
  */
 #pragma once
-#include "dynamic_light.h"
 #include "shader.h"
-#include "camera.h"
-#include "cascade.h"
 #include <glad/glad.h>
-#include <memory>
+#include <glm/glm.hpp>
+#include <vector>
 
 class R_BSP;
 class R_Models;
 
-class R_Lights
+class CascadeShadows
 {
 public:
-    R_Lights();
-    ~R_Lights();
+    CascadeShadows();
+    ~CascadeShadows();
 
-    bool Init();
-    void RenderShadowMaps(Camera& camera, R_BSP* bsp, R_Models* models);
-    void Bind(const Shader& shader);
+    void Init(int resolution = 4096);
     void Shutdown();
 
+    void Update(const class Camera& cam, const glm::vec3& sunDir);
+    void Render(const class Camera& camera, const glm::vec3& sunDir, Shader& shader, R_BSP* bsp, R_Models* models);
+    
+    void BindForWriting();
+    void BindForReading(uint32_t textureUnit);
+    void Bind(Shader& shader, const glm::vec3& sunColor, const glm::vec3& sunDir, bool enabled);
+
+    const std::vector<glm::mat4>& GetMatrices() const 
+    { 
+        return m_matrices; 
+    }
+
+    const std::vector<float>& GetSplits() const 
+    { 
+        return m_splits; 
+    }
+
+    GLuint GetTexArrayID() const
+    {
+        return m_texArray;
+    }
+
 private:
-    void SetupShadowMap(std::shared_ptr<DynamicLight> light);
+    GLuint m_fbo = 0;
+    GLuint m_texArray = 0;
+    GLuint m_dummyTex = 0;
+    int m_resolution;
 
-    Shader m_shadowSpotShader;
-    Shader m_shadowPointShader;
-
-    GLuint m_SpotShadow;
-    GLuint m_PointShadow;
-
-    std::unique_ptr<CascadeShadows> m_csm;
-    static glm::vec3 s_sunDir;
-    static glm::vec3 s_sunColor;
+    std::vector<glm::mat4> m_matrices;
+    std::vector<float> m_splits;
+    
+    std::vector<glm::vec4> GetFrustumCornersWorldSpace(const glm::mat4& proj, const glm::mat4& view);
 };

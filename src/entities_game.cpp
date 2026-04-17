@@ -32,6 +32,7 @@
 #include "lightstyles.h"
 #include "sprite.h"
 #include "r_sky.h"
+#include "r_lights.h"
 #include <sstream>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -444,22 +445,6 @@ public:
     }
 
 protected:
-    glm::vec4 GetVector4(const std::string& key, const glm::vec4& defaultVal = glm::vec4(0.0f)) const
-    {
-        auto it = m_keyvalues.find(key);
-        if (it == m_keyvalues.end())
-        {
-            return defaultVal;
-        }
-        glm::vec4 result;
-        std::stringstream ss(it->second);
-        if (ss >> result.x >> result.y >> result.z >> result.w)
-        {
-            return result;
-        }
-        return defaultVal;
-    }
-
     std::shared_ptr<DynamicLight> m_light;
     glm::vec3 m_baseColor;
 };
@@ -578,28 +563,33 @@ public:
     void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
     {
         Entity::Spawn(keyvalues);
-
         R_Sky::s_useDynamic = true;
-        glm::vec3 angles = GetVector("angles", { 45, 0, 0 });
 
-        glm::mat4 rot = glm::mat4(1.0f);
-        rot = glm::rotate(rot, glm::radians(angles.y), glm::vec3(0, 1, 0));
-        rot = glm::rotate(rot, glm::radians(angles.x), glm::vec3(1, 0, 0));
+        glm::vec3 angles = GetVector("angles", { 0, 0, 0 });
+        float p = glm::radians(angles.x);
+        float y = glm::radians(angles.y);
 
-        R_Sky::s_sunDir = glm::normalize(glm::vec3(rot * glm::vec4(0, 0, 1, 0)));
+        float hx = cos(p) * cos(y);
+        float hy = cos(p) * sin(y);
+        float hz = -sin(p);
+
+        R_Sky::s_sunDir = glm::normalize(glm::vec3(-hx, hz, hy));
+
+        glm::vec4 lightData = GetVector4("_light", glm::vec4(255, 255, 255, 255));
+        glm::vec3 color = glm::vec3(lightData.x, lightData.y, lightData.z) / 255.0f;
+        float intensity = lightData.w / 255.0f;
+
+        R_Sky::s_sunColor = color * intensity;
+
+        R_Sky::s_hasCSM = GetInt("hascsm", 1) != 0;
     }
 
     void AcceptInput(const std::string& input, const std::string& param) override
     {
-        if (input == "Enable")
-        {
+        if (input == "Enable") 
             R_Sky::s_useDynamic = true;
-        }
-
-        if (input == "Disable")
-        {
+        if (input == "Disable") 
             R_Sky::s_useDynamic = false;
-        }
     }
 };
 

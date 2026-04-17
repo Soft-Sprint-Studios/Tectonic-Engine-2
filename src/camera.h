@@ -82,7 +82,7 @@ public:
         m_aspect = ratio; 
     }
 
-    float GetAspectRatio()
+    float GetAspectRatio() const
     {
         return m_aspect;
     }

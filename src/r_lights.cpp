@@ -25,6 +25,7 @@
 #include "dynamic_light.h"
 #include "r_bsp.h"
 #include "r_models.h"
+#include "r_sky.h"
 #include "cvar.h"
 #include <string>
 #include <glm/gtc/matrix_transform.hpp>
@@ -45,6 +46,9 @@ bool R_Lights::Init()
     Shutdown();
     m_shadowSpotShader.Load("shaders/shadow_spot.vert", "shaders/shadow_spot.frag");
     m_shadowPointShader.Load("shaders/shadow_point.vert", "shaders/shadow_point.frag", "shaders/shadow_point.geom");
+
+    m_csm = std::make_unique<CascadeShadows>();
+    m_csm->Init(4096);
 
     float white = 1.0f;
 
@@ -116,8 +120,14 @@ void R_Lights::SetupShadowMap(std::shared_ptr<DynamicLight> light)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void R_Lights::RenderShadowMaps(R_BSP* bsp, R_Models* models)
+void R_Lights::RenderShadowMaps(Camera& camera, R_BSP* bsp, R_Models* models)
 {
+    // CSM
+    if (r_shadows.GetInt() > 0 && R_Sky::s_hasCSM)
+    {
+        m_csm->Render(camera, R_Sky::s_sunDir, m_shadowSpotShader, bsp, models);
+    }
+
     const auto& lights = DynamicLights::GetActiveLights();
 
     for (auto& light : lights)
@@ -216,6 +226,10 @@ void R_Lights::RenderShadowMaps(R_BSP* bsp, R_Models* models)
 
 void R_Lights::Bind(const Shader& shader)
 {
+    // CSM
+    m_csm->Bind(const_cast<Shader&>(shader), R_Sky::s_sunColor, R_Sky::s_sunDir, (r_shadows.GetInt() > 0 && R_Sky::s_hasCSM));
+
+    // Then the scene lights
     for (int i = 0; i < 4; ++i)
     {
         glActiveTexture(GL_TEXTURE5 + i);

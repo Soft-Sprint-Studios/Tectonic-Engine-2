@@ -37,7 +37,7 @@ R_UI::~R_UI()
 
 void R_UI::Init(Window* window)
 {
-    if (TTF_Init() == -1)
+    if (!TTF_Init())
     {
         Console::Error("Failed to initialize SDL_ttf: " + std::string(SDL_GetError()));
         return;

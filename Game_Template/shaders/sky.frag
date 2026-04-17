@@ -3,7 +3,7 @@
 layout(location = 0) out vec4 FragColor;
 
 in vec3 TexCoords;
-in centroid vec3 v_worldPos;
+in vec3 v_worldPos;
 
 uniform bool u_use_dynamic;
 uniform samplerCube skybox;

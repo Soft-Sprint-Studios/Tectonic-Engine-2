@@ -78,6 +78,7 @@ public:
     int GetInt(const std::string& key, int defaultVal = 0) const;
     float GetFloat(const std::string& key, float defaultVal = 0.0f) const;
     glm::vec3 GetVector(const std::string& key, const glm::vec3& defaultVal = glm::vec3(0.0f)) const;
+    glm::vec4 GetVector4(const std::string& key, const glm::vec4& defaultVal = glm::vec4(0.0f)) const;
 
     btCollisionObject* GetPhysObject() const 
     { 

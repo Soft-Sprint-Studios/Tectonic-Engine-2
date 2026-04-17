@@ -223,7 +223,7 @@ void Renderer::Render(Camera& camera)
 {
     if (m_lightRenderer)
     {
-        m_lightRenderer->RenderShadowMaps(m_bspRenderer.get(), m_modelRenderer.get());
+        m_lightRenderer->RenderShadowMaps(camera, m_bspRenderer.get(), m_modelRenderer.get());
     }
 
     int w, h;

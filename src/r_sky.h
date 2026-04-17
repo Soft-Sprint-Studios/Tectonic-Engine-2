@@ -40,7 +40,9 @@ public:
 
     // Dynamic sky data
     static glm::vec3 s_sunDir;
+    static glm::vec3 s_sunColor;
     static bool s_useDynamic;
+    static bool s_hasCSM;
 
 private:
     GLuint m_vao, m_vbo;

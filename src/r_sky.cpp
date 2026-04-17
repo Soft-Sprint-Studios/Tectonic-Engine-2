@@ -32,7 +32,9 @@
 
 // Dynamic sky data
 glm::vec3 R_Sky::s_sunDir = glm::vec3(0.0f, 1.0f, 0.01f);
+glm::vec3 R_Sky::s_sunColor = glm::vec3(1.0f, 1.0f, 1.0f);
 bool R_Sky::s_useDynamic = false;
+bool R_Sky::s_hasCSM = false;
 
 CVar r_sky_steps_primary("r_sky_steps_primary", "8", CVAR_SAVE);
 CVar r_sky_steps_light("r_sky_steps_light", "3", CVAR_SAVE);

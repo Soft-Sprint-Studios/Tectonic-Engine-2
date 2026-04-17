@@ -190,6 +190,21 @@ glm::vec3 Entity::GetVector(const std::string& key, const glm::vec3& defaultVal)
     return defaultVal;
 }
 
+glm::vec4 Entity::GetVector4(const std::string& key, const glm::vec4& defaultVal) const
+{
+    auto it = m_keyvalues.find(key);
+    if (it == m_keyvalues.end())
+        return defaultVal;
+
+    glm::vec4 result;
+    std::stringstream ss(it->second);
+    if (ss >> result.x >> result.y >> result.z >> result.w)
+    {
+        return result;
+    }
+    return defaultVal;
+}
+
 void EntityManager::Init()
 {
 }
