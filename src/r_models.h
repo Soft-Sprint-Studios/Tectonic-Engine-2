@@ -66,6 +66,7 @@ private:
 
         GLuint transformSSBO = 0;
         GLuint colorSSBO = 0;
+        bool hasBumpedLighting = false;
 
         btCollisionShape* physicsShape = nullptr;
         glm::vec3 localMins = glm::vec3(1e10f);

@@ -465,7 +465,7 @@ namespace BSP
                     int numStreams = (vertexSize >= 12) ? 3 : 1;
                     m_map.staticProps[i].hasBumpedLighting = (numStreams == 3);
 
-                    for (int s = 0; s < numStreams; s++)
+                    for (int s = 0; s < 3; s++)
                         m_map.staticProps[i].vertexColors[s].assign(totalVerts, glm::vec4(1.0f));
 
                     uint32_t colorIdx = 0;
@@ -482,15 +482,32 @@ namespace BSP
 
                         for (uint32_t v = 0; v < count && colorIdx < (uint32_t)totalVerts; v++)
                         {
-                            for (int s = 0; s < numStreams; s++)
+                            if (numStreams == 3)
                             {
-                                int offset = (v * numStreams + s) * 4;
+                                for (int s = 0; s < 3; s++)
+                                {
+                                    int offset = (v * 3 + s) * 4;
+                                    // They are stored in BGRA for some reason..
+                                    float b = colors[offset + 0] / 255.0f;
+                                    float g = colors[offset + 1] / 255.0f;
+                                    float r = colors[offset + 2] / 255.0f;
+                                    float a = colors[offset + 3] / 255.0f;
+                                    m_map.staticProps[i].vertexColors[s][colorIdx] = glm::vec4(r, g, b, a);
+                                }
+                            }
+                            else
+                            {
+                                int offset = v * 4;
                                 // They are stored in BGRA for some reason..
                                 float b = colors[offset + 0] / 255.0f;
                                 float g = colors[offset + 1] / 255.0f;
                                 float r = colors[offset + 2] / 255.0f;
                                 float a = colors[offset + 3] / 255.0f;
-                                m_map.staticProps[i].vertexColors[s][colorIdx] = glm::vec4(r, g, b, a);
+                                glm::vec4 flatColor(r, g, b, a);
+
+                                m_map.staticProps[i].vertexColors[0][colorIdx] = flatColor;
+                                m_map.staticProps[i].vertexColors[1][colorIdx] = flatColor;
+                                m_map.staticProps[i].vertexColors[2][colorIdx] = flatColor;
                             }
                             colorIdx++;
                         }

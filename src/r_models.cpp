@@ -62,6 +62,11 @@ bool R_Models::Init(const BSP::MapData& mapData)
         group.worldMins = glm::vec3(FLT_MAX);
         group.worldMaxs = glm::vec3(-FLT_MAX);
 
+        if (!props.empty())
+        {
+            group.hasBumpedLighting = props[0]->hasBumpedLighting;
+        }
+
         std::vector<glm::mat4> transforms;
         transforms.reserve(group.instanceCount);
 
@@ -325,12 +330,11 @@ void R_Models::Draw(const Shader& shader, const Frustum& frustum, bool depthOnly
             if (!depthOnly)
             {
                 shader.SetInt("u_vertexOffset", mesh.vertexOffset);
-                bool canBump = mesh.normalMap != nullptr;
-                shader.SetInt("u_useBump", canBump ? 1 : 0);
+                shader.SetInt("u_useBump", group.hasBumpedLighting ? 1 : 0);
 
                 (mesh.texture ? mesh.texture : Materials::GetTexture(""))->Bind(0);
-                (canBump ? mesh.normalMap : Materials::GetFlatNormal())->Bind(2);
-                (canBump && mesh.specularMap ? mesh.specularMap : Materials::GetWhiteTexture())->Bind(3);
+                (mesh.normalMap ? mesh.normalMap : Materials::GetFlatNormal())->Bind(2);
+                (mesh.specularMap ? mesh.specularMap : Materials::GetWhiteTexture())->Bind(3);
 
                 glVertexAttrib3f(11, 0.0f, 0.0f, 0.0f);
             }
