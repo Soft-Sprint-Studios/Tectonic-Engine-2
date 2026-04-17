@@ -61,6 +61,7 @@ uniform int u_numSpotLights;
 uniform SpotLight u_spotLights[4];
 uniform sampler2D u_spotShadowMaps[4];
 
+uniform int u_csmEnabled;
 uniform sampler2DArray u_csmArray;
 uniform mat4 u_csmMatrices[4];
 uniform float u_csmSplits[5];
@@ -376,24 +377,21 @@ void main()
     }
 	
     // CSM pass
-    vec3 sunL = normalize(u_sunDir);
-    
-    float sunMask = 1.0;
-    if (u_isModel)
+    vec3 sunFinal = vec3(0.0);
+
+    if (u_csmEnabled == 1)
     {
-        sunMask = Color.a;
-    }
-    else
-    {
-        if (u_useBump)
-            sunMask = texture(u_lightmap, LmCoord5).r;
+        vec3 sunL = normalize(u_sunDir);
+        
+        float sunMask = 1.0;
+        if (u_isModel)
+            sunMask = Color.a;
         else
-            sunMask = texture(u_lightmap, LmCoord1).a;
+            sunMask = u_useBump ? texture(u_lightmap, LmCoord5).r : texture(u_lightmap, LmCoord1).a;
+
+        float sunShadow = CalculateSunShadow(FragPos, N, sunL);
+        sunFinal = (u_sunColor * max(dot(N, sunL), 0.0) * (1.0 - sunShadow)) * sunMask;
     }
-
-    float sunShadow = CalculateSunShadow(FragPos, N, sunL);
-
-    vec3 sunFinal = (u_sunColor * max(dot(N, sunL), 0.0) * (1.0 - sunShadow)) * sunMask;
 
     // Final Composition
     vec3 finalDiffuse = albedo.rgb * (diffuseLight * 2.0 + dynDiffuse + sunFinal);
