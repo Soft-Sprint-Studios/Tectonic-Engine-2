@@ -35,11 +35,12 @@ float random(vec2 st)
     return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
 }
 
-float LinearizeDepth(float depth)
+vec3 GetViewPos(float depth)
 {
-    vec4 clipSpace = vec4(TexCoords * 2.0 - 1.0, depth, 1.0);
+    float z = depth * 2.0 - 1.0;
+    vec4 clipSpace = vec4(TexCoords * 2.0 - 1.0, z, 1.0);
     vec4 viewSpace = u_invProjection * clipSpace;
-    return viewSpace.z / viewSpace.w;
+    return viewSpace.xyz / viewSpace.w;
 }
 
 void main()
@@ -95,8 +96,9 @@ void main()
 
     if (u_fogEnabled == 1 && (u_fogAffectsSky == 1 || depth < 0.9999))
     {
-        float linearDepth = -LinearizeDepth(depth);
-        float fogFactor = smoothstep(u_fogStart, u_fogEnd, linearDepth);
+        vec3 viewPos = GetViewPos(depth);
+        float radialDist = length(viewPos);
+        float fogFactor = smoothstep(u_fogStart, u_fogEnd, radialDist);
         hdrColor = mix(hdrColor, u_fogColor, fogFactor);
     }
 
