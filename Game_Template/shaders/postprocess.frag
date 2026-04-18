@@ -24,6 +24,7 @@ uniform int u_bloom_enabled;
 uniform float u_bloom_intensity;
 uniform int u_volumetrics_enabled;
 uniform int u_ssao_enabled;
+uniform int u_tonemap_enabled;
 
 layout(std430, binding = 2) buffer LumData 
 {
@@ -41,6 +42,16 @@ vec3 GetViewPos(float depth)
     vec4 clipSpace = vec4(TexCoords * 2.0 - 1.0, z, 1.0);
     vec4 viewSpace = u_invProjection * clipSpace;
     return viewSpace.xyz / viewSpace.w;
+}
+
+vec3 ACESFilm(vec3 x)
+{
+    float a = 2.51;
+    float b = 0.03;
+    float c = 2.43;
+    float d = 0.59;
+    float e = 0.14;
+    return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);
 }
 
 void main()
@@ -102,7 +113,14 @@ void main()
         hdrColor = mix(hdrColor, u_fogColor, fogFactor);
     }
 
+    // Tone mapping
+    if (u_tonemap_enabled == 1)
+    {
+        hdrColor = ACESFilm(hdrColor);
+    }
+
     // Gamma correct
     hdrColor = pow(hdrColor, vec3(1.0 / u_Gamma));
+
     FragColor = vec4(hdrColor, 1.0);
 }
