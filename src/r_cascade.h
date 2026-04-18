@@ -50,6 +50,7 @@ private:
     GLuint m_fbo = 0;
     GLuint m_texArray = 0;
     GLuint m_dummyTex = 0;
+    GLuint m_matrixSSBO = 0;
     int m_resolution;
 
     std::vector<glm::mat4> m_matrices;

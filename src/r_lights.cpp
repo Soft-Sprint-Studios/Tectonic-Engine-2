@@ -47,6 +47,7 @@ bool R_Lights::Init()
 {
     Shutdown();
     m_shadowSpotShader.Load("shaders/shadow_spot.vert", "shaders/shadow_spot.frag");
+    m_shadowCascadeShader.Load("shaders/shadow_cascade.vert", "shaders/shadow_cascade.frag", "shaders/shadow_cascade.geom");
     m_shadowPointShader.Load("shaders/shadow_point.vert", "shaders/shadow_point.frag", "shaders/shadow_point.geom");
 
     m_cascade = std::make_unique<R_Cascade>();
@@ -127,7 +128,7 @@ void R_Lights::RenderShadowMaps(Camera& camera, R_BSP* bsp, R_Models* models)
     // CSM
     if (r_shadows.GetInt() > 0 && r_csm.GetInt() > 0 && R_Sky::s_hasCSM)
     {
-        m_cascade->Render(camera, R_Sky::s_sunDir, m_shadowSpotShader, bsp, models);
+        m_cascade->Render(camera, R_Sky::s_sunDir, m_shadowCascadeShader, bsp, models);
     }
 
     const auto& lights = DynamicLights::GetActiveLights();

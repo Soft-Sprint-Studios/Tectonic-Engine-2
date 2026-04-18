@@ -47,6 +47,7 @@ private:
     void SetupShadowMap(std::shared_ptr<DynamicLight> light);
 
     Shader m_shadowSpotShader;
+    Shader m_shadowCascadeShader;
     Shader m_shadowPointShader;
 
     GLuint m_SpotShadow;

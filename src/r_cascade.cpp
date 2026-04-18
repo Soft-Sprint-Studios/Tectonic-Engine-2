@@ -61,6 +61,11 @@ void R_Cascade::Init(int res)
 
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_texArray, 0);
+
+    glGenBuffers(1, &m_matrixSSBO);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_matrixSSBO);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::mat4) * 4, nullptr, GL_DYNAMIC_DRAW);
+
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -144,26 +149,24 @@ void R_Cascade::UpdateMatrices(const Camera& cam, const glm::vec3& sunDir)
 void R_Cascade::Render(const Camera& camera, const glm::vec3& sunDir, Shader& shadowShader, R_BSP* bsp, R_Models* models)
 {
     UpdateMatrices(camera, sunDir);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_matrixSSBO);
+    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(glm::mat4) * 4, m_matrices.data());
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, m_matrixSSBO);
     
     glViewport(0, 0, m_resolution, m_resolution);
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+    glClear(GL_DEPTH_BUFFER_BIT);
     glCullFace(GL_FRONT);
 
-    for (int i = 0; i < 4; i++)
-    {
-        glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_texArray, 0, i);
-        glClear(GL_DEPTH_BUFFER_BIT);
+    shadowShader.Bind();
+    shadowShader.SetMat4("u_model", glm::mat4(1.0f));
 
-        shadowShader.Bind();
-        shadowShader.SetMat4("u_lightSpaceMatrix", m_matrices[i]);
-        shadowShader.SetMat4("u_model", glm::mat4(1.0f));
+    Frustum sunFrustum;
+    sunFrustum.valid = false;
 
-        Frustum sunFrustum;
-        sunFrustum.valid = false;
-
-        bsp->Draw(shadowShader, sunFrustum, true);
-        models->Draw(shadowShader, sunFrustum, true);
-    }
+    bsp->Draw(shadowShader, sunFrustum, true);
+    models->Draw(shadowShader, sunFrustum, true);
 
     glCullFace(GL_BACK);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -208,6 +211,11 @@ void R_Cascade::Shutdown()
     if (m_texArray)
     {
         glDeleteTextures(1, &m_texArray);
+    }
+
+    if (m_matrixSSBO)
+    {
+        glDeleteBuffers(1, &m_matrixSSBO);
     }
 
     if (m_dummyTex) 
