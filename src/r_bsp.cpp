@@ -119,13 +119,10 @@ void R_BSP::Draw(const Shader& shader, const Frustum& frustum, bool depthOnly)
 
     if (depthOnly)
     {
-        uint32_t totalCount = 0;
         for (const auto& dc : m_drawCalls)
         {
-            totalCount += dc.count;
+            glDrawArrays(GL_TRIANGLES, dc.start, dc.count);
         }
-
-        glDrawArrays(GL_TRIANGLES, 0, totalCount);
 
         glBindVertexArray(0);
         return;
