@@ -38,33 +38,45 @@
 #include <BulletCollision/CollisionShapes/btCompoundShape.h>
 #include <set>
 #include <algorithm>
+#include <memory>
 
 CVar g_gravity("g_gravity", "-9.81", CVAR_SAVE);
 
 namespace Physics
 {
-    static btDefaultCollisionConfiguration* s_collisionConfiguration;
-    static btCollisionDispatcher* s_dispatcher;
-    static btBroadphaseInterface* s_broadphase;
-    static btSequentialImpulseConstraintSolver* s_solver;
-    static btDiscreteDynamicsWorld* s_dynamicsWorld;
+    static std::unique_ptr<btDefaultCollisionConfiguration> s_collisionConfiguration;
+    static std::unique_ptr<btCollisionDispatcher> s_dispatcher;
+    static std::unique_ptr<btBroadphaseInterface> s_broadphase;
+    static std::unique_ptr<btSequentialImpulseConstraintSolver> s_solver;
+    static std::unique_ptr<btDiscreteDynamicsWorld> s_dynamicsWorld;
+    static std::unique_ptr<btGhostPairCallback> s_ghostPairCallback;
 
-    static btTriangleMesh* s_bspMesh;
-    static btBvhTriangleMeshShape* s_bspShape;
-    static btRigidBody* s_bspBody;
-    static std::vector<btTriangleMesh*> s_modelMeshes;
+    static std::unique_ptr<btTriangleMesh> s_bspMesh;
+    static std::unique_ptr<btBvhTriangleMeshShape> s_bspShape;
+    static std::unique_ptr<btRigidBody> s_bspBody;
+    static std::unique_ptr<btDefaultMotionState> s_bspMotionState;
+
+    static std::vector<std::unique_ptr<btTriangleMesh>> s_modelMeshes;
+    static std::vector<std::unique_ptr<btCollisionShape>> s_shapes;
+    static std::vector<std::unique_ptr<btRigidBody>> s_rigidBodies;
+    static std::vector<std::unique_ptr<btCollisionObject>> s_collisionObjects;
+    static std::vector<std::unique_ptr<btMotionState>> s_motionStates;
+    static std::vector<std::unique_ptr<btKinematicCharacterController>> s_characters;
+
     static std::set<std::pair<const btCollisionObject*, const btCollisionObject*>> s_lastFramePairs;
 
     void Init()
     {
-        s_collisionConfiguration = new btDefaultCollisionConfiguration();
-        s_dispatcher = new btCollisionDispatcher(s_collisionConfiguration);
-        s_broadphase = new btDbvtBroadphase();
-        s_solver = new btSequentialImpulseConstraintSolver();
-        s_dynamicsWorld = new btDiscreteDynamicsWorld(s_dispatcher, s_broadphase, s_solver, s_collisionConfiguration);
+        s_collisionConfiguration = std::make_unique<btDefaultCollisionConfiguration>();
+        s_dispatcher = std::make_unique<btCollisionDispatcher>(s_collisionConfiguration.get());
+        s_broadphase = std::make_unique<btDbvtBroadphase>();
+        s_solver = std::make_unique<btSequentialImpulseConstraintSolver>();
+        s_dynamicsWorld = std::make_unique<btDiscreteDynamicsWorld>(s_dispatcher.get(), s_broadphase.get(), s_solver.get(), s_collisionConfiguration.get());
 
         s_dynamicsWorld->setGravity(btVector3(0, g_gravity.GetFloat(), 0));
-        s_dynamicsWorld->getBroadphase()->getOverlappingPairCache()->setInternalGhostPairCallback(new btGhostPairCallback());
+
+        s_ghostPairCallback = std::make_unique<btGhostPairCallback>();
+        s_dynamicsWorld->getBroadphase()->getOverlappingPairCache()->setInternalGhostPairCallback(s_ghostPairCallback.get());
     }
 
     void Update(float deltaTime)
@@ -116,67 +128,62 @@ namespace Physics
     {
         if (s_dynamicsWorld)
         {
-            if (s_bspBody) {
-                s_dynamicsWorld->removeRigidBody(s_bspBody);
-                if (s_bspBody->getMotionState()) 
-                    delete s_bspBody->getMotionState();
-                delete s_bspBody;
-                s_bspBody = nullptr;
-            }
-
-            for (int i = s_dynamicsWorld->getNumCollisionObjects() - 1; i >= 0; i--)
+            if (s_bspBody)
             {
-                btCollisionObject* obj = s_dynamicsWorld->getCollisionObjectArray()[i];
-                btRigidBody* body = btRigidBody::upcast(obj);
-                if (body && body->getMotionState()) 
-                    delete body->getMotionState();
-                s_dynamicsWorld->removeCollisionObject(obj);
-                delete obj;
+                s_dynamicsWorld->removeRigidBody(s_bspBody.get());
+                s_bspBody.reset();
             }
 
-            for (auto m : s_modelMeshes) 
-                delete m;
-            s_modelMeshes.clear();
+            for (auto& character : s_characters)
+            {
+                s_dynamicsWorld->removeAction(character.get());
+            }
+
+            for (auto& body : s_rigidBodies)
+            {
+                s_dynamicsWorld->removeRigidBody(body.get());
+            }
+
+            for (auto& obj : s_collisionObjects)
+            {
+                s_dynamicsWorld->removeCollisionObject(obj.get());
+            }
         }
 
-        s_lastFramePairs.clear();
-        delete s_dynamicsWorld; 
-        s_dynamicsWorld = nullptr;
-        delete s_solver; 
-        s_solver = nullptr;
-        delete s_broadphase; 
-        s_broadphase = nullptr;
-        delete s_dispatcher; 
-        s_dispatcher = nullptr;
-        delete s_collisionConfiguration; 
-        s_collisionConfiguration = nullptr;
+        s_characters.clear();
+        s_rigidBodies.clear();
+        s_collisionObjects.clear();
+        s_motionStates.clear();
+        s_shapes.clear();
+        s_modelMeshes.clear();
+        s_bspShape.reset();
+        s_bspMesh.reset();
+        s_bspMotionState.reset();
 
-        delete s_bspShape; 
-        s_bspShape = nullptr;
-        delete s_bspMesh; 
-        s_bspMesh = nullptr;
+        s_lastFramePairs.clear();
+        s_dynamicsWorld.reset();
+        s_solver.reset();
+        s_broadphase.reset();
+        s_dispatcher.reset();
+        s_collisionConfiguration.reset();
+        s_ghostPairCallback.reset();
     }
 
     void AddBSPCollision(const std::vector<glm::vec3>& vertices, const std::vector<uint32_t>& indices)
     {
-        if (!s_dynamicsWorld) 
-            return;
-
-        if (indices.empty() || vertices.empty()) 
+        if (!s_dynamicsWorld || indices.empty() || vertices.empty())
             return;
 
         if (s_bspBody)
         {
-            s_dynamicsWorld->removeRigidBody(s_bspBody);
-            delete s_bspBody;
-            s_bspBody = nullptr;
-            delete s_bspShape;
-            s_bspShape = nullptr;
-            delete s_bspMesh;
-            s_bspMesh = nullptr;
+            s_dynamicsWorld->removeRigidBody(s_bspBody.get());
+            s_bspBody.reset();
+            s_bspShape.reset();
+            s_bspMesh.reset();
+            s_bspMotionState.reset();
         }
 
-        s_bspMesh = new btTriangleMesh();
+        s_bspMesh = std::make_unique<btTriangleMesh>();
         for (size_t i = 0; i < indices.size(); i += 3)
         {
             btVector3 v0(vertices[indices[i]].x, vertices[indices[i]].y, vertices[indices[i]].z);
@@ -185,31 +192,29 @@ namespace Physics
             s_bspMesh->addTriangle(v0, v1, v2);
         }
 
-        s_bspShape = new btBvhTriangleMeshShape(s_bspMesh, true);
+        s_bspShape = std::make_unique<btBvhTriangleMeshShape>(s_bspMesh.get(), true);
         s_bspShape->setMargin(0.04f);
 
         btTransform groundTransform;
         groundTransform.setIdentity();
         groundTransform.setOrigin(btVector3(0, 0, 0));
 
-        btDefaultMotionState* motionState = new btDefaultMotionState(groundTransform);
-        btRigidBody::btRigidBodyConstructionInfo rbInfo(0, motionState, s_bspShape);
-        s_bspBody = new btRigidBody(rbInfo);
+        s_bspMotionState = std::make_unique<btDefaultMotionState>(groundTransform);
+        btRigidBody::btRigidBodyConstructionInfo rbInfo(0, s_bspMotionState.get(), s_bspShape.get());
+        s_bspBody = std::make_unique<btRigidBody>(rbInfo);
 
         s_bspBody->setFriction(0.5f);
         s_bspBody->setRollingFriction(0.5f);
 
-        s_dynamicsWorld->addRigidBody(s_bspBody, COL_WORLD, COL_ALL);
+        s_dynamicsWorld->addRigidBody(s_bspBody.get(), COL_WORLD, COL_ALL);
     }
 
     btBvhTriangleMeshShape* CreateStaticMeshShape(const std::vector<glm::vec3>& vertices, const std::vector<uint32_t>& indices)
     {
-        if (vertices.empty() || indices.empty()) 
+        if (vertices.empty() || indices.empty())
             return nullptr;
 
-        btTriangleMesh* meshInterface = new btTriangleMesh();
-        s_modelMeshes.push_back(meshInterface);
-
+        auto meshInterface = std::make_unique<btTriangleMesh>();
         for (size_t i = 0; i < indices.size(); i += 3)
         {
             btVector3 v0(vertices[indices[i]].x, vertices[indices[i]].y, vertices[indices[i]].z);
@@ -218,9 +223,14 @@ namespace Physics
             meshInterface->addTriangle(v0, v1, v2);
         }
 
-        btBvhTriangleMeshShape* shape = new btBvhTriangleMeshShape(meshInterface, true);
+        auto shape = std::make_unique<btBvhTriangleMeshShape>(meshInterface.get(), true);
         shape->setMargin(0.005f);
-        return shape;
+
+        btBvhTriangleMeshShape* rawPtr = shape.get();
+        s_modelMeshes.push_back(std::move(meshInterface));
+        s_shapes.push_back(std::move(shape));
+
+        return rawPtr;
     }
 
     void AddStaticBody(btCollisionShape* shape, const glm::mat4& transform, const glm::vec3& scale)
@@ -233,19 +243,22 @@ namespace Physics
         btTransform btTrans;
         btTrans.setFromOpenGLMatrix(&transform[0][0]);
 
-        btRigidBody* body = new btRigidBody(0, new btDefaultMotionState(btTrans), shape);
+        auto motionState = std::make_unique<btDefaultMotionState>(btTrans);
+        auto body = std::make_unique<btRigidBody>(0, motionState.get(), shape);
         body->setFriction(0.5f);
-        s_dynamicsWorld->addRigidBody(body, COL_WORLD, COL_ALL);
+
+        s_dynamicsWorld->addRigidBody(body.get(), COL_WORLD, COL_ALL);
+
+        s_motionStates.push_back(std::move(motionState));
+        s_rigidBodies.push_back(std::move(body));
     }
 
     btCollisionObject* CreateGhostObject(const BSP::CollisionData& collisionData, const glm::vec3& origin)
     {
-        if (collisionData.vertices.empty()) 
+        if (collisionData.vertices.empty())
             return nullptr;
 
-        btTriangleMesh* mesh = new btTriangleMesh();
-        s_modelMeshes.push_back(mesh);
-
+        auto mesh = std::make_unique<btTriangleMesh>();
         for (size_t i = 0; i < collisionData.indices.size(); i += 3)
         {
             const auto& v0_glm = collisionData.vertices[collisionData.indices[i]];
@@ -254,10 +267,10 @@ namespace Physics
             mesh->addTriangle(btVector3(v0_glm.x, v0_glm.y, v0_glm.z), btVector3(v1_glm.x, v1_glm.y, v1_glm.z), btVector3(v2_glm.x, v2_glm.y, v2_glm.z));
         }
 
-        btBvhTriangleMeshShape* shape = new btBvhTriangleMeshShape(mesh, true);
+        auto shape = std::make_unique<btBvhTriangleMeshShape>(mesh.get(), true);
+        auto ghost = std::make_unique<btPairCachingGhostObject>();
 
-        btGhostObject* ghost = new btPairCachingGhostObject();
-        ghost->setCollisionShape(shape);
+        ghost->setCollisionShape(shape.get());
         ghost->setCollisionFlags(btCollisionObject::CF_NO_CONTACT_RESPONSE);
 
         btTransform trans;
@@ -265,8 +278,14 @@ namespace Physics
         trans.setOrigin({ origin.x, origin.y, origin.z });
         ghost->setWorldTransform(trans);
 
-        s_dynamicsWorld->addCollisionObject(ghost, COL_WORLD, COL_PLAYER);
-        return ghost;
+        s_dynamicsWorld->addCollisionObject(ghost.get(), COL_WORLD, COL_PLAYER);
+
+        btCollisionObject* rawPtr = ghost.get();
+        s_modelMeshes.push_back(std::move(mesh));
+        s_shapes.push_back(std::move(shape));
+        s_collisionObjects.push_back(std::move(ghost));
+
+        return rawPtr;
     }
 
     btKinematicCharacterController* CreateCharacter(const glm::vec3& position, void* userPtr)
@@ -274,33 +293,36 @@ namespace Physics
         btScalar characterHeight = 1.75f;
         btScalar characterRadius = 0.4f;
 
-        btCapsuleShape* capsule = new btCapsuleShape(characterRadius, characterHeight - 2 * characterRadius);
+        auto capsule = std::make_unique<btCapsuleShape>(characterRadius, characterHeight - 2 * characterRadius);
 
         btTransform startTransform;
         startTransform.setIdentity();
         startTransform.setOrigin(btVector3(position.x, position.y, position.z));
 
-        btPairCachingGhostObject* ghostObject = new btPairCachingGhostObject();
+        auto ghostObject = std::make_unique<btPairCachingGhostObject>();
         ghostObject->setWorldTransform(startTransform);
-        ghostObject->setCollisionShape(capsule);
+        ghostObject->setCollisionShape(capsule.get());
         ghostObject->setCollisionFlags(btCollisionObject::CF_CHARACTER_OBJECT);
         ghostObject->setUserPointer(userPtr);
 
-        s_dynamicsWorld->getBroadphase()->getOverlappingPairCache()->setInternalGhostPairCallback(new btGhostPairCallback());
-        s_dynamicsWorld->addCollisionObject(ghostObject, COL_PLAYER, COL_WORLD);
+        s_dynamicsWorld->addCollisionObject(ghostObject.get(), COL_PLAYER, COL_WORLD);
 
-        btKinematicCharacterController* character = new btKinematicCharacterController(ghostObject, capsule, 0.35f);
-
+        auto character = std::make_unique<btKinematicCharacterController>(ghostObject.get(), capsule.get(), 0.35f);
         character->setGravity(s_dynamicsWorld->getGravity());
         character->setMaxSlope(btRadians(50.0f));
 
-        s_dynamicsWorld->addAction(character);
+        s_dynamicsWorld->addAction(character.get());
 
-        return character;
+        btKinematicCharacterController* rawPtr = character.get();
+        s_shapes.push_back(std::move(capsule));
+        s_collisionObjects.push_back(std::move(ghostObject));
+        s_characters.push_back(std::move(character));
+
+        return rawPtr;
     }
 
     btDiscreteDynamicsWorld* GetDynamicsWorld()
     {
-        return s_dynamicsWorld;
+        return s_dynamicsWorld.get();
     }
 }

@@ -26,6 +26,7 @@
 #include <glm/glm.hpp>
 #include <vector>
 #include <cstdint>
+#include <memory>
 
 #include <btBulletDynamicsCommon.h>
 #include <BulletCollision/CollisionDispatch/btGhostObject.h>
