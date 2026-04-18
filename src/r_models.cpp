@@ -327,19 +327,39 @@ void R_Models::Draw(const Shader& shader, const Frustum& frustum, bool depthOnly
 
             glBindVertexArray(mesh.vao);
 
-            if (!depthOnly)
+            if (depthOnly)
             {
-                shader.SetInt("u_vertexOffset", mesh.vertexOffset);
-                shader.SetInt("u_useBump", group.hasBumpedLighting ? 1 : 0);
+                for (auto& mesh : group.meshes)
+                {
+                    if (mesh.indexCount == 0) 
+                        continue;
 
-                (mesh.texture ? mesh.texture : Materials::GetTexture(""))->Bind(0);
-                (mesh.normalMap ? mesh.normalMap : Materials::GetFlatNormal())->Bind(2);
-                (mesh.specularMap ? mesh.specularMap : Materials::GetWhiteTexture())->Bind(3);
-
-                glVertexAttrib3f(11, 0.0f, 0.0f, 0.0f);
+                    glBindVertexArray(mesh.vao);
+                    glDrawElementsInstanced(GL_TRIANGLES, mesh.indexCount, mesh.indexType, 0, group.instanceCount);
+                }
             }
+            else
+            {
+                glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, group.colorSSBO);
+                shader.SetInt("u_totalVertices", group.totalVertices);
 
-            glDrawElementsInstanced(GL_TRIANGLES, mesh.indexCount, mesh.indexType, 0, group.instanceCount);
+                for (auto& mesh : group.meshes)
+                {
+                    if (mesh.indexCount == 0) 
+                        continue;
+
+                    glBindVertexArray(mesh.vao);
+                    shader.SetInt("u_vertexOffset", mesh.vertexOffset);
+                    shader.SetInt("u_useBump", group.hasBumpedLighting ? 1 : 0);
+
+                    (mesh.texture ? mesh.texture : Materials::GetTexture(""))->Bind(0);
+                    (mesh.normalMap ? mesh.normalMap : Materials::GetFlatNormal())->Bind(2);
+                    (mesh.specularMap ? mesh.specularMap : Materials::GetWhiteTexture())->Bind(3);
+
+                    glVertexAttrib3f(11, 0.0f, 0.0f, 0.0f);
+                    glDrawElementsInstanced(GL_TRIANGLES, mesh.indexCount, mesh.indexType, 0, group.instanceCount);
+                }
+            }
         }
     }
 

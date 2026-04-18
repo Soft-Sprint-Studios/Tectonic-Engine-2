@@ -26,6 +26,7 @@
 #include "r_bsp.h"
 #include "r_models.h"
 #include "r_sky.h"
+#include "renderer.h"
 #include "cvar.h"
 #include <string>
 #include <glm/gtc/matrix_transform.hpp>
@@ -178,8 +179,7 @@ void R_Lights::RenderShadowMaps(Camera& camera, R_BSP* bsp, R_Models* models)
             m_shadowSpotShader.SetMat4("u_lightSpaceMatrix", def.lightSpaceMatrix);
             m_shadowSpotShader.SetMat4("u_model", glm::mat4(1.0f));
 
-            bsp->Draw(m_shadowSpotShader, lightFrustum, true);
-            models->Draw(m_shadowSpotShader, lightFrustum, true);
+            Renderer::DrawSceneDepth(m_shadowSpotShader, lightFrustum, bsp, models);
         }
         else
         {
@@ -214,8 +214,7 @@ void R_Lights::RenderShadowMaps(Camera& camera, R_BSP* bsp, R_Models* models)
 
             m_shadowPointShader.SetMat4("u_model", glm::mat4(1.0f));
 
-            bsp->Draw(m_shadowPointShader, pointFrustum, true);
-            models->Draw(m_shadowPointShader, pointFrustum, true);
+            Renderer::DrawSceneDepth(m_shadowSpotShader, pointFrustum, bsp, models);
         }
 
         if (def.isStaticShadow)

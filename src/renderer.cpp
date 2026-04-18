@@ -50,6 +50,7 @@ CVar r_water("r_water", "1", CVAR_SAVE);
 CVar r_sprites("r_sprites", "1", CVAR_SAVE);
 CVar r_wireframe("r_wireframe", "0", CVAR_NONE);
 CVar r_fullbright("r_fullbright", "0", CVAR_NONE);
+CVar r_zprepass("r_zprepass", "1", CVAR_SAVE);
 
 CVar mat_specular("mat_specular", "1", CVAR_SAVE);
 CVar mat_bumpmap("mat_bumpmap", "1", CVAR_SAVE);
@@ -68,11 +69,13 @@ bool Renderer::Init(Window& window)
     m_windowRef = &window;
 
     m_worldShader.Load("shaders/world.vert", "shaders/world.frag");
+    m_depthShader.Load("shaders/depth.vert", "shaders/depth.frag");
 
     // Global GL State
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
     m_postProcess = std::make_unique<R_PostProcess>();
     m_postProcess->Init(1280, 720);
@@ -212,11 +215,48 @@ void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater
     }
 }
 
+void Renderer::DrawSceneDepth(Shader& shader, const Frustum& frustum, R_BSP* bsp, R_Models* models)
+{
+    bsp->Draw(shader, frustum, true);
+    models->Draw(shader, frustum, true);
+}
+
+void Renderer::DrawPrePass(Camera& camera)
+{
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    glDepthFunc(GL_LESS);
+    glDepthMask(GL_TRUE);
+
+    m_depthShader.Bind();
+    m_depthShader.SetMat4("u_projection", camera.GetProjectionMatrix());
+    m_depthShader.SetMat4("u_view", camera.GetViewMatrix());
+    m_depthShader.SetMat4("u_model", glm::mat4(1.0f));
+
+    DrawSceneDepth(m_depthShader, camera.GetFrustum(), m_bspRenderer.get(), m_modelRenderer.get());
+
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glDepthFunc(GL_LEQUAL);
+    glDepthMask(GL_FALSE);
+}
+
 void Renderer::RenderWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater)
 {
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    bool usePrepass = (r_zprepass.GetInt() > 0);
+
+    if (usePrepass)
+    {
+        DrawPrePass(camera);
+    }
+
     DrawWorld(camera, cubemapToExclude, drawWater);
+
+    if (usePrepass)
+    {
+        glDepthMask(GL_TRUE);
+        glDepthFunc(GL_LESS);
+    }
 }
 
 void Renderer::Render(Camera& camera)

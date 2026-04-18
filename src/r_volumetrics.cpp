@@ -119,7 +119,6 @@ void R_Volumetrics::Render(GLuint depthTexture, const Camera& camera, R_Lights* 
 
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
     glViewport(0, 0, vW, vH);
-    glClearColor(0, 0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT);
 
     m_volShader.Bind();

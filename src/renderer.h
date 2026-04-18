@@ -48,6 +48,7 @@ public:
     void Shutdown();
     void Render(Camera& camera);
     void RenderWorld(Camera& camera, GLuint cubemapToExclude = 0, bool drawWater = true);
+    static void DrawSceneDepth(Shader& shader, const Frustum& frustum, R_BSP* bsp, R_Models* models);
     void OnWindowResize(int w, int h);
 
     R_UI* GetUI() const 
@@ -58,8 +59,10 @@ public:
 private:
     bool m_drawingWater = false;
     void DrawWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater);
+    void DrawPrePass(Camera& camera);
     Window* m_windowRef;
     Shader m_worldShader;
+    Shader m_depthShader;
 
     // Sub-renderers
     std::unique_ptr<R_PostProcess> m_postProcess;

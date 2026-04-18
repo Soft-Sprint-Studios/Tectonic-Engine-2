@@ -25,6 +25,7 @@
 #include "camera.h"
 #include "r_bsp.h"
 #include "r_models.h"
+#include "renderer.h"
 #include <algorithm>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -165,8 +166,7 @@ void R_Cascade::Render(const Camera& camera, const glm::vec3& sunDir, Shader& sh
     Frustum sunFrustum;
     sunFrustum.valid = false;
 
-    bsp->Draw(shadowShader, sunFrustum, true);
-    models->Draw(shadowShader, sunFrustum, true);
+    Renderer::DrawSceneDepth(shadowShader, sunFrustum, bsp, models);
 
     glCullFace(GL_BACK);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

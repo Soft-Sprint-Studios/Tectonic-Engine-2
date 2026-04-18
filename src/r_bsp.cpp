@@ -116,6 +116,21 @@ void R_BSP::Draw(const Shader& shader, const Frustum& frustum, bool depthOnly)
     }
 
     glBindVertexArray(m_vao);
+
+    if (depthOnly)
+    {
+        uint32_t totalCount = 0;
+        for (const auto& dc : m_drawCalls)
+        {
+            totalCount += dc.count;
+        }
+
+        glDrawArrays(GL_TRIANGLES, 0, totalCount);
+
+        glBindVertexArray(0);
+        return;
+    }
+
     if (m_lightmapTexture != 0)
     {
         glActiveTexture(GL_TEXTURE1);
