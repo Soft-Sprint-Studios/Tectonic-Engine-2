@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 #pragma once
+#include "camera.h"
 #include "shader.h"
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -30,38 +31,22 @@
 class R_BSP;
 class R_Models;
 
-class CascadeShadows
+class R_Cascade
 {
 public:
-    CascadeShadows();
-    ~CascadeShadows();
+    R_Cascade();
+    ~R_Cascade();
 
     void Init(int resolution = 4096);
     void Shutdown();
 
-    void Update(const class Camera& cam, const glm::vec3& sunDir);
-    void Render(const class Camera& camera, const glm::vec3& sunDir, Shader& shader, R_BSP* bsp, R_Models* models);
-    
-    void BindForWriting();
-    void BindForReading(uint32_t textureUnit);
+    void Render(const Camera& camera, const glm::vec3& sunDir, Shader& shadowShader, R_BSP* bsp, R_Models* models);
     void Bind(Shader& shader, const glm::vec3& sunColor, const glm::vec3& sunDir, bool enabled);
 
-    const std::vector<glm::mat4>& GetMatrices() const 
-    { 
-        return m_matrices; 
-    }
-
-    const std::vector<float>& GetSplits() const 
-    { 
-        return m_splits; 
-    }
-
-    GLuint GetTexArrayID() const
-    {
-        return m_texArray;
-    }
-
 private:
+    void UpdateMatrices(const Camera& cam, const glm::vec3& sunDir);
+    std::vector<glm::vec4> GetFrustumCornersWorldSpace(const glm::mat4& proj, const glm::mat4& view);
+
     GLuint m_fbo = 0;
     GLuint m_texArray = 0;
     GLuint m_dummyTex = 0;
@@ -69,6 +54,4 @@ private:
 
     std::vector<glm::mat4> m_matrices;
     std::vector<float> m_splits;
-    
-    std::vector<glm::vec4> GetFrustumCornersWorldSpace(const glm::mat4& proj, const glm::mat4& view);
 };

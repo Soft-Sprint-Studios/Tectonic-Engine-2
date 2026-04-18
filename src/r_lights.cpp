@@ -31,6 +31,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 CVar r_shadows("r_shadows", "1", CVAR_SAVE);
+CVar r_csm("r_csm", "1", CVAR_SAVE);
+CVar r_csm_res("r_csm_res", "4096", CVAR_SAVE);
 
 R_Lights::R_Lights() : m_SpotShadow(0), m_PointShadow(0)
 {
@@ -47,8 +49,8 @@ bool R_Lights::Init()
     m_shadowSpotShader.Load("shaders/shadow_spot.vert", "shaders/shadow_spot.frag");
     m_shadowPointShader.Load("shaders/shadow_point.vert", "shaders/shadow_point.frag", "shaders/shadow_point.geom");
 
-    m_csm = std::make_unique<CascadeShadows>();
-    m_csm->Init(4096);
+    m_cascade = std::make_unique<R_Cascade>();
+    m_cascade->Init(r_csm_res.GetInt());
 
     float white = 1.0f;
 
@@ -123,9 +125,9 @@ void R_Lights::SetupShadowMap(std::shared_ptr<DynamicLight> light)
 void R_Lights::RenderShadowMaps(Camera& camera, R_BSP* bsp, R_Models* models)
 {
     // CSM
-    if (r_shadows.GetInt() > 0 && R_Sky::s_hasCSM)
+    if (r_shadows.GetInt() > 0 && r_csm.GetInt() > 0 && R_Sky::s_hasCSM)
     {
-        m_csm->Render(camera, R_Sky::s_sunDir, m_shadowSpotShader, bsp, models);
+        m_cascade->Render(camera, R_Sky::s_sunDir, m_shadowSpotShader, bsp, models);
     }
 
     const auto& lights = DynamicLights::GetActiveLights();
@@ -227,7 +229,8 @@ void R_Lights::RenderShadowMaps(Camera& camera, R_BSP* bsp, R_Models* models)
 void R_Lights::Bind(const Shader& shader)
 {
     // CSM
-    m_csm->Bind(const_cast<Shader&>(shader), R_Sky::s_sunColor, R_Sky::s_sunDir, (r_shadows.GetInt() > 0 && R_Sky::s_hasCSM));
+    bool csmEnabled = (r_shadows.GetInt() > 0 && r_csm.GetInt() > 0 && R_Sky::s_hasCSM);
+    m_cascade->Bind(const_cast<Shader&>(shader), R_Sky::s_sunColor, R_Sky::s_sunDir, csmEnabled);
 
     // Then the scene lights
     for (int i = 0; i < 4; ++i)

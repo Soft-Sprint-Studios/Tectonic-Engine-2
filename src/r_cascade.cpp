@@ -21,23 +21,24 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#include "cascade.h"
+#include "r_cascade.h"
 #include "camera.h"
 #include "r_bsp.h"
 #include "r_models.h"
 #include <algorithm>
 #include <glm/gtc/matrix_transform.hpp>
 
-CascadeShadows::CascadeShadows() : m_resolution(4096) 
+R_Cascade::R_Cascade() 
+    : m_resolution(4096)
 {
 }
 
-CascadeShadows::~CascadeShadows() 
+R_Cascade::~R_Cascade()
 {
     Shutdown();
 }
 
-void CascadeShadows::Init(int res)
+void R_Cascade::Init(int res)
 {
     m_resolution = res;
 
@@ -70,7 +71,7 @@ void CascadeShadows::Init(int res)
     glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 }
 
-std::vector<glm::vec4> CascadeShadows::GetFrustumCornersWorldSpace(const glm::mat4& proj, const glm::mat4& view)
+std::vector<glm::vec4> R_Cascade::GetFrustumCornersWorldSpace(const glm::mat4& proj, const glm::mat4& view)
 {
     const auto inv = glm::inverse(proj * view);
     std::vector<glm::vec4> corners;
@@ -88,7 +89,7 @@ std::vector<glm::vec4> CascadeShadows::GetFrustumCornersWorldSpace(const glm::ma
     return corners;
 }
 
-void CascadeShadows::Update(const Camera& cam, const glm::vec3& sunDir)
+void R_Cascade::UpdateMatrices(const Camera& cam, const glm::vec3& sunDir)
 {
     m_matrices.clear();
     for (size_t i = 0; i < 4; ++i)
@@ -140,11 +141,12 @@ void CascadeShadows::Update(const Camera& cam, const glm::vec3& sunDir)
     }
 }
 
-void CascadeShadows::Render(const Camera& camera, const glm::vec3& sunDir, Shader& shader, R_BSP* bsp, R_Models* models)
+void R_Cascade::Render(const Camera& camera, const glm::vec3& sunDir, Shader& shadowShader, R_BSP* bsp, R_Models* models)
 {
-    Update(camera, sunDir);
-    BindForWriting();
-
+    UpdateMatrices(camera, sunDir);
+    
+    glViewport(0, 0, m_resolution, m_resolution);
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
     glCullFace(GL_FRONT);
 
     for (int i = 0; i < 4; i++)
@@ -152,34 +154,22 @@ void CascadeShadows::Render(const Camera& camera, const glm::vec3& sunDir, Shade
         glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_texArray, 0, i);
         glClear(GL_DEPTH_BUFFER_BIT);
 
-        shader.Bind();
-        shader.SetMat4("u_lightSpaceMatrix", m_matrices[i]);
-        shader.SetMat4("u_model", glm::mat4(1.0f));
+        shadowShader.Bind();
+        shadowShader.SetMat4("u_lightSpaceMatrix", m_matrices[i]);
+        shadowShader.SetMat4("u_model", glm::mat4(1.0f));
 
         Frustum sunFrustum;
         sunFrustum.valid = false;
 
-        bsp->Draw(shader, sunFrustum, true);
-        models->Draw(shader, sunFrustum, true);
+        bsp->Draw(shadowShader, sunFrustum, true);
+        models->Draw(shadowShader, sunFrustum, true);
     }
 
     glCullFace(GL_BACK);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void CascadeShadows::BindForWriting()
-{
-    glViewport(0, 0, m_resolution, m_resolution);
-    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-}
-
-void CascadeShadows::BindForReading(uint32_t unit)
-{
-    glActiveTexture(GL_TEXTURE0 + unit);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, m_texArray);
-}
-
-void CascadeShadows::Bind(Shader& shader, const glm::vec3& sunColor, const glm::vec3& sunDir, bool enabled)
+void R_Cascade::Bind(Shader& shader, const glm::vec3& sunColor, const glm::vec3& sunDir, bool enabled)
 {
     shader.SetInt("u_csmArray", 13);
     glActiveTexture(GL_TEXTURE13);
@@ -208,7 +198,7 @@ void CascadeShadows::Bind(Shader& shader, const glm::vec3& sunColor, const glm::
     }
 }
 
-void CascadeShadows::Shutdown()
+void R_Cascade::Shutdown()
 {
     if (m_fbo)
     {

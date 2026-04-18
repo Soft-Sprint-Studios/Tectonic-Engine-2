@@ -25,7 +25,7 @@
 #include "dynamic_light.h"
 #include "shader.h"
 #include "camera.h"
-#include "cascade.h"
+#include "r_cascade.h"
 #include <glad/glad.h>
 #include <memory>
 
@@ -52,7 +52,7 @@ private:
     GLuint m_SpotShadow;
     GLuint m_PointShadow;
 
-    std::unique_ptr<CascadeShadows> m_csm;
+    std::unique_ptr<R_Cascade> m_cascade;
     static glm::vec3 s_sunDir;
     static glm::vec3 s_sunColor;
 };
