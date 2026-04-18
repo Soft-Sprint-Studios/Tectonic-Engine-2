@@ -197,8 +197,14 @@ void main()
         1.2e3,
         0.758
     );
+	
+	float sunAmount = max(dot(rayDir, u_sunDir), 0.0);
+    float sunDisk = pow(sunAmount, 250.0);
 
+    vec3 sunColor = vec3(1.0, 0.95, 0.9) * sunDisk;
+
+    color += sunColor;
     color += getCloudColor(rayOrigin, rayDir, u_sunDir);
     
-    FragColor = vec4(color * 0.2, 1.0);
+    FragColor = vec4(color, 1.0);
 }
