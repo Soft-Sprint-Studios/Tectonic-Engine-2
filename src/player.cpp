@@ -61,9 +61,6 @@ Player::~Player()
     {
         Physics::GetDynamicsWorld()->removeAction(m_character);
         Physics::GetDynamicsWorld()->removeCollisionObject(m_character->getGhostObject());
-        delete m_character->getGhostObject()->getCollisionShape();
-        delete m_character->getGhostObject();
-        delete m_character;
         m_character = nullptr;
     }
 }

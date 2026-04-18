@@ -137,6 +137,7 @@ namespace Physics
             for (auto& character : s_characters)
             {
                 s_dynamicsWorld->removeAction(character.get());
+                s_dynamicsWorld->removeCollisionObject(character->getGhostObject());
             }
 
             for (auto& body : s_rigidBodies)
@@ -200,7 +201,7 @@ namespace Physics
         groundTransform.setOrigin(btVector3(0, 0, 0));
 
         s_bspMotionState = std::make_unique<btDefaultMotionState>(groundTransform);
-        btRigidBody::btRigidBodyConstructionInfo rbInfo(0, s_bspMotionState.get(), s_bspShape.get());
+        btRigidBody::btRigidBodyConstructionInfo rbInfo(btScalar(0.0), s_bspMotionState.get(), s_bspShape.get());
         s_bspBody = std::make_unique<btRigidBody>(rbInfo);
 
         s_bspBody->setFriction(0.5f);
@@ -244,7 +245,7 @@ namespace Physics
         btTrans.setFromOpenGLMatrix(&transform[0][0]);
 
         auto motionState = std::make_unique<btDefaultMotionState>(btTrans);
-        auto body = std::make_unique<btRigidBody>(0, motionState.get(), shape);
+        auto body = std::make_unique<btRigidBody>(btScalar(0.0), motionState.get(), shape);
         body->setFriction(0.5f);
 
         s_dynamicsWorld->addRigidBody(body.get(), COL_WORLD, COL_ALL);

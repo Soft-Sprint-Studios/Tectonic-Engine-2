@@ -392,10 +392,7 @@ void R_Models::Shutdown()
         if (group.colorSSBO != 0)
             glDeleteBuffers(1, &group.colorSSBO);
 
-        if (group.physicsShape)
-        {
-            delete group.physicsShape;
-        }
+        group.physicsShape = nullptr;
     }
     m_propGroups.clear();
 }
