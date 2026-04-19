@@ -108,7 +108,7 @@ bool R_BSP::Init(const BSP::MapData& map)
     return true;
 }
 
-void R_BSP::Draw(const Shader& shader, const Frustum& frustum, bool depthOnly)
+void R_BSP::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOnly)
 {
     if (m_vao == 0)
     {

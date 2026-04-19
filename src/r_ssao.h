@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 #pragma once
-#include "shader.h"
+#include "r_shader.h"
 #include "camera.h"
 #include <glad/glad.h>
 #include <vector>
@@ -38,7 +38,7 @@ public:
     void Shutdown();
     void Rescale(int width, int height);
     void Render(GLuint depthTexture, const Camera& camera, GLuint quadVAO, int screenW, int screenH);
-    void Bind(const Shader& shader);
+    void Bind(const R_Shader& shader);
 
 private:
     void CreateBuffers(int width, int height);
@@ -52,8 +52,8 @@ private:
     GLuint m_blurTexture = 0;
     GLuint m_noiseTexture = 0;
 
-    Shader m_ssaoShader;
-    Shader m_blurShader;
+    R_Shader m_ssaoShader;
+    R_Shader m_blurShader;
     
     std::vector<glm::vec3> m_ssaoKernel;
 

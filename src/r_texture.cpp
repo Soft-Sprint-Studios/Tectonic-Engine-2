@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 #include "cvar.h"
-#include "texture.h"
+#include "r_texture.h"
 #include "filesystem.h"
 #include "console.h"
 
@@ -31,7 +31,7 @@
 
 CVar r_textureAnisotropy("r_textureAnisotropy", "16.0", CVAR_SAVE);
 
-Texture::Texture()
+R_Texture::R_Texture()
 {
     m_id = 0;
     m_width = 0;
@@ -39,12 +39,12 @@ Texture::Texture()
     m_channels = 0;
 }
 
-Texture::~Texture()
+R_Texture::~R_Texture()
 {
     Release();
 }
 
-bool Texture::Load(const std::string& path, bool srgb)
+bool R_Texture::Load(const std::string& path, bool srgb)
 {
     std::string fullPath = Filesystem::GetFullPath(path);
     stbi_set_flip_vertically_on_load(true);
@@ -63,7 +63,7 @@ bool Texture::Load(const std::string& path, bool srgb)
     return true;
 }
 
-void Texture::Create(int width, int height, unsigned char* data, bool srgb)
+void R_Texture::Create(int width, int height, unsigned char* data, bool srgb)
 {
     m_width = width;
     m_height = height;
@@ -89,13 +89,13 @@ void Texture::Create(int width, int height, unsigned char* data, bool srgb)
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void Texture::Bind(unsigned int unit) const
+void R_Texture::Bind(unsigned int unit) const
 {
     glActiveTexture(GL_TEXTURE0 + unit);
     glBindTexture(GL_TEXTURE_2D, m_id);
 }
 
-void Texture::Release()
+void R_Texture::Release()
 {
     if (m_id != 0)
     {

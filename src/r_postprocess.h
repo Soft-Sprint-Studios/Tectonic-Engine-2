@@ -27,7 +27,7 @@
 #include "r_autoexposure.h"
 #include "r_ssao.h"
 #include "camera.h"
-#include "shader.h"
+#include "r_shader.h"
 #include <glad/glad.h>
 #include <memory>
 
@@ -55,7 +55,7 @@ private:
 
     GLuint m_quadVAO;
     GLuint m_quadVBO;
-    Shader m_shader;
+    R_Shader m_shader;
 
     int m_width, m_height;
     void SetupBuffers();

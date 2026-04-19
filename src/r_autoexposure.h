@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 #pragma once
-#include "shader.h"
+#include "r_shader.h"
 #include <glad/glad.h>
 
 class R_AutoExposure
@@ -37,8 +37,8 @@ public:
     void Shutdown();
 
 private:
-    Shader m_histogramShader;
-    Shader m_averageShader;
+    R_Shader m_histogramShader;
+    R_Shader m_averageShader;
     GLuint m_histogramBuffer = 0;
     GLuint m_lumBuffer = 0;
 };

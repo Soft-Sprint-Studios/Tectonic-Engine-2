@@ -23,7 +23,7 @@
  */
 #pragma once
 #include "camera.h"
-#include "shader.h"
+#include "r_shader.h"
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <vector>
@@ -40,8 +40,8 @@ public:
     void Init(int resolution = 4096);
     void Shutdown();
 
-    void Render(const Camera& camera, const glm::vec3& sunDir, Shader& shadowShader, R_BSP* bsp, R_Models* models);
-    void Bind(Shader& shader, const glm::vec3& sunColor, const glm::vec3& sunDir, bool enabled);
+    void Render(const Camera& camera, const glm::vec3& sunDir, R_Shader& shadowShader, R_BSP* bsp, R_Models* models);
+    void Bind(R_Shader& shader, const glm::vec3& sunColor, const glm::vec3& sunDir, bool enabled);
 
 private:
     void UpdateMatrices(const Camera& cam, const glm::vec3& sunDir);

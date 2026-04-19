@@ -289,7 +289,7 @@ void R_Models::LoadModel(const std::string& path)
     cgltf_free(data);
 }
 
-void R_Models::Draw(const Shader& shader, const Frustum& frustum, bool depthOnly)
+void R_Models::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOnly)
 {
     shader.SetInt("u_isInstanced", 1);
 

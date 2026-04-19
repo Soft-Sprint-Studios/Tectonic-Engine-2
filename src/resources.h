@@ -25,15 +25,15 @@
 #include <string>
 #include <unordered_map>
 #include <memory>
-#include "texture.h"
+#include "r_texture.h"
 
 class Resources
 {
 public:
-    static std::shared_ptr<Texture> LoadTexture(const std::string& path, bool srgb = true);
+    static std::shared_ptr<R_Texture> LoadTexture(const std::string& path, bool srgb = true);
     static void UnloadUnused();
     static void Clear();
 
 private:
-    static std::unordered_map<std::string, std::shared_ptr<Texture>> s_textures;
+    static std::unordered_map<std::string, std::shared_ptr<R_Texture>> s_textures;
 };

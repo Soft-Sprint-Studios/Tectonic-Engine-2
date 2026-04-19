@@ -22,8 +22,8 @@
  * SOFTWARE.
  */
 #pragma once
-#include "shader.h"
-#include "texture.h"
+#include "r_shader.h"
+#include "r_texture.h"
 #include "camera.h"
 #include <vector>
 #include <memory>
@@ -48,7 +48,7 @@ public:
     void Shutdown();
 
 private:
-    Shader m_shader;
+    R_Shader m_shader;
     std::vector<WaterSurface> m_surfaces;
     std::vector<GLint> m_starts;
     std::vector<GLsizei> m_counts;
@@ -57,7 +57,7 @@ private:
     GLuint m_reflectRBO = 0;
     glm::mat4 m_reflectView;
     glm::mat4 m_reflectProj;
-    std::shared_ptr<Texture> m_normalMap;
-    std::shared_ptr<Texture> m_dudvMap;
+    std::shared_ptr<R_Texture> m_normalMap;
+    std::shared_ptr<R_Texture> m_dudvMap;
     int m_width, m_height;
 };

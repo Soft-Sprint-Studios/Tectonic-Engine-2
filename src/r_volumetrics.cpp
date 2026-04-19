@@ -159,7 +159,7 @@ void R_Volumetrics::Render(GLuint depthTexture, const Camera& camera, R_Lights* 
     glViewport(0, 0, screenW, screenH);
 }
 
-void R_Volumetrics::Bind(const Shader& shader) 
+void R_Volumetrics::Bind(const R_Shader& shader)
 {
     if (r_volumetrics.GetInt() > 0) 
     {

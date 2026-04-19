@@ -28,17 +28,17 @@
 #include <unordered_map>
 #include <set>
 
-class Shader
+class R_Shader
 {
 public:
-    Shader();
-    ~Shader();
+    R_Shader();
+    ~R_Shader();
 
     bool Load(const std::string& vertPath, const std::string& fragPath, const std::string& geomPath = "");
     bool LoadCompute(const std::string& path);
 
     static void ReloadAll();
-    static std::set<Shader*>& GetRegistry();
+    static std::set<R_Shader*>& GetRegistry();
 
     void Bind() const;
     void Unbind() const;

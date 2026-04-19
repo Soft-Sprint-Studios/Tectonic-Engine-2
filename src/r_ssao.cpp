@@ -201,7 +201,7 @@ void R_SSAO::Render(GLuint depthTexture, const Camera& camera, GLuint quadVAO, i
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void R_SSAO::Bind(const Shader& shader) 
+void R_SSAO::Bind(const R_Shader& shader)
 {
     if (r_ssao.GetInt() > 0) 
     {

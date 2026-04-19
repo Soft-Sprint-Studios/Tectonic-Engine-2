@@ -25,11 +25,11 @@
 #include <glad/glad.h>
 #include <string>
 
-class Texture
+class R_Texture
 {
 public:
-    Texture();
-    ~Texture();
+    R_Texture();
+    ~R_Texture();
 
     bool Load(const std::string& path, bool srgb = true);
     void Create(int width, int height, unsigned char* data, bool srgb = true);

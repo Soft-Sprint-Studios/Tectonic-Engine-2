@@ -30,12 +30,12 @@
 #include <algorithm>
 #include <cctype>
 
-std::unordered_map<std::string, std::shared_ptr<Texture>> Materials::m_textures;
-std::unordered_map<std::string, std::shared_ptr<Texture>> Materials::m_normals;
-std::unordered_map<std::string, std::shared_ptr<Texture>> Materials::m_speculars;
-std::shared_ptr<Texture> Materials::m_fallback;
-std::shared_ptr<Texture> Materials::m_flatNormal;
-std::shared_ptr<Texture> Materials::m_white;
+std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_textures;
+std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_normals;
+std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_speculars;
+std::shared_ptr<R_Texture> Materials::m_fallback;
+std::shared_ptr<R_Texture> Materials::m_flatNormal;
+std::shared_ptr<R_Texture> Materials::m_white;
 
 void Materials::Init()
 {
@@ -62,15 +62,15 @@ void Materials::CreateFallbackTexture()
         }
     }
 
-    m_fallback = std::make_shared<Texture>();
+    m_fallback = std::make_shared<R_Texture>();
     m_fallback->Create(size, size, data.data(), true);
 
     uint8_t whiteData[] = { 255, 255, 255, 255 };
-    m_white = std::make_shared<Texture>();
+    m_white = std::make_shared<R_Texture>();
     m_white->Create(1, 1, whiteData, true);
 
     uint8_t normalData[] = { 128, 128, 255, 255 };
-    m_flatNormal = std::make_shared<Texture>();
+    m_flatNormal = std::make_shared<R_Texture>();
     m_flatNormal->Create(1, 1, normalData, false);
 }
 
@@ -141,7 +141,7 @@ void Materials::LoadDefinitions(const std::string& path)
     }
 }
 
-std::shared_ptr<Texture> Materials::GetTexture(const std::string& name)
+std::shared_ptr<R_Texture> Materials::GetTexture(const std::string& name)
 {
     std::string searchName = name;
     std::transform(searchName.begin(), searchName.end(), searchName.begin(), ::tolower);
@@ -161,7 +161,7 @@ std::shared_ptr<Texture> Materials::GetTexture(const std::string& name)
     return m_fallback;
 }
 
-std::shared_ptr<Texture> Materials::GetNormalMap(const std::string& name)
+std::shared_ptr<R_Texture> Materials::GetNormalMap(const std::string& name)
 {
     std::string searchName = name;
     std::transform(searchName.begin(), searchName.end(), searchName.begin(), ::tolower);
@@ -180,7 +180,7 @@ std::shared_ptr<Texture> Materials::GetNormalMap(const std::string& name)
     return m_flatNormal;
 }
 
-std::shared_ptr<Texture> Materials::GetSpecularMap(const std::string& name)
+std::shared_ptr<R_Texture> Materials::GetSpecularMap(const std::string& name)
 {
     std::string searchName = name;
     std::transform(searchName.begin(), searchName.end(), searchName.begin(), ::tolower);
@@ -199,12 +199,12 @@ std::shared_ptr<Texture> Materials::GetSpecularMap(const std::string& name)
     return m_white;
 }
 
-std::shared_ptr<Texture> Materials::GetFlatNormal() 
+std::shared_ptr<R_Texture> Materials::GetFlatNormal()
 {
     return m_flatNormal; 
 }
 
-std::shared_ptr<Texture> Materials::GetWhiteTexture() 
+std::shared_ptr<R_Texture> Materials::GetWhiteTexture()
 { 
     return m_white; 
 }

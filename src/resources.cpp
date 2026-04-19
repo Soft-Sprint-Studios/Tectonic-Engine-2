@@ -24,9 +24,9 @@
 #include "resources.h"
 #include "console.h"
 
-std::unordered_map<std::string, std::shared_ptr<Texture>> Resources::s_textures;
+std::unordered_map<std::string, std::shared_ptr<R_Texture>> Resources::s_textures;
 
-std::shared_ptr<Texture> Resources::LoadTexture(const std::string& path, bool srgb)
+std::shared_ptr<R_Texture> Resources::LoadTexture(const std::string& path, bool srgb)
 {
     auto it = s_textures.find(path);
     if (it != s_textures.end())
@@ -34,7 +34,7 @@ std::shared_ptr<Texture> Resources::LoadTexture(const std::string& path, bool sr
         return it->second;
     }
 
-    auto tex = std::make_shared<Texture>();
+    auto tex = std::make_shared<R_Texture>();
     if (tex->Load(path, srgb))
     {
         s_textures[path] = tex;

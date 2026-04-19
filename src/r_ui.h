@@ -23,7 +23,7 @@
  */
 #pragma once
 #include "window.h"
-#include "shader.h"
+#include "r_shader.h"
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -58,7 +58,7 @@ private:
         int width, height;
     };
 
-    Shader m_shader;
+    R_Shader m_shader;
     GLuint m_vao = 0, m_vbo = 0;
     TTF_Font* m_font = nullptr;
     glm::mat4 m_projection;

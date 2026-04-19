@@ -22,17 +22,17 @@
  * SOFTWARE.
  */
 #include "concmd.h"
-#include "shader.h"
+#include "r_shader.h"
 #include "filesystem.h"
 #include "console.h"
 #include <glm/gtc/type_ptr.hpp>
 
-Shader::Shader() : m_program(0)
+R_Shader::R_Shader() : m_program(0)
 {
     GetRegistry().insert(this);
 }
 
-Shader::~Shader()
+R_Shader::~R_Shader()
 {
     GetRegistry().erase(this);
 
@@ -42,7 +42,7 @@ Shader::~Shader()
     }
 }
 
-bool Shader::Load(const std::string& vertPath, const std::string& fragPath, const std::string& geomPath)
+bool R_Shader::Load(const std::string& vertPath, const std::string& fragPath, const std::string& geomPath)
 {
     // We must store these for reloading shaders
     m_vertPath = vertPath;
@@ -98,7 +98,7 @@ bool Shader::Load(const std::string& vertPath, const std::string& fragPath, cons
     return true;
 }
 
-bool Shader::LoadCompute(const std::string& path)
+bool R_Shader::LoadCompute(const std::string& path)
 {
     // We must store these for reloading shaders
     m_computePath = path;
@@ -129,7 +129,7 @@ bool Shader::LoadCompute(const std::string& path)
     return true;
 }
 
-GLuint Shader::CompileShader(GLenum type, const std::string& source, const std::string& path)
+GLuint R_Shader::CompileShader(GLenum type, const std::string& source, const std::string& path)
 {
     GLuint shader = glCreateShader(type);
     const char* version = "#version 460 core\n";
@@ -153,7 +153,7 @@ GLuint Shader::CompileShader(GLenum type, const std::string& source, const std::
     return shader;
 }
 
-bool Shader::Reload()
+bool R_Shader::Reload()
 {
     if (m_program != 0)
     {
@@ -174,25 +174,25 @@ bool Shader::Reload()
     return false;
 }
 
-void Shader::ReloadAll()
+void R_Shader::ReloadAll()
 {
-    for (Shader* shader : GetRegistry())
+    for (R_Shader* shader : GetRegistry())
     {
         shader->Reload();
     }
 }
 
-void Shader::Bind() const
+void R_Shader::Bind() const
 {
     glUseProgram(m_program);
 }
 
-void Shader::Unbind() const
+void R_Shader::Unbind() const
 {
     glUseProgram(0);
 }
 
-GLint Shader::GetUniformLocation(const std::string& name) const
+GLint R_Shader::GetUniformLocation(const std::string& name) const
 {
     if (m_uniformLocationCache.find(name) != m_uniformLocationCache.end())
     {
@@ -204,44 +204,44 @@ GLint Shader::GetUniformLocation(const std::string& name) const
     return location;
 }
 
-void Shader::SetMat4(const std::string& name, const glm::mat4& mat) const
+void R_Shader::SetMat4(const std::string& name, const glm::mat4& mat) const
 {
     glUniformMatrix4fv(GetUniformLocation(name), 1, GL_FALSE, glm::value_ptr(mat));
 }
 
-void Shader::SetVec4(const std::string& name, const glm::vec4& vec) const
+void R_Shader::SetVec4(const std::string& name, const glm::vec4& vec) const
 {
     glUniform4fv(GetUniformLocation(name), 1, glm::value_ptr(vec));
 }
 
-void Shader::SetVec3(const std::string& name, const glm::vec3& vec) const
+void R_Shader::SetVec3(const std::string& name, const glm::vec3& vec) const
 {
     glUniform3fv(GetUniformLocation(name), 1, glm::value_ptr(vec));
 }
 
-void Shader::SetVec2(const std::string& name, const glm::vec2& vec) const
+void R_Shader::SetVec2(const std::string& name, const glm::vec2& vec) const
 {
     glUniform2fv(GetUniformLocation(name), 1, glm::value_ptr(vec));
 }
 
-void Shader::SetInt(const std::string& name, int value) const
+void R_Shader::SetInt(const std::string& name, int value) const
 {
     glUniform1i(GetUniformLocation(name), value);
 }
 
-void Shader::SetFloat(const std::string& name, float value) const
+void R_Shader::SetFloat(const std::string& name, float value) const
 {
     glUniform1f(GetUniformLocation(name), value);
 }
 
-std::set<Shader*>& Shader::GetRegistry()
+std::set<R_Shader*>& R_Shader::GetRegistry()
 {
-    static std::set<Shader*> s_registry;
+    static std::set<R_Shader*> s_registry;
     return s_registry;
 }
 
 CON_COMMAND(shaders_reload, "Reloads all shaders from disk.")
 {
-    Shader::ReloadAll();
+    R_Shader::ReloadAll();
     Console::Log("All shaders reloaded.");
 }

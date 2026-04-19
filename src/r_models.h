@@ -23,8 +23,8 @@
  */
 #pragma once
 #include "bsploader.h"
-#include "shader.h"
-#include "texture.h"
+#include "r_shader.h"
+#include "r_texture.h"
 #include <vector>
 #include <string>
 #include <unordered_map>
@@ -39,9 +39,9 @@ struct ModelMesh
     uint32_t ebo;
     uint32_t indexCount;
     uint32_t indexType;
-    std::shared_ptr<Texture> texture;
-    std::shared_ptr<Texture> normalMap;
-    std::shared_ptr<Texture> specularMap;
+    std::shared_ptr<R_Texture> texture;
+    std::shared_ptr<R_Texture> normalMap;
+    std::shared_ptr<R_Texture> specularMap;
     uint32_t vertexOffset;
     uint32_t vertexCount;
 };
@@ -53,7 +53,7 @@ public:
     ~R_Models();
 
     bool Init(const BSP::MapData& mapData);
-    void Draw(const Shader& shader, const Frustum& frustum, bool depthOnly = false);
+    void Draw(const R_Shader& shader, const Frustum& frustum, bool depthOnly = false);
     void Shutdown();
 
 private:

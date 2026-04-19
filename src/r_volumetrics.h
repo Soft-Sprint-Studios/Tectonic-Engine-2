@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 #pragma once
-#include "shader.h"
+#include "r_shader.h"
 #include "camera.h"
 #include "r_lights.h"
 #include <glad/glad.h>
@@ -37,7 +37,7 @@ public:
     void Shutdown();
     void Rescale(int width, int height);
     void Render(GLuint depthTexture, const Camera& camera, R_Lights* lights, GLuint quadVAO, int screenW, int screenH);
-    void Bind(const Shader& shader);
+    void Bind(const R_Shader& shader);
 
 private:
     void CreateBuffers(int width, int height);
@@ -48,8 +48,8 @@ private:
     GLuint m_blurFbo[2] = {0, 0};
     GLuint m_blurTexture[2] = {0, 0};
 
-    Shader m_volShader;
-    Shader m_blurShader;
+    R_Shader m_volShader;
+    R_Shader m_blurShader;
     
     int m_width, m_height;
 };

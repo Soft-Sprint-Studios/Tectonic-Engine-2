@@ -23,7 +23,7 @@
  */
 #pragma once
 #include "window.h"
-#include "shader.h"
+#include "r_shader.h"
 #include "camera.h"
 #include "r_postprocess.h"
 #include "r_bsp.h"
@@ -48,7 +48,7 @@ public:
     void Shutdown();
     void Render(Camera& camera);
     void RenderWorld(Camera& camera, GLuint cubemapToExclude = 0, bool drawWater = true);
-    static void DrawSceneDepth(Shader& shader, const Frustum& frustum, R_BSP* bsp, R_Models* models);
+    static void DrawSceneDepth(R_Shader& shader, const Frustum& frustum, R_BSP* bsp, R_Models* models);
     void OnWindowResize(int w, int h);
 
     R_UI* GetUI() const 
@@ -61,8 +61,8 @@ private:
     void DrawWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater);
     void DrawPrePass(Camera& camera);
     Window* m_windowRef;
-    Shader m_worldShader;
-    Shader m_depthShader;
+    R_Shader m_worldShader;
+    R_Shader m_depthShader;
 
     // Sub-renderers
     std::unique_ptr<R_PostProcess> m_postProcess;

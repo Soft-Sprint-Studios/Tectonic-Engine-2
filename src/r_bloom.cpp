@@ -144,7 +144,7 @@ void R_Bloom::Render(GLuint sourceTexture, GLuint quadVAO, int screenW, int scre
     glViewport(0, 0, screenW, screenH);
 }
 
-void R_Bloom::Bind(const Shader& shader)
+void R_Bloom::Bind(const R_Shader& shader)
 {
     if (r_bloom.GetInt() > 0 && !m_mipChain.empty())
     {

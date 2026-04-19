@@ -23,16 +23,16 @@
  */
 #pragma once
 #include "bsploader.h"
-#include "shader.h"
-#include "texture.h"
+#include "r_shader.h"
+#include "r_texture.h"
 #include <memory>
 #include <vector>
 
 struct BSPDrawCall
 {
-    std::shared_ptr<Texture> texture;
-    std::shared_ptr<Texture> normalMap;
-    std::shared_ptr<Texture> specularMap;
+    std::shared_ptr<R_Texture> texture;
+    std::shared_ptr<R_Texture> normalMap;
+    std::shared_ptr<R_Texture> specularMap;
     bool isBumped;
 
     uint32_t start;
@@ -48,7 +48,7 @@ public:
     ~R_BSP();
 
     bool Init(const BSP::MapData& mapData);
-    void Draw(const Shader& shader, const Frustum& frustum, bool depthOnly = false);
+    void Draw(const R_Shader& shader, const Frustum& frustum, bool depthOnly = false);
     void Shutdown();
 
     GLuint GetVAO() const 

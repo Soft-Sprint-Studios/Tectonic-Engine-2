@@ -215,7 +215,7 @@ void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater
     }
 }
 
-void Renderer::DrawSceneDepth(Shader& shader, const Frustum& frustum, R_BSP* bsp, R_Models* models)
+void Renderer::DrawSceneDepth(R_Shader& shader, const Frustum& frustum, R_BSP* bsp, R_Models* models)
 {
     bsp->Draw(shader, frustum, true);
     models->Draw(shader, frustum, true);

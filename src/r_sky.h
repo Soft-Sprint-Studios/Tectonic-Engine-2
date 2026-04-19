@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 #pragma once
-#include "shader.h"
+#include "r_shader.h"
 #include "camera.h"
 #include <glad/glad.h>
 #include <string>
@@ -47,7 +47,7 @@ public:
 private:
     GLuint m_vao, m_vbo;
     GLuint m_cubemapTexture;
-    Shader m_shader;
+    R_Shader m_shader;
 
     void LoadCubemap(const std::string& skyName);
 };

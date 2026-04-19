@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 #pragma once
-#include "shader.h"
+#include "r_shader.h"
 #include <glad/glad.h>
 #include <vector>
 #include <glm/glm.hpp>
@@ -36,7 +36,7 @@ public:
     bool Init(int width, int height);
     void Shutdown();
     void Rescale(int width, int height);
-    void Bind(const Shader& shader);
+    void Bind(const R_Shader& shader);
     void Render(GLuint sourceTexture, GLuint quadVAO, int screenW, int screenH);
     GLuint GetResultTexture() const;
 
@@ -51,8 +51,8 @@ private:
     void CreateChain(int width, int height);
     void DeleteChain();
 
-    Shader m_downsampleShader;
-    Shader m_upsampleShader;
+    R_Shader m_downsampleShader;
+    R_Shader m_upsampleShader;
     
     std::vector<Mip> m_mipChain;
 };

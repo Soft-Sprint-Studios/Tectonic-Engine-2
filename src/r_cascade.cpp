@@ -147,7 +147,7 @@ void R_Cascade::UpdateMatrices(const Camera& cam, const glm::vec3& sunDir)
     }
 }
 
-void R_Cascade::Render(const Camera& camera, const glm::vec3& sunDir, Shader& shadowShader, R_BSP* bsp, R_Models* models)
+void R_Cascade::Render(const Camera& camera, const glm::vec3& sunDir, R_Shader& shadowShader, R_BSP* bsp, R_Models* models)
 {
     UpdateMatrices(camera, sunDir);
 
@@ -172,7 +172,7 @@ void R_Cascade::Render(const Camera& camera, const glm::vec3& sunDir, Shader& sh
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void R_Cascade::Bind(Shader& shader, const glm::vec3& sunColor, const glm::vec3& sunDir, bool enabled)
+void R_Cascade::Bind(R_Shader& shader, const glm::vec3& sunColor, const glm::vec3& sunDir, bool enabled)
 {
     shader.SetInt("u_csmArray", 13);
     glActiveTexture(GL_TEXTURE13);

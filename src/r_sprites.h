@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 #pragma once
-#include "shader.h"
+#include "r_shader.h"
 #include "camera.h"
 #include "sprite.h"
 #include <glad/glad.h>
@@ -37,7 +37,7 @@ public:
     void Shutdown();
 
 private:
-    Shader m_shader;
+    R_Shader m_shader;
     GLuint m_vao = 0;
     GLuint m_vbo = 0;
 };

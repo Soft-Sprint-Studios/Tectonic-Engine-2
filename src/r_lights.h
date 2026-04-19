@@ -23,7 +23,7 @@
  */
 #pragma once
 #include "dynamic_light.h"
-#include "shader.h"
+#include "r_shader.h"
 #include "camera.h"
 #include "r_cascade.h"
 #include <glad/glad.h>
@@ -40,15 +40,15 @@ public:
 
     bool Init();
     void RenderShadowMaps(Camera& camera, R_BSP* bsp, R_Models* models);
-    void Bind(const Shader& shader);
+    void Bind(const R_Shader& shader);
     void Shutdown();
 
 private:
     void SetupShadowMap(std::shared_ptr<DynamicLight> light);
 
-    Shader m_shadowSpotShader;
-    Shader m_shadowCascadeShader;
-    Shader m_shadowPointShader;
+    R_Shader m_shadowSpotShader;
+    R_Shader m_shadowCascadeShader;
+    R_Shader m_shadowPointShader;
 
     GLuint m_SpotShadow;
     GLuint m_PointShadow;
