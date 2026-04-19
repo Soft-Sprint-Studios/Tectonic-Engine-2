@@ -331,9 +331,6 @@ void R_Models::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOn
             {
                 for (auto& mesh : group.meshes)
                 {
-                    if (mesh.indexCount == 0) 
-                        continue;
-
                     glBindVertexArray(mesh.vao);
                     glDrawElementsInstanced(GL_TRIANGLES, mesh.indexCount, mesh.indexType, 0, group.instanceCount);
                 }

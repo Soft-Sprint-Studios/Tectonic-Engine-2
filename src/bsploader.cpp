@@ -260,6 +260,11 @@ namespace BSP
                     m_map.drawCalls.push_back(dc);
             }
 
+            // Process overlays
+            ParseOverlays();
+
+            m_map.opaqueVertexCount = (uint32_t)m_map.renderVertices.size();
+
             // Process water brush
             m_map.waterSurfaces.clear();
             if (!waterFaces.empty())
@@ -281,9 +286,6 @@ namespace BSP
 
                 m_map.waterSurfaces.push_back(s);
             }
-
-            // Process overlays
-            ParseOverlays();
 
             // Process brush models for entities
             for (auto& ent : m_map.entities)

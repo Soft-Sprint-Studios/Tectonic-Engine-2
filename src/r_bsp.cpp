@@ -105,6 +105,9 @@ bool R_BSP::Init(const BSP::MapData& map)
         m_drawCalls.push_back(draw);
     }
 
+    m_totalVertexCount = (uint32_t)map.renderVertices.size();
+    m_opaqueVertexCount = map.opaqueVertexCount;
+
     return true;
 }
 
@@ -119,11 +122,7 @@ void R_BSP::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOnly)
 
     if (depthOnly)
     {
-        for (const auto& dc : m_drawCalls)
-        {
-            glDrawArrays(GL_TRIANGLES, dc.start, dc.count);
-        }
-
+        glDrawArrays(GL_TRIANGLES, 0, m_opaqueVertexCount);
         glBindVertexArray(0);
         return;
     }

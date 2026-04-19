@@ -61,4 +61,6 @@ private:
     GLuint m_vbo;
     GLuint m_lightmapTexture = 0;
     std::vector<BSPDrawCall> m_drawCalls;
+    uint32_t m_totalVertexCount = 0;
+    uint32_t m_opaqueVertexCount = 0;
 };

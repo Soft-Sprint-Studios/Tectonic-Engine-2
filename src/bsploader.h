@@ -272,6 +272,7 @@ namespace BSP
     {
         std::vector<Vertex> renderVertices;
         std::vector<DrawCall> drawCalls;
+        uint32_t opaqueVertexCount = 0;
         std::vector<WaterSurface> waterSurfaces;
         std::vector<StaticPropInstance> staticProps;
         CollisionData collision;
