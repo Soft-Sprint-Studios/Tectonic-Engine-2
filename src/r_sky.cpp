@@ -156,3 +156,13 @@ void R_Sky::Shutdown()
     glDeleteBuffers(1, &m_vbo);
     glDeleteTextures(1, &m_cubemapTexture);
 }
+
+void R_Sky::Reset()
+{
+    s_useDynamic = false;
+    s_hasCSM = false;
+    s_sunVolIntensity = 0.0f;
+    s_sunVolSteps = 8;
+    s_sunDir = glm::vec3(0.0f, 1.0f, 0.01f);
+    s_sunColor = glm::vec3(0.0f);
+}

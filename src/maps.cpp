@@ -61,6 +61,7 @@ namespace Maps
         DynamicLights::Clear();
         Particles::Shutdown();
         Sprites::Clear();
+        R_Sky::Reset();
 
         Physics::Init();
         EntityManager::Init();

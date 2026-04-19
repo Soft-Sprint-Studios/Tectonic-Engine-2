@@ -45,6 +45,7 @@ public:
     static int s_sunVolSteps;
     static bool s_useDynamic;
     static bool s_hasCSM;
+    static void Reset();
 
 private:
     GLuint m_vao, m_vbo;
