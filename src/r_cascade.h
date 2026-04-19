@@ -41,7 +41,7 @@ public:
     void Shutdown();
 
     void Render(const Camera& camera, const glm::vec3& sunDir, R_Shader& shadowShader, R_BSP* bsp, R_Models* models);
-    void Bind(R_Shader& shader, const glm::vec3& sunColor, const glm::vec3& sunDir, bool enabled);
+    void Bind(R_Shader& shader, const glm::vec3& sunColor, const glm::vec3& sunDir, bool enabled, float sunVolIntensity, int sunVolSteps);
 
 private:
     void UpdateMatrices(const Camera& cam, const glm::vec3& sunDir);

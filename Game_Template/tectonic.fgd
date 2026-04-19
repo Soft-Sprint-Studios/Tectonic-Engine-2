@@ -350,13 +350,16 @@
 @PointClass base(Targetname, Angles) = dynamic_sky : "Procedural Atmosphere and CSM Controller"
 [
 	angles(angle) : "Sun Pitch Yaw Roll" : "0 0 0" : "The direction the sun is coming from. Pitch -90 is straight up, Yaw 45 is North-East."
-	_light(color255) : "Sun Color and Intensity" : "255 255 255 200" : "color of the sunlight."
+	_light(color255) : "Sun Color and Intensity" : "255 255 255 200" : "Color and intensity of the sunlight."
 
 	hascsm(choices) : "Enable Cascaded Shadows" : 1 : "Whether this sky should generate real-time cascaded shadow maps for the world." =
 	[
 		0 : "No"
 		1 : "Yes"
 	]
+
+	volumetric_intensity(float) : "Sun Volumetric Intensity" : "0.0" : "Intensity of the sun's volumetric lighting. Set to 0 to disable."
+	volumetric_steps(integer) : "Sun Volumetric Steps" : 8 : "Number of ray-marching steps for the sun's volumetrics. Higher values are smoother but slower."
 
 	input Enable(void) : "Enable procedural sky"
 	input Disable(void) : "Disable procedural sky and return to cubemap"

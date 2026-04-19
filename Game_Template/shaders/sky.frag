@@ -9,6 +9,7 @@ uniform bool u_use_dynamic;
 uniform samplerCube skybox;
 
 uniform vec3 u_sunDir;
+uniform vec3 u_sunColor;
 uniform vec3 u_cameraPos;
 uniform float u_time;
 
@@ -184,11 +185,13 @@ void main()
     vec3 rayDir = normalize(v_worldPos);
     vec3 rayOrigin = vec3(0.0, u_cameraPos.y + 6371e3, 0.0);
 
+    float sunIntensity = length(u_sunColor) * 10.0; 
+    
     vec3 color = atmosphere(
         rayDir,
         rayOrigin,
         u_sunDir,
-        22.0,
+        sunIntensity,
         6371e3,
         6471e3,
         vec3(5.5e-6, 13.0e-6, 22.4e-6),
@@ -198,12 +201,12 @@ void main()
         0.758
     );
 	
-	float sunAmount = max(dot(rayDir, u_sunDir), 0.0);
+    float sunAmount = max(dot(rayDir, u_sunDir), 0.0);
     float sunDisk = pow(sunAmount, 250.0);
 
-    vec3 sunColor = vec3(1.0, 0.95, 0.9) * sunDisk;
+    vec3 sunDiskColor = u_sunColor * sunDisk;
 
-    color += sunColor;
+    color += sunDiskColor;
     color += getCloudColor(rayOrigin, rayDir, u_sunDir);
     
     FragColor = vec4(color, 1.0);

@@ -5,6 +5,7 @@ uniform sampler2D u_depthTexture;
 
 uniform mat4 u_invProjection;
 uniform mat4 u_invView;
+uniform mat4 u_view; 
 uniform vec3 u_viewPos;
 
 struct PointLight 
@@ -36,6 +37,15 @@ uniform samplerCube u_pointShadowMaps[4];
 uniform int u_numSpotLights;
 uniform SpotLight u_spotLights[4];
 uniform sampler2D u_spotShadowMaps[4];
+
+uniform int u_csmEnabled;
+uniform sampler2DArray u_csmArray;
+uniform mat4 u_csmMatrices[4];
+uniform float u_csmSplits[5];
+uniform vec3 u_sunColor;
+uniform vec3 u_sunDir;
+uniform float u_sunVolIntensity;
+uniform int u_sunVolSteps;
 
 float dither[16] = float[](
      0.0/16.0,  8.0/16.0,  2.0/16.0, 10.0/16.0,
@@ -99,9 +109,63 @@ float PointShadowCalc(vec3 fragPos, vec3 lightPos, float far_plane, samplerCube 
     return shadow / (samples * samples * samples);
 }
 
+float CalculateSunShadow(vec3 fragPosWorld)
+{
+    float depth = abs((u_view * vec4(fragPosWorld, 1.0)).z);
+    int layer = -1;
+
+    for (int i = 0; i < 4; i++)
+    {
+        if (depth < u_csmSplits[i + 1])
+        {
+            layer = i;
+            break;
+        }
+    }
+
+    if (layer == -1)
+    {
+        return 0.0;
+    }
+
+    vec4 fragPosLightSpace = u_csmMatrices[layer] * vec4(fragPosWorld, 1.0);
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    projCoords = projCoords * 0.5 + 0.5;
+
+    if (projCoords.z > 1.0)
+    {
+        return 0.0;
+    }
+
+    float shadow = 0.0;
+    vec2 texelSize = 1.0 / vec2(textureSize(u_csmArray, 0));
+
+    for (int x = -1; x <= 1; ++x)
+    {
+        for (int y = -1; y <= 1; ++y)
+        {
+            float pcfDepth = texture(u_csmArray, vec3(projCoords.xy + vec2(x, y) * texelSize, layer)).r;
+
+            if (projCoords.z > pcfDepth)
+            {
+                shadow += 1.0;
+            }
+        }
+    }
+
+    return shadow / 9.0;
+}
+
 void main() 
 {
     float depth = texture(u_depthTexture, TexCoords).r;
+
+    if (depth >= 1.0)
+    {
+        FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        return;
+    }
+	
     vec4 clipSpace = vec4(TexCoords * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
     vec4 viewSpace = u_invProjection * clipSpace;
     viewSpace /= viewSpace.w;
@@ -159,7 +223,6 @@ void main()
             if (attenuation > 0.0) 
             {
                 float shadow = PointShadowCalc(currentPos, u_pointLights[i].pos, u_pointLights[i].radius, u_pointShadowMaps[i]);
-
                 lightFog += u_pointLights[i].color * attenuation * (1.0 - shadow) * stepSize;
             }
             currentPos += rayDirection * stepSize;
@@ -215,12 +278,30 @@ void main()
             if (attenuation > 0.0 && intensity > 0.0) 
             {
                 float shadow = SpotShadowCalc(u_spotLights[i].lightSpaceMatrix * vec4(currentPos, 1.0), u_spotShadowMaps[i]);
-                
                 lightFog += u_spotLights[i].color * intensity * attenuation * (1.0 - shadow) * stepSize;
             }
             currentPos += rayDirection * stepSize;
         }
         accumFog += lightFog * u_spotLights[i].volumetricIntensity;
+    }
+
+    // Evaluate Sun Volumetrics
+    if (u_csmEnabled == 1 && u_sunVolIntensity > 0.0)
+    {
+        int steps = u_sunVolSteps;
+        float stepSize = rayLength / float(steps);
+        vec3 currentPos = startPosition + rayDirection * (stepSize * ditherVal);
+        
+        vec3 sunFogAccum = vec3(0.0);
+
+        for (int s = 0; s < steps; ++s)
+        {
+            float shadow = CalculateSunShadow(currentPos);
+            sunFogAccum += u_sunColor * (1.0 - shadow) * stepSize;
+            currentPos += rayDirection * stepSize;
+        }
+
+        accumFog += sunFogAccum * u_sunVolIntensity;
     }
 
     FragColor = vec4(accumFog, 1.0);

@@ -173,7 +173,7 @@ void R_Cascade::Render(const Camera& camera, const glm::vec3& sunDir, R_Shader& 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void R_Cascade::Bind(R_Shader& shader, const glm::vec3& sunColor, const glm::vec3& sunDir, bool enabled)
+void R_Cascade::Bind(R_Shader& shader, const glm::vec3& sunColor, const glm::vec3& sunDir, bool enabled, float sunVolIntensity, int sunVolSteps)
 {
     shader.SetInt("u_csmArray", 13);
     glActiveTexture(GL_TEXTURE13);
@@ -184,6 +184,8 @@ void R_Cascade::Bind(R_Shader& shader, const glm::vec3& sunColor, const glm::vec
         glBindTexture(GL_TEXTURE_2D_ARRAY, m_texArray);
         shader.SetVec3("u_sunColor", sunColor);
         shader.SetVec3("u_sunDir", sunDir);
+        shader.SetFloat("u_sunVolIntensity", sunVolIntensity);
+        shader.SetInt("u_sunVolSteps", sunVolSteps);
 
         for (int i = 0; i < 4; i++)
         {

@@ -580,9 +580,11 @@ public:
         float intensity = lightData.w / 255.0f;
 
         R_Sky::s_sunColor = color * intensity;
+        R_Sky::s_sunVolIntensity = GetFloat("volumetric_intensity", 0.0f);
+        R_Sky::s_sunVolSteps = GetInt("volumetric_steps", 8);
 
         R_Sky::s_hasCSM = GetInt("hascsm", 1) != 0;
-    }
+    }   
 
     void AcceptInput(const std::string& input, const std::string& param) override
     {

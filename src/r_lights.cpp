@@ -231,7 +231,7 @@ void R_Lights::Bind(const R_Shader& shader)
 {
     // CSM
     bool csmEnabled = (r_shadows.GetInt() > 0 && r_csm.GetInt() > 0 && R_Sky::s_hasCSM);
-    m_cascade->Bind(const_cast<R_Shader&>(shader), R_Sky::s_sunColor, R_Sky::s_sunDir, csmEnabled);
+    m_cascade->Bind(const_cast<R_Shader&>(shader), R_Sky::s_sunColor, R_Sky::s_sunDir, csmEnabled, R_Sky::s_sunVolIntensity, R_Sky::s_sunVolSteps);
 
     // Then the scene lights
     for (int i = 0; i < 4; ++i)

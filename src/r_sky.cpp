@@ -34,6 +34,8 @@
 // Dynamic sky data
 glm::vec3 R_Sky::s_sunDir = glm::vec3(0.0f, 1.0f, 0.01f);
 glm::vec3 R_Sky::s_sunColor = glm::vec3(1.0f, 1.0f, 1.0f);
+float R_Sky::s_sunVolIntensity = 0.0f;
+int R_Sky::s_sunVolSteps = 8;
 bool R_Sky::s_useDynamic = false;
 bool R_Sky::s_hasCSM = false;
 
@@ -136,6 +138,7 @@ void R_Sky::Draw(const Camera& camera)
     m_shader.SetInt("u_sky_steps_primary", r_sky_steps_primary.GetInt());
     m_shader.SetInt("u_sky_steps_light", r_sky_steps_light.GetInt());
     m_shader.SetVec3("u_sunDir", s_sunDir);
+    m_shader.SetVec3("u_sunColor", s_sunColor);
     m_shader.SetVec3("u_cameraPos", camera.position);
     m_shader.SetFloat("u_time", (float)Time::TotalTime());
 
