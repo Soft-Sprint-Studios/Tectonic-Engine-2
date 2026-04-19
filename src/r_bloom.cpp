@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 #include "r_bloom.h"
+#include "r_state.h"
 #include "cvar.h"
 #include <cmath>
 
@@ -115,7 +116,7 @@ void R_Bloom::Render(GLuint sourceTexture, GLuint quadVAO, int screenW, int scre
     for (size_t i = 0; i < m_mipChain.size(); ++i)
     {
         const auto& mip = m_mipChain[i];
-        glViewport(0, 0, mip.size.x, mip.size.y);
+        R_State::SetViewport(0, 0, mip.size.x, mip.size.y);
         glBindFramebuffer(GL_FRAMEBUFFER, mip.fbo);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -125,8 +126,8 @@ void R_Bloom::Render(GLuint sourceTexture, GLuint quadVAO, int screenW, int scre
 
     m_upsampleShader.Bind();
     m_upsampleShader.SetFloat("u_scatter", r_bloom_scatter.GetFloat());
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ONE);
+    R_State::SetBlending(true);
+    R_State::SetBlendFunc(GL_ONE, GL_ONE);
 
     for (int i = (int)m_mipChain.size() - 1; i > 0; --i)
     {
@@ -134,14 +135,14 @@ void R_Bloom::Render(GLuint sourceTexture, GLuint quadVAO, int screenW, int scre
         const auto& nextMip = m_mipChain[i - 1];
 
         glBindTexture(GL_TEXTURE_2D, mip.texture);
-        glViewport(0, 0, nextMip.size.x, nextMip.size.y);
+        R_State::SetViewport(0, 0, nextMip.size.x, nextMip.size.y);
         glBindFramebuffer(GL_FRAMEBUFFER, nextMip.fbo);
         glDrawArrays(GL_TRIANGLES, 0, 6);
     }
 
-    glDisable(GL_BLEND);
+    R_State::SetBlending(false);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, screenW, screenH);
+    R_State::SetViewport(0, 0, screenW, screenH);
 }
 
 void R_Bloom::Bind(const R_Shader& shader)

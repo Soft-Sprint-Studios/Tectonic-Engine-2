@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 #include "cubemap.h"
+#include "r_state.h"
 #include "console.h"
 #include "filesystem.h"
 #include "entities.h"
@@ -224,7 +225,7 @@ namespace Cubemap
             glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-            glViewport(0, 0, resolution, resolution);
+            R_State::SetViewport(0, 0, resolution, resolution);
             glBindFramebuffer(GL_FRAMEBUFFER, fbo);
             buildCam.position = origin;
 

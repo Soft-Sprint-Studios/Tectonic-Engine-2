@@ -34,6 +34,7 @@
 #include "r_sprites.h"
 #include "r_waters.h"
 #include "r_ui.h"
+#include "r_state.h"
 #include "cubemap.h"
 #include <memory>
 

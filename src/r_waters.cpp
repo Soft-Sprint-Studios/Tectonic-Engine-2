@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 #include "r_waters.h"
+#include "r_state.h"
 #include "renderer.h"
 #include "timing.h"
 #include "resources.h"
@@ -94,9 +95,9 @@ void R_Waters::RenderReflection(Renderer* renderer, const Camera& mainCam)
 
     glBindFramebuffer(GL_FRAMEBUFFER, m_reflectFBO);
     int ds = std::max(1, r_water_downsample.GetInt());
-    glViewport(0, 0, m_width / ds, m_height / ds);
+    R_State::SetViewport(0, 0, m_width / ds, m_height / ds);
 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    R_State::Clear(true, true, false);
 
     renderer->RenderWorld(reflectCam, 0, false);
 
@@ -108,8 +109,8 @@ void R_Waters::Draw(const Camera& camera, GLuint vao)
     if (m_surfaces.empty() || m_starts.empty())
         return;
 
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    R_State::SetBlending(true);
+    R_State::SetBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     m_shader.Bind();
     m_shader.SetMat4("u_projection", camera.GetProjectionMatrix());
@@ -139,7 +140,7 @@ void R_Waters::Draw(const Camera& camera, GLuint vao)
     }
 
     glBindVertexArray(0);
-    glDisable(GL_BLEND);
+    R_State::SetBlending(false);
 }
 
 void R_Waters::Shutdown()

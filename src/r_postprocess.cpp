@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 #include "r_postprocess.h"
+#include "r_state.h"
 #include "console.h"
 #include "cvar.h"
 #include "postprocess.h"
@@ -183,16 +184,9 @@ void R_PostProcess::Begin()
 
     glBindFramebuffer(GL_FRAMEBUFFER, (useMSAA && m_msFbo != 0) ? m_msFbo : m_fbo);
 
-    if (useMSAA)
-    {
-        glEnable(GL_MULTISAMPLE);
-    }
-    else
-    {
-        glDisable(GL_MULTISAMPLE);
-    }
+    R_State::SetMultisample(useMSAA);
 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    R_State::Clear(true, true, false);
 }
 
 void R_PostProcess::End()

@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 #include "r_ssao.h"
+#include "r_state.h"
 #include "cvar.h"
 #include <random>
 #include <glm/gtc/type_ptr.hpp>
@@ -162,7 +163,7 @@ void R_SSAO::Render(GLuint depthTexture, const Camera& camera, GLuint quadVAO, i
 
     // SSAO pass
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-    glClear(GL_COLOR_BUFFER_BIT);
+    R_State::Clear(true, false, false);
     m_ssaoShader.Bind();
     m_ssaoShader.SetMat4("u_projection", camera.GetProjectionMatrix());
     m_ssaoShader.SetMat4("u_invProjection", glm::inverse(camera.GetProjectionMatrix()));
@@ -188,7 +189,7 @@ void R_SSAO::Render(GLuint depthTexture, const Camera& camera, GLuint quadVAO, i
 
     // Blur pass
     glBindFramebuffer(GL_FRAMEBUFFER, m_blurFbo);
-    glClear(GL_COLOR_BUFFER_BIT);
+    R_State::Clear(true, false, false);
     m_blurShader.Bind();
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_texture);

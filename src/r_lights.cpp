@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 #include "r_lights.h"
+#include "r_state.h"
 #include "dynamic_light.h"
 #include "r_bsp.h"
 #include "r_models.h"
@@ -157,9 +158,9 @@ void R_Lights::RenderShadowMaps(Camera& camera, R_BSP* bsp, R_Models* models)
 
         SetupShadowMap(light);
 
-        glViewport(0, 0, def.shadowRes, def.shadowRes);
+        R_State::SetViewport(0, 0, def.shadowRes, def.shadowRes);
         glBindFramebuffer(GL_FRAMEBUFFER, def.shadowFBO);
-        glClear(GL_DEPTH_BUFFER_BIT);
+        R_State::Clear(false, true, false);
 
         if (def.type == LightType::Spot)
         {

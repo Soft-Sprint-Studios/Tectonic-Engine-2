@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 #include "r_cascade.h"
+#include "r_state.h"
 #include "camera.h"
 #include "r_bsp.h"
 #include "r_models.h"
@@ -155,10 +156,10 @@ void R_Cascade::Render(const Camera& camera, const glm::vec3& sunDir, R_Shader& 
     glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(glm::mat4) * 4, m_matrices.data());
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, m_matrixSSBO);
     
-    glViewport(0, 0, m_resolution, m_resolution);
+    R_State::SetViewport(0, 0, m_resolution, m_resolution);
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-    glClear(GL_DEPTH_BUFFER_BIT);
-    glCullFace(GL_FRONT);
+    R_State::Clear(false, true, false);
+    R_State::SetCullFace(GL_FRONT);
 
     shadowShader.Bind();
     shadowShader.SetMat4("u_model", glm::mat4(1.0f));
@@ -168,7 +169,7 @@ void R_Cascade::Render(const Camera& camera, const glm::vec3& sunDir, R_Shader& 
 
     Renderer::DrawSceneDepth(shadowShader, sunFrustum, bsp, models);
 
-    glCullFace(GL_BACK);
+    R_State::SetCullFace(GL_BACK);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
