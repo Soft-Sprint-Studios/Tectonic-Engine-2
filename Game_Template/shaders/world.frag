@@ -299,8 +299,7 @@ void main()
         float intensity = clamp((theta - u_spotLights[i].outerAngle) / epsilon, 0.0, 1.0);
         float attenuation = 1.0 - (dist / u_spotLights[i].radius);
 
-        float shadow = 0.0;
-        shadow = SpotShadowCalc(u_spotLights[i].lightSpaceMatrix * vec4(FragPos, 1.0), u_spotShadowMaps[i]);
+        float shadow = SpotShadowCalc(u_spotLights[i].lightSpaceMatrix * vec4(FragPos, 1.0), u_spotShadowMaps[i]);
 
         vec3 lightEnergy = u_spotLights[i].color * intensity * attenuation * (1.0 - shadow);
 
@@ -329,8 +328,7 @@ void main()
 
         float attenuation = 1.0 - (dist / u_pointLights[i].radius);
 
-        float shadow = 0.0;
-        shadow = PointShadowCalc(FragPos, u_pointLights[i].pos, u_pointLights[i].radius, u_pointShadowMaps[i]);
+        float shadow = PointShadowCalc(FragPos, u_pointLights[i].pos, u_pointLights[i].radius, u_pointShadowMaps[i]);
 
         vec3 lightEnergy = u_pointLights[i].color * attenuation * (1.0 - shadow);
 

@@ -158,24 +158,7 @@ void main()
 
             if (attenuation > 0.0) 
             {
-                float shadow = 0.0;
-
-                if (i == 0) 
-                {
-                    shadow = PointShadowCalc(currentPos, u_pointLights[i].pos, u_pointLights[i].radius, u_pointShadowMaps[0]);
-                }
-                else if (i == 1) 
-                {
-                    shadow = PointShadowCalc(currentPos, u_pointLights[i].pos, u_pointLights[i].radius, u_pointShadowMaps[1]);
-                }
-                else if (i == 2) 
-                {
-                    shadow = PointShadowCalc(currentPos, u_pointLights[i].pos, u_pointLights[i].radius, u_pointShadowMaps[2]);
-                }
-                else if (i == 3) 
-                {
-                    shadow = PointShadowCalc(currentPos, u_pointLights[i].pos, u_pointLights[i].radius, u_pointShadowMaps[3]);
-                }
+                float shadow = PointShadowCalc(currentPos, u_pointLights[i].pos, u_pointLights[i].radius, u_pointShadowMaps[i]);
 
                 lightFog += u_pointLights[i].color * attenuation * (1.0 - shadow) * stepSize;
             }
@@ -231,24 +214,7 @@ void main()
 
             if (attenuation > 0.0 && intensity > 0.0) 
             {
-                float shadow = 0.0;
-
-                if (i == 0) 
-                {
-                    shadow = SpotShadowCalc(u_spotLights[i].lightSpaceMatrix * vec4(currentPos, 1.0), u_spotShadowMaps[0]);
-                }
-                else if (i == 1) 
-                {
-                    shadow = SpotShadowCalc(u_spotLights[i].lightSpaceMatrix * vec4(currentPos, 1.0), u_spotShadowMaps[1]);
-                }
-                else if (i == 2) 
-                {
-                    shadow = SpotShadowCalc(u_spotLights[i].lightSpaceMatrix * vec4(currentPos, 1.0), u_spotShadowMaps[2]);
-                }
-                else if (i == 3) 
-                {
-                    shadow = SpotShadowCalc(u_spotLights[i].lightSpaceMatrix * vec4(currentPos, 1.0), u_spotShadowMaps[3]);
-                }
+                float shadow = SpotShadowCalc(u_spotLights[i].lightSpaceMatrix * vec4(currentPos, 1.0), u_spotShadowMaps[i]);
                 
                 lightFog += u_spotLights[i].color * intensity * attenuation * (1.0 - shadow) * stepSize;
             }
