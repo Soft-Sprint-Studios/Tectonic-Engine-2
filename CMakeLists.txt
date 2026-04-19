@@ -41,11 +41,11 @@ file(GLOB_RECURSE HEADER_FILES "src/*.h" "src/*.hpp")
 set(GLAD_SRC "${GLAD_PATH}/src/glad.c")
 
 # ---- EXECUTABLE ----
-add_library(TectonicEngine2 SHARED ${SRC_FILES} ${HEADER_FILES} ${GLAD_SRC})
-target_compile_definitions(TectonicEngine2 PRIVATE GLM_ENABLE_EXPERIMENTAL ENGINE_BUILD)
+add_library(Engine SHARED ${SRC_FILES} ${HEADER_FILES} ${GLAD_SRC})
+target_compile_definitions(Engine PRIVATE GLM_ENABLE_EXPERIMENTAL ENGINE_BUILD)
 
 # ---- INCLUDE DIRECTORIES ----
-target_include_directories(TectonicEngine2 PRIVATE
+target_include_directories(Engine PRIVATE
     ${SDL3_PATH}/include
     ${SDL_TTF_PATH}/include
     ${GLM_PATH}/include
@@ -64,7 +64,7 @@ target_include_directories(TectonicEngine2 PRIVATE
 find_package(OpenGL REQUIRED)
 
 if(WIN32)
-    target_link_libraries(TectonicEngine2 PRIVATE
+    target_link_libraries(Engine PRIVATE
         ${SDL3_PATH}/lib/${ARCH_FOLDER}/SDL3.lib
         ${SDL_TTF_PATH}/lib/${ARCH_FOLDER}/SDL3_ttf.lib
         ${BULLET_PATH}/lib/${ARCH_FOLDER}/Bullet3Dynamics.lib
@@ -79,7 +79,7 @@ if(WIN32)
 elseif(UNIX)
     find_package(OpenAL REQUIRED)
 
-    target_link_directories(TectonicEngine2 PRIVATE
+    target_link_directories(Engine PRIVATE
         ${SDL3_PATH}/lib/linux
         ${SDL_TTF_PATH}/lib/linux
         ${BULLET_PATH}/lib/linux
@@ -87,7 +87,7 @@ elseif(UNIX)
         ${SENTRY_PATH}/lib/linux
     )
 
-    target_link_libraries(TectonicEngine2 PRIVATE
+    target_link_libraries(Engine PRIVATE
         SDL3
         SDL3_ttf
         OpenAL::OpenAL
@@ -105,26 +105,26 @@ elseif(UNIX)
 endif()
 
 if(MSVC AND WIN32 AND NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
-    target_link_options(TectonicEngine2 PRIVATE "/SAFESEH:NO")
+    target_link_options(Engine PRIVATE "/SAFESEH:NO")
 endif()
 
 # ---- DLL COPY ----
 if (WIN32)
-    add_custom_command(TARGET TectonicEngine2 POST_BUILD
+    add_custom_command(TARGET Engine POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${SDL3_PATH}/lib/${ARCH_FOLDER}/SDL3.dll"
         "${SDL_TTF_PATH}/lib/${ARCH_FOLDER}/SDL3_ttf.dll"
         "${SENTRY_PATH}/lib/${ARCH_FOLDER}/sentry.dll"
         "${SENTRY_PATH}/lib/${ARCH_FOLDER}/crashpad_wer.dll"
         "${SENTRY_PATH}/lib/${ARCH_FOLDER}/crashpad_handler.exe"
-        $<TARGET_FILE_DIR:TectonicEngine2>
+        $<TARGET_FILE_DIR:Engine>
     )
 elseif(UNIX)
-    add_custom_command(TARGET TectonicEngine2 POST_BUILD
+    add_custom_command(TARGET Engine POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${SENTRY_PATH}/lib/linux/libsentry.so"
         "${SENTRY_PATH}/lib/linux/crashpad_handler"
-        $<TARGET_FILE_DIR:TectonicEngine2>
+        $<TARGET_FILE_DIR:Engine>
     )
 endif()
 

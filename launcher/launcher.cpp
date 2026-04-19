@@ -89,7 +89,7 @@ private:
 #ifdef _WIN32
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-    DynamicLibrary lib("TectonicEngine2.dll");
+    DynamicLibrary lib("Engine.dll");
     auto Engine_Main = reinterpret_cast<EngineMainFunc>(lib.getSymbol("Engine_Main"));
 
     return Engine_Main(__argc, __argv);
@@ -97,7 +97,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 #else
 int main(int argc, char* argv[])
 {
-    DynamicLibrary lib("./libTectonicEngine2.so");
+    DynamicLibrary lib("./Engine.so");
     auto Engine_Main = reinterpret_cast<EngineMainFunc>(lib.getSymbol("Engine_Main"));
 
     return Engine_Main(argc, argv);
