@@ -109,8 +109,8 @@ void R_Sky::LoadCubemap(const std::string& skyName)
         else
         {
             Console::Warn("Skybox: face [" + faces[i] + "] missing - using fallback color.");
-            uint8_t pink[3] = { 0, 0, 0 };
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, pink);
+            uint8_t black[3] = { 0, 0, 0 };
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, black);
         }
     }
 
