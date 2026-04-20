@@ -364,3 +364,60 @@
 	input Enable(void) : "Enable procedural sky"
 	input Disable(void) : "Disable procedural sky and return to cubemap"
 ]
+
+@PointClass base(Targetname) iconsprite("editor/logic_auto.vmt") = logic_auto : 
+	"Fires outputs as soon as the map loads."
+[
+	output OnMapSpawn(void) : "Fired when the map loads."
+]
+
+@PointClass base(Targetname) iconsprite("editor/logic_relay.vmt") = logic_relay :
+	"A message forwarder. Use this to fire multiple outputs from one input."
+[
+	spawnflags(flags) =
+	[
+		1 : "Start Disabled" : 0
+		2 : "Only fire once" : 0
+	]
+
+	input Enable(void) : "Enable the relay."
+	input Disable(void) : "Disable the relay."
+	input Toggle(void) : "Toggle the relay."
+	input Trigger(void) : "Trigger the relay."
+
+	output OnTrigger(void) : "Fired when the relay is triggered."
+]
+
+@PointClass base(Targetname) iconsprite("editor/logic_timer.vmt") = logic_timer :
+	"Fires an output at regular intervals."
+[
+	refire(float) : "Refire Interval" : "1.0" : "Time between timer fires in seconds."
+	
+	spawnflags(flags) =
+	[
+		1 : "Start Disabled" : 0
+	]
+
+	input Enable(void) : "Enable the timer."
+	input Disable(void) : "Disable the timer."
+	input Toggle(void) : "Toggle the timer."
+	input SetTimer(float) : "Change the refire interval."
+
+	output OnTimer(void) : "Fired every interval."
+]
+
+@PointClass base(Targetname) iconsprite("editor/math_counter.vmt") = math_counter :
+	"Stores a value and fires outputs when it reaches limits."
+[
+	startvalue(float) : "Initial Value" : "0"
+	min(float) : "Minimum Legal Value" : "0"
+	max(float) : "Maximum Legal Value" : "10"
+
+	input Add(float) : "Add to the value."
+	input Subtract(float) : "Subtract from the value."
+	input SetValue(float) : "Set the value directly."
+
+	output OutValue(float) : "Fired when the value changes."
+	output OnHitMin(void) : "Fired when the value reaches or goes below the minimum."
+	output OnHitMax(void) : "Fired when the value reaches or goes above the maximum."
+]

@@ -596,3 +596,191 @@ public:
 };
 
 LINK_ENTITY_TO_CLASS("dynamic_sky", DynamicSky)
+
+// ==========================================
+// logic_auto
+// ==========================================
+class LogicAuto : public Entity
+{
+public:
+    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    {
+        Entity::Spawn(keyvalues);
+        FireOutput("OnMapSpawn");
+    }
+
+    bool IsCollidable() const override
+    {
+        return false;
+    }
+};
+
+LINK_ENTITY_TO_CLASS("logic_auto", LogicAuto)
+
+// ==========================================
+// logic_relay
+// ==========================================
+class LogicRelay : public Entity
+{
+public:
+    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    {
+        Entity::Spawn(keyvalues);
+        m_disabled = HasSpawnFlag(1);
+    }
+
+    void AcceptInput(const std::string& input, const std::string& param) override
+    {
+        if (input == "Enable")
+        {
+            m_disabled = false;
+        }
+        else if (input == "Disable")
+        {
+            m_disabled = true;
+        }
+        else if (input == "Toggle")
+        {
+            m_disabled = !m_disabled;
+        }
+
+        if (input == "Trigger" && !m_disabled)
+        {
+            FireOutput("OnTrigger");
+            if (HasSpawnFlag(2))
+            {
+                m_disabled = true;
+            }
+        }
+    }
+
+    bool IsCollidable() const override
+    {
+        return false;
+    }
+
+private:
+    bool m_disabled = false;
+};
+
+LINK_ENTITY_TO_CLASS("logic_relay", LogicRelay)
+
+// ==========================================
+// logic_timer
+// ==========================================
+class LogicTimer : public Entity
+{
+public:
+    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    {
+        Entity::Spawn(keyvalues);
+        m_enabled = !HasSpawnFlag(1);
+        m_refireTime = GetFloat("refire", 1.0f);
+        m_nextFire = (float)Time::TotalTime() + m_refireTime;
+    }
+
+    void Think(float deltaTime) override
+    {
+        if (!m_enabled)
+        {
+            return;
+        }
+
+        if (Time::TotalTime() >= m_nextFire)
+        {
+            FireOutput("OnTimer");
+            m_nextFire = (float)Time::TotalTime() + m_refireTime;
+        }
+    }
+
+    void AcceptInput(const std::string& input, const std::string& param) override
+    {
+        if (input == "Enable")
+        {
+            m_enabled = true;
+        }
+        else if (input == "Disable")
+        {
+            m_enabled = false;
+        }
+        else if (input == "Toggle")
+        {
+            m_enabled = !m_enabled;
+        }
+        else if (input == "SetTimer" && !param.empty())
+        {
+            m_refireTime = std::stof(param);
+        }
+    }
+
+    bool IsCollidable() const override
+    {
+        return false;
+    }
+
+private:
+    bool m_enabled = true;
+    float m_refireTime = 1.0f;
+    float m_nextFire = 0.0f;
+};
+
+LINK_ENTITY_TO_CLASS("logic_timer", LogicTimer)
+
+// ==========================================
+// math_counter
+// ==========================================
+class MathCounter : public Entity
+{
+public:
+    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    {
+        Entity::Spawn(keyvalues);
+        m_currentValue = GetFloat("startvalue", 0.0f);
+        m_min = GetFloat("min", 0.0f);
+        m_max = GetFloat("max", 10.0f);
+    }
+
+    void AcceptInput(const std::string& input, const std::string& param) override
+    {
+        float val = param.empty() ? 1.0f : std::stof(param);
+
+        if (input == "Add")
+        {
+            UpdateValue(m_currentValue + val);
+        }
+        else if (input == "Subtract")
+        {
+            UpdateValue(m_currentValue - val);
+        }
+        else if (input == "SetValue")
+        {
+            UpdateValue(val);
+        }
+    }
+
+    bool IsCollidable() const override
+    {
+        return false;
+    }
+
+private:
+    void UpdateValue(float newVal)
+    {
+        m_currentValue = newVal;
+        FireOutput("OutValue");
+
+        if (m_currentValue >= m_max)
+        {
+            FireOutput("OnHitMax");
+        }
+
+        if (m_currentValue <= m_min)
+        {
+            FireOutput("OnHitMin");
+        }
+    }
+
+    float m_currentValue, m_min, m_max;
+};
+
+LINK_ENTITY_TO_CLASS("math_counter", MathCounter)
