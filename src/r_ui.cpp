@@ -23,6 +23,7 @@
  */
 #include "r_ui.h"
 #include "r_state.h"
+#include "materials.h"
 #include "filesystem.h"
 #include "console.h"
 #include <glm/gtc/matrix_transform.hpp>
@@ -103,6 +104,18 @@ void R_UI::DrawText(const std::string& text, float x, float y, const glm::vec4& 
     m_commands.push_back({text, x, y, color});
 }
 
+void R_UI::DrawRect(float x, float y, float w, float h, const glm::vec4& color)
+{
+    m_rectCommands.push_back({ x, y, w, h, color });
+}
+
+bool R_UI::IsMouseOver(float x, float y, float w, float h) const
+{
+    float mx, my;
+    SDL_GetMouseState(&mx, &my);
+    return (mx >= x && mx <= x + w && my >= y && my <= y + h);
+}
+
 void R_UI::Render()
 {
     if (!m_font || m_commands.empty())
@@ -122,6 +135,27 @@ void R_UI::Render()
     glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(m_vao);
 
+    // Render Rectangles first
+    Materials::GetWhiteTexture()->Bind(0);
+    for (const auto& rect : m_rectCommands)
+    {
+        m_shader.SetVec4("textColor", rect.color);
+        float vertices[6][4] = 
+        {
+            { rect.x,          rect.y + rect.h, 0.0f, 1.0f },
+            { rect.x,          rect.y,          0.0f, 0.0f },
+            { rect.x + rect.w, rect.y,          1.0f, 0.0f },
+            { rect.x,          rect.y + rect.h, 0.0f, 1.0f },
+            { rect.x + rect.w, rect.y,          1.0f, 0.0f },
+            { rect.x + rect.w, rect.y + rect.h, 1.0f, 1.0f }
+        };
+        glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+    }
+    m_rectCommands.clear();
+
+    // Render Text
     for (const auto& cmd : m_commands)
     {
         // Check for cache, else prase and convert it

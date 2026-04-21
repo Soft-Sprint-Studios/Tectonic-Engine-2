@@ -42,6 +42,8 @@ public:
     void OnWindowResize(int w, int h);
     
     void DrawText(const std::string& text, float x, float y, const glm::vec4& color);
+    void DrawRect(float x, float y, float w, float h, const glm::vec4& color);
+    bool IsMouseOver(float x, float y, float w, float h) const;
     void Render();
 
 private:
@@ -58,10 +60,18 @@ private:
         int width, height;
     };
 
+    struct RectDrawCommand
+    {
+        float x, y, w, h;
+        glm::vec4 color;
+    };
+
     R_Shader m_shader;
     GLuint m_vao = 0, m_vbo = 0;
     TTF_Font* m_font = nullptr;
     glm::mat4 m_projection;
     std::vector<TextDrawCommand> m_commands;
     std::unordered_map<std::string, CachedText> m_textCache;
+    std::vector<RectDrawCommand> m_rectCommands;
+    float m_mouseX, m_mouseY;
 };

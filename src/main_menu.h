@@ -22,15 +22,21 @@
  * SOFTWARE.
  */
 #pragma once
-#include "renderer.h"
-#include "camera.h"
-#include "input.h"
 #include <string>
+#include <vector>
+#include <glm/glm.hpp>
 
-namespace Maps
+class Renderer;
+class Input;
+
+namespace MainMenu
 {
-    void Init(Renderer* renderer, Camera* camera, Input* input);
-    void Load(const std::string& mapName);
-    std::string GetCurrentMapName();
-    bool HasMapLoaded();
+    void Init();
+    void Update(const Input& input, float deltaTime);
+    void Draw(Renderer* renderer);
+    
+    void SetActive(bool active);
+    bool IsActive();
+
+    bool Button(Renderer* renderer, const std::string& label, float x, float y, float w, float h);
 }

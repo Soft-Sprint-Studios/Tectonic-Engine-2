@@ -49,6 +49,7 @@
 #include "gamedef.h"
 #include "sprite.h"
 #include "concmd.h"
+#include "main_menu.h"
 
 CVar r_max_fps("r_max_fps", "0", CVAR_SAVE);
 CVar r_show_fps("r_show_fps", "0", CVAR_SAVE);
@@ -90,6 +91,7 @@ ENGINE_API int Engine_Main(int argc, char** argv)
     Sprites::Init();
 
     Binds::Init();
+    MainMenu::Init();
 
     Console::Log("Tectonic Engine 2 Initialized");
     std::string fullBuildStr = std::string(Build::GetCompileDate()) + " " + std::string(Build::GetCompileTime());
@@ -118,11 +120,17 @@ ENGINE_API int Engine_Main(int argc, char** argv)
 
         float dt = Time::DeltaTime();
 
-        Particles::Update(dt);
-        DynamicLights::Update();
-        LightStyles::Update(Time::TotalTime());
-        Sprites::Update();
-        Physics::Update(dt);
+        MainMenu::Update(input, dt);
+
+        if (!MainMenu::IsActive())
+        {
+            Particles::Update(dt);
+            DynamicLights::Update();
+            LightStyles::Update(Time::TotalTime());
+            Sprites::Update();
+            Physics::Update(dt);
+            EntityManager::UpdateAll(dt);
+        }
 
         // Input Handling
         input.BeginFrame();
@@ -139,11 +147,6 @@ ENGINE_API int Engine_Main(int argc, char** argv)
             }
         }
 
-        if (input.GetKey(SDL_SCANCODE_ESCAPE))
-            running = false;
-
-        EntityManager::UpdateAll(dt);
-
         Binds::Update(input);
 
         if (r_show_fps.GetInt() > 0 && renderer.GetUI())
@@ -154,6 +157,11 @@ ENGINE_API int Engine_Main(int argc, char** argv)
 
         // Rendering
         renderer.Render(camera);
+
+        if (renderer.GetUI())
+        {
+            MainMenu::Draw(&renderer);
+        }
 
         if (r_max_fps.GetInt() > 0) 
         {

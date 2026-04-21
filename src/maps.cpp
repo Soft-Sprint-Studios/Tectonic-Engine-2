@@ -88,6 +88,11 @@ namespace Maps
         return s_currentMapName;
     }
 
+    bool HasMapLoaded()
+    {
+        return !s_currentMapName.empty();
+    }
+
     CON_COMMAND(buildcubemaps, "Builds cubemaps for the current map.")
     {
         if (s_currentMapName.empty())
