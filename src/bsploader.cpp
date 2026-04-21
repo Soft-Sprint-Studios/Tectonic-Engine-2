@@ -90,12 +90,14 @@ namespace BSP
         int m_rowHeight = 1;
 
         // Must store this data for overlays
-        struct FaceLightmapInfo 
+        struct FaceLightmapInfo
         {
             int axs[5] = { 0 };
             int ays[5] = { 0 };
+            int lH = 0;
             bool hasLM = false;
             int numMaps = 1;
+            bool isDisplacement = false;
         };
 
         std::unordered_map<int, FaceLightmapInfo> m_faceLightmaps;
@@ -607,6 +609,11 @@ namespace BSP
                             lu -= face.lightmapTextureMinsInLuxels[0];
                             lv -= face.lightmapTextureMinsInLuxels[1];
 
+                            if (lmInfo.isDisplacement)
+                            {
+                                lv = (float)lmInfo.lH - lv;
+                            }
+
                             lu = glm::clamp(lu, 0.0f, (float)face.lightmapTextureSizeInLuxels[0]);
                             lv = glm::clamp(lv, 0.0f, (float)face.lightmapTextureSizeInLuxels[1]);
 
@@ -694,9 +701,11 @@ namespace BSP
             FaceLightmapInfo lmInfo;
             lmInfo.hasLM = hasLM;
             lmInfo.numMaps = numMaps;
+            lmInfo.lH = face.lightmapTextureSizeInLuxels[1];
+            lmInfo.isDisplacement = (face.dispinfo != -1);
             for (int m = 0; m < 5; ++m)
             {
-                lmInfo.axs[m] = axs[m]; 
+                lmInfo.axs[m] = axs[m];
                 lmInfo.ays[m] = ays[m];
             }
             m_faceLightmaps[faceIdx] = lmInfo;
