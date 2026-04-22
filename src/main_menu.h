@@ -31,12 +31,19 @@ class Input;
 
 namespace MainMenu
 {
+    enum class MenuPage 
+    {
+        Main, Options 
+    };
+
     void Init();
     void Update(const Input& input, float deltaTime);
     void Draw(Renderer* renderer);
-    
+
     void SetActive(bool active);
     bool IsActive();
 
     bool Button(Renderer* renderer, const std::string& label, float x, float y, float w, float h);
+    bool Checkbox(Renderer* renderer, const std::string& label, bool& value, float x, float y);
+    void Slider(Renderer* renderer, const std::string& label, float& value, float min, float max, float x, float y);
 }
