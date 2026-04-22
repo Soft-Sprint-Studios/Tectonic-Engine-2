@@ -34,10 +34,6 @@
 #include "concmd.h"
 #include <cstring>
 
-CVar r_vsync("r_vsync", "1", CVAR_SAVE);
-CVar r_multisample("r_multisample", "1", CVAR_SAVE);
-CVar r_multisample_samples("r_multisample_samples", "4", CVAR_SAVE);
-
 CVar r_debug_lightmaps("r_debug_lightmaps", "0", CVAR_NONE);
 CVar r_debug_lightmaps_directional("r_debug_lightmaps_directional", "0", CVAR_NONE);
 CVar r_debug_vertexlight("r_debug_vertexlight", "0", CVAR_NONE);

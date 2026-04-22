@@ -26,6 +26,11 @@
 #include "cvar.h"
 #include <glad/glad.h>
 
+CVar r_fullscreen("r_fullscreen", "1", CVAR_SAVE);
+CVar r_vsync("r_vsync", "1", CVAR_SAVE);
+CVar r_multisample("r_multisample", "1", CVAR_SAVE);
+CVar r_multisample_samples("r_multisample_samples", "4", CVAR_SAVE);
+
 bool Window::Init(const char* title, int width, int height)
 {
     if (!SDL_Init(SDL_INIT_VIDEO))
@@ -37,15 +42,21 @@ bool Window::Init(const char* title, int width, int height)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    if (CVar::Find("r_multisample")->GetInt() > 0)
+    if (r_multisample.GetInt() > 0)
     {
         SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, CVar::Find("r_multisample_samples")->GetInt());
+        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, r_multisample_samples.GetInt());
     }
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
-    m_window = SDL_CreateWindow(title, width, height, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+    SDL_WindowFlags flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE;
+    if (r_fullscreen.GetInt() > 0)
+    {
+        flags |= SDL_WINDOW_FULLSCREEN;
+    }
+
+    m_window = SDL_CreateWindow(title, width, height, flags);
     if (!m_window)
     {
         Console::Error("Window Creation Error: " + std::string(SDL_GetError()));
@@ -65,7 +76,7 @@ bool Window::Init(const char* title, int width, int height)
         return false;
     }
 
-    SDL_GL_SetSwapInterval(CVar::Find("r_vsync")->GetInt());
+    SDL_GL_SetSwapInterval(r_vsync.GetInt());
 
     SDL_SetWindowRelativeMouseMode(m_window, true);
 
