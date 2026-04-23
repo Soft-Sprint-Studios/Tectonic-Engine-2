@@ -153,7 +153,7 @@ namespace MainMenu
             ui->DrawText("OPTIONS", startX, 60.0f, glm::vec4(1, 0.5f, 0, 1));
 
             bool bloom = CVar::Find("r_bloom")->GetInt() > 0;
-            if (Checkbox(renderer, "High Quality Bloom", bloom, startX, startY))
+            if (Checkbox(renderer, "Bloom", bloom, startX, startY))
                 CVar::Set("r_bloom", bloom ? "1" : "0");
 
             bool ssao = CVar::Find("r_ssao")->GetInt() > 0;
