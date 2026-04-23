@@ -512,6 +512,9 @@ private:
 
 LINK_ENTITY_TO_CLASS("light_dynamic_spot", LightDynamicSpot)
 
+// ==========================================
+// sprite
+// ==========================================
 class SpriteEmitter : public Entity
 {
 public:
