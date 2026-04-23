@@ -35,6 +35,9 @@ public:
     static std::shared_ptr<R_Texture> GetTexture(const std::string& name);
     static std::shared_ptr<R_Texture> GetNormalMap(const std::string& name);
     static std::shared_ptr<R_Texture> GetSpecularMap(const std::string& name);
+    static std::shared_ptr<R_Texture> GetTexture2(const std::string& name);
+    static std::shared_ptr<R_Texture> GetNormalMap2(const std::string& name);
+    static std::shared_ptr<R_Texture> GetSpecularMap2(const std::string& name);
     static std::shared_ptr<R_Texture> GetFlatNormal();
     static std::shared_ptr<R_Texture> GetWhiteTexture();
 
@@ -43,6 +46,9 @@ private:
     static std::unordered_map<std::string, std::shared_ptr<R_Texture>> m_textures;
     static std::unordered_map<std::string, std::shared_ptr<R_Texture>> m_normals;
     static std::unordered_map<std::string, std::shared_ptr<R_Texture>> m_speculars;
+    static std::unordered_map<std::string, std::shared_ptr<R_Texture>> m_textures2;
+    static std::unordered_map<std::string, std::shared_ptr<R_Texture>> m_normals2;
+    static std::unordered_map<std::string, std::shared_ptr<R_Texture>> m_speculars2;
     static std::shared_ptr<R_Texture> m_fallback;
     static std::shared_ptr<R_Texture> m_flatNormal;
     static std::shared_ptr<R_Texture> m_white;

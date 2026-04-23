@@ -805,7 +805,7 @@ namespace BSP
                     }
                 }
 
-                v.color = glm::vec3(1.0f);
+                v.color = glm::vec3(0.0f);
                 verts.push_back(v);
             }
 
@@ -914,7 +914,7 @@ namespace BSP
                             }
                         }
                     }
-                    float alpha = dv.alpha / 255.0f;
+                    float alpha = (255.0f - dv.alpha) / 255.0f;
                     vert.color = glm::vec3(alpha);
                 }
             }

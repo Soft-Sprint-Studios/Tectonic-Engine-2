@@ -97,6 +97,9 @@ bool R_BSP::Init(const BSP::MapData& map)
         draw.texture = Materials::GetTexture(dc.textureName);
         draw.normalMap = Materials::GetNormalMap(dc.textureName);
         draw.specularMap = Materials::GetSpecularMap(dc.textureName);
+        draw.texture2 = Materials::GetTexture2(dc.textureName) ? Materials::GetTexture2(dc.textureName) : draw.texture;
+        draw.normalMap2 = (Materials::GetTexture2(dc.textureName) && Materials::GetNormalMap2(dc.textureName)) ? Materials::GetNormalMap2(dc.textureName) : draw.normalMap;
+        draw.specularMap2 = (Materials::GetTexture2(dc.textureName) && Materials::GetSpecularMap2(dc.textureName)) ? Materials::GetSpecularMap2(dc.textureName) : draw.specularMap;
         draw.isBumped = dc.isBumped;
         draw.start = dc.start;
         draw.count = dc.count;
@@ -147,6 +150,9 @@ void R_BSP::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOnly)
             (dc.texture ? dc.texture : Materials::GetTexture(""))->Bind(0);
             (dc.isBumped && dc.normalMap ? dc.normalMap : Materials::GetFlatNormal())->Bind(2);
             (dc.isBumped && dc.specularMap ? dc.specularMap : Materials::GetWhiteTexture())->Bind(3);
+            (dc.texture2 ? dc.texture2 : Materials::GetTexture(""))->Bind(14);
+            (dc.isBumped && dc.normalMap2 ? dc.normalMap2 : Materials::GetFlatNormal())->Bind(15);
+            (dc.isBumped && dc.specularMap2 ? dc.specularMap2 : Materials::GetWhiteTexture())->Bind(16);
         }
 
         glDrawArrays(GL_TRIANGLES, dc.start, dc.count);

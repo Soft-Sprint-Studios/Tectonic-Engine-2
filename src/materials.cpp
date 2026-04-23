@@ -33,6 +33,9 @@
 std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_textures;
 std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_normals;
 std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_speculars;
+std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_textures2;
+std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_normals2;
+std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_speculars2;
 std::shared_ptr<R_Texture> Materials::m_fallback;
 std::shared_ptr<R_Texture> Materials::m_flatNormal;
 std::shared_ptr<R_Texture> Materials::m_white;
@@ -136,6 +139,42 @@ void Materials::LoadDefinitions(const std::string& path)
                         m_speculars[matName] = tex;
                     }
                 }
+                else if (token == "diffuse2")
+                {
+                    ss >> token; 
+                    ss >> token;
+
+                    auto tex = Resources::LoadTexture("textures/" + token.substr(1, token.size() - 2), true);
+
+                    if (tex) 
+                    { 
+                        m_textures2[matName] = tex; 
+                    }
+                }
+                else if (token == "normal2")
+                {
+                    ss >> token; 
+                    ss >> token;
+
+                    auto tex = Resources::LoadTexture("textures/" + token.substr(1, token.size() - 2), false);
+
+                    if (tex) 
+                    { 
+                        m_normals2[matName] = tex; 
+                    }
+                }
+                else if (token == "specular2")
+                {
+                    ss >> token; 
+                    ss >> token;
+
+                    auto tex = Resources::LoadTexture("textures/" + token.substr(1, token.size() - 2), false);
+
+                    if (tex) 
+                    { 
+                        m_speculars2[matName] = tex; 
+                    }
+                }
             }
         }
     }
@@ -197,6 +236,30 @@ std::shared_ptr<R_Texture> Materials::GetSpecularMap(const std::string& name)
     }
 
     return m_white;
+}
+
+std::shared_ptr<R_Texture> Materials::GetTexture2(const std::string& name) 
+{
+    std::string searchName = name;
+    std::transform(searchName.begin(), searchName.end(), searchName.begin(), ::tolower);
+    auto it = m_textures2.find(searchName);
+    return (it != m_textures2.end()) ? it->second : nullptr;
+}
+
+std::shared_ptr<R_Texture> Materials::GetNormalMap2(const std::string& name) 
+{
+    std::string searchName = name;
+    std::transform(searchName.begin(), searchName.end(), searchName.begin(), ::tolower);
+    auto it = m_normals2.find(searchName);
+    return (it != m_normals2.end()) ? it->second : m_flatNormal;
+}
+
+std::shared_ptr<R_Texture> Materials::GetSpecularMap2(const std::string& name) 
+{
+    std::string searchName = name;
+    std::transform(searchName.begin(), searchName.end(), searchName.begin(), ::tolower);
+    auto it = m_speculars2.find(searchName);
+    return (it != m_speculars2.end()) ? it->second : m_white;
 }
 
 std::shared_ptr<R_Texture> Materials::GetFlatNormal()

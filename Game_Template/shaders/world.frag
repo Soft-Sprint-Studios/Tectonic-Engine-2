@@ -14,6 +14,9 @@ uniform sampler2D u_diffuse;
 uniform sampler2D u_normal;
 uniform sampler2D u_lightmap;
 uniform sampler2D u_specular;
+uniform sampler2D u_diffuse2;
+uniform sampler2D u_normal2;
+uniform sampler2D u_specular2;
 uniform samplerCube u_cubemap;
 uniform bool u_useCubemap;
 uniform vec3 u_cubemapOrigin;
@@ -198,13 +201,20 @@ float CalculateSunShadow(vec3 fragPosWorld, vec3 N, vec3 L)
 
 void main()
 {
-    vec4 albedo = texture(u_diffuse, TexCoord);
-    if(albedo.a < 0.1) 
+    float blend = Color.r;
+    vec4 alb1 = texture(u_diffuse, TexCoord);
+    vec4 alb2 = texture(u_diffuse2, TexCoord);
+    vec4 albedo = mix(alb1, alb2, blend);
+
+    if (albedo.a < 0.1) 
     {
         discard;
     }
 
-    vec3 specMask = texture(u_specular, TexCoord).rgb;
+    vec3 spec1 = texture(u_specular, TexCoord).rgb;
+    vec3 spec2 = texture(u_specular2, TexCoord).rgb;
+    vec3 specMask = mix(spec1, spec2, blend);
+
     if (u_mat_specular == 0) 
         specMask = vec3(0.0);
     vec3 baseNorm = normalize(TBN[2]);
@@ -216,7 +226,9 @@ void main()
 	vec3 tangentNormal = vec3(0.0, 0.0, 1.0);
     if (u_useBump && u_mat_bumpmap == 1)
     {
-        tangentNormal = texture(u_normal, TexCoord).rgb * 2.0 - 1.0;
+        vec3 n1 = texture(u_normal, TexCoord).rgb * 2.0 - 1.0;
+        vec3 n2 = texture(u_normal2, TexCoord).rgb * 2.0 - 1.0;
+        tangentNormal = normalize(mix(n1, n2, blend));
         N = normalize(TBN * tangentNormal);
     }
 
