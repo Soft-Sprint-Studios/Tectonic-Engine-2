@@ -7,6 +7,9 @@ in centroid mat3 v_TBN;
 uniform sampler2D u_reflectionTexture;
 uniform sampler2D u_dudvMap;
 uniform sampler2D u_normalMap;
+uniform sampler2D u_flowMap;
+uniform float u_flowSpeed;
+uniform bool u_hasFlow;
 
 uniform mat4 u_reflectView;
 uniform mat4 u_reflectProj;
@@ -23,8 +26,21 @@ void main()
 {
     vec2 worldUV = v_FragPos.xz * 0.25;
 
-    float move = u_time * dudvMoveSpeed;
-    vec2 distortion = (texture(u_dudvMap, worldUV + vec2(move)).rg * 2.0 - 1.0) * waveStrength;
+    vec2 flowDir = vec2(1.0, 0.0); 
+    if (u_hasFlow)
+    {
+        flowDir = texture(u_flowMap, worldUV).rg * 2.0 - 1.0;
+    }
+
+    float time = u_time * u_flowSpeed;
+    float phase0 = fract(time);
+    float phase1 = fract(time + 0.5);
+
+    vec2 dist0 = (texture(u_dudvMap, worldUV + flowDir * phase0).rg * 2.0 - 1.0) * waveStrength;
+    vec2 dist1 = (texture(u_dudvMap, worldUV + flowDir * phase1).rg * 2.0 - 1.0) * waveStrength;
+
+    float lerpFlow = abs(0.5 - phase0) / 0.5;
+    vec2 distortion = mix(dist0, dist1, lerpFlow);
 
     vec4 reflectClip = u_reflectProj * u_reflectView * vec4(v_FragPos, 1.0);
     vec2 ndc = (reflectClip.xy / reflectClip.w) * 0.5 + 0.5;

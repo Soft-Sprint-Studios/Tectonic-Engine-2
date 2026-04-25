@@ -22,41 +22,27 @@
  * SOFTWARE.
  */
 #pragma once
-#include "r_shader.h"
 #include "r_texture.h"
-#include "camera.h"
-#include <vector>
+#include <unordered_map>
+#include <string>
 #include <memory>
-#include <glm/glm.hpp>
-#include <glad/glad.h>
 
-struct WaterSurface
+struct WaterDef
 {
-    uint32_t start;
-    uint32_t count;
-    float height;
-    std::string textureName;
+    std::shared_ptr<R_Texture> normalMap;
+    std::shared_ptr<R_Texture> dudvMap;
+    std::shared_ptr<R_Texture> flowMap;
+    float flowSpeed = 0.05f;
 };
 
-class R_Waters
+class Waters
 {
 public:
-    void Init(int width, int height);
-    void AddSurface(const WaterSurface& surface);
-    void ClearSurfaces();
-    void RenderReflection(class Renderer* renderer, const Camera& mainCam);
-    void Draw(const Camera& camera, GLuint vao);
-    void Shutdown();
+    static void Init();
+    static void LoadDefinitions(const std::string& path);
+    static WaterDef* GetDefinition(const std::string& name);
 
 private:
-    R_Shader m_shader;
-    std::vector<WaterSurface> m_surfaces;
-    std::vector<GLint> m_starts;
-    std::vector<GLsizei> m_counts;
-    GLuint m_reflectFBO = 0;
-    GLuint m_reflectTex = 0;
-    GLuint m_reflectRBO = 0;
-    glm::mat4 m_reflectView;
-    glm::mat4 m_reflectProj;
-    int m_width, m_height;
+    static std::unordered_map<std::string, WaterDef> m_defs;
+    static WaterDef m_fallback;
 };

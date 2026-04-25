@@ -112,7 +112,7 @@ bool Renderer::LoadMap(const std::string& path)
     m_waterRenderer->ClearSurfaces();
     for (const auto& s : map.waterSurfaces)
     {
-        m_waterRenderer->AddSurface({ s.start, s.count, s.height });
+        m_waterRenderer->AddSurface({ s.start, s.count, s.height, s.textureName });
     }
 
     Physics::AddBSPCollision(map.collision.vertices, map.collision.indices);

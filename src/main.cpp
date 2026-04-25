@@ -48,6 +48,7 @@
 #include "build_date.h"
 #include "gamedef.h"
 #include "sprite.h"
+#include "waters.h"
 #include "concmd.h"
 #include "main_menu.h"
 
@@ -82,6 +83,9 @@ ENGINE_API int Engine_Main(int argc, char** argv)
 
     Materials::Init();
     Materials::LoadDefinitions("materials.def");
+
+    Waters::Init();
+    Waters::LoadDefinitions("water.def");
 
     Particles::Init();
     Particles::LoadDefinitions("particles.def");

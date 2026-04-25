@@ -271,22 +271,38 @@ namespace BSP
             m_map.waterSurfaces.clear();
             if (!waterFaces.empty())
             {
-                WaterSurface s;
-                s.start = (uint32_t)m_map.renderVertices.size();
-                s.height = 0;
-
+                std::unordered_map<std::string, std::vector<int>> waterBatches;
                 for (int faceIdx : waterFaces)
                 {
-                    ProcessFace(faceIdx);
+                    const Face& face = d_faces[faceIdx];
+                    const TexInfo& tex = d_texinfos[face.texinfo];
+                    const TexData& td = d_texdatas[tex.texdata];
+                    std::string name = d_stringdata + d_stringtable[td.nameStringTableID];
+                    waterBatches[name].push_back(faceIdx);
                 }
 
-                s.count = (uint32_t)m_map.renderVertices.size() - s.start;
+                for (auto const& [texName, faceIndices] : waterBatches)
+                {
+                    WaterSurface s;
+                    s.textureName = texName;
+                    s.start = (uint32_t)m_map.renderVertices.size();
 
-                for (uint32_t v = s.start; v < m_map.renderVertices.size(); ++v)
-                    s.height += m_map.renderVertices[v].position.y;
-                s.height /= s.count;
+                    for (int faceIdx : faceIndices)
+                    {
+                        ProcessFace(faceIdx);
+                    }
 
-                m_map.waterSurfaces.push_back(s);
+                    s.count = (uint32_t)m_map.renderVertices.size() - s.start;
+                    s.height = 0;
+
+                    for (uint32_t v = s.start; v < m_map.renderVertices.size(); ++v)
+                    {
+                        s.height += m_map.renderVertices[v].position.y;
+                    }
+                    s.height /= s.count;
+
+                    m_map.waterSurfaces.push_back(s);
+                }
             }
 
             // Process brush models for entities

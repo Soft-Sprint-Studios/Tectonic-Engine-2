@@ -266,6 +266,7 @@ namespace BSP
     {
         uint32_t start, count;
         float height;
+        std::string textureName;
     };
 
     struct MapData

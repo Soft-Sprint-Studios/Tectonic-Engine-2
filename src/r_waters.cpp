@@ -25,6 +25,7 @@
 #include "r_state.h"
 #include "renderer.h"
 #include "timing.h"
+#include "waters.h"
 #include "resources.h"
 #include "cvar.h"
 #include <algorithm>
@@ -41,8 +42,6 @@ void R_Waters::Init(int width, int height)
     int fboH = height / ds;
 
     m_shader.Load("shaders/water.vert", "shaders/water.frag");
-    m_normalMap = Resources::LoadTexture("textures/water_normal.png", false);
-    m_dudvMap = Resources::LoadTexture("textures/water_dudv.png", false);
 
     glGenFramebuffers(1, &m_reflectFBO);
     glBindFramebuffer(GL_FRAMEBUFFER, m_reflectFBO);
@@ -125,17 +124,26 @@ void R_Waters::Draw(const Camera& camera, GLuint vao)
     glBindTexture(GL_TEXTURE_2D, m_reflectTex);
     m_shader.SetInt("u_reflectionTexture", 0);
 
-    if (m_dudvMap)
-        m_dudvMap->Bind(1);
-    m_shader.SetInt("u_dudvMap", 1);
-
-    if (m_normalMap)
-        m_normalMap->Bind(2);
-    m_shader.SetInt("u_normalMap", 2);
-
     glBindVertexArray(vao);
     for (const auto& s : m_surfaces)
     {
+        WaterDef* def = Waters::GetDefinition(s.textureName);
+
+        if (def->dudvMap) 
+            def->dudvMap->Bind(1);
+
+        if (def->normalMap)
+            def->normalMap->Bind(2);
+
+        if (def->flowMap) 
+            def->flowMap->Bind(3);
+
+        m_shader.SetInt("u_dudvMap", 1);
+        m_shader.SetInt("u_normalMap", 2);
+        m_shader.SetInt("u_flowMap", 3);
+        m_shader.SetFloat("u_flowSpeed", def->flowSpeed);
+        m_shader.SetInt("u_hasFlow", def->flowMap ? 1 : 0);
+
         glDrawArrays(GL_TRIANGLES, s.start, s.count);
     }
 
