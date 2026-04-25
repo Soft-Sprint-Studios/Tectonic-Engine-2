@@ -25,6 +25,8 @@
 #include <cmath>
 #include <algorithm>
 
+// LightStyles, for dynamic lights only
+
 namespace LightStyles
 {
     static std::map<int, LightStyle> s_styles;
