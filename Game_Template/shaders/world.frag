@@ -201,7 +201,7 @@ float CalculateSunShadow(vec3 fragPosWorld, vec3 N, vec3 L)
 
 void main()
 {
-    float blend = Color.r;
+    float blend = u_isModel ? 0.0 : Color.r;
     vec4 alb1 = texture(u_diffuse, TexCoord);
     vec4 alb2 = texture(u_diffuse2, TexCoord);
     vec4 albedo = mix(alb1, alb2, blend);

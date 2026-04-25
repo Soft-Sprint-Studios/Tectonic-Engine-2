@@ -49,6 +49,14 @@ public:
         m_nextFireTime = 0.0f;
     }
 
+    void OnSave() override
+    {
+        Entity::OnSave();
+        AddSaveField(DATA_FIELD(TriggerMultiple, m_wait, FieldType::Float));
+        AddSaveField(DATA_FIELD(TriggerMultiple, m_nextFireTime, FieldType::Float));
+        AddSaveField(DATA_FIELD(TriggerMultiple, m_disabled, FieldType::Bool));
+    }
+
     void Touch(Entity* other) override
     {
         if (m_disabled) 
@@ -124,6 +132,13 @@ public:
         m_delay = GetFloat("wait", 0.0f);
     }
 
+    void OnSave() override
+    {
+        Entity::OnSave();
+        AddSaveField(DATA_FIELD(FuncButton, m_delay, FieldType::Float));
+        AddSaveField(DATA_FIELD(FuncButton, m_nextUseTime, FieldType::Float));
+    }
+
     void OnPress(Entity* activator) override
     {
         if (Time::TotalTime() < m_nextUseTime) 
@@ -193,6 +208,13 @@ public:
         }
     }
 
+    void OnSave() override
+    {
+        Entity::OnSave();
+        AddSaveField(DATA_FIELD(SoundEntity, m_soundName, FieldType::String));
+        AddSaveField(DATA_FIELD(SoundEntity, m_isLooping, FieldType::Bool));
+    }
+
     void AcceptInput(const std::string& inputName, const std::string& parameter) override
     {
         if (inputName == "PlaySound")
@@ -260,6 +282,16 @@ public:
             ApplySettings();
             m_enabled = true;
         }
+    }
+
+    void OnSave() override
+    {
+        Entity::OnSave();
+        AddSaveField(DATA_FIELD(PostProcessController, m_enabled, FieldType::Bool));
+        AddSaveField(DATA_FIELD(PostProcessController, m_vignette, FieldType::Float));
+        AddSaveField(DATA_FIELD(PostProcessController, m_chroma, FieldType::Float));
+        AddSaveField(DATA_FIELD(PostProcessController, m_grain, FieldType::Float));
+        AddSaveField(DATA_FIELD(PostProcessController, m_bw, FieldType::Float));
     }
 
     void AcceptInput(const std::string& inputName, const std::string& parameter) override
@@ -358,6 +390,12 @@ public:
         }
     }
 
+    void OnSave() override
+    {
+        Entity::OnSave();
+        AddSaveField(DATA_FIELD(ParticleEntity, m_effect, FieldType::String));
+    }
+
     void AcceptInput(const std::string& input, const std::string& param) override
     {
         if (!m_sys) 
@@ -402,6 +440,12 @@ public:
             def.volumetricIntensity = GetFloat("volumetric_intensity", 0.0f);
             def.volumetricSteps = GetInt("volumetric_steps", 32);
         }
+    }
+
+    void OnSave() override
+    {
+        Entity::OnSave();
+        AddSaveField(DATA_FIELD(LightDynamicPoint, m_baseColor, FieldType::Vec3));
     }
 
     void Think(float deltaTime) override
@@ -491,6 +535,12 @@ public:
         }
     }
 
+    void OnSave() override
+    {
+        LightDynamicPoint::OnSave();
+        AddSaveField(DATA_FIELD(LightDynamicSpot, m_direction, FieldType::Vec3));
+    }
+
     void Think(float deltaTime) override
     {
         Entity::Think(deltaTime);
@@ -522,8 +572,8 @@ public:
     {
         Entity::Spawn(keyvalues);
 
-        std::string texturePath = GetValue("texture");
-        m_sprite = Sprites::CreateSprite(m_origin, texturePath);
+        m_texturePath = GetValue("texture");
+        m_sprite = Sprites::CreateSprite(m_origin, m_texturePath);
 
         if (m_sprite)
         {
@@ -537,6 +587,12 @@ public:
 
             m_sprite->SetActive(!HasSpawnFlag(1));
         }
+    }
+
+    void OnSave() override
+    {
+        Entity::OnSave();
+        AddSaveField(DATA_FIELD(SpriteEmitter, m_texturePath, FieldType::String));
     }
 
     void AcceptInput(const std::string& input, const std::string& param) override
@@ -553,6 +609,7 @@ public:
 
 private:
     std::shared_ptr<Sprite> m_sprite;
+    std::string m_texturePath;
 };
 
 LINK_ENTITY_TO_CLASS("sprite", SpriteEmitter)
@@ -632,6 +689,12 @@ public:
         m_disabled = HasSpawnFlag(1);
     }
 
+    void OnSave() override
+    {
+        Entity::OnSave();
+        AddSaveField(DATA_FIELD(LogicRelay, m_disabled, FieldType::Bool));
+    }
+
     void AcceptInput(const std::string& input, const std::string& param) override
     {
         if (input == "Enable")
@@ -680,6 +743,13 @@ public:
         m_enabled = !HasSpawnFlag(1);
         m_refireTime = GetFloat("refire", 1.0f);
         m_nextFire = (float)Time::TotalTime() + m_refireTime;
+    }
+
+    void OnSave() override
+    {
+        Entity::OnSave();
+        AddSaveField(DATA_FIELD(LogicTimer, m_enabled, FieldType::Bool));
+        AddSaveField(DATA_FIELD(LogicTimer, m_nextFire, FieldType::Float));
     }
 
     void Think(float deltaTime) override
@@ -741,6 +811,12 @@ public:
         m_currentValue = GetFloat("startvalue", 0.0f);
         m_min = GetFloat("min", 0.0f);
         m_max = GetFloat("max", 10.0f);
+    }
+
+    void OnSave() override
+    {
+        Entity::OnSave();
+        AddSaveField(DATA_FIELD(MathCounter, m_currentValue, FieldType::Float));
     }
 
     void AcceptInput(const std::string& input, const std::string& param) override

@@ -22,52 +22,35 @@
  * SOFTWARE.
  */
 #pragma once
-#include "camera.h"
-#include "input.h"
-#include "entities.h"
-#include "dynamic_light.h"
+#include <string>
+#include <vector>
+#include <cstdint>
+#include <glm/glm.hpp>
 
-#include <BulletDynamics/Character/btKinematicCharacterController.h>
+// Save game api was heavily inspired by pathos
 
-class Player : public Entity
+enum class FieldType
 {
-public:
-    Player();
-    ~Player();
-
-    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override;
-    void Think(float deltaTime) override;
-
-    void LinkCamera(Camera* cam);
-    void LinkInput(Input* input);
-
-    void SetNoclip(bool state);
-    void SetOrigin(const glm::vec3& origin) override;
-    bool IsNoclip() const 
-    { 
-        return m_noclip; 
-    }
-
-    bool IsPlayer() const override 
-    { 
-        return true; 
-    }
-
-    void OnSave() override;
-
-    std::shared_ptr<DynamicLight> m_flashlight;
-    bool m_flashlightOn = false;
-
-    float m_viewHeight = 1.5f;
-    bool m_isCrouching = false;
-
-    float m_saveYaw = 0.0f;
-    float m_savePitch = 0.0f;
-
-private:
-    Camera* m_camera = nullptr;
-    Input* m_input = nullptr;
-    btKinematicCharacterController* m_character = nullptr;
-    bool m_noclip = false;
-    glm::vec3 m_smoothedFlashlightDir;
+    Float,
+    Int32,
+    Bool,
+    Vec3,
+    String
 };
+
+struct SaveField
+{
+    FieldType type;
+    std::string name;
+    size_t offset;
+    size_t size;
+};
+
+#define DATA_FIELD(cls, member, type) \
+    { type, #member, offsetof(cls, member), sizeof(((cls*)0)->member) }
+
+namespace Save
+{
+    void Write(const std::string& name);
+    void Read(const std::string& name);
+}

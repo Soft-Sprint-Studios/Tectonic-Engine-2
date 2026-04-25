@@ -23,6 +23,7 @@
  */
 #pragma once
 #include "bsploader.h"
+#include "saveload.h"
 #include <string>
 #include <vector>
 #include <memory>
@@ -64,13 +65,17 @@ public:
         return true; 
     }
 
+    virtual void OnSave()
+    {
+    }
+
     bool HasSpawnFlag(int bit) const;
     void SetSpawnFlag(int bit, bool state);
 
     void FireOutput(const std::string& outputName);
 
     glm::vec3 GetOrigin() const;
-    void SetOrigin(const glm::vec3& origin);
+    virtual void SetOrigin(const glm::vec3& origin);
     std::string GetClassName() const;
     std::string GetTargetName() const;
 
@@ -79,6 +84,21 @@ public:
     float GetFloat(const std::string& key, float defaultVal = 0.0f) const;
     glm::vec3 GetVector(const std::string& key, const glm::vec3& defaultVal = glm::vec3(0.0f)) const;
     glm::vec4 GetVector4(const std::string& key, const glm::vec4& defaultVal = glm::vec4(0.0f)) const;
+
+    void AddSaveField(const SaveField& field)
+    {
+        m_saveFields.push_back(field);
+    }
+
+    const std::vector<SaveField>& GetSaveFields() const
+    {
+        return m_saveFields;
+    }
+
+    void ClearSaveFields()
+    {
+        m_saveFields.clear();
+    }
 
     btCollisionObject* GetPhysObject() const 
     { 
@@ -94,6 +114,7 @@ protected:
 
     std::unordered_map<std::string, std::string> m_keyvalues;
     std::vector<std::pair<std::string, EntityIO>> m_outputs;
+    std::vector<SaveField> m_saveFields;
 
     friend class EntityManager;
 };

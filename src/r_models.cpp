@@ -70,7 +70,7 @@ bool R_Models::Init(const BSP::MapData& mapData)
         std::vector<glm::mat4> transforms;
         transforms.reserve(group.instanceCount);
 
-        std::vector<glm::vec4> packedColors(group.instanceCount * group.totalVertices * 3, glm::vec4(1.0f));
+        std::vector<glm::vec4> packedColors(group.instanceCount * group.totalVertices * 3, glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
 
         glm::vec3 corners[8] =
         {

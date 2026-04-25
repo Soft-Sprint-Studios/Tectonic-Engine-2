@@ -94,23 +94,35 @@ std::thread server_thread;
 bool should_exit = false;
 
 void append_message(const std::string& msg, char style_char = 'A') {
+    std::string clean_msg = msg;
+
     if (msg.rfind("[ERROR]", 0) == 0) {
         style_char = 'C';
+        clean_msg = msg.substr(7);
     }
     else if (msg.rfind("[WARNING]", 0) == 0) {
         style_char = 'B';
+        clean_msg = msg.substr(9);
+    }
+    else if (msg.rfind("[LOG]", 0) == 0) {
+        style_char = 'A';
+        clean_msg = msg.substr(5);
     }
     else if (msg.rfind("[TConsole]", 0) == 0) {
         style_char = 'D';
+        clean_msg = msg.substr(10);
     }
     else if (msg.rfind("> ", 0) == 0) {
         style_char = 'D';
     }
 
-    text_buffer->append(msg.c_str());
+    if (!clean_msg.empty() && clean_msg[0] == ' ')
+        clean_msg.erase(0, 1);
+
+    text_buffer->append(clean_msg.c_str());
     text_buffer->append("\n");
 
-    std::string style_line(msg.length(), style_char);
+    std::string style_line(clean_msg.length(), style_char);
     style_buffer->append(style_line.c_str());
     style_buffer->append("\n");
 

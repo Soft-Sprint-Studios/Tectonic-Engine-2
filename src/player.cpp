@@ -102,6 +102,14 @@ void Player::Think(float deltaTime)
         return;
     }
 
+    if (m_saveYaw != 0.0f || m_savePitch != 0.0f)
+    {
+        m_camera->yaw = m_saveYaw;
+        m_camera->pitch = m_savePitch;
+        m_saveYaw = 0.0f;
+        m_savePitch = 0.0f;
+    }
+
     float mouseSensitivity = 0.15f * sensitivity.GetFloat();
     m_camera->yaw += m_input->GetMouseDeltaX() * mouseSensitivity;
     m_camera->pitch -= m_input->GetMouseDeltaY() * mouseSensitivity;
@@ -220,6 +228,7 @@ void Player::Think(float deltaTime)
         btTransform currentTransform = m_character->getGhostObject()->getWorldTransform();
         btVector3 bulletPos = currentTransform.getOrigin();
         m_camera->position = glm::vec3(bulletPos.getX(), bulletPos.getY() + m_viewHeight, bulletPos.getZ());
+        m_origin = glm::vec3(bulletPos.x(), bulletPos.y(), bulletPos.z());
     }
 }
 
@@ -238,6 +247,39 @@ void Player::SetNoclip(bool state)
             ghost->setCollisionFlags(ghost->getCollisionFlags() & ~btCollisionObject::CF_NO_CONTACT_RESPONSE);
         }
     }
+}
+
+void Player::SetOrigin(const glm::vec3& origin)
+{
+    m_origin = origin;
+
+    if (m_character)
+    {
+        btTransform trans;
+        trans.setIdentity();
+        trans.setOrigin(btVector3(origin.x, origin.y, origin.z));
+        m_character->getGhostObject()->setWorldTransform(trans);
+
+        m_character->reset(Physics::GetDynamicsWorld());
+    }
+}
+
+void Player::OnSave()
+{
+    Entity::OnSave();
+
+    if (m_camera)
+    {
+        m_saveYaw = m_camera->yaw;
+        m_savePitch = m_camera->pitch;
+    }
+
+    AddSaveField(DATA_FIELD(Player, m_flashlightOn, FieldType::Bool));
+    AddSaveField(DATA_FIELD(Player, m_viewHeight, FieldType::Float));
+    AddSaveField(DATA_FIELD(Player, m_isCrouching, FieldType::Bool));
+    AddSaveField(DATA_FIELD(Player, m_noclip, FieldType::Bool));
+    AddSaveField(DATA_FIELD(Player, m_saveYaw, FieldType::Float));
+    AddSaveField(DATA_FIELD(Player, m_savePitch, FieldType::Float));
 }
 
 LINK_ENTITY_TO_CLASS("info_player_start", Player)
