@@ -21,6 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#include "platform.h"
 #include "networking.h"
 #include "console.h"
 #include "concmd.h"
@@ -31,7 +32,7 @@
 #include <algorithm>
 #include <cstdio>
 
-#ifdef _WIN32
+#ifdef PLATFORM_WINDOWS
     #include <winsock2.h>
     #include <ws2tcpip.h>
     typedef SOCKET socket_t;
@@ -51,7 +52,7 @@ namespace Networking
 {
     void Init()
     {
-#ifdef _WIN32
+#ifdef PLATFORM_WINDOWS
         WSADATA wsaData;
         WSAStartup(MAKEWORD(2, 2), &wsaData);
 #endif
@@ -59,7 +60,7 @@ namespace Networking
 
     void Shutdown()
     {
-#ifdef _WIN32
+#ifdef PLATFORM_WINDOWS
         WSACleanup();
 #endif
     }

@@ -21,7 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#ifdef _WIN32
+#include "platform.h"
+#ifdef PLATFORM_WINDOWS
 #include <windows.h>
 #else
 #include <dlfcn.h>
@@ -32,7 +33,7 @@
 
 using EngineMainFunc = int(*)(int, char**);
 
-#ifdef _WIN32
+#ifdef PLATFORM_WINDOWS
 // Hint Windows to prefer discrete AMD/NVIDIA GPUs over integrated ones (mostly for laptops).
 extern "C" {
     __declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
@@ -44,7 +45,7 @@ class DynamicLibrary {
 public:
     DynamicLibrary(const std::string& path) 
     {
-#ifdef _WIN32
+#ifdef PLATFORM_WINDOWS
         handle = LoadLibraryA(path.c_str());
         if (!handle)
             throw std::runtime_error("Failed to load library: " + path);
@@ -57,7 +58,7 @@ public:
 
     ~DynamicLibrary() 
     {
-#ifdef _WIN32
+#ifdef PLATFORM_WINDOWS
         if (handle) 
             FreeLibrary((HMODULE)handle);
 #else
@@ -68,7 +69,7 @@ public:
 
     void* getSymbol(const std::string& name) 
     {
-#ifdef _WIN32
+#ifdef PLATFORM_WINDOWS
         void* sym = (void*)GetProcAddress((HMODULE)handle, name.c_str());
         if (!sym)
             throw std::runtime_error("Failed to find symbol: " + name);
@@ -86,7 +87,7 @@ private:
     void* handle{};
 };
 
-#ifdef _WIN32
+#ifdef PLATFORM_WINDOWS
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
     DynamicLibrary lib("Engine.dll");

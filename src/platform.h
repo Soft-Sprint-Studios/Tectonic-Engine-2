@@ -22,14 +22,45 @@
  * SOFTWARE.
  */
 #pragma once
-#include "platform.h"
+
+#if defined(_WIN32) || defined(_WIN64)
+    #define PLATFORM_WINDOWS
+#elif defined(__linux__)
+    #define PLATFORM_LINUX
+#else
+    #error "Unsupported platform"
+#endif
+
+#if defined(_WIN64) || defined(__x86_64__) || defined(__ppc64__)
+    #define ARCH_64BIT
+#else
+    #define ARCH_32BIT
+#endif
+
+#if defined(_MSC_VER)
+    #define COMPILER_MSVC
+#elif defined(__GNUC__)
+    #define COMPILER_GCC
+#else
+    #error "Unsupported compiler"
+#endif
 
 #ifdef PLATFORM_WINDOWS
-    #ifdef ENGINE_BUILD
-        #define ENGINE_API extern "C" __declspec(dllexport)
-    #else
-        #define ENGINE_API extern "C" __declspec(dllimport)
-    #endif
+    #define OS_STRING "Windows"
 #else
-    #define ENGINE_API extern "C"
+    #define OS_STRING "Linux"
+#endif
+
+#if defined(COMPILER_MSVC)
+    #define COMPILER_STRING "MSVC"
+#elif defined(COMPILER_GCC)
+    #define COMPILER_STRING "GCC"
+#else
+    #error "Unsupported compiler"
+#endif
+
+#ifdef ARCH_64BIT
+    #define ARCH_STRING "x64"
+#else
+    #define ARCH_STRING "x86"
 #endif

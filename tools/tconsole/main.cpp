@@ -21,6 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#include "platform.h"
 #include <FL/Fl.H>
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Text_Display.H>
@@ -37,7 +38,7 @@
 #include <algorithm>
 #include <cstring>
 
-#ifdef _WIN32
+#ifdef PLATFORM_WINDOWS
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #pragma comment(lib, "ws2_32.lib")
@@ -261,7 +262,7 @@ void on_window_close(Fl_Widget*, void*) {
     should_exit = true;
 
     if (server_socket != INVALID_SOCKET) {
-#ifdef _WIN32
+#ifdef PLATFORM_WINDOWS
         shutdown(server_socket, SD_BOTH);
 #else
         shutdown(server_socket, SHUT_RDWR);
@@ -271,7 +272,7 @@ void on_window_close(Fl_Widget*, void*) {
     }
 
     if (client_socket != INVALID_SOCKET) {
-#ifdef _WIN32
+#ifdef PLATFORM_WINDOWS
         shutdown(client_socket, SD_BOTH);
 #else
         shutdown(client_socket, SHUT_RDWR);
@@ -303,7 +304,7 @@ void on_about_cb(Fl_Widget*, void*) {
 }
 
 void server_loop() {
-#ifdef _WIN32
+#ifdef PLATFORM_WINDOWS
     WSADATA wsaData;
     WSAStartup(MAKEWORD(2, 2), &wsaData);
 #endif
@@ -381,7 +382,7 @@ void server_loop() {
         client_socket = INVALID_SOCKET;
     }
 
-#ifdef _WIN32
+#ifdef PLATFORM_WINDOWS
     WSACleanup();
 #endif
 }

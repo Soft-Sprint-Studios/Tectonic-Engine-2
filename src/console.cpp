@@ -21,6 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#include "platform.h"
 #include "console.h"
 #include "cvar.h"
 #include "concmd.h"
@@ -31,7 +32,7 @@
 #include <vector>
 #include <chrono>
 
-#ifdef _WIN32
+#ifdef PLATFORM_WINDOWS
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #pragma comment(lib, "ws2_32.lib")
@@ -95,7 +96,7 @@ namespace Console
 
     static void NetworkLoop()
     {
-#ifdef _WIN32
+#ifdef PLATFORM_WINDOWS
         WSADATA wsaData;
         WSAStartup(MAKEWORD(2, 2), &wsaData);
 #endif
@@ -166,7 +167,7 @@ namespace Console
             }
         }
 
-#ifdef _WIN32
+#ifdef PLATFORM_WINDOWS
         WSACleanup();
 #endif
     }

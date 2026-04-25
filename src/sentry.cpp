@@ -21,6 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#include "platform.h"
 #include "sentry.h"
 #include "cvar.h"
 #include "concmd.h"
@@ -47,7 +48,7 @@ namespace Sentry
         sentry_options_set_release(options, "tectonic-engine-2@1.0.0");
         sentry_options_set_environment(options, "development");
 
-        #ifdef _WIN32
+        #ifdef PLATFORM_WINDOWS
             sentry_options_set_handler_path(options, "crashpad_handler.exe");
         #else
             sentry_options_set_handler_path(options, "crashpad_handler");

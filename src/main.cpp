@@ -51,6 +51,7 @@
 #include "waters.h"
 #include "concmd.h"
 #include "main_menu.h"
+#include "platform.h"
 
 CVar r_max_fps("r_max_fps", "0", "Maximum frames per second. 0 = unlimited.", CVAR_SAVE);
 CVar r_show_fps("r_show_fps", "0", "Displays the current FPS counter.", CVAR_SAVE);
@@ -101,6 +102,8 @@ ENGINE_API int Engine_Main(int argc, char** argv)
     std::string fullBuildStr = std::string(Build::GetCompileDate()) + " " + std::string(Build::GetCompileTime());
     Console::Log("Build Date: " + fullBuildStr);
     Console::Log("Build Number: " + std::to_string(Build::GetBuildNumber()));
+    Console::Log("Platform: " OS_STRING " (" ARCH_STRING ")");
+    Console::Log("Compiler: " COMPILER_STRING);
 
     Maps::Init(&renderer, &camera, &input);
 

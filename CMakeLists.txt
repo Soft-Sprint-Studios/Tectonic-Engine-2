@@ -130,6 +130,7 @@ endif()
 
 # launcher executable
 add_executable(Launcher ${CMAKE_SOURCE_DIR}/launcher/launcher.cpp)
+target_include_directories(Launcher PRIVATE src)
 
 if(WIN32)
     set(LAUNCHER_ICON_RC "${CMAKE_CURRENT_SOURCE_DIR}/launcher/resources/launcher.rc")
@@ -144,7 +145,7 @@ endif()
 add_executable(TConsole ${CMAKE_SOURCE_DIR}/tools/tconsole/main.cpp)
 target_compile_features(TConsole PRIVATE cxx_std_17)
 
-target_include_directories(TConsole PRIVATE ${FLTK_PATH}/include)
+target_include_directories(TConsole PRIVATE ${FLTK_PATH}/include src)
 
 if(WIN32)
     set_target_properties(TConsole PROPERTIES WIN32_EXECUTABLE TRUE)
