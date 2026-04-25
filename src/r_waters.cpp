@@ -30,7 +30,7 @@
 #include "cvar.h"
 #include <algorithm>
 
-CVar r_water_downsample("r_water_downsample", "2", CVAR_SAVE);
+CVar r_water_downsample("r_water_downsample", "2", "Downscaling factor for water reflection buffer.", CVAR_SAVE);
 
 void R_Waters::Init(int width, int height)
 {

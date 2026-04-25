@@ -29,7 +29,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-CVar r_textureAnisotropy("r_textureAnisotropy", "16.0", CVAR_SAVE);
+CVar r_textureAnisotropy("r_textureAnisotropy", "16.0", "Maximum anisotropic filtering level.", CVAR_SAVE);
 
 R_Texture::R_Texture()
 {

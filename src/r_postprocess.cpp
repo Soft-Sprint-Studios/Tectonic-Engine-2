@@ -29,9 +29,9 @@
 #include "timing.h"
 #include "r_bloom.h"
 
-CVar r_postprocess("r_postprocess", "1", CVAR_SAVE);
-CVar r_gamma("r_gamma", "1.7", CVAR_SAVE);
-CVar r_tonemap("r_tonemap", "1", CVAR_SAVE);
+CVar r_postprocess("r_postprocess", "1", "Enable entire post-processing stack.", CVAR_SAVE);
+CVar r_gamma("r_gamma", "1.7", "Display gamma correction value.", CVAR_SAVE);
+CVar r_tonemap("r_tonemap", "1", "Enable filmic ACES tonemapping.", CVAR_SAVE);
 
 R_PostProcess::R_PostProcess()
     : m_fbo(0), m_texture(0), m_depthTexture(0),

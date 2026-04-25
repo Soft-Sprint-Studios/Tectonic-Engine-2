@@ -30,8 +30,8 @@
 
 namespace Discord
 {
-    CVar discord_enabled("discord_enabled", "1", CVAR_SAVE);
-    CVar discord_appid("discord_appid", "1491042222966308987", CVAR_SAVE);
+    CVar discord_enabled("discord_enabled", "1", "Enable Discord Rich Presence.", CVAR_SAVE);
+    CVar discord_appid("discord_appid", "1491042222966308987", "Discord Application ID.", CVAR_SAVE);
 
     static bool s_initialized = false;
     static int64_t s_startTime = 0;

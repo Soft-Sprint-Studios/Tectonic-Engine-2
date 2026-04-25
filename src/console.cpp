@@ -50,6 +50,8 @@ typedef int socket_t;
 
 namespace Console
 {
+    CVar sv_cheats("sv_cheats", "0", "Allow cheat commands and variables.", CVAR_SAVE);
+
     static std::queue<std::string> s_commandQueue;
     static std::mutex s_consoleMutex;
     static std::thread s_networkThread;
@@ -119,7 +121,7 @@ namespace Console
                     // Sync CVars
                     for (auto const& [name, cvar] : CVar::GetRegistry())
                     {
-                        SendRemote("register_cvar \"" + name + "\" \"" + cvar->GetString() + "\" \"Engine CVar\"");
+                        SendRemote("register_cvar \"" + name + "\" \"" + cvar->GetString() + "\" \"" + cvar->GetDescription() + "\"");
                     }
 
                     // Sync ConCmds
@@ -192,6 +194,12 @@ namespace Console
         {
             if (args.size() > 1)
             {
+                if (var->IsCheat() && sv_cheats.GetInt() == 0)
+                {
+                    Warn("CVar '" + name + "' is cheat protected (sv_cheats must be 1)");
+                    return;
+                }
+
                 CVar::Set(name, args[1]);
                 Log(name + " = " + args[1]);
             }

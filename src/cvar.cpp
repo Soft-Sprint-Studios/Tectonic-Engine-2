@@ -32,8 +32,8 @@ std::unordered_map<std::string, CVar*>& CVar::GetRegistry()
     return s_registry;
 }
 
-CVar::CVar(const std::string& name, const std::string& defaultValue, int flags)
-    : m_name(name), m_value(defaultValue), m_flags(flags)
+CVar::CVar(const std::string& name, const std::string& defaultValue, const std::string& description, int flags)
+    : m_name(name), m_value(defaultValue), m_description(description), m_flags(flags)
 {
     GetRegistry()[name] = this;
 }

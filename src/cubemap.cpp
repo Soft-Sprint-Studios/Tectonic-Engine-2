@@ -43,7 +43,7 @@
 namespace Cubemap
 {
     static std::vector<CubemapProbe> s_probes;
-    CVar r_cubemap_resolution("r_cubemap_resolution", "512", CVAR_SAVE);
+    CVar r_cubemap_resolution("r_cubemap_resolution", "512", "Resolution of rendered cubemap faces.", CVAR_SAVE);
 
     void Init() 
     {

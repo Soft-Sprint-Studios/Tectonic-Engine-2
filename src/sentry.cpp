@@ -29,8 +29,8 @@
 
 namespace Sentry
 {
-    CVar sentry_enabled("sentry_enabled", "1", CVAR_SAVE);
-    CVar sentry_dsn("sentry_dsn", "https://72d9d4bb2da65d9d3d590c08795704eb@o4505736231124992.ingest.us.sentry.io/4511183954116608", CVAR_SAVE);
+    CVar sentry_enabled("sentry_enabled", "1", "Enable Sentry crash reporting.", CVAR_SAVE);
+    CVar sentry_dsn("sentry_dsn", "https://72d9d4bb2da65d9d3d590c08795704eb@o4505736231124992.ingest.us.sentry.io/4511183954116608", "Sentry project DSN URL.", CVAR_SAVE);
 
     void Init()
     {

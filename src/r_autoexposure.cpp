@@ -25,11 +25,11 @@
 #include "cvar.h"
 #include "timing.h"
 
-CVar r_autoexposure("r_autoexposure", "1", CVAR_SAVE);
-CVar r_exposure_speed("r_exposure_speed", "1.5", CVAR_SAVE);
-CVar r_exposure_target("r_exposure_target", "0.12", CVAR_SAVE);
-CVar r_exposure_min("r_exposure_min", "0.85", CVAR_SAVE);
-CVar r_exposure_max("r_exposure_max", "1.8", CVAR_SAVE);
+CVar r_autoexposure("r_autoexposure", "1", "Enable compute-based auto exposure.", CVAR_SAVE);
+CVar r_exposure_speed("r_exposure_speed", "1.5", "Speed of exposure adjustment.", CVAR_SAVE);
+CVar r_exposure_target("r_exposure_target", "0.12", "Target average luminance for the scene.", CVAR_SAVE);
+CVar r_exposure_min("r_exposure_min", "0.85", "Minimum allowed exposure multiplier.", CVAR_SAVE);
+CVar r_exposure_max("r_exposure_max", "1.8", "Maximum allowed exposure multiplier.", CVAR_SAVE);
 
 R_AutoExposure::R_AutoExposure()
 {

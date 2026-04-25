@@ -32,8 +32,8 @@
 #define MINIMP3_IMPLEMENTATION
 #include "minimp3_ex.h"
 
-CVar s_volume("s_volume", "1.0", CVAR_SAVE);
-CVar s_mute("s_mute", "0", CVAR_SAVE);
+CVar s_volume("s_volume", "1.0", "Master audio volume.", CVAR_SAVE);
+CVar s_mute("s_mute", "0", "Mute all audio output.", CVAR_SAVE);
 
 namespace Sound
 {

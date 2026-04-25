@@ -30,15 +30,15 @@
 #include "dynamic_light.h"
 #include <glm/gtx/string_cast.hpp>
 
-CVar sensitivity("sensitivity", "1.0", CVAR_SAVE);
-CVar g_walk_speed("g_walk_speed", "3.64", CVAR_SAVE);
-CVar g_crouch_speed("g_crouch_speed", "1.82", CVAR_SAVE);
-CVar g_noclip_speed("g_noclip_speed", "4.0", CVAR_SAVE);
-CVar g_sprint_speed("g_sprint_speed", "5.0", CVAR_SAVE);
-CVar g_jump_force("g_jump_force", "5.0", CVAR_SAVE);
-CVar g_view_height("g_view_height", "1.5", CVAR_SAVE);
-CVar g_crouch_height("g_crouch_height", "0.7", CVAR_SAVE);
-CVar g_view_interp("g_view_interp", "12.0", CVAR_SAVE);
+CVar sensitivity("sensitivity", "1.0", "Mouse sensitivity multiplier.", CVAR_SAVE);
+CVar g_walk_speed("g_walk_speed", "3.64", "Player walking speed.", CVAR_SAVE);
+CVar g_crouch_speed("g_crouch_speed", "1.82", "Player crouching speed.", CVAR_SAVE);
+CVar g_noclip_speed("g_noclip_speed", "4.0", "Speed while in noclip mode.", CVAR_SAVE);
+CVar g_sprint_speed("g_sprint_speed", "5.0", "Player sprinting speed.", CVAR_SAVE);
+CVar g_jump_force("g_jump_force", "5.0", "Initial upward velocity of a jump.", CVAR_SAVE);
+CVar g_view_height("g_view_height", "1.5", "Standing eye level height.", CVAR_SAVE);
+CVar g_crouch_height("g_crouch_height", "0.7", "Crouching eye level height.", CVAR_SAVE);
+CVar g_view_interp("g_view_interp", "12.0", "Speed of view height interpolation.", CVAR_SAVE);
 
 CON_COMMAND(noclip, "Toggles player noclip mode")
 {

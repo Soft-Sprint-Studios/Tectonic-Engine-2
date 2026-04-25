@@ -28,13 +28,14 @@
 enum CVarFlags
 {
     CVAR_NONE = 0,
-    CVAR_SAVE = (1 << 0)
+    CVAR_SAVE = (1 << 0),
+    CVAR_CHEAT = (1 << 1)
 };
 
 class CVar
 {
 public:
-    CVar(const std::string& name, const std::string& defaultValue, int flags = CVAR_NONE);
+    CVar(const std::string& name, const std::string& defaultValue, const std::string& description, int flags = CVAR_NONE);
 
     static void Set(const std::string& name, const std::string& value);
     static CVar* Find(const std::string& name);
@@ -58,8 +59,19 @@ public:
         return std::stof(m_value);
     }
 
+    std::string GetDescription() const 
+    {
+        return m_description; 
+    }
+
+    bool IsCheat() const 
+    {
+        return (m_flags & CVAR_CHEAT) != 0; 
+    }
+
 private:
     std::string m_name;
     std::string m_value;
+    std::string m_description;
     int m_flags;
 };

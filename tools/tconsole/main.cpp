@@ -174,8 +174,8 @@ void idle_callback(void*) {
 
     for (const auto& msg : local_queue) {
         if (msg.rfind("register_cvar", 0) == 0) {
-            char name[64], value_str[128], desc[128];
-            if (sscanf(msg.c_str(), "register_cvar \"%63[^\"]\" \"%127[^\"]\" \"%127[^\"]\"", name, value_str, desc) == 3) {
+            char name[64], value_str[128], desc[512];
+            if (sscanf(msg.c_str(), "register_cvar \"%63[^\"]\" \"%127[^\"]\" \"%511[^\"]\"", name, value_str, desc) == 3) {
                 g_cvars.push_back({ name, value_str, desc });
             }
         }
@@ -217,10 +217,8 @@ void send_command_callback(Fl_Widget*, void*) {
 
         append_message("=== Available CVars ===", 'B');
         for (const auto& cvar : g_cvars) {
-            std::string info = "  " + cvar.name + " (Default: " + cvar.value + ")";
-            if (!cvar.description.empty()) {
-                info += " - " + cvar.description;
-            }
+            char info[1024];
+            snprintf(info, sizeof(info), "  %-25s - %s", cvar.name.c_str(), cvar.description.c_str());
             append_message(info);
         }
 

@@ -39,8 +39,8 @@ int R_Sky::s_sunVolSteps = 8;
 bool R_Sky::s_useDynamic = false;
 bool R_Sky::s_hasCSM = false;
 
-CVar r_sky_steps_primary("r_sky_steps_primary", "8", CVAR_SAVE);
-CVar r_sky_steps_light("r_sky_steps_light", "3", CVAR_SAVE);
+CVar r_sky_steps_primary("r_sky_steps_primary", "8", "Primary raymarching steps for dynamic sky.", CVAR_SAVE);
+CVar r_sky_steps_light("r_sky_steps_light", "3", "Secondary light-sampling steps for dynamic sky.", CVAR_SAVE);
 
 R_Sky::R_Sky() : m_vao(0), m_vbo(0), m_cubemapTexture(0) 
 {

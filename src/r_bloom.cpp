@@ -26,11 +26,11 @@
 #include "cvar.h"
 #include <cmath>
 
-CVar r_bloom("r_bloom", "1", CVAR_SAVE);
-CVar r_bloom_intensity("r_bloom_intensity", "2", CVAR_SAVE);
-CVar r_bloom_threshold("r_bloom_threshold", "0.9", CVAR_SAVE);
-CVar r_bloom_scatter("r_bloom_scatter", "0.7", CVAR_SAVE);
-CVar r_bloom_passes("r_bloom_passes", "6", CVAR_SAVE);
+CVar r_bloom("r_bloom", "1", "Enable bloom post-processing.", CVAR_SAVE);
+CVar r_bloom_intensity("r_bloom_intensity", "2", "Strength of the bloom effect.", CVAR_SAVE);
+CVar r_bloom_threshold("r_bloom_threshold", "0.9", "Brightness threshold for pixels to bloom.", CVAR_SAVE);
+CVar r_bloom_scatter("r_bloom_scatter", "0.7", "Scatter amount for bloom blur.", CVAR_SAVE);
+CVar r_bloom_passes("r_bloom_passes", "6", "Number of downsample/upsample passes.", CVAR_SAVE);
 
 R_Bloom::R_Bloom()
 {

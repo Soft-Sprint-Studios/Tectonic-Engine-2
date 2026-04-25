@@ -40,7 +40,7 @@
 #include <algorithm>
 #include <memory>
 
-CVar g_gravity("g_gravity", "-9.81", CVAR_SAVE);
+CVar g_gravity("g_gravity", "-9.81", "World gravity force.", CVAR_SAVE);
 
 namespace Physics
 {

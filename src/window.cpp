@@ -26,10 +26,10 @@
 #include "cvar.h"
 #include <glad/glad.h>
 
-CVar r_fullscreen("r_fullscreen", "1", CVAR_SAVE);
-CVar r_vsync("r_vsync", "1", CVAR_SAVE);
-CVar r_multisample("r_multisample", "1", CVAR_SAVE);
-CVar r_multisample_samples("r_multisample_samples", "4", CVAR_SAVE);
+CVar r_fullscreen("r_fullscreen", "1", "Enable fullscreen mode.", CVAR_SAVE);
+CVar r_vsync("r_vsync", "1", "Enable vertical synchronization.", CVAR_SAVE);
+CVar r_multisample("r_multisample", "1", "Enable MSAA anti-aliasing.", CVAR_SAVE);
+CVar r_multisample_samples("r_multisample_samples", "4", "Number of MSAA samples.", CVAR_SAVE);
 
 bool Window::Init(const char* title, int width, int height)
 {

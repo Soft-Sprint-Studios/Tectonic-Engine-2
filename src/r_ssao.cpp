@@ -27,11 +27,11 @@
 #include <random>
 #include <glm/gtc/type_ptr.hpp>
 
-CVar r_ssao("r_ssao", "1", CVAR_SAVE);
-CVar r_ssao_radius("r_ssao_radius", "0.5", CVAR_SAVE);
-CVar r_ssao_bias("r_ssao_bias", "0.025", CVAR_SAVE);
-CVar r_ssao_samples("r_ssao_samples", "64", CVAR_SAVE);
-CVar r_ssao_power("r_ssao_power", "2.0", CVAR_SAVE);
+CVar r_ssao("r_ssao", "1", "Enable Screen Space Ambient Occlusion.", CVAR_SAVE);
+CVar r_ssao_radius("r_ssao_radius", "0.5", "Sampling radius for AO.", CVAR_SAVE);
+CVar r_ssao_bias("r_ssao_bias", "0.025", "Occlusion bias to prevent self-shadowing.", CVAR_SAVE);
+CVar r_ssao_samples("r_ssao_samples", "64", "Number of AO samples per pixel.", CVAR_SAVE);
+CVar r_ssao_power("r_ssao_power", "2.0", "Contrast strength of the AO effect.", CVAR_SAVE);
 
 R_SSAO::R_SSAO() 
 {
