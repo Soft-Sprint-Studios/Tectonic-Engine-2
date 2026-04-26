@@ -37,13 +37,6 @@ class CVar
 public:
     CVar(const std::string& name, const std::string& defaultValue, const std::string& description, int flags = CVAR_NONE);
 
-    static void Set(const std::string& name, const std::string& value);
-    static CVar* Find(const std::string& name);
-    static std::unordered_map<std::string, CVar*>& GetRegistry();
-
-    static void Init();
-    static void Save();
-
     std::string GetString() const
     {
         return m_value;
@@ -51,23 +44,54 @@ public:
 
     int GetInt() const
     {
-        return std::stoi(m_value);
+        try
+        {
+            if (m_value.empty())
+                return 0;
+
+            return std::stoi(m_value);
+        }
+        catch (...)
+        {
+            return 0;
+        }
     }
 
     float GetFloat() const
     {
-        return std::stof(m_value);
+        try
+        {
+            if (m_value.empty())
+                return 0.0f;
+
+            return std::stof(m_value);
+        }
+        catch (...)
+        {
+            return 0.0f;
+        }
     }
 
-    std::string GetDescription() const 
+    std::string GetDescription() const
     {
-        return m_description; 
+        return m_description;
     }
 
-    bool IsCheat() const 
+    bool IsCheat() const
     {
-        return (m_flags & CVAR_CHEAT) != 0; 
+        return (m_flags & CVAR_CHEAT) != 0;
     }
+
+    static int GetInt(const std::string& name, int defaultVal = 0);
+    static float GetFloat(const std::string& name, float defaultVal = 0.0f);
+    static std::string GetString(const std::string& name, const std::string& defaultVal = "");
+
+    static void Set(const std::string& name, const std::string& value);
+    static CVar* Find(const std::string& name);
+    static std::unordered_map<std::string, CVar*>& GetRegistry();
+
+    static void Init();
+    static void Save();
 
 private:
     std::string m_name;

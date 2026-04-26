@@ -53,6 +53,24 @@ void CVar::Set(const std::string& name, const std::string& value)
     }
 }
 
+int CVar::GetInt(const std::string& name, int defaultVal)
+{
+    CVar* var = Find(name);
+    return var ? var->GetInt() : defaultVal;
+}
+
+float CVar::GetFloat(const std::string& name, float defaultVal)
+{
+    CVar* var = Find(name);
+    return var ? var->GetFloat() : defaultVal;
+}
+
+std::string CVar::GetString(const std::string& name, const std::string& defaultVal)
+{
+    CVar* var = Find(name);
+    return var ? var->GetString() : defaultVal;
+}
+
 void CVar::Init()
 {
     std::string content = Filesystem::ReadText("cvars.txt");
@@ -65,7 +83,7 @@ void CVar::Init()
     std::string line;
     while (std::getline(ss, line))
     {
-        if (line.empty()) 
+        if (line.empty())
             continue;
 
         std::stringstream lineStream(line);
