@@ -205,6 +205,7 @@ public:
         if (!HasSpawnFlag(1))
         {
             m_source.Play(m_soundName, m_isLooping);
+            m_isPlaying = true;
         }
     }
 
@@ -213,6 +214,10 @@ public:
         Entity::OnSave();
         AddSaveField(DATA_FIELD(SoundEntity, m_soundName, FieldType::String));
         AddSaveField(DATA_FIELD(SoundEntity, m_isLooping, FieldType::Bool));
+        AddSaveField(DATA_FIELD(SoundEntity, m_volume, FieldType::Float));
+        AddSaveField(DATA_FIELD(SoundEntity, m_pitch, FieldType::Float));
+        m_isPlaying = m_source.IsPlaying();
+        AddSaveField(DATA_FIELD(SoundEntity, m_isPlaying, FieldType::Bool));
     }
 
     void AcceptInput(const std::string& inputName, const std::string& parameter) override
@@ -255,6 +260,7 @@ private:
     float m_volume;
     float m_pitch;
     bool m_isLooping = false;
+    bool m_isPlaying = false;
 };
 
 LINK_ENTITY_TO_CLASS("sound", SoundEntity)
@@ -292,6 +298,10 @@ public:
         AddSaveField(DATA_FIELD(PostProcessController, m_chroma, FieldType::Float));
         AddSaveField(DATA_FIELD(PostProcessController, m_grain, FieldType::Float));
         AddSaveField(DATA_FIELD(PostProcessController, m_bw, FieldType::Float));
+        AddSaveField(DATA_FIELD(PostProcessController, m_fogColor, FieldType::Vec3));
+        AddSaveField(DATA_FIELD(PostProcessController, m_fogStart, FieldType::Float));
+        AddSaveField(DATA_FIELD(PostProcessController, m_fogEnd, FieldType::Float));
+        AddSaveField(DATA_FIELD(PostProcessController, m_fogAffectsSky, FieldType::Bool));
     }
 
     void AcceptInput(const std::string& inputName, const std::string& parameter) override
@@ -386,7 +396,8 @@ public:
         {
             glm::vec3 angles = GetVector("angles");
             m_sys->SetAngles(angles);
-            m_sys->SetActive(!HasSpawnFlag(1));
+            m_isActive = !HasSpawnFlag(1);
+            m_sys->SetActive(m_isActive);
         }
     }
 
@@ -394,6 +405,7 @@ public:
     {
         Entity::OnSave();
         AddSaveField(DATA_FIELD(ParticleEntity, m_effect, FieldType::String));
+        AddSaveField(DATA_FIELD(ParticleEntity, m_isActive, FieldType::Bool));
     }
 
     void AcceptInput(const std::string& input, const std::string& param) override
@@ -409,6 +421,7 @@ public:
 private:
     std::string m_effect;
     std::shared_ptr<ParticleSystem> m_sys;
+    bool m_isActive = true;
 };
 
 LINK_ENTITY_TO_CLASS("particle_system", ParticleEntity)
@@ -432,7 +445,8 @@ public:
         m_light = DynamicLights::CreatePointLight(m_origin, m_baseColor, radius);
         if (m_light)
         {
-            m_light->SetActive(!HasSpawnFlag(1));
+            m_isActive = !HasSpawnFlag(1);
+            m_light->SetActive(m_isActive);
             auto& def = const_cast<DynamicLightDef&>(m_light->GetDef());
             def.castsShadows = HasSpawnFlag(2);
             def.isStaticShadow = HasSpawnFlag(4);
@@ -446,6 +460,8 @@ public:
     {
         Entity::OnSave();
         AddSaveField(DATA_FIELD(LightDynamicPoint, m_baseColor, FieldType::Vec3));
+        m_isActive = m_light->IsActive();
+        AddSaveField(DATA_FIELD(LightDynamicPoint, m_isActive, FieldType::Bool));
     }
 
     void Think(float deltaTime) override
@@ -491,6 +507,7 @@ public:
 protected:
     std::shared_ptr<DynamicLight> m_light;
     glm::vec3 m_baseColor;
+    bool m_isActive = true;
 };
 
 LINK_ENTITY_TO_CLASS("light_dynamic_point", LightDynamicPoint)
@@ -585,7 +602,8 @@ public:
             float alpha = GetFloat("renderamt", 255.0f);
             def.color = glm::vec4(color / 255.0f, alpha / 255.0f);
 
-            m_sprite->SetActive(!HasSpawnFlag(1));
+            m_isVisible = !HasSpawnFlag(1);
+            m_sprite->SetActive(m_isVisible);
         }
     }
 
@@ -593,6 +611,8 @@ public:
     {
         Entity::OnSave();
         AddSaveField(DATA_FIELD(SpriteEmitter, m_texturePath, FieldType::String));
+        m_isVisible = m_sprite->IsActive();
+        AddSaveField(DATA_FIELD(SpriteEmitter, m_isVisible, FieldType::Bool));
     }
 
     void AcceptInput(const std::string& input, const std::string& param) override
@@ -610,6 +630,7 @@ public:
 private:
     std::shared_ptr<Sprite> m_sprite;
     std::string m_texturePath;
+    bool m_isVisible = true;
 };
 
 LINK_ENTITY_TO_CLASS("sprite", SpriteEmitter)
