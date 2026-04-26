@@ -33,6 +33,7 @@ namespace R_State
     static bool s_blendEnabled = false;
     static bool s_cullEnabled = false;
     static bool s_msEnabled = false;
+    static bool s_seamlessEnabled = false;
 
     void SetClearColor(const glm::vec4& color)
     {
@@ -148,6 +149,15 @@ namespace R_State
         {
             enable ? glEnable(GL_MULTISAMPLE) : glDisable(GL_MULTISAMPLE);
             s_msEnabled = enable;
+        }
+    }
+
+    void SetSeamlessCubemaps(bool enable)
+    {
+        if (enable != s_seamlessEnabled)
+        {
+            enable ? glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS) : glDisable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+            s_seamlessEnabled = enable;
         }
     }
 }

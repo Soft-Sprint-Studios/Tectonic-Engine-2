@@ -75,6 +75,7 @@ bool Renderer::Init(Window& window)
     R_State::SetDepthTest(true);
     R_State::SetCulling(true);
     R_State::SetCullFace(GL_BACK);
+    R_State::SetSeamlessCubemaps(true);
     R_State::SetClearColor(glm::vec4(0, 0, 0, 0));
 
     m_postProcess = std::make_unique<R_PostProcess>();

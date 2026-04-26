@@ -46,4 +46,6 @@ namespace R_State
     void SetWireframe(bool enable);
 
     void SetMultisample(bool enable);
+
+    void SetSeamlessCubemaps(bool enable);
 }
