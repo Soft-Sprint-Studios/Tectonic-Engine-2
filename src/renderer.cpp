@@ -50,6 +50,10 @@ CVar r_zprepass("r_zprepass", "1", "Use a depth-only prepass to reduce overdraw.
 
 CVar mat_specular("mat_specular", "1", "Enable specular mapping on materials.", CVAR_SAVE);
 CVar mat_bumpmap("mat_bumpmap", "1", "Enable normal/bump mapping on materials.", CVAR_SAVE);
+CVar mat_parallax("mat_parallax", "1", "Enable Parallax Mapping.", CVAR_SAVE);
+CVar mat_parallax_min_steps("mat_parallax_min_steps", "8", "Minimum ray steps for Parallax Mapping.", CVAR_SAVE);
+CVar mat_parallax_max_steps("mat_parallax_max_steps", "32", "Maximum ray steps for Parallax Mapping.", CVAR_SAVE);
+CVar mat_parallax_refine("mat_parallax_refine", "8", "Number of binary search refinement steps for Parallax Mapping.", CVAR_SAVE);
 
 Renderer::Renderer() : m_windowRef(nullptr)
 {
@@ -140,6 +144,11 @@ void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater
     m_worldShader.SetInt("u_mat_specular", mat_specular.GetInt());
     m_worldShader.SetInt("u_mat_bumpmap", mat_bumpmap.GetInt());
 
+    m_worldShader.SetInt("u_mat_parallax", mat_parallax.GetInt());
+    m_worldShader.SetFloat("u_pomMinSteps", mat_parallax_min_steps.GetFloat());
+    m_worldShader.SetFloat("u_pomMaxSteps", mat_parallax_max_steps.GetFloat());
+    m_worldShader.SetInt("u_pomRefineSteps", mat_parallax_refine.GetInt());
+
     m_worldShader.SetInt("u_diffuse", 0);
     m_worldShader.SetInt("u_lightmap", 1);
     m_worldShader.SetInt("u_normal", 2);
@@ -148,6 +157,8 @@ void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater
     m_worldShader.SetInt("u_diffuse2", 14);
     m_worldShader.SetInt("u_normal2", 15);
     m_worldShader.SetInt("u_specular2", 16);
+    m_worldShader.SetInt("u_heightMap", 17);
+    m_worldShader.SetInt("u_heightMap2", 18);
 
     m_worldShader.SetInt("u_useCubemap", 0);
     const Cubemap::CubemapProbe* probe = Cubemap::FindClosest(camera.position);

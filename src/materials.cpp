@@ -33,9 +33,13 @@
 std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_textures;
 std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_normals;
 std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_speculars;
+std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_heights;
 std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_textures2;
 std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_normals2;
 std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_speculars2;
+std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_heights2;
+std::unordered_map<std::string, float> Materials::m_heightScales;
+std::unordered_map<std::string, float> Materials::m_heightScales2;
 std::shared_ptr<R_Texture> Materials::m_fallback;
 std::shared_ptr<R_Texture> Materials::m_flatNormal;
 std::shared_ptr<R_Texture> Materials::m_white;
@@ -139,6 +143,18 @@ void Materials::LoadDefinitions(const std::string& path)
                         m_speculars[matName] = tex;
                     }
                 }
+                else if (token == "height")
+                {
+                    ss >> token;
+                    ss >> token;
+
+                    auto tex = Resources::LoadTexture("textures/" + token.substr(1, token.size() - 2), false);
+
+                    if (tex) 
+                    { 
+                        m_heights[matName] = tex; 
+                    }
+                }
                 else if (token == "diffuse2")
                 {
                     ss >> token; 
@@ -174,6 +190,36 @@ void Materials::LoadDefinitions(const std::string& path)
                     { 
                         m_speculars2[matName] = tex; 
                     }
+                }
+                else if (token == "height2")
+                {
+                    ss >> token;
+                    ss >> token;
+
+                    auto tex = Resources::LoadTexture("textures/" + token.substr(1, token.size() - 2), false);
+
+                    if (tex) 
+                    { 
+                        m_heights2[matName] = tex; 
+                    }
+                }
+                else if (token == "heightscale")
+                {
+                    float s;
+
+                    ss >> token;
+                    ss >> s;
+
+                    m_heightScales[matName] = s;
+                }
+                else if (token == "heightscale2")
+                {
+                    float s;
+
+                    ss >> token;
+                    ss >> s;
+
+                    m_heightScales2[matName] = s;
                 }
             }
         }
@@ -238,6 +284,14 @@ std::shared_ptr<R_Texture> Materials::GetSpecularMap(const std::string& name)
     return m_white;
 }
 
+std::shared_ptr<R_Texture> Materials::GetHeightMap(const std::string& name)
+{
+    std::string searchName = name;
+    std::transform(searchName.begin(), searchName.end(), searchName.begin(), ::tolower);
+    auto it = m_heights.find(searchName);
+    return (it != m_heights.end()) ? it->second : m_white;
+}
+
 std::shared_ptr<R_Texture> Materials::GetTexture2(const std::string& name) 
 {
     std::string searchName = name;
@@ -260,6 +314,30 @@ std::shared_ptr<R_Texture> Materials::GetSpecularMap2(const std::string& name)
     std::transform(searchName.begin(), searchName.end(), searchName.begin(), ::tolower);
     auto it = m_speculars2.find(searchName);
     return (it != m_speculars2.end()) ? it->second : m_white;
+}
+
+std::shared_ptr<R_Texture> Materials::GetHeightMap2(const std::string& name)
+{
+    std::string searchName = name;
+    std::transform(searchName.begin(), searchName.end(), searchName.begin(), ::tolower);
+    auto it = m_heights2.find(searchName);
+    return (it != m_heights2.end()) ? it->second : m_white;
+}
+
+float Materials::GetHeightScale(const std::string& name)
+{
+    std::string searchName = name;
+    std::transform(searchName.begin(), searchName.end(), searchName.begin(), ::tolower);
+    auto it = m_heightScales.find(searchName);
+    return (it != m_heightScales.end()) ? it->second : 0.00f;
+}
+
+float Materials::GetHeightScale2(const std::string& name)
+{
+    std::string searchName = name;
+    std::transform(searchName.begin(), searchName.end(), searchName.begin(), ::tolower);
+    auto it = m_heightScales2.find(searchName);
+    return (it != m_heightScales2.end()) ? it->second : 0.00f;
 }
 
 std::shared_ptr<R_Texture> Materials::GetFlatNormal()

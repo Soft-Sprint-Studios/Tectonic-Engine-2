@@ -275,6 +275,8 @@ void R_Models::LoadModel(const std::string& path)
             m.texture = Materials::GetTexture(matName);
             m.normalMap = Materials::GetNormalMap(matName);
             m.specularMap = Materials::GetSpecularMap(matName);
+            m.heightMap = Materials::GetHeightMap(matName);
+            m.heightScale = Materials::GetHeightScale(matName);
 
             m.vertexCount = vertexCount;
             currentVertexOffset += vertexCount;
@@ -347,11 +349,13 @@ void R_Models::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOn
 
                     glBindVertexArray(mesh.vao);
                     shader.SetInt("u_vertexOffset", mesh.vertexOffset);
+                    shader.SetFloat("u_heightScale1", mesh.heightScale);
                     shader.SetInt("u_useBump", group.hasBumpedLighting ? 1 : 0);
 
                     (mesh.texture ? mesh.texture : Materials::GetTexture(""))->Bind(0);
                     (mesh.normalMap ? mesh.normalMap : Materials::GetFlatNormal())->Bind(2);
                     (mesh.specularMap ? mesh.specularMap : Materials::GetWhiteTexture())->Bind(3);
+                    (mesh.heightMap ? mesh.heightMap : Materials::GetWhiteTexture())->Bind(17);
 
                     glVertexAttrib3f(11, 0.0f, 0.0f, 0.0f);
                     glDrawElementsInstanced(GL_TRIANGLES, mesh.indexCount, mesh.indexType, 0, group.instanceCount);
