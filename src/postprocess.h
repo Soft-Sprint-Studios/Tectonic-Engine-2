@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 #pragma once
+#include <string>
 #include <glm/vec3.hpp>
 
 namespace PostProcess
@@ -33,6 +34,8 @@ namespace PostProcess
         float grainStrength = 0.0f;
         float bwStrength = 0.0f;
         float sharpenStrength = 0.0f;
+        float lensDirtStrength = 0.0f;
+        std::string lensDirtTexture = "";
         bool fogEnabled = false;
         glm::vec3 fogColor{ 0.5f, 0.6f, 0.7f };
         float fogStart = 50.0f;
@@ -45,6 +48,7 @@ namespace PostProcess
     void SetGrain(float strength);
     void SetBW(float strength);
     void SetSharpen(float strength);
+    void SetLensDirt(float strength, const std::string& texture);
     void SetFog(bool enabled, const glm::vec3& color, float start, float end, bool affectsSky);
 
     const Settings& GetCurrentSettings();

@@ -53,6 +53,12 @@ namespace PostProcess
         s_currentSettings.sharpenStrength = std::max(0.0f, strength);
     }
 
+    void SetLensDirt(float strength, const std::string& texture)
+    {
+        s_currentSettings.lensDirtStrength = std::max(0.0f, strength);
+        s_currentSettings.lensDirtTexture = texture;
+    }
+
     void SetFog(bool enabled, const glm::vec3& color, float start, float end, bool affectsSky)
     {
         s_currentSettings.fogEnabled = enabled;

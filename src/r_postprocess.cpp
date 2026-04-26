@@ -28,6 +28,8 @@
 #include "postprocess.h"
 #include "timing.h"
 #include "r_bloom.h"
+#include "resources.h"
+#include "materials.h"
 
 CVar r_postprocess("r_postprocess", "1", "Enable entire post-processing stack.", CVAR_SAVE);
 CVar r_gamma("r_gamma", "1.7", "Display gamma correction value.", CVAR_SAVE);
@@ -234,6 +236,23 @@ void R_PostProcess::Draw(const Camera& camera, R_Lights* lights)
     m_shader.SetFloat("u_grainStrength", ppSettings.grainStrength);
     m_shader.SetFloat("u_bwStrength", ppSettings.bwStrength);
     m_shader.SetFloat("u_sharpenStrength", ppSettings.sharpenStrength);
+
+    m_shader.SetFloat("u_lensDirtStrength", ppSettings.lensDirtStrength);
+    m_shader.SetInt("u_lensDirtTexture", 6);
+
+    if (ppSettings.lensDirtStrength > 0.0f && !ppSettings.lensDirtTexture.empty())
+    {
+        auto dirtTex = Resources::LoadTexture(ppSettings.lensDirtTexture, true);
+        if (dirtTex)
+            dirtTex->Bind(6);
+        else
+            Materials::GetWhiteTexture()->Bind(6);
+    }
+    else
+    {
+        Materials::GetWhiteTexture()->Bind(6);
+    }
+
     m_shader.SetInt("u_fogEnabled", ppSettings.fogEnabled);
     m_shader.SetVec3("u_fogColor", ppSettings.fogColor);
     m_shader.SetFloat("u_fogStart", ppSettings.fogStart);

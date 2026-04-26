@@ -6,6 +6,7 @@ uniform sampler2D u_depthTexture;
 uniform sampler2D u_bloomTexture;
 uniform sampler2D u_volumetricTexture;
 uniform sampler2D u_ssaoTexture;
+uniform sampler2D u_lensDirtTexture;
 uniform float u_time;
 
 uniform float u_vignetteStrength;
@@ -13,6 +14,7 @@ uniform float u_chromaStrength;
 uniform float u_grainStrength;
 uniform float u_bwStrength;
 uniform float u_sharpenStrength;
+uniform float u_lensDirtStrength;
 uniform float u_Gamma;
 uniform int u_postprocess_enabled;
 uniform mat4 u_invProjection;
@@ -108,7 +110,9 @@ void main()
     // Bloom
     if (u_bloom_enabled == 1)
     {
-        hdrColor += texture(u_bloomTexture, TexCoords).rgb * u_bloom_intensity;
+        vec3 bloom = texture(u_bloomTexture, TexCoords).rgb * u_bloom_intensity;
+        vec3 dirt = texture(u_lensDirtTexture, TexCoords).rgb * u_lensDirtStrength;
+        hdrColor += bloom + (bloom * dirt);
     }
 
     // Volumetrics
