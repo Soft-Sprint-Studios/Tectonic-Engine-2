@@ -199,7 +199,6 @@ namespace BSP
             for (int i = 0; i < numVerts; ++i)
             {
                 const auto& v = d_verts[i];
-                // Z-up to Y-up and 1/32 scale conversion
                 m_map.collision.vertices[i] = ToEngineSpace(v);
             }
 
@@ -455,7 +454,7 @@ namespace BSP
                 std::string path((const char*)(pakData + offset + 30), nameLen);
                 std::string name = path.substr(path.find_last_of("/\\") + 1);
 
-                // Collect both VHV
+                // Collect VHV
                 if (*(uint16_t*)(pakData + offset + 8) == 0 &&
                     name.find(".vhv") != std::string::npos)
                 {
