@@ -177,6 +177,7 @@ namespace Save
                 ent->OnSave();
                 auto& fields = ent->GetSaveFields();
 
+                // Load all fields
                 for (uint32_t j = 0; j < fieldCount; j++)
                 {
                     if (j >= fields.size()) 
