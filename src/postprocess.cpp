@@ -48,6 +48,11 @@ namespace PostProcess
         s_currentSettings.bwStrength = std::clamp(strength, 0.0f, 1.0f);
     }
 
+    void SetSharpen(float strength)
+    {
+        s_currentSettings.sharpenStrength = std::max(0.0f, strength);
+    }
+
     void SetFog(bool enabled, const glm::vec3& color, float start, float end, bool affectsSky)
     {
         s_currentSettings.fogEnabled = enabled;

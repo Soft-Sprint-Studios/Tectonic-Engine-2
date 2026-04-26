@@ -264,6 +264,7 @@
 	chroma(float) : "Chromatic Aberration Strength" : "0.0" : "How strong the chromatic aberration is. Good values are around 0.001 to 0.01."
 	grain(float) : "Film Grain Strength" : "0.0" : "How strong the film grain is. Good values are around 0.02 to 0.1."
 	bw(float) : "Black and White Strength" : "0.0" : "Percentage of grayscale to apply. Range 0.0 to 1.0."
+    sharpen(float) : "Sharpening Strength" : "0.0" : "How strong the sharpening effect is."
 	fog_color(color255) : "Fog Color" : "128 144 179" : "The color of the fog. The engine will use this when fog is enabled by this entity."
 	fog_start(float) : "Fog Start Distance" : "50.0" : "Distance in world units where the fog begins to appear."
 	fog_end(float) : "Fog End Distance" : "200.0" : "Distance in world units where the fog is at its maximum density."
@@ -285,6 +286,7 @@
 	input SetChroma(float) : "Sets a new chromatic aberration strength."
 	input SetGrain(float) : "Sets a new film grain strength."
 	input SetBW(float) : "Sets a new black and white strength percentage."
+    input SetSharpen(float) : "Sets a new sharpening strength."
 	input EnableFog(void) : "Enables the fog effect using this entity's settings. The controller must be enabled first."
 	input DisableFog(void) : "Disables the fog effect. Other effects remain active."
 ]

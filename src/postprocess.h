@@ -32,6 +32,7 @@ namespace PostProcess
         float chromaStrength = 0.0f;
         float grainStrength = 0.0f;
         float bwStrength = 0.0f;
+        float sharpenStrength = 0.0f;
         bool fogEnabled = false;
         glm::vec3 fogColor{ 0.5f, 0.6f, 0.7f };
         float fogStart = 50.0f;
@@ -43,6 +44,7 @@ namespace PostProcess
     void SetChroma(float strength);
     void SetGrain(float strength);
     void SetBW(float strength);
+    void SetSharpen(float strength);
     void SetFog(bool enabled, const glm::vec3& color, float start, float end, bool affectsSky);
 
     const Settings& GetCurrentSettings();

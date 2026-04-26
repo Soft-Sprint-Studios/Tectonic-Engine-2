@@ -12,6 +12,7 @@ uniform float u_vignetteStrength;
 uniform float u_chromaStrength;
 uniform float u_grainStrength;
 uniform float u_bwStrength;
+uniform float u_sharpenStrength;
 uniform float u_Gamma;
 uniform int u_postprocess_enabled;
 uniform mat4 u_invProjection;
@@ -77,6 +78,19 @@ void main()
     if (u_ssao_enabled == 1)
     {
         hdrColor *= texture(u_ssaoTexture, TexCoords).r;
+    }
+	
+    // Sharpening
+    if (u_sharpenStrength > 0.0)
+    {
+        vec2 texel = 1.0 / textureSize(u_screenTexture, 0);
+        vec3 center = hdrColor;
+        vec3 left   = texture(u_screenTexture, TexCoords + vec2(-texel.x, 0.0)).rgb * u_exposure;
+        vec3 right  = texture(u_screenTexture, TexCoords + vec2(texel.x, 0.0)).rgb * u_exposure;
+        vec3 up     = texture(u_screenTexture, TexCoords + vec2(0.0, texel.y)).rgb * u_exposure;
+        vec3 down   = texture(u_screenTexture, TexCoords + vec2(0.0, -texel.y)).rgb * u_exposure;
+
+        hdrColor = center + (center - (left + right + up + down) * 0.25) * u_sharpenStrength;
     }
 
     // Black and White

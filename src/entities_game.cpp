@@ -278,6 +278,7 @@ public:
         m_chroma = GetFloat("chroma", 0.0f);
         m_grain = GetFloat("grain", 0.0f);
         m_bw = GetFloat("bw", 0.0f);
+        m_sharpen = GetFloat("sharpen", 0.0f);
         m_fogColor = GetVector("fog_color", glm::vec3(128.0f)) / 255.0f;
         m_fogStart = GetFloat("fog_start", 50.0f);
         m_fogEnd = GetFloat("fog_end", 200.0f);
@@ -298,6 +299,7 @@ public:
         AddSaveField(DATA_FIELD(PostProcessController, m_chroma, FieldType::Float));
         AddSaveField(DATA_FIELD(PostProcessController, m_grain, FieldType::Float));
         AddSaveField(DATA_FIELD(PostProcessController, m_bw, FieldType::Float));
+        AddSaveField(DATA_FIELD(PostProcessController, m_sharpen, FieldType::Float));
         AddSaveField(DATA_FIELD(PostProcessController, m_fogColor, FieldType::Vec3));
         AddSaveField(DATA_FIELD(PostProcessController, m_fogStart, FieldType::Float));
         AddSaveField(DATA_FIELD(PostProcessController, m_fogEnd, FieldType::Float));
@@ -350,6 +352,12 @@ public:
             if (m_enabled) 
                 PostProcess::SetBW(m_bw);
         }
+        else if (inputName == "SetSharpen")
+        {
+            m_sharpen = std::stof(parameter);
+            if (m_enabled)
+                PostProcess::SetSharpen(m_sharpen);
+        }
         else if (inputName == "EnableFog")
         {
             if (m_enabled) 
@@ -369,6 +377,7 @@ private:
         PostProcess::SetChroma(m_chroma);
         PostProcess::SetGrain(m_grain);
         PostProcess::SetBW(m_bw);
+        PostProcess::SetSharpen(m_sharpen);
         PostProcess::SetFog(true, m_fogColor, m_fogStart, m_fogEnd, m_fogAffectsSky);
     }
 
@@ -376,6 +385,7 @@ private:
     float m_chroma = 0.0f;
     float m_grain = 0.0f;
     float m_bw = 0.0f;
+    float m_sharpen = 0.0f;
     glm::vec3 m_fogColor;
     float m_fogStart, m_fogEnd;
     bool m_fogAffectsSky;
