@@ -89,6 +89,10 @@ void Entity::OnPress(Entity* activator)
 {
 }
 
+void Entity::OnSave()
+{
+}
+
 bool Entity::HasSpawnFlag(int bit) const
 {
     return (m_spawnflags & bit) != 0;

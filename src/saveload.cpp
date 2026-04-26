@@ -79,6 +79,7 @@ namespace Save
             uint32_t fieldCount = (uint32_t)fields.size();
             file.write((char*)&fieldCount, sizeof(uint32_t));
 
+            // Write each field
             for (auto& f : fields)
             {
                 char* dataPtr = (char*)ent.get() + f.offset;

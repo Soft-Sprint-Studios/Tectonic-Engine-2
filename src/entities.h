@@ -54,6 +54,7 @@ public:
     virtual void Touch(Entity* other);
     virtual void EndTouch(Entity* other);
     virtual void OnPress(Entity* activator);
+    virtual void OnSave();
 
     virtual bool IsPlayer() const 
     { 
@@ -63,10 +64,6 @@ public:
     virtual bool IsCollidable() const 
     {
         return true; 
-    }
-
-    virtual void OnSave()
-    {
     }
 
     bool HasSpawnFlag(int bit) const;
