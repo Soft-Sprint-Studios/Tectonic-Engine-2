@@ -273,7 +273,7 @@ void main()
         }
         else
         {
-            finalUV = ReliefMapping(u_heightMap, TexCoord, u_heightScale1, tsViewDir);
+            finalUV = ParallaxMapping(u_heightMap, TexCoord, u_heightScale1, tsViewDir);
         }
     }
 	
