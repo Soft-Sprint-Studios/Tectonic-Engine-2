@@ -74,7 +74,10 @@ bool Renderer::Init(Window& window)
     R_State::SetClearColor(glm::vec4(0, 0, 0, 0));
 
     m_postProcess = std::make_unique<R_PostProcess>();
-    m_postProcess->Init(1280, 720);
+    int ww, wh;
+    SDL_GetWindowSize(m_windowRef->Get(), &ww, &wh);
+
+    m_postProcess->Init(ww, wh);
 
     m_bspRenderer = std::make_unique<R_BSP>();
     m_modelRenderer = std::make_unique<R_Models>();
@@ -84,7 +87,7 @@ bool Renderer::Init(Window& window)
     m_spriteRenderer = std::make_unique<R_Sprites>();
 
     m_waterRenderer = std::make_unique<R_Waters>();
-    m_waterRenderer->Init(1280, 720);
+    m_waterRenderer->Init(ww, wh);
 
     m_uiRenderer = std::make_unique<R_UI>();
     m_uiRenderer->Init(m_windowRef);

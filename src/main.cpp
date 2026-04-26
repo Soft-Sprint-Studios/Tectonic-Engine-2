@@ -115,6 +115,10 @@ ENGINE_API int Engine_Main(int argc, char** argv)
 
     Maps::Load(Gamedef::GetStartingMap());
 
+    int ww, wh;
+    SDL_GetWindowSize(window.Get(), &ww, &wh);
+    renderer.OnWindowResize(ww, wh);
+
     while (running)
     {
         // Update Time and Console
@@ -147,6 +151,19 @@ ENGINE_API int Engine_Main(int argc, char** argv)
             input.ProcessEvent(e);
             if (e.type == SDL_EVENT_QUIT)
                 running = false;
+
+            if (e.type == SDL_EVENT_WINDOW_FOCUS_LOST)
+            {
+                SDL_SetWindowRelativeMouseMode(window.Get(), false);
+            }
+
+            if (e.type == SDL_EVENT_WINDOW_FOCUS_GAINED)
+            {
+                if (!MainMenu::IsActive())
+                {
+                    SDL_SetWindowRelativeMouseMode(window.Get(), true);
+                }
+            }
 
             if (e.type == SDL_EVENT_WINDOW_RESIZED)
             {

@@ -53,7 +53,13 @@ bool Window::Init(const char* title, int width, int height)
     SDL_WindowFlags flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE;
     if (r_fullscreen.GetInt() > 0)
     {
-        flags |= SDL_WINDOW_FULLSCREEN;
+        const SDL_DisplayMode* mode = SDL_GetDesktopDisplayMode(SDL_GetPrimaryDisplay());
+        if (mode)
+        {
+            width = mode->w;
+            height = mode->h;
+        }
+        flags |= SDL_WINDOW_BORDERLESS;
     }
 
     m_window = SDL_CreateWindow(title, width, height, flags);
