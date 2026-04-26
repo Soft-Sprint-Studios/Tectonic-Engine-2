@@ -259,13 +259,13 @@ vec2 ParallaxMapping(sampler2D heightMapSampler, vec2 texCoords, float hScale, v
 void main()
 {
     float blend = u_isModel ? 0.0 : Color.r;
-	
+
 	vec2 finalUV = TexCoord;
     if (u_mat_parallax == 1)
     {
         vec3 tsViewDir = normalize(transpose(TBN) * (u_viewPos - FragPos));
         
-        if (blend > 0.01)
+        if (blend > 0.01 && u_heightScale2 > 0.0)
         {
             vec2 uv1 = ParallaxMapping(u_heightMap, TexCoord, u_heightScale1, tsViewDir);
             vec2 uv2 = ParallaxMapping(u_heightMap2, TexCoord, u_heightScale2, tsViewDir);
