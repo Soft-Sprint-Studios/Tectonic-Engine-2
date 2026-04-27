@@ -409,6 +409,9 @@ private:
 
 LINK_ENTITY_TO_CLASS("postprocess_controller", PostProcessController)
 
+// ==========================================
+// particle_system
+// ==========================================
 class ParticleEntity : public Entity
 {
 public:
