@@ -48,10 +48,9 @@ void main()
     FragPos = vec3(modelMat * vec4(aPos, 1.0));
     mat3 normalMatrix = mat3(transpose(inverse(modelMat)));
     vec3 T = normalize(normalMatrix * aTangent);
-    vec3 B = normalize(normalMatrix * aBitangent);
     vec3 N = normalize(normalMatrix * aNormal);
+    vec3 B = normalize(normalMatrix * aBitangent);
     T = normalize(T - dot(T, N) * N);
-    B = normalize(cross(N, T)); 
     
     TBN = mat3(T, B, N);
     
