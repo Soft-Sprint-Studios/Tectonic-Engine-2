@@ -219,7 +219,7 @@ void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater
     // Draw particles
     if (m_particleRenderer && r_particles.GetInt() > 0)
     {
-        m_particleRenderer->Draw(camera);
+        m_particleRenderer->Draw(camera, m_postProcess->GetDepthTexture());
     }
 
     // Draw sprites

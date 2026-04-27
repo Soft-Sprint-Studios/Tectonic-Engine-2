@@ -33,7 +33,7 @@ public:
     ~R_Particles();
 
     bool Init();
-    void Draw(const Camera& camera);
+    void Draw(const Camera& camera, uint32_t depthTex);
     void Shutdown();
 
 private:

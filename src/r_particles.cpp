@@ -26,6 +26,7 @@
 #include "particles.h"
 #include "materials.h"
 #include "console.h"
+#include <r_ui.h>
 
 R_Particles::R_Particles() : m_vao(0), m_vbo(0) 
 {
@@ -56,7 +57,7 @@ bool R_Particles::Init()
     return true;
 }
 
-void R_Particles::Draw(const Camera& camera)
+void R_Particles::Draw(const Camera& camera, uint32_t depthTex)
 {
     auto& systems = Particles::GetActiveSystems();
     if (systems.empty()) 
@@ -67,6 +68,14 @@ void R_Particles::Draw(const Camera& camera)
     m_shader.Bind();
     m_shader.SetMat4("u_proj", camera.GetProjectionMatrix());
     m_shader.SetMat4("u_view", camera.GetViewMatrix());
+    m_shader.SetMat4("u_invProj", glm::inverse(camera.GetProjectionMatrix()));
+    m_shader.SetInt("u_depthTexture", 1);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, depthTex);
+
+    int w, h;
+    SDL_GetWindowSize(SDL_GL_GetCurrentWindow(), &w, &h);
+    m_shader.SetVec2("u_screenSize", { (float)w, (float)h });
 
     glm::mat4 v = camera.GetViewMatrix();
     m_shader.SetVec3("u_right", glm::vec3(v[0][0], v[1][0], v[2][0]));

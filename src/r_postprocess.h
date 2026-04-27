@@ -44,6 +44,11 @@ public:
     void Rescale(int width, int height);
     void Shutdown();
 
+    GLuint GetDepthTexture() 
+    { 
+        return m_depthTexture;
+    }
+
 private:
     GLuint m_fbo;
     GLuint m_texture;

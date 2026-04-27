@@ -6,6 +6,7 @@ in float vSize[];
 
 out vec2 fTex;
 out vec4 fCol;
+out float fDepth;
 
 uniform mat4 u_proj;
 uniform mat4 u_view;
@@ -24,7 +25,9 @@ void main()
 
     for (int i = 0; i < 4; i++)
     {
-        gl_Position = u_proj * u_view * vec4(corners[i], 1.0);
+        vec4 viewPos = u_view * vec4(corners[i], 1.0);
+        fDepth = -viewPos.z;
+        gl_Position = u_proj * viewPos;
         fTex = uvs[i];
         EmitVertex();
     }
