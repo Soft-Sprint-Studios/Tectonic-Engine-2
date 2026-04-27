@@ -149,6 +149,13 @@ ENGINE_API int Engine_Main(int argc, char** argv)
         while (SDL_PollEvent(&e))
         {
             input.ProcessEvent(e);
+            if (e.type == SDL_EVENT_KEY_DOWN)
+            {
+                if (e.key.key == SDLK_GRAVE)
+                {
+                    Console::ToggleExternal();
+                }
+            }
             if (e.type == SDL_EVENT_QUIT)
                 running = false;
 

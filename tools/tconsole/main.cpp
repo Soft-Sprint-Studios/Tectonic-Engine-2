@@ -186,6 +186,18 @@ void idle_callback(void*) {
     }
 
     for (const auto& msg : local_queue) {
+        if (msg == "_toggle_window")
+        {
+            if (window->visible())
+            {
+                window->hide();
+            }
+            else
+            {
+                window->show();
+            }
+            continue;
+        }
         if (msg.rfind("register_cvar", 0) == 0) {
             char name[64], value_str[128], desc[512];
             if (sscanf(msg.c_str(), "register_cvar \"%63[^\"]\" \"%127[^\"]\" \"%511[^\"]\"", name, value_str, desc) == 3) {
@@ -387,8 +399,22 @@ void server_loop() {
 #endif
 }
 
+int global_hide_handler(int event)
+{
+    if ((event == FL_KEYBOARD || event == FL_SHORTCUT) && Fl::event_key() == '`')
+    {
+        if (::window && ::window->visible())
+        {
+            ::window->hide();
+            return 1;
+        }
+    }
+    return 0;
+}
+
 int main(int argc, char** argv) {
     window = new Fl_Double_Window(800, 600, "Tectonic Console 2");
+    Fl::add_handler(global_hide_handler);
     window->callback(on_window_close);
 
     menu_bar = new Fl_Menu_Bar(0, 0, 800, 25);

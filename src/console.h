@@ -36,4 +36,5 @@ namespace Console
 
     void SendRemote(const std::string& text);
     void Execute(const std::string& command);
+    void ToggleExternal();
 }

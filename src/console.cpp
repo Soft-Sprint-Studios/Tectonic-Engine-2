@@ -35,6 +35,7 @@
 #ifdef PLATFORM_WINDOWS
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include <shellapi.h>
 #pragma comment(lib, "ws2_32.lib")
 typedef SOCKET socket_t;
 #else
@@ -211,6 +212,22 @@ namespace Console
             return;
         }
         Warn("Unknown command or variable: " + name);
+    }
+
+    void ToggleExternal()
+    {
+        if (!s_connected)
+        {
+#ifdef PLATFORM_WINDOWS
+            ShellExecuteA(NULL, "open", "TConsole.exe", NULL, NULL, SW_SHOWNORMAL);
+#else
+            system("./TConsole &");
+#endif
+        }
+        else
+        {
+            SendRemote("_toggle_window");
+        }
     }
 
     void Update()
