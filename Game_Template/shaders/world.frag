@@ -445,7 +445,16 @@ void main()
             sunMask = u_useBump ? texture(u_lightmap, LmCoord5).r : texture(u_lightmap, LmCoord1).a;
 
         float sunShadow = CalculateSunShadow(FragPos, N, sunL);
-        sunFinal = (u_sunColor * max(dot(N, sunL), 0.0) * (1.0 - sunShadow)) * sunMask;
+
+        vec3 sunEnergy = u_sunColor * (1.0 - sunShadow) * sunMask;
+
+        sunFinal = sunEnergy * max(dot(N, sunL), 0.0);
+
+        vec3 H = normalize(sunL + viewDir);
+        vec3 specN = u_useBump ? normalize(baseNorm + TBN * (tangentNormal * 0.4)) : N;
+        float spec = pow(max(dot(specN, H), 0.0), shine);
+
+        dynSpecular += sunEnergy * spec * specMask * 0.5;
     }
 
     // Final Composition
