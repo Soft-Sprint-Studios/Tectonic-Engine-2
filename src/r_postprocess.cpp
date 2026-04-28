@@ -235,6 +235,8 @@ void R_PostProcess::Draw(const Camera& camera, R_Lights* lights)
     m_shader.SetFloat("u_chromaStrength", ppSettings.chromaStrength);
     m_shader.SetFloat("u_grainStrength", ppSettings.grainStrength);
     m_shader.SetFloat("u_bwStrength", ppSettings.bwStrength);
+    m_shader.SetFloat("u_negativeStrength", ppSettings.negativeStrength);
+    m_shader.SetFloat("u_sepiaStrength", ppSettings.sepiaStrength);
     m_shader.SetFloat("u_sharpenStrength", ppSettings.sharpenStrength);
 
     m_shader.SetFloat("u_lensDirtStrength", ppSettings.lensDirtStrength);

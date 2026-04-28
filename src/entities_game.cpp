@@ -278,6 +278,8 @@ public:
         m_chroma = GetFloat("chroma", 0.0f);
         m_grain = GetFloat("grain", 0.0f);
         m_bw = GetFloat("bw", 0.0f);
+        m_negative = GetFloat("negative", 0.0f);
+        m_sepia = GetFloat("sepia", 0.0f);
         m_sharpen = GetFloat("sharpen", 0.0f);
         m_lensDirtStrength = GetFloat("lens_dirt_strength", 0.0f);
         m_lensDirtTexture = GetValue("lens_dirt_texture", "");
@@ -301,6 +303,8 @@ public:
         AddSaveField(DATA_FIELD(PostProcessController, m_chroma, FieldType::Float));
         AddSaveField(DATA_FIELD(PostProcessController, m_grain, FieldType::Float));
         AddSaveField(DATA_FIELD(PostProcessController, m_bw, FieldType::Float));
+        AddSaveField(DATA_FIELD(PostProcessController, m_negative, FieldType::Float));
+        AddSaveField(DATA_FIELD(PostProcessController, m_sepia, FieldType::Float));
         AddSaveField(DATA_FIELD(PostProcessController, m_sharpen, FieldType::Float));
         AddSaveField(DATA_FIELD(PostProcessController, m_lensDirtStrength, FieldType::Float));
         AddSaveField(DATA_FIELD(PostProcessController, m_lensDirtTexture, FieldType::String));
@@ -358,6 +362,18 @@ public:
             if (m_enabled) 
                 PostProcess::SetBW(m_bw);
         }
+        else if (inputName == "SetNegative")
+        {
+            m_negative = std::stof(parameter);
+            if (m_enabled) 
+                PostProcess::SetNegative(m_negative);
+        }
+        else if (inputName == "SetSepia")
+        {
+            m_sepia = std::stof(parameter);
+            if (m_enabled) 
+                PostProcess::SetSepia(m_sepia);
+        }
         else if (inputName == "SetSharpen")
         {
             m_sharpen = std::stof(parameter);
@@ -389,6 +405,8 @@ private:
         PostProcess::SetChroma(m_chroma);
         PostProcess::SetGrain(m_grain);
         PostProcess::SetBW(m_bw);
+        PostProcess::SetNegative(m_negative);
+        PostProcess::SetSepia(m_sepia);
         PostProcess::SetSharpen(m_sharpen);
         PostProcess::SetLensDirt(m_lensDirtStrength, m_lensDirtTexture);
         PostProcess::SetFog(true, m_fogColor, m_fogStart, m_fogEnd, m_fogAffectsSky);
@@ -398,6 +416,8 @@ private:
     float m_chroma = 0.0f;
     float m_grain = 0.0f;
     float m_bw = 0.0f;
+    float m_negative = 0.0f;
+    float m_sepia = 0.0f;
     float m_sharpen = 0.0f;
     float m_lensDirtStrength = 0.0f;
     std::string m_lensDirtTexture;

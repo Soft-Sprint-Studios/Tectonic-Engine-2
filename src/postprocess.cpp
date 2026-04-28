@@ -48,6 +48,16 @@ namespace PostProcess
         s_currentSettings.bwStrength = std::clamp(strength, 0.0f, 1.0f);
     }
 
+    void SetNegative(float strength)
+    {
+        s_currentSettings.negativeStrength = std::clamp(strength, 0.0f, 1.0f);
+    }
+
+    void SetSepia(float strength)
+    {
+        s_currentSettings.sepiaStrength = std::clamp(strength, 0.0f, 1.0f);
+    }
+
     void SetSharpen(float strength)
     {
         s_currentSettings.sharpenStrength = std::max(0.0f, strength);

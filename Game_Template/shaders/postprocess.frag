@@ -13,6 +13,8 @@ uniform float u_vignetteStrength;
 uniform float u_chromaStrength;
 uniform float u_grainStrength;
 uniform float u_bwStrength;
+uniform float u_negativeStrength;
+uniform float u_sepiaStrength;
 uniform float u_sharpenStrength;
 uniform float u_lensDirtStrength;
 uniform float u_Gamma;
@@ -82,6 +84,30 @@ void main()
         hdrColor *= texture(u_ssaoTexture, TexCoords).r;
     }
 	
+    // Bloom
+    if (u_bloom_enabled == 1)
+    {
+        vec3 bloom = texture(u_bloomTexture, TexCoords).rgb * u_bloom_intensity;
+        vec3 dirt = texture(u_lensDirtTexture, TexCoords).rgb * u_lensDirtStrength;
+        hdrColor += bloom + (bloom * dirt);
+    }
+
+    // Volumetrics
+    if (u_volumetrics_enabled == 1)
+    {
+        hdrColor += texture(u_volumetricTexture, TexCoords).rgb;
+    }
+
+    // Fog
+    float depth = texture(u_depthTexture, TexCoords).r;
+    if (u_fogEnabled == 1 && (u_fogAffectsSky == 1 || depth < 0.9999))
+    {
+        vec3 viewPos = GetViewPos(depth);
+        float radialDist = length(viewPos);
+        float fogFactor = smoothstep(u_fogStart, u_fogEnd, radialDist);
+        hdrColor = mix(hdrColor, u_fogColor, fogFactor);
+    }
+	
     // Sharpening
     if (u_sharpenStrength > 0.0)
     {
@@ -98,6 +124,17 @@ void main()
     // Black and White
     float luminance = dot(hdrColor, vec3(0.299, 0.587, 0.114));
     hdrColor = mix(hdrColor, vec3(luminance), u_bwStrength);
+	
+    // Negative
+    vec3 negativeColor = 1.0 - hdrColor;
+    hdrColor = mix(hdrColor, negativeColor, u_negativeStrength);
+
+    // Sepia
+    vec3 sepiaColor;
+    sepiaColor.r = (hdrColor.r * 0.393) + (hdrColor.g * 0.769) + (hdrColor.b * 0.189);
+    sepiaColor.g = (hdrColor.r * 0.349) + (hdrColor.g * 0.686) + (hdrColor.b * 0.168);
+    sepiaColor.b = (hdrColor.r * 0.272) + (hdrColor.g * 0.534) + (hdrColor.b * 0.131);
+    hdrColor = mix(hdrColor, sepiaColor, u_sepiaStrength);
 
     // Vignette
     float vignette = smoothstep(0.8, 0.2, length(TexCoords - 0.5));
@@ -106,30 +143,6 @@ void main()
     // Film Grain
     float grain = (random(TexCoords + u_time) - 0.5) * u_grainStrength;
     hdrColor += grain;
-
-    // Bloom
-    if (u_bloom_enabled == 1)
-    {
-        vec3 bloom = texture(u_bloomTexture, TexCoords).rgb * u_bloom_intensity;
-        vec3 dirt = texture(u_lensDirtTexture, TexCoords).rgb * u_lensDirtStrength;
-        hdrColor += bloom + (bloom * dirt);
-    }
-
-    // Volumetrics
-    if (u_volumetrics_enabled == 1)
-    {
-        hdrColor += texture(u_volumetricTexture, TexCoords).rgb;
-    }
-
-    float depth = texture(u_depthTexture, TexCoords).r;
-
-    if (u_fogEnabled == 1 && (u_fogAffectsSky == 1 || depth < 0.9999))
-    {
-        vec3 viewPos = GetViewPos(depth);
-        float radialDist = length(viewPos);
-        float fogFactor = smoothstep(u_fogStart, u_fogEnd, radialDist);
-        hdrColor = mix(hdrColor, u_fogColor, fogFactor);
-    }
 
     // Tone mapping
     if (u_tonemap_enabled == 1)

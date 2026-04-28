@@ -33,6 +33,8 @@ namespace PostProcess
         float chromaStrength = 0.0f;
         float grainStrength = 0.0f;
         float bwStrength = 0.0f;
+        float negativeStrength = 0.0f;
+        float sepiaStrength = 0.0f;
         float sharpenStrength = 0.0f;
         float lensDirtStrength = 0.0f;
         std::string lensDirtTexture = "";
@@ -47,6 +49,8 @@ namespace PostProcess
     void SetChroma(float strength);
     void SetGrain(float strength);
     void SetBW(float strength);
+    void SetNegative(float strength);
+    void SetSepia(float strength);
     void SetSharpen(float strength);
     void SetLensDirt(float strength, const std::string& texture);
     void SetFog(bool enabled, const glm::vec3& color, float start, float end, bool affectsSky);
