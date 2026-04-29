@@ -228,6 +228,7 @@ namespace BSP
 
                 const TexData& td = d_texdatas[tex.texdata];
                 std::string name = d_stringdata + d_stringtable[td.nameStringTableID];
+                std::transform(name.begin(), name.end(), name.begin(), ::tolower);
                 textureBatches[name].push_back(faceIdx);
             }
 
@@ -277,6 +278,7 @@ namespace BSP
                     const TexInfo& tex = d_texinfos[face.texinfo];
                     const TexData& td = d_texdatas[tex.texdata];
                     std::string name = d_stringdata + d_stringtable[td.nameStringTableID];
+                    std::transform(name.begin(), name.end(), name.begin(), ::tolower);
                     waterBatches[name].push_back(faceIdx);
                 }
 
@@ -551,6 +553,7 @@ namespace BSP
                 const TexInfo& tex = d_texinfos[ov.texinfo];
                 const TexData& td = d_texdatas[tex.texdata];
                 std::string texName = d_stringdata + d_stringtable[td.nameStringTableID];
+                std::transform(texName.begin(), texName.end(), texName.begin(), ::tolower);
 
                 glm::vec3 basisU = glm::vec3(ov.uvPoints[0].z, ov.uvPoints[1].z, ov.uvPoints[2].z);
                 glm::vec3 basisNormal = ov.basisNormal;

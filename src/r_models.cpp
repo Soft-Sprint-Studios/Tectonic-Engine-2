@@ -30,6 +30,7 @@
 #include "cubemap.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glad/glad.h>
+#include <algorithm>
 
 #define CGLTF_IMPLEMENTATION
 #include <cgltf.h>
@@ -272,6 +273,7 @@ void R_Models::LoadModel(const std::string& path)
             }
 
             std::string matName = (prim.material && prim.material->name) ? prim.material->name : "";
+            std::transform(matName.begin(), matName.end(), matName.begin(), ::tolower);
             m.texture = Materials::GetTexture(matName);
             m.normalMap = Materials::GetNormalMap(matName);
             m.specularMap = Materials::GetSpecularMap(matName);

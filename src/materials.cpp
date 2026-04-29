@@ -228,17 +228,14 @@ void Materials::LoadDefinitions(const std::string& path)
 
 std::shared_ptr<R_Texture> Materials::GetTexture(const std::string& name)
 {
-    std::string searchName = name;
-    std::transform(searchName.begin(), searchName.end(), searchName.begin(), ::tolower);
-
-    auto it = m_textures.find(searchName);
+    auto it = m_textures.find(name);
 
     if (it != m_textures.end())
     {
         return it->second;
     }
 
-    if (!searchName.empty())
+    if (!name.empty())
     {
         Console::Warn("Texture definition missing: [" + name + "] - using fallback.");
     }
@@ -248,16 +245,13 @@ std::shared_ptr<R_Texture> Materials::GetTexture(const std::string& name)
 
 std::shared_ptr<R_Texture> Materials::GetNormalMap(const std::string& name)
 {
-    std::string searchName = name;
-    std::transform(searchName.begin(), searchName.end(), searchName.begin(), ::tolower);
-
-    auto it = m_normals.find(searchName);
+    auto it = m_normals.find(name);
     if (it != m_normals.end())
     {
         return it->second;
     }
 
-    if (!searchName.empty())
+    if (!name.empty())
     {
         return m_flatNormal;
     }
@@ -267,16 +261,13 @@ std::shared_ptr<R_Texture> Materials::GetNormalMap(const std::string& name)
 
 std::shared_ptr<R_Texture> Materials::GetSpecularMap(const std::string& name)
 {
-    std::string searchName = name;
-    std::transform(searchName.begin(), searchName.end(), searchName.begin(), ::tolower);
-
-    auto it = m_speculars.find(searchName);
+    auto it = m_speculars.find(name);
     if (it != m_speculars.end())
     {
         return it->second;
     }
 
-    if (!searchName.empty())
+    if (!name.empty())
     {
         return m_white;
     }
@@ -286,57 +277,43 @@ std::shared_ptr<R_Texture> Materials::GetSpecularMap(const std::string& name)
 
 std::shared_ptr<R_Texture> Materials::GetHeightMap(const std::string& name)
 {
-    std::string searchName = name;
-    std::transform(searchName.begin(), searchName.end(), searchName.begin(), ::tolower);
-    auto it = m_heights.find(searchName);
+    auto it = m_heights.find(name);
     return (it != m_heights.end()) ? it->second : m_white;
 }
 
 std::shared_ptr<R_Texture> Materials::GetTexture2(const std::string& name) 
 {
-    std::string searchName = name;
-    std::transform(searchName.begin(), searchName.end(), searchName.begin(), ::tolower);
-    auto it = m_textures2.find(searchName);
+    auto it = m_textures2.find(name);
     return (it != m_textures2.end()) ? it->second : nullptr;
 }
 
 std::shared_ptr<R_Texture> Materials::GetNormalMap2(const std::string& name) 
 {
-    std::string searchName = name;
-    std::transform(searchName.begin(), searchName.end(), searchName.begin(), ::tolower);
-    auto it = m_normals2.find(searchName);
+    auto it = m_normals2.find(name);
     return (it != m_normals2.end()) ? it->second : m_flatNormal;
 }
 
 std::shared_ptr<R_Texture> Materials::GetSpecularMap2(const std::string& name) 
 {
-    std::string searchName = name;
-    std::transform(searchName.begin(), searchName.end(), searchName.begin(), ::tolower);
-    auto it = m_speculars2.find(searchName);
+    auto it = m_speculars2.find(name);
     return (it != m_speculars2.end()) ? it->second : m_white;
 }
 
 std::shared_ptr<R_Texture> Materials::GetHeightMap2(const std::string& name)
 {
-    std::string searchName = name;
-    std::transform(searchName.begin(), searchName.end(), searchName.begin(), ::tolower);
-    auto it = m_heights2.find(searchName);
+    auto it = m_heights2.find(name);
     return (it != m_heights2.end()) ? it->second : m_white;
 }
 
 float Materials::GetHeightScale(const std::string& name)
 {
-    std::string searchName = name;
-    std::transform(searchName.begin(), searchName.end(), searchName.begin(), ::tolower);
-    auto it = m_heightScales.find(searchName);
+    auto it = m_heightScales.find(name);
     return (it != m_heightScales.end()) ? it->second : 0.00f;
 }
 
 float Materials::GetHeightScale2(const std::string& name)
 {
-    std::string searchName = name;
-    std::transform(searchName.begin(), searchName.end(), searchName.begin(), ::tolower);
-    auto it = m_heightScales2.find(searchName);
+    auto it = m_heightScales2.find(name);
     return (it != m_heightScales2.end()) ? it->second : 0.00f;
 }
 

@@ -92,10 +92,7 @@ void Waters::LoadDefinitions(const std::string& path)
 
 WaterDef* Waters::GetDefinition(const std::string& name)
 {
-    std::string searchName = name;
-    std::transform(searchName.begin(), searchName.end(), searchName.begin(), ::tolower);
-
-    auto it = m_defs.find(searchName);
+    auto it = m_defs.find(name);
     if (it != m_defs.end())
     {
         return &it->second;
