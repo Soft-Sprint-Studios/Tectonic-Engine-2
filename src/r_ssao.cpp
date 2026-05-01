@@ -32,6 +32,7 @@ CVar r_ssao_radius("r_ssao_radius", "0.5", "Sampling radius for AO.", CVAR_SAVE)
 CVar r_ssao_bias("r_ssao_bias", "0.025", "Occlusion bias to prevent self-shadowing.", CVAR_SAVE);
 CVar r_ssao_samples("r_ssao_samples", "64", "Number of AO samples per pixel.", CVAR_SAVE);
 CVar r_ssao_power("r_ssao_power", "2.0", "Contrast strength of the AO effect.", CVAR_SAVE);
+CVar r_ssao_res("r_ssao_res", "2", "SSAO downscale factor (higher = faster).", CVAR_SAVE);
 
 R_SSAO::R_SSAO() 
 {
@@ -102,16 +103,21 @@ void R_SSAO::GenerateNoiseTexture()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 }
 
-void R_SSAO::CreateBuffers(int width, int height) 
+void R_SSAO::CreateBuffers(int width, int height)
 {
     m_width = width;
     m_height = height;
+
+    int ds = std::max(1, r_ssao_res.GetInt());
+
+    int vW = width / ds;
+    int vH = height / ds;
 
     glGenFramebuffers(1, &m_fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
     glGenTextures(1, &m_texture);
     glBindTexture(GL_TEXTURE_2D, m_texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RED, GL_FLOAT, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, vW, vH, 0, GL_RED, GL_FLOAT, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_texture, 0);
@@ -120,7 +126,7 @@ void R_SSAO::CreateBuffers(int width, int height)
     glBindFramebuffer(GL_FRAMEBUFFER, m_blurFbo);
     glGenTextures(1, &m_blurTexture);
     glBindTexture(GL_TEXTURE_2D, m_blurTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RED, GL_FLOAT, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, vW, vH, 0, GL_RED, GL_FLOAT, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_blurTexture, 0);
@@ -163,6 +169,13 @@ void R_SSAO::Render(GLuint depthTexture, const Camera& camera, GLuint quadVAO, i
 
     // SSAO pass
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+
+    int ds = std::max(1, r_ssao_res.GetInt());
+
+    int vW = screenW / ds;
+    int vH = screenH / ds;
+    R_State::SetViewport(0, 0, vW, vH);
+
     R_State::Clear(true, false, false);
     m_ssaoShader.Bind();
     m_ssaoShader.SetMat4("u_projection", camera.GetProjectionMatrix());
@@ -174,7 +187,9 @@ void R_SSAO::Render(GLuint depthTexture, const Camera& camera, GLuint quadVAO, i
     m_ssaoShader.SetFloat("u_radius", r_ssao_radius.GetFloat());
     m_ssaoShader.SetFloat("u_bias", r_ssao_bias.GetFloat());
     m_ssaoShader.SetFloat("u_power", r_ssao_power.GetFloat());
-    m_ssaoShader.SetVec2("u_noiseScale", glm::vec2((float)screenW / 4.0, (float)screenH / 4.0));
+
+    int res = std::max(1, r_ssao_res.GetInt());
+    m_ssaoShader.SetVec2("u_noiseScale", glm::vec2((float)(screenW / res) / 4.0f, (float)(screenH / res) / 4.0f));
     
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, depthTexture);
@@ -199,6 +214,7 @@ void R_SSAO::Render(GLuint depthTexture, const Camera& camera, GLuint quadVAO, i
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
 
+    R_State::SetViewport(0, 0, screenW, screenH);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
