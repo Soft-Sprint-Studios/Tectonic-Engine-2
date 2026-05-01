@@ -30,6 +30,7 @@ CVar r_exposure_speed("r_exposure_speed", "1.5", "Speed of exposure adjustment."
 CVar r_exposure_target("r_exposure_target", "0.12", "Target average luminance for the scene.", CVAR_SAVE);
 CVar r_exposure_min("r_exposure_min", "0.85", "Minimum allowed exposure multiplier.", CVAR_SAVE);
 CVar r_exposure_max("r_exposure_max", "1.8", "Maximum allowed exposure multiplier.", CVAR_SAVE);
+CVar r_autoexposure_res("r_autoexposure_res", "4", "Downscale factor for auto exposure (higher = faster).", CVAR_SAVE);
 
 R_AutoExposure::R_AutoExposure()
 {
@@ -67,7 +68,15 @@ void R_AutoExposure::Update(GLuint screenTexture, int width, int height)
         m_histogramShader.Bind();
         glBindImageTexture(0, screenTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, m_histogramBuffer);
-        glDispatchCompute((width + 15) / 16, (height + 15) / 16, 1);
+
+        int ds = r_autoexposure_res.GetInt();
+        ds = std::max(1, ds);
+
+        int vW = width / ds;
+        int vH = height / ds;
+
+        glDispatchCompute((vW + 15) / 16, (vH + 15) / 16, 1);
+
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
         m_averageShader.Bind();
