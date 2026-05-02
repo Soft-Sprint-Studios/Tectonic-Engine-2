@@ -105,47 +105,34 @@ void R_Cascade::UpdateMatrices(const Camera& cam, const glm::vec3& sunDir)
         glm::mat4 proj = glm::perspective(glm::radians(cam.GetFOV()), cam.GetAspectRatio(), m_splits[i], m_splits[i + 1]);
         auto corners = GetFrustumCornersWorldSpace(proj, cam.GetViewMatrix());
 
-        glm::vec3 center = glm::vec3(0);
-        for (const auto& v : corners)
-        {
+        glm::vec3 center = glm::vec3(0.0f);
+        for (const auto& v : corners) 
             center += glm::vec3(v);
-        }
-        center /= corners.size();
+        center /= 8.0f;
 
-        glm::mat4 lightView = glm::lookAt(center + sunDir, center, glm::vec3(0, 1, 0));
+        float radius = 0.0f;
+        for (const auto& v : corners) 
+            radius = std::max(radius, glm::distance(center, glm::vec3(v)));
 
-        float minX = 1e10, minY = 1e10, minZ = 1e10;
-        float maxX = -1e10, maxY = -1e10, maxZ = -1e10;
+        radius = std::ceil(radius * 16.0f) / 16.0f;
 
-        for (const auto& v : corners)
-        {
-            const auto trf = lightView * v;
-            minX = std::min(minX, trf.x);
-            maxX = std::max(maxX, trf.x);
-            minY = std::min(minY, trf.y);
-            maxY = std::max(maxY, trf.y);
-            minZ = std::min(minZ, trf.z);
-            maxZ = std::max(maxZ, trf.z);
-        }
+        glm::vec3 up = std::abs(sunDir.y) > 0.99f ? glm::vec3(0, 0, 1) : glm::vec3(0, 1, 0);
+        glm::mat4 lightView = glm::lookAt(center + sunDir * radius, center, up);
 
-        // Pull back near plane to catch high geometry behind the view
-        if (minZ < 0) 
-            minZ *= 10.0f;
-        else 
-            minZ /= 10.0f;
+        glm::mat4 lightProj = glm::ortho(-radius, radius, -radius, radius, -radius * 6.0f, radius * 6.0f);
 
-        if (maxZ < 0) 
-            maxZ /= 10.0f;
-        else 
-            maxZ *= 10.0f;
+        glm::mat4 shadowMatrix = lightProj * lightView;
+        glm::vec4 shadowOrigin = shadowMatrix * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        shadowOrigin *= (float)m_resolution / 2.0f;
 
-        float worldUnitsPerTexel = (maxX - minX) / (float)m_resolution;
-        minX = floor(minX / worldUnitsPerTexel) * worldUnitsPerTexel;
-        maxX = floor(maxX / worldUnitsPerTexel) * worldUnitsPerTexel;
-        minY = floor(minY / worldUnitsPerTexel) * worldUnitsPerTexel;
-        maxY = floor(maxY / worldUnitsPerTexel) * worldUnitsPerTexel;
+        glm::vec4 roundedOrigin = glm::round(shadowOrigin);
+        glm::vec4 roundOffset = roundedOrigin - shadowOrigin;
+        roundOffset = roundOffset * 2.0f / (float)m_resolution;
+        roundOffset.z = 0.0f;
+        roundOffset.w = 0.0f;
 
-        m_matrices.push_back(glm::ortho(minX, maxX, minY, maxY, minZ, maxZ) * lightView);
+        lightProj[3] += roundOffset;
+        m_matrices.push_back(lightProj * lightView);
     }
 }
 
