@@ -46,16 +46,8 @@ struct SaveField
     size_t size;
 };
 
-#ifdef COMPILER_GCC
 #define DATA_FIELD(cls, member, type) \
-        _Pragma("GCC diagnostic push") \
-        _Pragma("GCC diagnostic ignored \"-Winvalid-offsetof\"") \
-        { type, #member, offsetof(cls, member), sizeof(((cls*)0)->member) } \
-        _Pragma("GCC diagnostic pop")
-#else
-#define DATA_FIELD(cls, member, type) \
-        { type, #member, offsetof(cls, member), sizeof(((cls*)0)->member) }
-#endif
+    { type, #member, (size_t)(&((cls*)0)->member), sizeof(((cls*)0)->member) }
 
 namespace Save
 {
