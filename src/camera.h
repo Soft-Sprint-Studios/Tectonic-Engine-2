@@ -49,7 +49,8 @@ struct Frustum
     }
 };
 
-class Camera {
+class Camera 
+{
 public:
     Camera(float fov = 75.0f, float aspect = 16.0f/9.0f, float nearP = 0.1f, float farP = 1000.0f)
         : m_fov(fov), m_aspect(aspect), m_near(nearP), m_far(farP) {}

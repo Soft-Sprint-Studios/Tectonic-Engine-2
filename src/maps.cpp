@@ -32,7 +32,9 @@
 #include "discord.h"
 #include "cubemap.h"
 #include "dynamic_light.h"
+#include "dynamic_sky.h"
 #include "particles.h"
+#include "beams.h"
 
 namespace Maps
 {
@@ -61,7 +63,8 @@ namespace Maps
         DynamicLights::Clear();
         Particles::Shutdown();
         Sprites::Clear();
-        R_Sky::Reset();
+        Beams::Clear();
+        DynamicSky::Reset();
 
         Physics::Init();
         EntityManager::Init();

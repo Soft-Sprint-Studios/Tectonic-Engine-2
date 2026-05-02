@@ -430,3 +430,25 @@
 	output OnHitMin(void) : "Fired when the value reaches or goes below the minimum."
 	output OnHitMax(void) : "Fired when the value reaches or goes above the maximum."
 ]
+
+@PointClass base(Targetname) = info_target : 
+	"A generic target entity for beams and other effects." 
+[
+]
+
+@PointClass base(Targetname) = env_beam : 
+	"A beam entity that stretches between this entity and a target."
+[
+	LightningEnd(target_destination) : "Ending Entity" : "" : "Name of the entity where the beam ends."
+	width(float) : "Beam Width" : "2.0"
+	rendercolor(color255) : "Beam Color" : "255 255 255"
+	
+	spawnflags(flags) =
+	[
+		1 : "Start Disabled" : 0
+	]
+
+	input TurnOn(void) : "Enable the beam."
+	input TurnOff(void) : "Disable the beam."
+	input Toggle(void) : "Toggle the beam state."
+]

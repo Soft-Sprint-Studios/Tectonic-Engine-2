@@ -24,24 +24,17 @@
 #pragma once
 #include "r_shader.h"
 #include "camera.h"
+#include "beams.h"
 #include <glad/glad.h>
-#include <string>
-#include <vector>
 
-class R_Sky
+class R_Beams
 {
 public:
-    R_Sky();
-    ~R_Sky();
-
-    bool Init(const std::string& skyName);
-    void Draw(const Camera& camera);
+    void Init();
+    void Draw(const Camera& camera, const std::vector<std::shared_ptr<Beam>>& beams);
     void Shutdown();
 
 private:
-    GLuint m_vao, m_vbo;
-    GLuint m_cubemapTexture;
     R_Shader m_shader;
-
-    void LoadCubemap(const std::string& skyName);
+    GLuint m_vao = 0, m_vbo = 0;
 };

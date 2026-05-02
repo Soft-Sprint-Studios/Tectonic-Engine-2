@@ -22,26 +22,53 @@
  * SOFTWARE.
  */
 #pragma once
-#include "r_shader.h"
-#include "camera.h"
-#include <glad/glad.h>
+#include <glm/glm.hpp>
 #include <string>
 #include <vector>
+#include <memory>
 
-class R_Sky
+struct BeamDef
+{
+    std::string endEntity;
+    glm::vec3 startPos;
+    glm::vec3 endPos;
+    glm::vec3 color{ 1.0f };
+    float width = 0.1f;
+    bool active = true;
+};
+
+class Beam
 {
 public:
-    R_Sky();
-    ~R_Sky();
+    Beam(const BeamDef& def) : m_def(def) 
+    {
+    }
 
-    bool Init(const std::string& skyName);
-    void Draw(const Camera& camera);
-    void Shutdown();
+    BeamDef& GetDef() 
+    { 
+        return m_def; 
+    }
+
+    bool IsActive() const 
+    { 
+        return m_def.active; 
+    }
+
+    void SetActive(bool state) 
+    { 
+        m_def.active = state; 
+    }
 
 private:
-    GLuint m_vao, m_vbo;
-    GLuint m_cubemapTexture;
-    R_Shader m_shader;
-
-    void LoadCubemap(const std::string& skyName);
+    BeamDef m_def;
 };
+
+namespace Beams
+{
+    void Init();
+    void Update();
+    void Clear();
+
+    std::shared_ptr<Beam> CreateBeam(const BeamDef& def);
+    const std::vector<std::shared_ptr<Beam>>& GetActiveBeams();
+}

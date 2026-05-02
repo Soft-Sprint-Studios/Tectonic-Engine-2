@@ -54,6 +54,7 @@
 #include "platform.h"
 #include "localization.h"
 #include "cmdargs.h"
+#include "beams.h"
 
 CVar r_max_fps("r_max_fps", "0", "Maximum frames per second. 0 = unlimited.", CVAR_SAVE);
 CVar r_show_fps("r_show_fps", "0", "Displays the current FPS counter.", CVAR_SAVE);
@@ -161,6 +162,7 @@ ENGINE_API int Engine_Main(int argc, char** argv)
             DynamicLights::Update();
             LightStyles::Update(Time::TotalTime());
             Sprites::Update();
+            Beams::Update();
             Physics::Update(dt);
             EntityManager::UpdateAll(dt);
         }

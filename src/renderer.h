@@ -35,6 +35,7 @@
 #include "r_waters.h"
 #include "r_ui.h"
 #include "r_state.h"
+#include "r_beams.h"
 #include "cubemap.h"
 #include <memory>
 
@@ -73,6 +74,7 @@ private:
     std::unique_ptr<R_Particles> m_particleRenderer;
     std::unique_ptr<R_Lights> m_lightRenderer;
     std::unique_ptr<R_Sprites> m_spriteRenderer;
+    std::unique_ptr<R_Beams> m_beamRenderer;
     std::unique_ptr<R_Waters> m_waterRenderer;
     std::unique_ptr<R_UI> m_uiRenderer;
 };

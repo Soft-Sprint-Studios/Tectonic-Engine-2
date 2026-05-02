@@ -32,6 +32,7 @@
 #include "dynamic_sky.h"
 #include "lightstyles.h"
 #include "sprite.h"
+#include "beams.h"
 #include <sstream>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -929,3 +930,90 @@ private:
 };
 
 LINK_ENTITY_TO_CLASS("math_counter", MathCounter)
+
+// ==========================================
+// info_target
+// ==========================================
+class InfoTarget : public Entity
+{
+public:
+    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    {
+        Entity::Spawn(keyvalues);
+    }
+
+    bool IsCollidable() const override
+    {
+        return false;
+    }
+};
+
+LINK_ENTITY_TO_CLASS("info_target", InfoTarget)
+
+// ==========================================
+// env_beam
+// ==========================================
+class EnvBeam : public Entity
+{
+public:
+    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    {
+        Entity::Spawn(keyvalues);
+
+        BeamDef def;
+        def.endEntity = GetValue("LightningEnd");
+        def.width = GetFloat("width", 2.0f) * BSP::MAPSCALE;
+
+        glm::vec3 col = GetVector("rendercolor", { 255, 255, 255 });
+        def.color = col / 255.0f;
+
+        m_beam = Beams::CreateBeam(def);
+        if (m_beam)
+        {
+            m_beam->SetActive(!HasSpawnFlag(1));
+        }
+    }
+
+    void Think(float deltaTime) override
+    {
+        Entity::Think(deltaTime);
+
+        if (m_beam)
+        {
+            m_beam->GetDef().startPos = m_origin;
+
+            auto target = EntityManager::FindEntityByName(m_beam->GetDef().endEntity);
+            if (target)
+            {
+                m_beam->GetDef().endPos = target->GetOrigin();
+            }
+            else
+            {
+                m_beam->GetDef().endPos = m_origin;
+            }
+        }
+    }
+
+    void AcceptInput(const std::string& inputName, const std::string& parameter) override
+    {
+        if (!m_beam)
+            return;
+
+        if (inputName == "TurnOn")
+            m_beam->SetActive(true);
+        else if (inputName == "TurnOff")
+            m_beam->SetActive(false);
+        else if (inputName == "Toggle")
+            m_beam->SetActive(!m_beam->IsActive());
+    }
+
+    bool IsCollidable() const override
+    {
+        return false;
+    }
+
+private:
+    std::shared_ptr<Beam> m_beam;
+};
+
+LINK_ENTITY_TO_CLASS("env_beam", EnvBeam)

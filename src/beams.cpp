@@ -21,27 +21,46 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#pragma once
-#include "r_shader.h"
-#include "camera.h"
-#include <glad/glad.h>
-#include <string>
-#include <vector>
+#include "beams.h"
+#include "entities.h"
 
-class R_Sky
+namespace Beams
 {
-public:
-    R_Sky();
-    ~R_Sky();
+    static std::vector<std::shared_ptr<Beam>> s_beams;
 
-    bool Init(const std::string& skyName);
-    void Draw(const Camera& camera);
-    void Shutdown();
+    void Init() 
+    {
+    }
 
-private:
-    GLuint m_vao, m_vbo;
-    GLuint m_cubemapTexture;
-    R_Shader m_shader;
+    void Update()
+    {
+        for (auto it = s_beams.begin(); it != s_beams.end();)
+        {
+            if (it->use_count() <= 1)
+            {
+                it = s_beams.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+    }
 
-    void LoadCubemap(const std::string& skyName);
-};
+    void Clear()
+    {
+        s_beams.clear();
+    }
+
+    std::shared_ptr<Beam> CreateBeam(const BeamDef& def)
+    {
+        auto b = std::make_shared<Beam>(def);
+        s_beams.push_back(b);
+        return b;
+    }
+
+    const std::vector<std::shared_ptr<Beam>>& GetActiveBeams()
+    {
+        return s_beams;
+    }
+}

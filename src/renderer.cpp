@@ -90,6 +90,7 @@ bool Renderer::Init(Window& window)
     m_particleRenderer = std::make_unique<R_Particles>();
     m_lightRenderer = std::make_unique<R_Lights>();
     m_spriteRenderer = std::make_unique<R_Sprites>();
+    m_beamRenderer = std::make_unique<R_Beams>();
 
     m_waterRenderer = std::make_unique<R_Waters>();
     m_waterRenderer->Init(ww, wh);
@@ -116,6 +117,7 @@ bool Renderer::LoadMap(const std::string& path)
     m_particleRenderer->Init();
     m_lightRenderer->Init();
     m_spriteRenderer->Init();
+    m_beamRenderer->Init();
 
     m_waterRenderer->ClearSurfaces();
     for (const auto& s : map.waterSurfaces)
@@ -226,6 +228,12 @@ void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater
     if (m_spriteRenderer && r_sprites.GetInt() > 0)
     {
         m_spriteRenderer->Draw(camera, Sprites::GetActiveSprites());
+    }
+
+    // Draw beams
+    if (m_beamRenderer)
+    {
+        m_beamRenderer->Draw(camera, Beams::GetActiveBeams());
     }
 }
 
@@ -369,6 +377,12 @@ void Renderer::Shutdown()
     {
         m_spriteRenderer->Shutdown();
         m_spriteRenderer.reset();
+    }
+
+    if (m_beamRenderer)
+    {
+        m_beamRenderer->Shutdown();
+        m_beamRenderer.reset();
     }
 
     if (m_waterRenderer)

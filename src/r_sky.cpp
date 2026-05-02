@@ -150,8 +150,3 @@ void R_Sky::Shutdown()
     glDeleteBuffers(1, &m_vbo);
     glDeleteTextures(1, &m_cubemapTexture);
 }
-
-void R_Sky::Reset()
-{
-    DynamicSky::Reset();
-}
