@@ -28,22 +28,31 @@ if(WIN32)
     else()
         set(ARCH_FOLDER "x86")
     endif()
-elseif(UNIX)
-    set(ARCH_FOLDER "linux")
 endif()
 
 # ---- SOURCE FILES ----
-file(GLOB_RECURSE SRC_FILES "src/*.cpp")
-file(GLOB_RECURSE HEADER_FILES "src/*.h" "src/*.hpp")
-
-# Add GLAD source file specifically
+file(GLOB_RECURSE ENGINE_SRC "src/engine/*.cpp")
+file(GLOB_RECURSE ENGINE_HDR "src/engine/*.h" "src/engine/*.hpp")
 set(GLAD_SRC "${GLAD_PATH}/src/glad.c")
 
-# ---- EXECUTABLE ----
-add_library(Engine SHARED ${SRC_FILES} ${HEADER_FILES} ${GLAD_SRC})
-target_compile_definitions(Engine PRIVATE GLM_ENABLE_EXPERIMENTAL ENGINE_BUILD)
+file(GLOB_RECURSE GAME_SRC "src/game/*.cpp")
+file(GLOB_RECURSE GAME_HDR "src/game/*.h")
 
-# ---- INCLUDE DIRECTORIES ----
+# ---- GAME STATIC LIB ----
+add_library(Game STATIC ${GAME_SRC} ${GAME_HDR})
+target_compile_definitions(Game PRIVATE GLM_ENABLE_EXPERIMENTAL ENGINE_BUILD)
+target_include_directories(Game PRIVATE
+    ${SDL3_PATH}/include
+    ${GLM_PATH}/include
+    ${BULLET_PATH}/include
+    ${OPENAL_PATH}/include
+    src/engine
+    src/game
+)
+
+# ---- ENGINE DLL ----
+add_library(Engine SHARED ${ENGINE_SRC} ${ENGINE_HDR} ${GLAD_SRC})
+target_compile_definitions(Engine PRIVATE GLM_ENABLE_EXPERIMENTAL ENGINE_BUILD)
 target_include_directories(Engine PRIVATE
     ${SDL3_PATH}/include
     ${SDL_TTF_PATH}/include
@@ -56,13 +65,22 @@ target_include_directories(Engine PRIVATE
     ${MINIMP3_PATH}/include
     ${DISCORDRPC_PATH}/include
     ${SENTRY_PATH}/include
-    src
+    src/engine
+    src/game
 )
 
-# ---- LINK LIBRARIES ----
+# ---- LINKING ----
 find_package(OpenGL REQUIRED)
 
 if(WIN32)
+    target_link_libraries(Engine PRIVATE Game)
+
+    if(MSVC)
+        target_link_options(Engine PRIVATE "/WHOLEARCHIVE:Game")
+    else()
+        target_link_options(Engine PRIVATE "-Wl,--whole-archive" "Game" "-Wl,--no-whole-archive")
+    endif()
+
     target_link_libraries(Engine PRIVATE
         ${SDL3_PATH}/lib/${ARCH_FOLDER}/SDL3.lib
         ${SDL_TTF_PATH}/lib/${ARCH_FOLDER}/SDL3_ttf.lib
@@ -76,36 +94,20 @@ if(WIN32)
         OpenGL::GL
         ws2_32
     )
-elseif(UNIX)
-    find_package(OpenAL REQUIRED)
-
-    target_link_directories(Engine PRIVATE
-        ${SDL3_PATH}/lib/linux
-        ${SDL_TTF_PATH}/lib/linux
-        ${BULLET_PATH}/lib/linux
-        ${DISCORDRPC_PATH}/lib/linux
-        ${SENTRY_PATH}/lib/linux
-    )
-
-    target_link_libraries(Engine PRIVATE
-        SDL3
-        SDL3_ttf
-        OpenAL::OpenAL
-        Bullet3Dynamics
-        BulletCollision
-        BulletDynamics
-        LinearMath
-        discord-rpc
-        sentry
-        OpenGL::GL
-        dl
-        pthread
-        m 
-    )
 endif()
 
-if(MSVC AND WIN32 AND NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
-    target_link_options(Engine PRIVATE "/SAFESEH:NO")
+# ---- LAUNCHER ----
+add_executable(Launcher ${CMAKE_SOURCE_DIR}/launcher/launcher.cpp)
+target_include_directories(Launcher PRIVATE src/engine src/game)
+target_link_libraries(Launcher PRIVATE Engine)
+
+if(WIN32)
+    set(LAUNCHER_ICON_RC "${CMAKE_CURRENT_SOURCE_DIR}/launcher/resources/launcher.rc")
+    set(LAUNCHER_MANIFEST "${CMAKE_CURRENT_SOURCE_DIR}/launcher/resources/launcher.manifest")
+    target_sources(Launcher PRIVATE ${LAUNCHER_ICON_RC} ${LAUNCHER_MANIFEST})
+    target_link_options(Launcher PRIVATE "/LARGEADDRESSAWARE")
+    target_link_options(Engine PRIVATE "/LARGEADDRESSAWARE")
+    target_link_options(Launcher PRIVATE "/MANIFEST:EMBED" "/MANIFESTINPUT:${LAUNCHER_MANIFEST}" /subsystem:windows)
 endif()
 
 # ---- DLL COPY ----
@@ -126,17 +128,4 @@ elseif(UNIX)
         "${SENTRY_PATH}/lib/linux/crashpad_handler"
         $<TARGET_FILE_DIR:Engine>
     )
-endif()
-
-# launcher executable
-add_executable(Launcher ${CMAKE_SOURCE_DIR}/launcher/launcher.cpp)
-target_include_directories(Launcher PRIVATE src)
-
-if(WIN32)
-    set(LAUNCHER_ICON_RC "${CMAKE_CURRENT_SOURCE_DIR}/launcher/resources/launcher.rc")
-    set(LAUNCHER_MANIFEST "${CMAKE_CURRENT_SOURCE_DIR}/launcher/resources/launcher.manifest")
-
-    target_sources(Launcher PRIVATE ${LAUNCHER_ICON_RC} ${LAUNCHER_MANIFEST})
-    target_link_options(Launcher PRIVATE "/MANIFEST:EMBED" "/MANIFESTINPUT:${LAUNCHER_MANIFEST}" /subsystem:windows)
-    target_link_options(Launcher PRIVATE /subsystem:windows)
 endif()
