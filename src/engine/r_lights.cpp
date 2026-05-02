@@ -56,22 +56,16 @@ bool R_Lights::Init()
     m_cascade = std::make_unique<R_Cascade>();
     m_cascade->Init(r_csm_res.GetInt());
 
-    float white = 1.0f;
+    float dummyData[] = { 1.0f, 1.0f };
 
     glGenTextures(1, &m_SpotShadow);
     glBindTexture(GL_TEXTURE_2D, m_SpotShadow);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 1, 1, 0, GL_DEPTH_COMPONENT, GL_FLOAT, &white);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, 1, 1, 0, GL_RG, GL_FLOAT, dummyData);
 
     glGenTextures(1, &m_PointShadow);
     glBindTexture(GL_TEXTURE_CUBE_MAP, m_PointShadow);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     for (int i = 0; i < 6; ++i)
-    {
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, 1, 1, 0, GL_DEPTH_COMPONENT, GL_FLOAT, &white);
-    }
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RG32F, 1, 1, 0, GL_RG, GL_FLOAT, dummyData);
 
     return true;
 }
@@ -88,41 +82,56 @@ void R_Lights::SetupShadowMap(std::shared_ptr<DynamicLight> light)
     glGenFramebuffers(1, &def.shadowFBO);
     glGenTextures(1, &def.shadowTex);
 
+    glGenTextures(1, &def.shadowDepthTex);
+
     if (def.type == LightType::Spot)
     {
         glBindTexture(GL_TEXTURE_2D, def.shadowTex);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, def.shadowRes, def.shadowRes, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, def.shadowRes, def.shadowRes, 0, GL_RG, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
         float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
         glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
+        glBindTexture(GL_TEXTURE_2D, def.shadowDepthTex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, def.shadowRes, def.shadowRes, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
         glBindFramebuffer(GL_FRAMEBUFFER, def.shadowFBO);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, def.shadowTex, 0);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, def.shadowTex, 0);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, def.shadowDepthTex, 0);
     }
     else
     {
         glBindTexture(GL_TEXTURE_CUBE_MAP, def.shadowTex);
         for (int i = 0; i < 6; ++i)
-        {
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, def.shadowRes, def.shadowRes, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-        }
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RG32F, def.shadowRes, def.shadowRes, 0, GL_RG, GL_FLOAT, NULL);
 
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
+        glBindTexture(GL_TEXTURE_CUBE_MAP, def.shadowDepthTex);
+        for (int i = 0; i < 6; ++i)
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT24, def.shadowRes, def.shadowRes, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
         glBindFramebuffer(GL_FRAMEBUFFER, def.shadowFBO);
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, def.shadowTex, 0);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, def.shadowTex, 0);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, def.shadowDepthTex, 0);
     }
 
-    glDrawBuffer(GL_NONE);
-    glReadBuffer(GL_NONE);
+    static const GLenum drawBuffers[] = { GL_COLOR_ATTACHMENT0 };
+    glDrawBuffers(1, drawBuffers);
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -162,7 +171,8 @@ void R_Lights::RenderShadowMaps(Camera& camera, R_BSP* bsp, R_Models* models)
 
         R_State::SetViewport(0, 0, def.shadowRes, def.shadowRes);
         glBindFramebuffer(GL_FRAMEBUFFER, def.shadowFBO);
-        R_State::Clear(false, true, false);
+        R_State::SetClearColor({ 1.0f, 1.0f, 0.0f, 0.0f });
+        R_State::Clear(true, true, false);
 
         if (def.type == LightType::Spot)
         {
@@ -217,7 +227,7 @@ void R_Lights::RenderShadowMaps(Camera& camera, R_BSP* bsp, R_Models* models)
 
             m_shadowPointShader.SetMat4("u_model", glm::mat4(1.0f));
 
-            Renderer::DrawSceneDepth(m_shadowSpotShader, pointFrustum, bsp, models);
+            Renderer::DrawSceneDepth(m_shadowPointShader, pointFrustum, bsp, models);
         }
 
         if (def.isStaticShadow)
@@ -318,6 +328,10 @@ void R_Lights::Shutdown()
         if (d.shadowTex != 0)
         {
             glDeleteTextures(1, &d.shadowTex);
+        }
+        if (d.shadowDepthTex != 0)
+        {
+            glDeleteTextures(1, &d.shadowDepthTex);
         }
     }
 

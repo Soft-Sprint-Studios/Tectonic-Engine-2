@@ -50,6 +50,7 @@ struct DynamicLightDef
 
     uint32_t shadowFBO = 0;
     uint32_t shadowTex = 0;
+    uint32_t shadowDepthTex = 0;
 
     glm::mat4 lightSpaceMatrix = glm::mat4(1.0f);
 };

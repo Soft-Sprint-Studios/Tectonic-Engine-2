@@ -104,58 +104,57 @@ vec3 ParallaxCorrect(vec3 R, vec3 fragPos, vec3 boxMin, vec3 boxMax, vec3 probeP
     return normalize(intersectPos - probePos);
 }
 
+float ChebyshevUpperBound(vec2 moments, float t)
+{
+    if (t <= moments.x)
+    {
+        return 1.0;
+    }
+
+    float mean = moments.x;
+    float meanSquared = mean * mean;
+
+    float variance = moments.y - meanSquared;
+
+    variance = max(variance, 0.000002);
+
+    float d = t - mean;
+
+    float pMax = variance / (variance + d * d);
+
+    return pMax;
+}
+
 float SpotShadowCalc(vec4 fragPosLightSpace, sampler2D shadowMap)
 {
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+
     projCoords = projCoords * 0.5 + 0.5;
-    
+
     if (projCoords.z > 1.0)
     {
         return 0.0;
     }
-    
-    float currentDepth = projCoords.z;
-    float shadow = 0.0;
-    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
-    
-    for (int x = -1; x <= 1; ++x)
-    {
-        for (int y = -1; y <= 1; ++y)
-        {
-            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r; 
-            shadow += currentDepth - 0.005 > pcfDepth ? 1.0 : 0.0;        
-        }    
-    }
-    
-    return shadow / 9.0;
+
+    vec2 moments = texture(shadowMap, projCoords.xy).rg;
+
+    float shadow = ChebyshevUpperBound(moments, projCoords.z);
+
+    return 1.0 - shadow;
 }
 
 float PointShadowCalc(vec3 fragPos, vec3 lightPos, float far_plane, samplerCube shadowMap)
 {
     vec3 fragToLight = fragPos - lightPos;
-    float currentDepth = length(fragToLight);
-    float shadow = 0.0;
-    float bias = 0.05; 
-    float samples = 4.0;
-    float offset = 0.1;
-    
-    for (float x = -offset; x < offset; x += offset / (samples * 0.5))
-    {
-        for (float y = -offset; y < offset; y += offset / (samples * 0.5))
-        {
-            for (float z = -offset; z < offset; z += offset / (samples * 0.5))
-            {
-                float closestDepth = texture(shadowMap, fragToLight + vec3(x, y, z)).r; 
-                closestDepth *= far_plane;
-                if (currentDepth - bias > closestDepth)
-                {
-                    shadow += 1.0;
-                }
-            }
-        }
-    }
-    
-    return shadow / (samples * samples * samples);
+
+    float distanceToLight = length(fragToLight);
+    float currentDepth = distanceToLight / far_plane;
+
+    vec2 moments = texture(shadowMap, fragToLight).rg;
+
+    float shadow = ChebyshevUpperBound(moments, currentDepth);
+
+    return 1.0 - shadow;
 }
 
 float CalculateSunShadow(vec3 fragPosWorld, vec3 N, vec3 L)
