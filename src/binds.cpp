@@ -90,6 +90,7 @@ namespace Binds
             return;
         }
         s_bindMap[code] = command;
+        Console::Log("\"" + keyName + "\" is bound to \"" + command + "\"");
     }
 
     void Unbind(const std::string& keyName)
@@ -98,6 +99,7 @@ namespace Binds
         if (code != SDL_SCANCODE_UNKNOWN)
         {
             s_bindMap.erase(code);
+            Console::Log("\"" + keyName + "\" is unbound");
         }
     }
 
@@ -121,5 +123,12 @@ namespace Binds
         }
         Unbind(args[1]);
         Save();
+    }
+
+    CON_COMMAND(unbindall, "Unbinds all keys")
+    {
+        s_bindMap.clear();
+        Save();
+        Console::Log("All keys unbound.");
     }
 }

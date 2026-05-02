@@ -2,9 +2,11 @@ out vec4 FragColor;
 
 in centroid vec3 v_FragPos;
 in vec2 v_TexCoord;
+in vec2 v_LmCoord;
 in centroid mat3 v_TBN;
 
 uniform sampler2D u_reflectionTexture;
+uniform sampler2D u_lightmap;
 uniform sampler2D u_dudvMap;
 uniform sampler2D u_normalMap;
 uniform sampler2D u_flowMap;
@@ -16,6 +18,7 @@ uniform mat4 u_reflectProj;
 
 uniform vec3 u_viewPos;
 uniform float u_time;
+uniform int u_debugMode;
 
 const float waveStrength = 0.02;
 const float normalTiling = 1.0;
@@ -54,7 +57,14 @@ void main()
     float fresnel = clamp(1.0 - dot(V, vec3(0.0, 1.0, 0.0)), 0.0, 1.0);
     fresnel = pow(fresnel, 2.0);
 
-    vec3 finalColor = mix(vec3(0.0), reflection, fresnel);
+    vec3 finalColor = reflection * fresnel;
+    finalColor *= texture(u_lightmap, v_LmCoord).rgb * 2.0;
+	
+	if (u_debugMode == 1) 
+    {
+        FragColor = vec4(texture(u_lightmap, v_LmCoord).rgb * 2.0, 1.0);
+        return;
+    }
 
     FragColor = vec4(finalColor, 0.95);
 }

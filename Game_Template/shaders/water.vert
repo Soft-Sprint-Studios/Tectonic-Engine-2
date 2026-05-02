@@ -11,6 +11,7 @@ uniform mat4 u_model;
 
 out centroid vec3 v_FragPos;
 out vec2 v_TexCoord;
+out vec2 v_LmCoord;
 out centroid mat3 v_TBN;
 
 void main()
@@ -18,6 +19,7 @@ void main()
     vec4 worldPos = u_model * vec4(aPos, 1.0);
     v_FragPos = worldPos.xyz;
     v_TexCoord = aTexCoord;
+    v_LmCoord = aLmCoord;
     
     mat3 normalMatrix = mat3(transpose(inverse(u_model)));
     vec3 N = normalize(normalMatrix * aNormal);

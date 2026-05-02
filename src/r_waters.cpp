@@ -103,7 +103,7 @@ void R_Waters::RenderReflection(Renderer* renderer, const Camera& mainCam)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void R_Waters::Draw(const Camera& camera, GLuint vao)
+void R_Waters::Draw(const Camera& camera, GLuint vao, GLuint lightmap)
 {
     if (m_surfaces.empty() || m_starts.empty())
         return;
@@ -120,9 +120,18 @@ void R_Waters::Draw(const Camera& camera, GLuint vao)
     m_shader.SetVec3("u_viewPos", camera.position);
     m_shader.SetFloat("u_time", (float)Time::TotalTime());
 
+    int debugMode = 0;
+    if (CVar::GetInt("r_debug_lightmaps")) 
+        debugMode = 1;
+    m_shader.SetInt("u_debugMode", debugMode);
+
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_reflectTex);
     m_shader.SetInt("u_reflectionTexture", 0);
+
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_2D, lightmap);
+    m_shader.SetInt("u_lightmap", 4);
 
     glBindVertexArray(vao);
     for (const auto& s : m_surfaces)

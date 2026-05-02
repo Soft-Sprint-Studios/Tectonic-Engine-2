@@ -63,6 +63,11 @@ public:
         return m_vao; 
     }
 
+    GLuint GetLightmapTexture() const 
+    { 
+        return m_lightmapTexture; 
+    }
+
 private:
     GLuint m_vao;
     GLuint m_vbo;

@@ -207,7 +207,7 @@ void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater
     // Draw water
     if (m_waterRenderer && drawWater && r_water.GetInt() > 0)
     {
-        m_waterRenderer->Draw(camera, m_bspRenderer->GetVAO());
+        m_waterRenderer->Draw(camera, m_bspRenderer->GetVAO(), m_bspRenderer->GetLightmapTexture());
     }
 
     // Draw sky

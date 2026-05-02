@@ -45,7 +45,7 @@ public:
     void AddSurface(const WaterSurface& surface);
     void ClearSurfaces();
     void RenderReflection(class Renderer* renderer, const Camera& mainCam);
-    void Draw(const Camera& camera, GLuint vao);
+    void Draw(const Camera& camera, GLuint vao, GLuint lightmap);
     void Shutdown();
 
 private:
