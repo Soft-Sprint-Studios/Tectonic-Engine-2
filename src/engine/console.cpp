@@ -350,6 +350,8 @@ namespace Console
     CON_COMMAND(version, "Displays engine build info")
     {
         Console::Log("Tectonic Engine 2 - Build " + std::to_string(Build::GetBuildNumber()));
-        Console::Log("Date: " + std::string(Build::GetCompileDate()));
+        Console::Log("Date: " + std::string(Build::GetCompileDate()) + " " + std::string(Build::GetCompileTime()));
+        Console::Log("Platform: " OS_STRING " (" ARCH_STRING ")");
+        Console::Log("Compiler: " COMPILER_STRING);
     }
 }

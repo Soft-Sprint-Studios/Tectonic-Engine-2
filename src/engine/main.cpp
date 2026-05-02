@@ -116,13 +116,6 @@ ENGINE_API int Engine_Main(int argc, char** argv)
     Binds::Init();
     MainMenu::Init();
 
-    Console::Log("Tectonic Engine 2 Initialized");
-    std::string fullBuildStr = std::string(Build::GetCompileDate()) + " " + std::string(Build::GetCompileTime());
-    Console::Log("Build Date: " + fullBuildStr);
-    Console::Log("Build Number: " + std::to_string(Build::GetBuildNumber()));
-    Console::Log("Platform: " OS_STRING " (" ARCH_STRING ")");
-    Console::Log("Compiler: " COMPILER_STRING);
-
     Maps::Init(&renderer, &camera, &input);
 
     if (!renderer.Init(window)) 
