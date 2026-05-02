@@ -29,6 +29,7 @@
 #include "console.h"
 #include "concmd.h"
 #include "cvar.h"
+#include "localization.h"
 #include <algorithm>
 
 namespace MainMenu
@@ -111,12 +112,13 @@ namespace MainMenu
             SetActive(!s_active);
     }
 
-    void Draw(Renderer* renderer) {
-        if (!s_active) 
+    void Draw(Renderer* renderer)
+    {
+        if (!s_active)
             return;
 
         // Reset click tracking if mouse released
-        if (!(SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_MASK(SDL_BUTTON_LEFT))) 
+        if (!(SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_MASK(SDL_BUTTON_LEFT)))
             s_mousePressedLast = false;
 
         int w, h;
@@ -131,64 +133,65 @@ namespace MainMenu
         float btnH = 40.0f;
         float spacing = 12.0f;
 
-        if (s_currentPage == MenuPage::Main) 
+        if (s_currentPage == MenuPage::Main)
         {
             ui->DrawText(Gamedef::GetGameName(), startX, 60.0f, glm::vec4(1, 0.5f, 0, 1));
 
-            if (Button(renderer, Maps::HasMapLoaded() ? "Resume Game" : "New Game", startX, startY, s_menuWidth, btnH)) 
+            std::string startLabel = Maps::HasMapLoaded() ? Localization::Get("Menu_ResumeGame") : Localization::Get("Menu_NewGame");
+            if (Button(renderer, startLabel, startX, startY, s_menuWidth, btnH))
             {
-                if (!Maps::HasMapLoaded()) 
+                if (!Maps::HasMapLoaded())
                     Maps::Load(Gamedef::GetStartingMap());
                 SetActive(false);
             }
 
-            if (Button(renderer, "Options", startX, startY + (btnH + spacing), s_menuWidth, btnH)) 
+            if (Button(renderer, Localization::Get("Menu_Options"), startX, startY + (btnH + spacing), s_menuWidth, btnH))
                 s_currentPage = MenuPage::Options;
 
-            if (Button(renderer, "Quit to Desktop", startX, startY + (btnH + spacing) * 2, s_menuWidth, btnH)) 
+            if (Button(renderer, Localization::Get("Menu_Quit"), startX, startY + (btnH + spacing) * 2, s_menuWidth, btnH))
                 Console::Execute("quit");
         }
-        else if (s_currentPage == MenuPage::Options) 
+        else if (s_currentPage == MenuPage::Options)
         {
-            ui->DrawText("OPTIONS", startX, 60.0f, glm::vec4(1, 0.5f, 0, 1));
+            ui->DrawText(Localization::Get("Menu_Options"), startX, 60.0f, glm::vec4(1, 0.5f, 0, 1));
 
             bool bloom = CVar::Find("r_bloom")->GetInt() > 0;
-            if (Checkbox(renderer, "Bloom", bloom, startX, startY))
+            if (Checkbox(renderer, Localization::Get("Opt_Bloom"), bloom, startX, startY))
                 CVar::Set("r_bloom", bloom ? "1" : "0");
 
             bool ssao = CVar::Find("r_ssao")->GetInt() > 0;
-            if (Checkbox(renderer, "Ambient Occlusion (SSAO)", ssao, startX, startY + 35.0f))
+            if (Checkbox(renderer, Localization::Get("Opt_SSAO"), ssao, startX, startY + 35.0f))
                 CVar::Set("r_ssao", ssao ? "1" : "0");
 
             bool volumetrics = CVar::Find("r_volumetrics")->GetInt() > 0;
-            if (Checkbox(renderer, "Volumetric Lighting", volumetrics, startX, startY + 70.0f))
+            if (Checkbox(renderer, Localization::Get("Opt_Volumetrics"), volumetrics, startX, startY + 70.0f))
                 CVar::Set("r_volumetrics", volumetrics ? "1" : "0");
 
             bool shadows = CVar::Find("r_shadows")->GetInt() > 0;
-            if (Checkbox(renderer, "Dynamic Shadows", shadows, startX, startY + 105.0f))
+            if (Checkbox(renderer, Localization::Get("Opt_Shadows"), shadows, startX, startY + 105.0f))
                 CVar::Set("r_shadows", shadows ? "1" : "0");
 
             bool tonemap = CVar::Find("r_tonemap")->GetInt() > 0;
-            if (Checkbox(renderer, "Filmic Tonemapping", tonemap, startX, startY + 140.0f))
+            if (Checkbox(renderer, Localization::Get("Opt_Tonemap"), tonemap, startX, startY + 140.0f))
                 CVar::Set("r_tonemap", tonemap ? "1" : "0");
 
             float vol = CVar::Find("s_volume")->GetFloat();
-            Slider(renderer, "Master Volume", vol, 0.0f, 1.0f, startX, startY + 210.0f);
+            Slider(renderer, Localization::Get("Opt_MasterVol"), vol, 0.0f, 1.0f, startX, startY + 210.0f);
             CVar::Set("s_volume", std::to_string(vol));
 
             float fov = CVar::Find("fov")->GetFloat();
-            Slider(renderer, "Field of View", fov, 60.0f, 110.0f, startX, startY + 270.0f);
+            Slider(renderer, Localization::Get("Opt_FOV"), fov, 60.0f, 110.0f, startX, startY + 270.0f);
             CVar::Set("fov", std::to_string(fov));
 
             float sens = CVar::Find("sensitivity")->GetFloat();
-            Slider(renderer, "Mouse Sensitivity", sens, 0.1f, 5.0f, startX, startY + 330.0f);
+            Slider(renderer, Localization::Get("Opt_Sens"), sens, 0.1f, 5.0f, startX, startY + 330.0f);
             CVar::Set("sensitivity", std::to_string(sens));
 
             float gamma = CVar::Find("r_gamma")->GetFloat();
-            Slider(renderer, "Display Gamma", gamma, 1.0f, 3.0f, startX, startY + 390.0f);
+            Slider(renderer, Localization::Get("Opt_Gamma"), gamma, 1.0f, 3.0f, startX, startY + 390.0f);
             CVar::Set("r_gamma", std::to_string(gamma));
 
-            if (Button(renderer, "Back", startX, (float)h - 100.0f, s_menuWidth, btnH)) 
+            if (Button(renderer, Localization::Get("Menu_Back"), startX, (float)h - 100.0f, s_menuWidth, btnH))
             {
                 s_currentPage = MenuPage::Main;
                 CVar::Save();

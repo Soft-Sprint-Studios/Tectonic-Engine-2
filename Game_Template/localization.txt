@@ -1,0 +1,17 @@
+"en"
+{
+    "Menu_NewGame"      "New Game"
+    "Menu_ResumeGame"   "Resume Game"
+    "Menu_Options"      "Options"
+    "Menu_Quit"         "Quit to Desktop"
+    "Menu_Back"         "Back"
+    "Opt_Bloom"         "Bloom"
+    "Opt_SSAO"          "Ambient Occlusion (SSAO)"
+    "Opt_Volumetrics"   "Volumetric Lighting"
+    "Opt_Shadows"       "Dynamic Shadows"
+    "Opt_Tonemap"       "Filmic Tonemapping"
+    "Opt_MasterVol"     "Master Volume"
+    "Opt_FOV"           "Field of View"
+    "Opt_Sens"          "Mouse Sensitivity"
+    "Opt_Gamma"         "Display Gamma"
+}
