@@ -53,6 +53,7 @@
 #include "main_menu.h"
 #include "platform.h"
 #include "localization.h"
+#include "cmdargs.h"
 
 CVar r_max_fps("r_max_fps", "0", "Maximum frames per second. 0 = unlimited.", CVAR_SAVE);
 CVar r_show_fps("r_show_fps", "0", "Displays the current FPS counter.", CVAR_SAVE);
@@ -71,9 +72,23 @@ ENGINE_API int Engine_Main(int argc, char** argv)
     Sound::Init();
     Networking::Init();
     CVar::Init();
+    CommandLine::Init(argc, argv);
+
+    int width = std::stoi(CommandLine::GetValue("-w", "1280"));
+    int height = std::stoi(CommandLine::GetValue("-h", "720"));
+
+    if (CommandLine::HasParm("-window"))
+    {
+        CVar::Set("r_fullscreen", "0");
+    }
+
+    if (CommandLine::HasParm("-fullscreen"))
+    {
+        CVar::Set("r_fullscreen", "1");
+    }
 
     Window window;
-    window.Init(Gamedef::GetGameName().c_str(), 1280, 720);
+    window.Init(Gamedef::GetGameName().c_str(), width, height);
 
     // Engine Systems Init
     Input input;
@@ -115,7 +130,12 @@ ENGINE_API int Engine_Main(int argc, char** argv)
         return -1;
     }
 
-    Maps::Load(Gamedef::GetStartingMap());
+    CommandLine::ExecuteInitialCommands();
+
+    if (!Maps::HasMapLoaded())
+    {
+        Maps::Load(Gamedef::GetStartingMap());
+    }
 
     int ww, wh;
     SDL_GetWindowSize(window.Get(), &ww, &wh);

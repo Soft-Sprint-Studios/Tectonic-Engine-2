@@ -49,7 +49,8 @@ namespace Localization
         {
             line.erase(0, line.find_first_not_of(" \t\r\n"));
             size_t last = line.find_last_not_of(" \t\r\n");
-            if (last != std::string::npos) line.erase(last + 1);
+            if (last != std::string::npos) 
+                line.erase(last + 1);
 
             if (line.empty()) 
                 continue;

@@ -82,6 +82,9 @@ void R_SSAO::GenerateSampleKernel()
 
 void R_SSAO::GenerateNoiseTexture()
 {
+    if (m_noiseTexture != 0) 
+        glDeleteTextures(1, &m_noiseTexture);
+
     std::uniform_real_distribution<float> randomFloats(0.0, 1.0);
     std::default_random_engine generator;
     std::vector<glm::vec3> ssaoNoise;
