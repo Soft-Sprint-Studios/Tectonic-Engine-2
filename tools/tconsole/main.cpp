@@ -162,7 +162,7 @@ public:
             if (matches.size() == 1) {
                 value(matches[0].c_str());
                 insert(" ");
-                position(size());
+                insert_position(size());
             }
             else {
                 append_message("> " + std::string(current_text), 'D');

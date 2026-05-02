@@ -221,7 +221,7 @@ namespace Console
 #ifdef PLATFORM_WINDOWS
             ShellExecuteA(NULL, "open", "TConsole.exe", NULL, NULL, SW_SHOWNORMAL);
 #else
-            system("./TConsole &");
+            (void)system("./TConsole &");
 #endif
         }
         else
