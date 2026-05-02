@@ -26,6 +26,7 @@
 #include "camera.h"
 #include "r_bsp.h"
 #include "r_models.h"
+#include "dynamic_sky.h"
 #include "renderer.h"
 #include <algorithm>
 #include <glm/gtc/matrix_transform.hpp>
@@ -148,9 +149,9 @@ void R_Cascade::UpdateMatrices(const Camera& cam, const glm::vec3& sunDir)
     }
 }
 
-void R_Cascade::Render(const Camera& camera, const glm::vec3& sunDir, R_Shader& shadowShader, R_BSP* bsp, R_Models* models)
+void R_Cascade::Render(const Camera& camera, R_Shader& shadowShader, R_BSP* bsp, R_Models* models)
 {
-    UpdateMatrices(camera, sunDir);
+    UpdateMatrices(camera, DynamicSky::GetSettings().sunDir);
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_matrixSSBO);
     glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(glm::mat4) * 4, m_matrices.data());

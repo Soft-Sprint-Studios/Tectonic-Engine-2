@@ -24,6 +24,7 @@
 #include "r_lights.h"
 #include "r_state.h"
 #include "dynamic_light.h"
+#include "dynamic_sky.h"
 #include "r_bsp.h"
 #include "r_models.h"
 #include "r_sky.h"
@@ -128,9 +129,10 @@ void R_Lights::SetupShadowMap(std::shared_ptr<DynamicLight> light)
 void R_Lights::RenderShadowMaps(Camera& camera, R_BSP* bsp, R_Models* models)
 {
     // CSM
-    if (r_shadows.GetInt() > 0 && r_csm.GetInt() > 0 && R_Sky::s_hasCSM)
+    const auto& sky = DynamicSky::GetSettings();
+    if (r_shadows.GetInt() > 0 && r_csm.GetInt() > 0 && sky.hasCSM)
     {
-        m_cascade->Render(camera, R_Sky::s_sunDir, m_shadowCascadeShader, bsp, models);
+        m_cascade->Render(camera, m_shadowCascadeShader, bsp, models);
     }
 
     const auto& lights = DynamicLights::GetActiveLights();
@@ -230,8 +232,9 @@ void R_Lights::RenderShadowMaps(Camera& camera, R_BSP* bsp, R_Models* models)
 void R_Lights::Bind(const R_Shader& shader)
 {
     // CSM
-    bool csmEnabled = (r_shadows.GetInt() > 0 && r_csm.GetInt() > 0 && R_Sky::s_hasCSM);
-    m_cascade->Bind(const_cast<R_Shader&>(shader), R_Sky::s_sunColor, R_Sky::s_sunDir, csmEnabled, R_Sky::s_sunVolIntensity, R_Sky::s_sunVolSteps);
+    const auto& sky = DynamicSky::GetSettings();
+    bool csmEnabled = (r_shadows.GetInt() > 0 && r_csm.GetInt() > 0 && sky.hasCSM);
+    m_cascade->Bind(const_cast<R_Shader&>(shader), sky.sunColor, sky.sunDir, csmEnabled, sky.sunVolIntensity, sky.sunVolSteps);
 
     // Then the scene lights
     for (int i = 0; i < 4; ++i)

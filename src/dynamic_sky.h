@@ -22,27 +22,26 @@
  * SOFTWARE.
  */
 #pragma once
-#include "r_shader.h"
-#include "camera.h"
-#include <glad/glad.h>
-#include <string>
-#include <vector>
+#include <glm/glm.hpp>
 
-class R_Sky
+namespace DynamicSky
 {
-public:
-    R_Sky();
-    ~R_Sky();
+    struct Settings
+    {
+        glm::vec3 sunDir = glm::vec3(0.0f, 1.0f, 0.01f);
+        glm::vec3 sunColor = glm::vec3(1.0f);
+        float sunVolIntensity = 0.0f;
+        int sunVolSteps = 8;
+        bool useDynamic = false;
+        bool hasCSM = false;
+    };
 
-    bool Init(const std::string& skyName);
-    void Draw(const Camera& camera);
-    void Shutdown();
-    static void Reset();
+    void SetSunDirection(const glm::vec3& dir);
+    void SetSunColor(const glm::vec3& color);
+    void SetVolumetrics(float intensity, int steps);
+    void SetEnabled(bool enabled);
+    void SetCSM(bool enabled);
+    void Reset();
 
-private:
-    GLuint m_vao, m_vbo;
-    GLuint m_cubemapTexture;
-    R_Shader m_shader;
-
-    void LoadCubemap(const std::string& skyName);
-};
+    const Settings& GetSettings();
+}

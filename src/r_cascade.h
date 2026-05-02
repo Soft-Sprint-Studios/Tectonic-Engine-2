@@ -40,7 +40,7 @@ public:
     void Init(int resolution = 4096);
     void Shutdown();
 
-    void Render(const Camera& camera, const glm::vec3& sunDir, R_Shader& shadowShader, R_BSP* bsp, R_Models* models);
+    void Render(const Camera& camera, R_Shader& shadowShader, R_BSP* bsp, R_Models* models);
     void Bind(R_Shader& shader, const glm::vec3& sunColor, const glm::vec3& sunDir, bool enabled, float sunVolIntensity, int sunVolSteps);
 
 private:

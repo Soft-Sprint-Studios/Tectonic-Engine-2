@@ -21,28 +21,45 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#pragma once
-#include "r_shader.h"
-#include "camera.h"
-#include <glad/glad.h>
-#include <string>
-#include <vector>
+#include "dynamic_sky.h"
 
-class R_Sky
+namespace DynamicSky
 {
-public:
-    R_Sky();
-    ~R_Sky();
+    static Settings s_settings;
 
-    bool Init(const std::string& skyName);
-    void Draw(const Camera& camera);
-    void Shutdown();
-    static void Reset();
+    void SetSunDirection(const glm::vec3& dir) 
+    { 
+        s_settings.sunDir = dir; 
+    }
 
-private:
-    GLuint m_vao, m_vbo;
-    GLuint m_cubemapTexture;
-    R_Shader m_shader;
+    void SetSunColor(const glm::vec3& color) 
+    {
+        s_settings.sunColor = color; 
+    }
 
-    void LoadCubemap(const std::string& skyName);
-};
+    void SetVolumetrics(float intensity, int steps)
+    { 
+        s_settings.sunVolIntensity = intensity; 
+        s_settings.sunVolSteps = steps; 
+    }
+
+    void SetEnabled(bool enabled) 
+    { 
+        s_settings.useDynamic = enabled; 
+    }
+
+    void SetCSM(bool enabled) 
+    { 
+        s_settings.hasCSM = enabled; 
+    }
+    
+    void Reset()
+    {
+        s_settings = Settings();
+    }
+
+    const Settings& GetSettings()
+    {
+        return s_settings;
+    }
+}
