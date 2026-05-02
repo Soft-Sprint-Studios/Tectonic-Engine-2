@@ -23,6 +23,7 @@
  */
 #include "platform.h"
 #include "console.h"
+#include "build_date.h"
 #include "cvar.h"
 #include "concmd.h"
 #include "renderer.h"
@@ -247,7 +248,10 @@ namespace Console
             if (y < yOffset + 20.0f) 
                 break;
 
-            ui->DrawText(s_history[i].text, 10.0f, y, s_history[i].color);
+            float alpha = std::clamp((y - yOffset) / 100.0f, 0.2f, 1.0f);
+            glm::vec4 fadedColor = s_history[i].color;
+            fadedColor.a *= alpha;
+            ui->DrawText(s_history[i].text, 10.0f, y, fadedColor);
             y -= 20.0f;
         }
 
@@ -341,5 +345,11 @@ namespace Console
         {
             Console::Log("  " + name + " : " + cvar->GetDescription());
         }
+    }
+
+    CON_COMMAND(version, "Displays engine build info")
+    {
+        Console::Log("Tectonic Engine 2 - Build " + std::to_string(Build::GetBuildNumber()));
+        Console::Log("Date: " + std::string(Build::GetCompileDate()));
     }
 }

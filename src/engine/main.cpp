@@ -184,10 +184,10 @@ ENGINE_API int Engine_Main(int argc, char** argv)
                 continue;
             }
 
-            if (e.type == SDL_EVENT_KEY_DOWN && e.key.key == SDLK_GRAVE)
+            if (e.type == SDL_EVENT_KEY_DOWN && e.key.key == SDLK_GRAVE && !e.key.repeat)
             {
                 Console::Toggle();
-                if (Console::IsOpen()) 
+                if (Console::IsOpen())
                     input.ClearStates();
                 continue;
             }
