@@ -88,7 +88,8 @@ void R_Lights::SetupShadowMap(std::shared_ptr<DynamicLight> light)
     {
         glBindTexture(GL_TEXTURE_2D, def.shadowTex);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, def.shadowRes, def.shadowRes, 0, GL_RG, GL_FLOAT, NULL);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, CVar::GetFloat("r_textureAnisotropy", 16.0f));
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
@@ -111,7 +112,8 @@ void R_Lights::SetupShadowMap(std::shared_ptr<DynamicLight> light)
         for (int i = 0; i < 6; ++i)
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RG32F, def.shadowRes, def.shadowRes, 0, GL_RG, GL_FLOAT, NULL);
 
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_ANISOTROPY_EXT, CVar::GetFloat("r_textureAnisotropy", 16.0f));
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -228,6 +230,20 @@ void R_Lights::RenderShadowMaps(Camera& camera, R_BSP* bsp, R_Models* models)
             m_shadowPointShader.SetMat4("u_model", glm::mat4(1.0f));
 
             Renderer::DrawSceneDepth(m_shadowPointShader, pointFrustum, bsp, models);
+        }
+
+        if (!(def.isStaticShadow && def.shadowRendered))
+        {
+            if (def.type == LightType::Spot)
+            {
+                glBindTexture(GL_TEXTURE_2D, def.shadowTex);
+                glGenerateMipmap(GL_TEXTURE_2D);
+            }
+            else
+            {
+                glBindTexture(GL_TEXTURE_CUBE_MAP, def.shadowTex);
+                glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+            }
         }
 
         if (def.isStaticShadow)
