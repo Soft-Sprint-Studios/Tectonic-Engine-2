@@ -32,6 +32,7 @@
 #include <vector>
 #include <string>
 #include <glm/glm.hpp>
+#include <algorithm>
 
 namespace Console
 {
@@ -47,6 +48,7 @@ namespace Console
     static std::string s_inputBuffer;
     static bool s_opened = false;
     static float s_animPos = 0.0f;
+    static int s_scrollOffset = 0;
 
     // Colors
     static const glm::vec4 COL_NORMAL = { 1.0f, 1.0f, 1.0f, 1.0f }; // White
@@ -103,6 +105,7 @@ namespace Console
     void Toggle()
     {
         s_opened = !s_opened;
+        s_scrollOffset = 0;
         if (s_opened)
         {
             SDL_StartTextInput(SDL_GL_GetCurrentWindow());
@@ -132,8 +135,42 @@ namespace Console
             return true;
         }
 
+        if (e.type == SDL_EVENT_MOUSE_WHEEL)
+        {
+            s_scrollOffset += (int)e.wheel.y;
+            s_scrollOffset = std::clamp(s_scrollOffset, 0, (int)s_history.size());
+            return true;
+        }
+
         if (e.type == SDL_EVENT_KEY_DOWN)
         {
+            if (e.key.key == SDLK_TAB)
+            {
+                if (s_inputBuffer.empty()) 
+                    return true;
+
+                // Try commands
+                for (auto const& [name, cmd] : ConCmd::GetRegistry())
+                {
+                    if (name.substr(0, s_inputBuffer.size()) == s_inputBuffer)
+                    {
+                        s_inputBuffer = name + " ";
+                        return true;
+                    }
+                }
+
+                // Try CVars
+                for (auto const& [name, cvar] : CVar::GetRegistry())
+                {
+                    if (name.substr(0, s_inputBuffer.size()) == s_inputBuffer)
+                    {
+                        s_inputBuffer = name + " ";
+                        return true;
+                    }
+                }
+                return true;
+            }
+
             if (e.key.key == SDLK_BACKSPACE)
             {
                 if (!s_inputBuffer.empty()) 
@@ -187,16 +224,31 @@ namespace Console
         ui->DrawRect(0, yOffset, (float)w, conH, { 0.1f, 0.1f, 0.1f, 0.95f });
         ui->DrawRect(0, yOffset + conH - 3.0f, (float)w, 3.0f, { 1.0f, 0.5f, 0.0f, 1.0f });
 
+        // Scroll bar
+        if (s_history.size() > 20)
+        {
+            float scrollbarW = 8.0f;
+            float totalH = conH - 60.0f;
+
+            float ratio = std::clamp((float)s_history.size() / 20.0f, 1.0f, 10.0f);
+            float handleH = totalH / ratio;
+            float scrollPos = 1.0f - (float)s_scrollOffset / (float)s_history.size();
+            float handleY = yOffset + 30.0f + (scrollPos * (totalH - handleH));
+
+            ui->DrawRect((float)w - scrollbarW, handleY, scrollbarW, handleH, { 1.0f, 0.5f, 0.0f, 0.8f });
+        }
+
         // Draw history
         float y = yOffset + conH - 55.0f;
-        for (int i = (int)s_history.size() - 1; i >= 0; --i)
+        int startIdx = (int)s_history.size() - 1 - s_scrollOffset;
+
+        for (int i = startIdx; i >= 0; --i)
         {
+            if (y < yOffset + 20.0f) 
+                break;
+
             ui->DrawText(s_history[i].text, 10.0f, y, s_history[i].color);
             y -= 20.0f;
-            if (y < yOffset)
-            {
-                break;
-            }
         }
 
         bool showCursor = std::fmod(Time::TotalTime(), 0.8f) < 0.4f;
@@ -274,5 +326,20 @@ namespace Console
     CON_COMMAND(clear, "Clears the console history")
     {
         s_history.clear();
+    }
+
+    CON_COMMAND(help, "Lists all commands and variables")
+    {
+        Console::Log("=== Available Commands ===");
+        for (auto const& [name, cmd] : ConCmd::GetRegistry())
+        {
+            Console::Log("  " + name + " : " + cmd->GetDescription());
+        }
+
+        Console::Log("=== Available CVars ===");
+        for (auto const& [name, cvar] : CVar::GetRegistry())
+        {
+            Console::Log("  " + name + " : " + cvar->GetDescription());
+        }
     }
 }
