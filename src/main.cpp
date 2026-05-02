@@ -170,16 +170,33 @@ ENGINE_API int Engine_Main(int argc, char** argv)
         SDL_Event e;
         while (SDL_PollEvent(&e))
         {
-            input.ProcessEvent(e);
-            if (e.type == SDL_EVENT_KEY_DOWN)
-            {
-                if (e.key.key == SDLK_GRAVE)
-                {
-                    Console::ToggleExternal();
-                }
-            }
             if (e.type == SDL_EVENT_QUIT)
+            {
                 running = false;
+                continue;
+            }
+
+            if (e.type == SDL_EVENT_WINDOW_RESIZED)
+            {
+                renderer.OnWindowResize(e.window.data1, e.window.data2);
+                continue;
+            }
+
+            if (e.type == SDL_EVENT_KEY_DOWN && e.key.key == SDLK_GRAVE)
+            {
+                Console::Toggle();
+                if (Console::IsOpen()) 
+                    input.ClearStates();
+                continue;
+            }
+
+            if (Console::IsOpen())
+            {
+                if (Console::HandleEvent(e)) 
+                    continue;
+            }
+
+            input.ProcessEvent(e);
 
             if (e.type == SDL_EVENT_WINDOW_FOCUS_LOST)
             {
@@ -214,6 +231,7 @@ ENGINE_API int Engine_Main(int argc, char** argv)
         if (renderer.GetUI())
         {
             MainMenu::Draw(&renderer);
+            Console::Draw(&renderer);
         }
 
         if (r_max_fps.GetInt() > 0) 

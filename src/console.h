@@ -23,6 +23,9 @@
  */
 #pragma once
 #include <string>
+#include <SDL3/SDL.h>
+
+class Renderer;
 
 namespace Console
 {
@@ -34,7 +37,10 @@ namespace Console
     void Warn(const std::string& message);
     void Error(const std::string& message);
 
-    void SendRemote(const std::string& text);
     void Execute(const std::string& command);
-    void ToggleExternal();
+
+    void Draw(Renderer* renderer);
+    bool HandleEvent(const SDL_Event& e);
+    void Toggle();
+    bool IsOpen();
 }

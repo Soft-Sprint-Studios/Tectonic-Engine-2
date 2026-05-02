@@ -30,6 +30,12 @@ void Input::BeginFrame()
     m_mouseDeltaY = 0.0f;
 }
 
+void Input::ClearStates()
+{
+    m_keys.clear();
+    m_pressed.clear();
+}
+
 void Input::ProcessEvent(const SDL_Event& e)
 {
     if (e.type == SDL_EVENT_KEY_DOWN || e.type == SDL_EVENT_KEY_UP)

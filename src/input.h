@@ -30,6 +30,7 @@ class Input
 public:
     void BeginFrame();
     void ProcessEvent(const SDL_Event& e);
+    void ClearStates();
 
     bool GetKey(SDL_Scancode key) const;
     bool GetKeyDown(SDL_Scancode key) const;

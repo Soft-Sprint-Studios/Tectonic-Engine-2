@@ -16,7 +16,6 @@ set(STB_IMAGE_PATH ${CMAKE_SOURCE_DIR}/libs/stb_image)
 set(GLAD_PATH ${CMAKE_SOURCE_DIR}/libs/glad)
 set(BULLET_PATH ${CMAKE_SOURCE_DIR}/libs/bullet)
 set(CGLTF_PATH ${CMAKE_SOURCE_DIR}/libs/cgltf)
-set(FLTK_PATH ${CMAKE_SOURCE_DIR}/libs/fltk-1.4.4)
 set(OPENAL_PATH ${CMAKE_SOURCE_DIR}/libs/openal-soft-1.24.3)
 set(MINIMP3_PATH ${CMAKE_SOURCE_DIR}/libs/minimp3)
 set(DISCORDRPC_PATH ${CMAKE_SOURCE_DIR}/libs/DiscordRPC)
@@ -75,6 +74,7 @@ if(WIN32)
         ${DISCORDRPC_PATH}/lib/${ARCH_FOLDER}/discord-rpc.lib
         ${SENTRY_PATH}/lib/${ARCH_FOLDER}/sentry.lib
         OpenGL::GL
+        ws2_32
     )
 elseif(UNIX)
     find_package(OpenAL REQUIRED)
@@ -139,35 +139,4 @@ if(WIN32)
     target_sources(Launcher PRIVATE ${LAUNCHER_ICON_RC} ${LAUNCHER_MANIFEST})
     target_link_options(Launcher PRIVATE "/MANIFEST:EMBED" "/MANIFESTINPUT:${LAUNCHER_MANIFEST}" /subsystem:windows)
     target_link_options(Launcher PRIVATE /subsystem:windows)
-endif()
-
-# TConsole
-add_executable(TConsole ${CMAKE_SOURCE_DIR}/tools/tconsole/main.cpp)
-target_compile_features(TConsole PRIVATE cxx_std_17)
-
-target_include_directories(TConsole PRIVATE ${FLTK_PATH}/include src)
-
-if(WIN32)
-    set_target_properties(TConsole PROPERTIES WIN32_EXECUTABLE TRUE)
-    target_link_directories(TConsole PRIVATE ${FLTK_PATH}/lib/${ARCH_FOLDER})
-    target_link_libraries(TConsole PRIVATE fltk ws2_32 comctl32 gdiplus)
-else()
-    target_link_directories(TConsole PRIVATE ${FLTK_PATH}/lib/linux)
-
-    target_link_libraries(TConsole PRIVATE
-        fltk
-        fltk_gl
-        fltk_images
-        X11
-        Xext
-        Xinerama
-        Xft
-        fontconfig
-        Xrender
-        Xfixes
-        Xcursor
-        dl
-        pthread
-        m
-    )
 endif()
