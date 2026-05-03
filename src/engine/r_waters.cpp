@@ -119,6 +119,9 @@ void R_Waters::Draw(const Camera& camera, GLuint vao, GLuint lightmap)
     m_shader.SetMat4("u_reflectProj", m_reflectProj);
     m_shader.SetVec3("u_viewPos", camera.position);
     m_shader.SetFloat("u_time", (float)Time::TotalTime());
+    m_shader.SetInt("u_mat_specular", CVar::GetInt("mat_specular"));
+    m_shader.SetInt("u_mat_bumpmap", CVar::GetInt("mat_bumpmap"));
+    m_shader.SetInt("u_useBump", 1);
 
     int debugMode = 0;
     if (CVar::GetInt("r_debug_lightmaps")) 
