@@ -29,11 +29,13 @@
 #include "renderer.h"
 #include "r_ui.h"
 #include "timing.h"
+#include "filesystem.h"
 #include <cmath>
 #include <vector>
 #include <string>
 #include <glm/glm.hpp>
 #include <algorithm>
+#include <sstream>
 
 namespace Console
 {
@@ -353,5 +355,36 @@ namespace Console
         Console::Log("Date: " + std::string(Build::GetCompileDate()) + " " + std::string(Build::GetCompileTime()));
         Console::Log("Platform: " OS_STRING " (" ARCH_STRING ")");
         Console::Log("Compiler: " COMPILER_STRING);
+    }
+
+    CON_COMMAND(exec, "Executes a script file")
+    {
+        if (args.size() < 2) 
+        {
+            Console::Log("Usage: exec <filename>");
+            return;
+        }
+
+        std::string path = args[1];
+        if (path.find(".cfg") == std::string::npos) 
+            path += ".cfg";
+
+        std::string content = Filesystem::ReadText(path);
+        if (content.empty()) 
+        {
+            Console::Warn("Could not exec " + path);
+            return;
+        }
+
+        std::stringstream ss(content);
+        std::string line;
+        while (std::getline(ss, line)) 
+        {
+            if (line.empty() || line[0] == '#') 
+                continue;
+
+            Execute(line);
+        }
+        Console::Log("Executed " + path);
     }
 }

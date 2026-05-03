@@ -332,3 +332,26 @@ CON_COMMAND(ent_dump, "Lists all entities and their targetnames")
     }
     Console::Log("-------------------");
 }
+
+CON_COMMAND(ent_fire, "Fires an entity input: ent_fire <target> <input> <parameter>")
+{
+    if (args.size() < 3) 
+    {
+        Console::Log("Usage: ent_fire <target> <input> <optional_param>");
+        return;
+    }
+
+    auto ent = EntityManager::FindEntityByName(args[1]);
+    if (!ent) 
+        ent = EntityManager::FindEntityByClass(args[1]);
+
+    if (ent) 
+    {
+        ent->AcceptInput(args[2], args.size() > 3 ? args[3] : "");
+        Console::Log("Fired " + args[2] + " at " + args[1]);
+    }
+    else 
+    {
+        Console::Warn("Target not found!");
+    }
+}
