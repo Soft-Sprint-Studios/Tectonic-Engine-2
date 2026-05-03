@@ -318,6 +318,11 @@ void main()
         float w2 = clamp(dot(tangentNormal, basis1), 0.0, 1.0);
         float w3 = clamp(dot(tangentNormal, basis2), 0.0, 1.0);
 
+        float sumW = w1 + w2 + w3 + 1e-5;
+        w1 /= sumW;
+        w2 /= sumW;
+        w3 /= sumW;
+
         if (u_isModel)
         {
             diffuseLight = Color.rgb * w1 + Color2.rgb * w2 + Color3.rgb * w3;
@@ -334,15 +339,18 @@ void main()
         vec3 light2 = u_isModel ? Color2.rgb : texture(u_lightmap, LmCoord3).rgb;
         vec3 light3 = u_isModel ? Color3.rgb : texture(u_lightmap, LmCoord4).rgb;
 
-        vec3 H1 = normalize(TBN * basis0 + viewDir);
-        vec3 H2 = normalize(TBN * basis1 + viewDir);
-        vec3 H3 = normalize(TBN * basis2 + viewDir);
+        vec3 L1 = normalize(TBN * basis0);
+        vec3 L2 = normalize(TBN * basis1);
+        vec3 L3 = normalize(TBN * basis2);
 
-        float s1 = pow(max(dot(N, H1), 0.0), shine);
-        float s2 = pow(max(dot(N, H2), 0.0), shine);
-        float s3 = pow(max(dot(N, H3), 0.0), shine);
+        vec3 dominantL = normalize(L1 * w1 + L2 * w2 + L3 * w3);
 
-        specularLight = (light1 * s1 + light2 * s2 + light3 * s3) * specMask;
+        vec3 dominantLightColor = light1 * w1 + light2 * w2 + light3 * w3;
+
+        vec3 H = normalize(dominantL + viewDir);
+        float spec = pow(max(dot(N, H), 0.0), shine);
+
+        specularLight = dominantLightColor * spec * specMask;
     }
     else
     {
