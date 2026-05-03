@@ -253,6 +253,7 @@ void R_Lights::RenderShadowMaps(Camera& camera, R_BSP* bsp, R_Models* models)
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    R_State::SetClearColor({ 0.0f, 0.0f, 0.0f, 1.0f });
 }
 
 void R_Lights::Bind(const R_Shader& shader)
