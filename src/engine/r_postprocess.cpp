@@ -34,6 +34,8 @@
 CVar r_postprocess("r_postprocess", "1", "Enable entire post-processing stack.", CVAR_SAVE);
 CVar r_gamma("r_gamma", "1.7", "Display gamma correction value.", CVAR_SAVE);
 CVar r_tonemap("r_tonemap", "1", "Enable filmic ACES tonemapping.", CVAR_SAVE);
+CVar r_fxaa("r_fxaa", "0", "Enable Fast Approximate Anti-Aliasing (Can be used alongside MSAA at the same time).", CVAR_SAVE);
+CVar r_fxaa_strength("r_fxaa_strength", "1.0", "Strength of FXAA smoothing.", CVAR_SAVE);
 
 R_PostProcess::R_PostProcess()
     : m_fbo(0), m_texture(0), m_depthTexture(0),
@@ -262,6 +264,8 @@ void R_PostProcess::Draw(const Camera& camera, R_Lights* lights)
     m_shader.SetInt("u_fogAffectsSky", ppSettings.fogAffectsSky ? 1 : 0);
     m_shader.SetInt("u_tonemap_enabled", r_tonemap.GetInt());
     m_shader.SetFloat("u_Gamma", r_gamma.GetFloat());
+    m_shader.SetInt("u_fxaa", r_fxaa.GetInt());
+    m_shader.SetFloat("u_fxaaStrength", r_fxaa_strength.GetFloat());
     m_shader.SetMat4("u_invProjection", glm::inverse(camera.GetProjectionMatrix()));
 
     glBindVertexArray(m_quadVAO);

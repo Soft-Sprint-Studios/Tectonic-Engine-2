@@ -30,6 +30,8 @@ uniform float u_bloom_intensity;
 uniform int u_volumetrics_enabled;
 uniform int u_ssao_enabled;
 uniform int u_tonemap_enabled;
+uniform int u_fxaa;
+uniform float u_fxaaStrength;
 
 layout(std430, binding = 2) buffer LumData 
 {
@@ -59,6 +61,52 @@ vec3 ACESFilm(vec3 x)
     return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);
 }
 
+vec3 ApplyFXAA(sampler2D tex, vec2 uv)
+{
+    float FXAA_SPAN_MAX = 8.0;
+    float FXAA_REDUCE_MUL = 1.0 / 8.0;
+    float FXAA_REDUCE_MIN = 1.0 / 128.0;
+
+    vec2 texel = 1.0 / textureSize(tex, 0);
+
+    vec3 rgbNW = texture(tex, uv + vec2(-1.0, -1.0) * texel).xyz;
+    vec3 rgbNE = texture(tex, uv + vec2( 1.0, -1.0) * texel).xyz;
+    vec3 rgbSW = texture(tex, uv + vec2(-1.0,  1.0) * texel).xyz;
+    vec3 rgbSE = texture(tex, uv + vec2( 1.0,  1.0) * texel).xyz;
+    vec3 rgbM  = texture(tex, uv).xyz;
+
+    vec3 luma = vec3(0.299, 0.587, 0.114);
+
+    float lumaNW = dot(rgbNW, luma);
+    float lumaNE = dot(rgbNE, luma);
+    float lumaSW = dot(rgbSW, luma);
+    float lumaSE = dot(rgbSE, luma);
+    float lumaM  = dot(rgbM,  luma);
+
+    float lumaMin = min(lumaM, min(min(lumaNW, lumaNE), min(lumaSW, lumaSE)));
+    float lumaMax = max(lumaM, max(max(lumaNW, lumaNE), max(lumaSW, lumaSE)));
+
+    vec2 dir;
+    dir.x = -((lumaNW + lumaNE) - (lumaSW + lumaSE));
+    dir.y =  ((lumaNW + lumaSW) - (lumaNE + lumaSE));
+
+    float dirReduce = max((lumaNW + lumaNE + lumaSW + lumaSE) * (0.25 * FXAA_REDUCE_MUL), FXAA_REDUCE_MIN);
+    float rcpDirMin = 1.0 / (min(abs(dir.x), abs(dir.y)) + dirReduce);
+
+    dir = clamp(dir * rcpDirMin, vec2(-FXAA_SPAN_MAX), vec2(FXAA_SPAN_MAX)) * texel;
+
+    vec3 rgbA = 0.5 * (texture(tex, uv + dir * (1.0 / 3.0 - 0.5)).xyz + texture(tex, uv + dir * (2.0 / 3.0 - 0.5)).xyz);
+
+    vec3 rgbB = rgbA * 0.5 + 0.25 * (texture(tex, uv + dir * (0.0 / 3.0 - 0.5)).xyz + texture(tex, uv + dir * (3.0 / 3.0 - 0.5)).xyz);
+
+    float lumaB = dot(rgbB, luma);
+
+    if (lumaB < lumaMin || lumaB > lumaMax)
+        return rgbA;
+
+    return rgbB;
+}
+
 void main()
 {
     if (u_postprocess_enabled == 0)
@@ -74,7 +122,16 @@ void main()
     float r = texture(u_screenTexture, TexCoords - redOffset).r;
     float g = texture(u_screenTexture, TexCoords - greenOffset).g;
     float b = texture(u_screenTexture, TexCoords).b;
-    vec3 hdrColor = vec3(r, g, b);
+
+    vec3 original = vec3(r, g, b);
+    vec3 fxaaColor = original;
+
+    if (u_fxaa == 1)
+    {
+        fxaaColor = ApplyFXAA(u_screenTexture, TexCoords);
+    }
+
+    vec3 hdrColor = mix(original, fxaaColor, u_fxaaStrength);
 
     hdrColor *= u_exposure;
 	
