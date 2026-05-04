@@ -290,6 +290,7 @@ namespace Console
 
                 CVar::Set(name, args[1]);
                 Log(name + " = " + args[1]);
+                CVar::Save();
             }
             else
             {
