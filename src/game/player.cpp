@@ -39,6 +39,8 @@ CVar g_jump_force("g_jump_force", "5.0", "Initial upward velocity of a jump.", C
 CVar g_view_height("g_view_height", "1.5", "Standing eye level height.", CVAR_SAVE);
 CVar g_crouch_height("g_crouch_height", "0.7", "Crouching eye level height.", CVAR_SAVE);
 CVar g_view_interp("g_view_interp", "12.0", "Speed of view height interpolation.", CVAR_SAVE);
+CVar g_viewbob("g_viewbob", "1", "Enable view bobbing movement.", CVAR_SAVE);
+CVar g_viewbob_scale("g_viewbob_scale", "1.0", "Strength of the view bobbing effect.", CVAR_SAVE);
 
 CON_COMMAND(noclip, "Toggles player noclip mode")
 {
@@ -228,6 +230,30 @@ void Player::Think(float deltaTime)
         btTransform currentTransform = m_character->getGhostObject()->getWorldTransform();
         btVector3 bulletPos = currentTransform.getOrigin();
         m_camera->position = glm::vec3(bulletPos.getX(), bulletPos.getY() + m_viewHeight, bulletPos.getZ());
+
+        // Apply View Bobbing
+        if (g_viewbob.GetInt() > 0 && m_character->onGround() && !m_noclip)
+        {
+            float horizontalSpeed = glm::length(glm::vec2(wishDir.x, wishDir.z));
+            if (horizontalSpeed > 0.1f)
+            {
+                float speedFactor = isSprinting ? 1.4f : 1.0f;
+                m_bobTimer += deltaTime * 10.0f * speedFactor;
+
+                float amount = 0.035f * g_viewbob_scale.GetFloat();
+
+                m_camera->position.y += sin(m_bobTimer) * amount;
+
+                glm::vec3 forward = m_camera->GetForward();
+                glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0, 1, 0)));
+                m_camera->position += right * (cos(m_bobTimer * 0.5f) * (amount * 0.4f));
+            }
+            else
+            {
+                m_bobTimer = glm::mix(m_bobTimer, 0.0f, deltaTime * 5.0f);
+            }
+        }
+
         m_origin = glm::vec3(bulletPos.x(), bulletPos.y(), bulletPos.z());
     }
 }

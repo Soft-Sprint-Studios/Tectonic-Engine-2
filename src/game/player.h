@@ -63,6 +63,7 @@ public:
 
     float m_saveYaw = 0.0f;
     float m_savePitch = 0.0f;
+    float m_bobTimer = 0.0f;
 
 private:
     Camera* m_camera = nullptr;
