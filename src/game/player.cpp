@@ -39,7 +39,7 @@ CVar g_jump_force("g_jump_force", "5.0", "Initial upward velocity of a jump.", C
 CVar g_view_height("g_view_height", "1.5", "Standing eye level height.", CVAR_SAVE);
 CVar g_crouch_height("g_crouch_height", "0.7", "Crouching eye level height.", CVAR_SAVE);
 CVar g_view_interp("g_view_interp", "12.0", "Speed of view height interpolation.", CVAR_SAVE);
-CVar g_viewbob("g_viewbob", "1", "Enable view bobbing movement.", CVAR_SAVE);
+CVar g_viewbob("g_viewbob", "0", "Enable view bobbing movement.", CVAR_SAVE);
 CVar g_viewbob_scale("g_viewbob_scale", "1.0", "Strength of the view bobbing effect.", CVAR_SAVE);
 
 CON_COMMAND(noclip, "Toggles player noclip mode")
