@@ -21,23 +21,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#include "engine_api.h"
-#include "sys_main.h"
+#pragma once
 
-ENGINE_API int Engine_Main(int argc, char** argv)
+namespace Sys
 {
-    if (!Sys::Init(argc, argv))
-    {
-        return -1;
-    }
-
-    // Engine Loop
-    while (!Sys::ShouldExit())
-    {
-        Sys::RunFrame();
-    }
-
-    Sys::Shutdown();
-
-    return 0;
+    bool Init(int argc, char** argv);
+    void RunFrame();
+    void Shutdown();
+    bool ShouldExit();
 }
