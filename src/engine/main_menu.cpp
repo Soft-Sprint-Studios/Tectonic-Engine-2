@@ -108,8 +108,13 @@ namespace MainMenu
 
     void Update(const Input& input, float deltaTime) 
     {
-        if (input.GetKeyDown(SDL_SCANCODE_ESCAPE)) 
-            SetActive(!s_active);
+        if (input.GetKeyDown(SDL_SCANCODE_ESCAPE))
+        {
+            if (Maps::HasMapLoaded())
+            {
+                SetActive(!s_active);
+            }
+        }
     }
 
     void Draw(Renderer* renderer)

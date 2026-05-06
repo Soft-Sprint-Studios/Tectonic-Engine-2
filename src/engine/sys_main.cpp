@@ -210,7 +210,7 @@ namespace Sys
 
             if (e.type == SDL_EVENT_WINDOW_FOCUS_GAINED)
             {
-                if (!MainMenu::IsActive())
+                if (!MainMenu::IsActive() && Maps::HasMapLoaded())
                 {
                     SDL_SetWindowRelativeMouseMode(s_window.Get(), true);
                 }

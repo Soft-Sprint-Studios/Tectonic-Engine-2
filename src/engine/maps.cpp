@@ -35,6 +35,7 @@
 #include "dynamic_sky.h"
 #include "particles.h"
 #include "beams.h"
+#include "main_menu.h"
 
 namespace Maps
 {
@@ -86,6 +87,26 @@ namespace Maps
         }
     }
 
+    void Disconnect()
+    {
+        if (s_currentMapName.empty())
+            return;
+
+        s_currentMapName = "";
+        Console::Log("Disconnecting from map...");
+
+        EntityManager::Shutdown();
+        Physics::Shutdown();
+        DynamicLights::Clear();
+        Particles::Shutdown();
+        Sprites::Clear();
+        Beams::Clear();
+        DynamicSky::Reset();
+
+        Discord::UpdatePresence("Main Menu", "");
+        MainMenu::SetActive(true);
+    }
+
     std::string GetCurrentMapName()
     {
         return s_currentMapName;
@@ -114,6 +135,11 @@ namespace Maps
             return;
         }
         Load(args[1]);
+    }
+
+    CON_COMMAND(disconnect, "Unloads the current map and returns to main menu")
+    {
+        Disconnect();
     }
 
     CON_COMMAND(maps, "Lists all available maps in the maps/ folder")

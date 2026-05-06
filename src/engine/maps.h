@@ -31,6 +31,7 @@ namespace Maps
 {
     void Init(Renderer* renderer, Camera* camera, Input* input);
     void Load(const std::string& mapName);
+    void Disconnect();
     std::string GetCurrentMapName();
     bool HasMapLoaded();
 }
