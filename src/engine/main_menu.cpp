@@ -183,9 +183,9 @@ namespace MainMenu
             Slider(renderer, Localization::Get("Opt_FOV"), fov, 60.0f, 110.0f, startX, startY + 270.0f);
             CVar::Set("fov", std::to_string(fov));
 
-            float sens = CVar::Find("sensitivity")->GetFloat();
+            float sens = CVar::Find("cl_sensitivity")->GetFloat();
             Slider(renderer, Localization::Get("Opt_Sens"), sens, 0.1f, 5.0f, startX, startY + 330.0f);
-            CVar::Set("sensitivity", std::to_string(sens));
+            CVar::Set("cl_sensitivity", std::to_string(sens));
 
             float gamma = CVar::Find("r_gamma")->GetFloat();
             Slider(renderer, Localization::Get("Opt_Gamma"), gamma, 1.0f, 3.0f, startX, startY + 390.0f);

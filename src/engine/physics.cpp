@@ -40,10 +40,10 @@
 #include <algorithm>
 #include <memory>
 
-CVar g_gravity("g_gravity", "-9.81", "World gravity force.", CVAR_SAVE);
-
 namespace Physics
 {
+    CVar sv_gravity("sv_gravity", "-9.81", "World gravity force.", CVAR_SAVE);
+
     static std::unique_ptr<btDefaultCollisionConfiguration> s_collisionConfiguration;
     static std::unique_ptr<btCollisionDispatcher> s_dispatcher;
     static std::unique_ptr<btBroadphaseInterface> s_broadphase;
@@ -73,7 +73,7 @@ namespace Physics
         s_solver = std::make_unique<btSequentialImpulseConstraintSolver>();
         s_dynamicsWorld = std::make_unique<btDiscreteDynamicsWorld>(s_dispatcher.get(), s_broadphase.get(), s_solver.get(), s_collisionConfiguration.get());
 
-        s_dynamicsWorld->setGravity(btVector3(0, g_gravity.GetFloat(), 0));
+        s_dynamicsWorld->setGravity(btVector3(0, sv_gravity.GetFloat(), 0));
 
         s_ghostPairCallback = std::make_unique<btGhostPairCallback>();
         s_dynamicsWorld->getBroadphase()->getOverlappingPairCache()->setInternalGhostPairCallback(s_ghostPairCallback.get());

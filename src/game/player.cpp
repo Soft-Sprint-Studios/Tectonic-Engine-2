@@ -30,17 +30,17 @@
 #include "dynamic_light.h"
 #include <glm/gtx/string_cast.hpp>
 
-CVar sensitivity("sensitivity", "1.0", "Mouse sensitivity multiplier.", CVAR_SAVE);
-CVar g_walk_speed("g_walk_speed", "3.64", "Player walking speed.", CVAR_SAVE);
-CVar g_crouch_speed("g_crouch_speed", "1.82", "Player crouching speed.", CVAR_SAVE);
-CVar g_noclip_speed("g_noclip_speed", "4.0", "Speed while in noclip mode.", CVAR_SAVE);
-CVar g_sprint_speed("g_sprint_speed", "5.0", "Player sprinting speed.", CVAR_SAVE);
-CVar g_jump_force("g_jump_force", "5.0", "Initial upward velocity of a jump.", CVAR_SAVE);
-CVar g_view_height("g_view_height", "1.5", "Standing eye level height.", CVAR_SAVE);
-CVar g_crouch_height("g_crouch_height", "0.7", "Crouching eye level height.", CVAR_SAVE);
-CVar g_view_interp("g_view_interp", "12.0", "Speed of view height interpolation.", CVAR_SAVE);
-CVar g_viewbob("g_viewbob", "0", "Enable view bobbing movement.", CVAR_SAVE);
-CVar g_viewbob_scale("g_viewbob_scale", "1.0", "Strength of the view bobbing effect.", CVAR_SAVE);
+CVar cl_sensitivity("cl_sensitivity", "1.0", "Mouse sensitivity multiplier.", CVAR_SAVE);
+CVar cl_walk_speed("cl_walk_speed", "3.64", "Player walking speed.", CVAR_SAVE);
+CVar cl_crouch_speed("cl_crouch_speed", "1.82", "Player crouching speed.", CVAR_SAVE);
+CVar cl_noclip_speed("cl_noclip_speed", "4.0", "Speed while in noclip mode.", CVAR_SAVE);
+CVar cl_sprint_speed("cl_sprint_speed", "5.0", "Player sprinting speed.", CVAR_SAVE);
+CVar cl_jump_force("cl_jump_force", "5.0", "Initial upward velocity of a jump.", CVAR_SAVE);
+CVar cl_view_height("cl_view_height", "1.5", "Standing eye level height.", CVAR_SAVE);
+CVar cl_crouch_height("cl_crouch_height", "0.7", "Crouching eye level height.", CVAR_SAVE);
+CVar cl_view_interp("cl_view_interp", "12.0", "Speed of view height interpolation.", CVAR_SAVE);
+CVar cl_viewbob("cl_viewbob", "0", "Enable view bobbing movement.", CVAR_SAVE);
+CVar cl_viewbob_scale("cl_viewbob_scale", "1.0", "Strength of the view bobbing effect.", CVAR_SAVE);
 
 CON_COMMAND(noclip, "Toggles player noclip mode")
 {
@@ -112,7 +112,7 @@ void Player::Think(float deltaTime)
         m_savePitch = 0.0f;
     }
 
-    float mouseSensitivity = 0.15f * sensitivity.GetFloat();
+    float mouseSensitivity = 0.15f * cl_sensitivity.GetFloat();
     m_camera->yaw += m_input->GetMouseDeltaX() * mouseSensitivity;
     m_camera->pitch -= m_input->GetMouseDeltaY() * mouseSensitivity;
 
@@ -136,7 +136,7 @@ void Player::Think(float deltaTime)
 
     if (m_input->GetKeyDown(SDL_SCANCODE_SPACE) && m_character->onGround() && !m_noclip)
     {
-        m_character->jump(btVector3(0, g_jump_force.GetFloat(), 0));
+        m_character->jump(btVector3(0, cl_jump_force.GetFloat(), 0));
     }
 
     bool wantCrouch = m_input->GetKey(SDL_SCANCODE_LCTRL);
@@ -179,11 +179,11 @@ void Player::Think(float deltaTime)
 
     glm::vec3 wishDir(0.0f);
     bool isSprinting = m_input->GetKey(SDL_SCANCODE_LSHIFT) && !m_isCrouching;
-    float baseSpeed = isSprinting ? g_sprint_speed.GetFloat() : g_walk_speed.GetFloat();
+    float baseSpeed = isSprinting ? cl_sprint_speed.GetFloat() : cl_walk_speed.GetFloat();
 
     if (m_isCrouching && !m_noclip)
     {
-        baseSpeed = g_crouch_speed.GetFloat();
+        baseSpeed = cl_crouch_speed.GetFloat();
     }
 
     glm::vec3 moveForward = m_noclip ? forward : flatForward;
@@ -205,7 +205,7 @@ void Player::Think(float deltaTime)
     // If we are in noclip then move directly
     if (m_noclip)
     {
-        float noclipSpeed = g_noclip_speed.GetFloat();
+        float noclipSpeed = cl_noclip_speed.GetFloat();
         if (isSprinting) 
             noclipSpeed *= 2.0f;
 
@@ -223,8 +223,8 @@ void Player::Think(float deltaTime)
         glm::vec3 walkDisplacement = wishDir * physicsStep;
         m_character->setWalkDirection(btVector3(walkDisplacement.x, 0.0f, walkDisplacement.z));
 
-        float targetHeight = m_isCrouching ? g_crouch_height.GetFloat() : g_view_height.GetFloat();
-        float interpFactor = 1.0f - exp(-g_view_interp.GetFloat() * deltaTime);
+        float targetHeight = m_isCrouching ? cl_crouch_height.GetFloat() : cl_view_height.GetFloat();
+        float interpFactor = 1.0f - exp(-cl_view_interp.GetFloat() * deltaTime);
         m_viewHeight = glm::mix(m_viewHeight, targetHeight, interpFactor);
 
         btTransform currentTransform = m_character->getGhostObject()->getWorldTransform();
@@ -232,7 +232,7 @@ void Player::Think(float deltaTime)
         m_camera->position = glm::vec3(bulletPos.getX(), bulletPos.getY() + m_viewHeight, bulletPos.getZ());
 
         // Apply View Bobbing
-        if (g_viewbob.GetInt() > 0 && m_character->onGround() && !m_noclip)
+        if (cl_viewbob.GetInt() > 0 && m_character->onGround() && !m_noclip)
         {
             float horizontalSpeed = glm::length(glm::vec2(wishDir.x, wishDir.z));
             if (horizontalSpeed > 0.1f)
@@ -240,7 +240,7 @@ void Player::Think(float deltaTime)
                 float speedFactor = isSprinting ? 1.4f : 1.0f;
                 m_bobTimer += deltaTime * 10.0f * speedFactor;
 
-                float amount = 0.035f * g_viewbob_scale.GetFloat();
+                float amount = 0.035f * cl_viewbob_scale.GetFloat();
 
                 m_camera->position.y += sin(m_bobTimer) * amount;
 
