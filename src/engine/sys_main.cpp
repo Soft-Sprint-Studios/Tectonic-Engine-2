@@ -226,6 +226,13 @@ namespace Sys
             s_renderer.GetUI()->DrawText(fpsText, 10.0f, 10.0f, { 1.0f, 1.0f, 0.0f, 1.0f });
         }
 
+        if (CVar::GetInt("cl_showpos") > 0 && s_renderer.GetUI())
+        {
+            char buf[128];
+            snprintf(buf, sizeof(buf), "pos: %.2f %.2f %.2f  ang: %.2f %.2f", s_camera.position.x, s_camera.position.y, s_camera.position.z, s_camera.pitch, s_camera.yaw);
+            s_renderer.GetUI()->DrawText(buf, 10.0f, 30.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
+        }
+
         // Rendering
         s_renderer.Render(s_camera);
 
