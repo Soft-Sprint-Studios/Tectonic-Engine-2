@@ -56,6 +56,7 @@
 #include "sound.h"
 #include "discord.h"
 #include "sentry.h"
+#include "sound_reverb.h"
 
 namespace Sys
 {
@@ -76,6 +77,7 @@ namespace Sys
         Discord::Init();
         Cubemap::Init();
         Sound::Init();
+        Reverb::Init();
         Networking::Init();
         CVar::Init();
         CommandLine::Init(argc, argv);
@@ -258,6 +260,7 @@ namespace Sys
     void Shutdown()
     {
         s_renderer.Shutdown();
+        Reverb::Shutdown();
         Sound::Shutdown();
         Cubemap::Shutdown();
         DynamicLights::Shutdown();

@@ -21,42 +21,34 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#pragma once
-#include <string>
-#include <unordered_map>
-#include <glm/glm.hpp>
-#include <AL/al.h>
-#include <AL/alc.h>
+#include "entities.h"
+#include "sound.h"
 #include "sound_reverb.h"
 
-namespace Sound
+class TriggerSound : public Entity
 {
-    void Init();
-    void Update(const glm::vec3& listenerPos, const glm::vec3& listenerForward);
-    void Shutdown();
-
-    ALuint GetBuffer(const std::string& path);
-    void SetRoomStyle(int styleID);
-
-    class AudioSource
+public:
+    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
     {
-    public:
-        AudioSource();
-        ~AudioSource();
+        Entity::Spawn(keyvalues);
+        m_styleID = GetInt("dsp", 0);
+    }
 
-        void Play(const std::string& path, bool loop = false);
-        void Stop();
-        
-        void SetVolume(float volume);
-        void SetPitch(float pitch);
-        void SetPosition(const glm::vec3& pos);
-        void SetRadius(float referenceDist, float maxDist);
-        
-        void SetLooping(bool loop);
-        bool IsLooping() const;
-        bool IsPlaying() const;
+    void Touch(Entity* other) override
+    {
+        if (other && other->IsPlayer())
+        {
+            Sound::SetRoomStyle(m_styleID);
+        }
+    }
 
-    private:
-        ALuint m_sourceID = 0;
-    };
-}
+    bool IsCollidable() const override
+    {
+        return false;
+    }
+
+private:
+    int m_styleID = 0;
+};
+
+LINK_ENTITY_TO_CLASS("trigger_sound", TriggerSound)

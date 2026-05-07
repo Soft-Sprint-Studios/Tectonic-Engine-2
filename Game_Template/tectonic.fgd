@@ -452,3 +452,22 @@
 	input TurnOff(void) : "Disable the beam."
 	input Toggle(void) : "Toggle the beam state."
 ]
+
+@SolidClass base(Targetname) = trigger_sound : 
+	"Sets the reverb environment for sounds loaded while the player is inside."
+[
+	dsp(choices) : "DSP Preset" : 0 =
+	[
+		0 : "Normal (Dry)"
+		1 : "Generic"
+		2 : "Metal"
+		3 : "Tunnel"
+		4 : "Chamber"
+		5 : "Cave"
+		6 : "Small Room"
+		7 : "Large Hall"
+		8 : "Sewer"
+		9 : "Hangar"
+		10: "Basement"
+	]
+]

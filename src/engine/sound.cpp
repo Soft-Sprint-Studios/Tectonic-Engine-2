@@ -40,6 +40,7 @@ namespace Sound
     static ALCdevice* s_device = nullptr;
     static ALCcontext* s_context = nullptr;
     static std::unordered_map<std::string, ALuint> s_bufferCache;
+    static int s_currentStyle = 0;
 
     static ALuint Internal_LoadWAV(const std::string& path)
     {
@@ -99,6 +100,20 @@ namespace Sound
 
         ALuint bufferID;
         alGenBuffers(1, &bufferID);
+
+        if (s_currentStyle != 0 && bitsPerSample == 16)
+        {
+            int processedCount = 0;
+            int16_t* processedData = Reverb::ProcessAsync((const int16_t*)audioData, (int)(dataSize / 2), (int)sampleRate, s_currentStyle, processedCount);
+
+            if (processedData)
+            {
+                alBufferData(bufferID, format, processedData, processedCount * 2, sampleRate);
+                delete[] processedData;
+                return bufferID;
+            }
+        }
+
         alBufferData(bufferID, format, audioData, dataSize, sampleRate);
         return bufferID;
     }
@@ -119,6 +134,21 @@ namespace Sound
         ALenum format = (mp3d.info.channels == 2) ? AL_FORMAT_STEREO16 : AL_FORMAT_MONO16;
         ALuint bufferID;
         alGenBuffers(1, &bufferID);
+
+        if (s_currentStyle != 0)
+        {
+            int processedCount = 0;
+            int16_t* processedData = Reverb::ProcessAsync((const int16_t*)pcm.data(), (int)pcm.size(), (int)mp3d.info.hz, s_currentStyle, processedCount);
+
+            if (processedData)
+            {
+                alBufferData(bufferID, format, processedData, processedCount * 2, mp3d.info.hz);
+                delete[] processedData;
+                mp3dec_ex_close(&mp3d);
+                return bufferID;
+            }
+        }
+
         alBufferData(bufferID, format, pcm.data(), (ALsizei)(pcm.size() * 2), mp3d.info.hz);
 
         mp3dec_ex_close(&mp3d);
@@ -149,6 +179,11 @@ namespace Sound
         alListenerfv(AL_POSITION, &listenerPos.x);
         float orientation[] = { listenerForward.x, listenerForward.y, listenerForward.z, 0.0f, 1.0f, 0.0f };
         alListenerfv(AL_ORIENTATION, orientation);
+    }
+
+    void SetRoomStyle(int styleID)
+    {
+        s_currentStyle = styleID;
     }
 
     ALuint GetBuffer(const std::string& fileName)
