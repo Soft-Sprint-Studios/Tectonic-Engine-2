@@ -224,7 +224,10 @@ namespace BSP
                 }
 
                 if (tex.flags & SURF_NODRAW || tex.flags & SURF_SKY || tex.flags & SURF_SKY2D)
-                    continue; // Skip nodraw/triggers
+                {
+                    ProcessFace(faceIdx, false); // Collision only
+                    continue;
+                }
 
                 const TexData& td = d_texdatas[tex.texdata];
                 std::string name = d_stringdata + d_stringtable[td.nameStringTableID];
@@ -684,7 +687,7 @@ namespace BSP
             }
         }
 
-        void ProcessFace(int faceIdx)
+        void ProcessFace(int faceIdx, bool render = true)
         {
             const Face& face = d_faces[faceIdx];
             const TexInfo& tex = d_texinfos[face.texinfo];
@@ -702,7 +705,7 @@ namespace BSP
             bool hasLM = (face.lightofs >= 0 && (face.lightofs + (lw * lh * 4 * totalMaps)) <= m_lightingLength);
 
             int axs[5] = { 0 }, ays[5] = { 0 };
-            if (hasLM)
+            if (hasLM && render)
             {
                 for (int m = 0; m < totalMaps; m++)
                 {
@@ -711,9 +714,9 @@ namespace BSP
             }
 
             if (face.dispinfo != -1)
-                LoadDisplacement(face, tex, td, axs, ays, hasLM, numMaps);
+                LoadDisplacement(face, tex, td, axs, ays, hasLM, numMaps, render);
             else
-                LoadBrush(face, tex, td, axs, ays, hasLM, numMaps);
+                LoadBrush(face, tex, td, axs, ays, hasLM, numMaps, render);
 
             // We must save for overlays to know where to get their lightmaps from
             FaceLightmapInfo lmInfo;
@@ -772,7 +775,7 @@ namespace BSP
             m_atlasX += w;
         }
 
-        void LoadBrush(const Face& face, const TexInfo& tex, const TexData& td, int* axs, int* ays, bool hasLM, int numMaps)
+        void LoadBrush(const Face& face, const TexInfo& tex, const TexData& td, int* axs, int* ays, bool hasLM, int numMaps, bool render)
         {
             std::vector<Vertex> verts;
             std::vector<uint32_t> indices;
@@ -830,9 +833,12 @@ namespace BSP
             // Triangulate face fan
             for (size_t i = 1; i < verts.size() - 1; i++)
             {
-                m_map.renderVertices.push_back(verts[0]);
-                m_map.renderVertices.push_back(verts[i + 1]);
-                m_map.renderVertices.push_back(verts[i]);
+                if (render)
+                {
+                    m_map.renderVertices.push_back(verts[0]);
+                    m_map.renderVertices.push_back(verts[i + 1]);
+                    m_map.renderVertices.push_back(verts[i]);
+                }
 
                 if (!(tex.flags & SURF_WATER))
                 {
@@ -843,7 +849,7 @@ namespace BSP
             }
         }
 
-        void LoadDisplacement(const Face& face, const TexInfo& tex, const TexData& td, int* axs, int* ays, bool hasLM, int numMaps)
+        void LoadDisplacement(const Face& face, const TexInfo& tex, const TexData& td, int* axs, int* ays, bool hasLM, int numMaps, bool render)
         {
             const DispInfo& di = d_dispinfos[face.dispinfo];
             int size = (1 << di.power) + 1;
@@ -952,12 +958,15 @@ namespace BSP
                     int i2 = (y + 1) * size + (x + 1);
                     int i3 = (y + 1) * size + x;
 
-                    m_map.renderVertices.push_back(grid[i0]);
-                    m_map.renderVertices.push_back(grid[i1]);
-                    m_map.renderVertices.push_back(grid[i2]);
-                    m_map.renderVertices.push_back(grid[i0]);
-                    m_map.renderVertices.push_back(grid[i2]);
-                    m_map.renderVertices.push_back(grid[i3]);
+                    if (render)
+                    {
+                        m_map.renderVertices.push_back(grid[i0]);
+                        m_map.renderVertices.push_back(grid[i1]);
+                        m_map.renderVertices.push_back(grid[i2]);
+                        m_map.renderVertices.push_back(grid[i0]);
+                        m_map.renderVertices.push_back(grid[i2]);
+                        m_map.renderVertices.push_back(grid[i3]);
+                    }
 
                     if (!(tex.flags & SURF_WATER))
                     {
