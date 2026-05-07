@@ -164,6 +164,7 @@ namespace Sys
             LightStyles::Update(Time::TotalTime());
             Sprites::Update();
             Beams::Update();
+            Cables::Update();
             Physics::Update(dt);
             EntityManager::UpdateAll(dt);
         }

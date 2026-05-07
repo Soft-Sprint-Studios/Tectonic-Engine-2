@@ -101,6 +101,7 @@ namespace Maps
         Particles::Shutdown();
         Sprites::Clear();
         Beams::Clear();
+        Cables::Clear();
         DynamicSky::Reset();
 
         Discord::UpdatePresence("Main Menu", "");

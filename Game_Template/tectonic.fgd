@@ -471,3 +471,12 @@
 		10: "Basement"
 	]
 ]
+
+@PointClass base(Targetname) = env_cable : 
+	"A hanging cable that sags between two points using a Bezier curve."
+[
+	CableEnd(target_destination) : "Ending Entity" : "" : "Name of the entity where the cable ends."
+	width(float) : "Cable Width" : "0.5"
+	slack(float) : "Cable Sag (Slack)" : "16.0" : "How low the cable hangs in the middle."
+	segments(integer) : "Segments" : 16 : "Number of divisions for the curve."
+]
