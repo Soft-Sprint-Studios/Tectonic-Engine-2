@@ -48,7 +48,6 @@ void R_Cables::Draw(const Camera& camera, const std::vector<std::shared_ptr<Cabl
     if (cables.empty()) 
         return;
 
-    R_State::SetCullFace(GL_NONE);
     m_shader.Bind();
     m_shader.SetMat4("u_view", camera.GetViewMatrix());
     m_shader.SetMat4("u_projection", camera.GetProjectionMatrix());
@@ -91,7 +90,6 @@ void R_Cables::Draw(const Camera& camera, const std::vector<std::shared_ptr<Cabl
         
         glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)vertices.size());
     }
-    R_State::SetCullFace(GL_BACK);
 }
 
 void R_Cables::Shutdown()
