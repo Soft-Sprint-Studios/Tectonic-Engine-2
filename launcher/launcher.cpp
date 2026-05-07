@@ -71,7 +71,7 @@ int main(int argc, char* argv[])
     void* engineLib = dlopen("./libengine.so", RTLD_NOW);
     if (!engineLib)
     {
-        cerr << "Failed to load libengine.so: " << dlerror() << endl;
+        std::cerr << "Failed to load libengine.so: " << dlerror() << std::endl;
         return -1;
     }
 
@@ -79,7 +79,7 @@ int main(int argc, char* argv[])
     auto Engine_Main = reinterpret_cast<EngineMainFunc>(dlsym(engineLib, "Engine_Main"));
     if (const char* error = dlerror())
     {
-        cerr << "Failed to find Engine_Main: " << error << endl;
+        std::cerr << "Failed to find Engine_Main: " << error << std::endl;
         dlclose(engineLib);
         return -1;
     }
