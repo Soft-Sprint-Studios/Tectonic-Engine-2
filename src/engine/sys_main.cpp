@@ -219,8 +219,8 @@ namespace Sys
 
         Binds::Update(s_input);
 
-        // FPS Overlays
-        if (CVar::GetInt("r_show_fps") > 0 && s_renderer.GetUI())
+        // HUD Overlays
+        if (CVar::GetInt("cl_showfps") > 0 && s_renderer.GetUI())
         {
             std::string fpsText = "FPS: " + std::to_string(Time::FPS());
             s_renderer.GetUI()->DrawText(fpsText, 10.0f, 10.0f, { 1.0f, 1.0f, 0.0f, 1.0f });

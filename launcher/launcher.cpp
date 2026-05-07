@@ -35,72 +35,58 @@ using EngineMainFunc = int(*)(int, char**);
 
 #ifdef PLATFORM_WINDOWS
 // Hint Windows to prefer discrete AMD/NVIDIA GPUs over integrated ones (mostly for laptops).
-extern "C" {
+extern "C" 
+{
     __declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
     __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 0x00000001;
 }
-#endif
 
-class DynamicLibrary {
-public:
-    DynamicLibrary(const std::string& path) 
-    {
-#ifdef PLATFORM_WINDOWS
-        handle = LoadLibraryA(path.c_str());
-        if (!handle)
-            throw std::runtime_error("Failed to load library: " + path);
-#else
-        handle = dlopen(path.c_str(), RTLD_NOW);
-        if (!handle)
-            throw std::runtime_error(std::string("Failed to load library: ") + dlerror());
-#endif
-    }
-
-    ~DynamicLibrary() 
-    {
-#ifdef PLATFORM_WINDOWS
-        if (handle) 
-            FreeLibrary((HMODULE)handle);
-#else
-        if (handle) 
-            dlclose(handle);
-#endif
-    }
-
-    void* getSymbol(const std::string& name) 
-    {
-#ifdef PLATFORM_WINDOWS
-        void* sym = (void*)GetProcAddress((HMODULE)handle, name.c_str());
-        if (!sym)
-            throw std::runtime_error("Failed to find symbol: " + name);
-        return sym;
-#else
-        dlerror(); // clear
-        void* sym = dlsym(handle, name.c_str());
-        if (const char* err = dlerror())
-            throw std::runtime_error(std::string("Failed to find symbol: ") + err);
-        return sym;
-#endif
-    }
-
-private:
-    void* handle{};
-};
-
-#ifdef PLATFORM_WINDOWS
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) 
 {
-    DynamicLibrary lib("Engine.dll");
-    auto Engine_Main = reinterpret_cast<EngineMainFunc>(lib.getSymbol("Engine_Main"));
+    int result = 0;
+    HMODULE engineLib = LoadLibraryA("engine.dll");
+    if (!engineLib)
+    {
+        MessageBoxA(nullptr, "Failed to load engine.dll", "Engine Error", MB_ICONERROR | MB_OK);
+        return -1;
+    }
 
-    return Engine_Main(__argc, __argv);
+    auto Engine_Main = reinterpret_cast<EngineMainFunc>(GetProcAddress(engineLib, "Engine_Main"));
+    if (!Engine_Main) 
+    {
+        MessageBoxA(nullptr, "Failed to find Engine_Main in engine.dll", "Engine Error", MB_ICONERROR | MB_OK);
+        FreeLibrary(engineLib);
+        return -1;
+    }
+
+    result = Engine_Main(__argc, __argv);
+    FreeLibrary(engineLib);
+
+    return result;
 }
 #else
-int main(int argc, char* argv[])
+int main(int argc, char* argv[]) 
 {
-    DynamicLibrary lib("./Engine.so");
-    auto Engine_Main = reinterpret_cast<EngineMainFunc>(lib.getSymbol("Engine_Main"));
+    int result = 0;
+    void* engineLib = dlopen("./libengine.so", RTLD_NOW);
+    if (!engineLib)
+    {
+        cerr << "Failed to load libengine.so: " << dlerror() << endl;
+        return -1;
+    }
 
-    return Engine_Main(argc, argv);
+    dlerror();
+    auto Engine_Main = reinterpret_cast<EngineMainFunc>(dlsym(engineLib, "Engine_Main"));
+    if (const char* error = dlerror())
+    {
+        cerr << "Failed to find Engine_Main: " << error << endl;
+        dlclose(engineLib);
+        return -1;
+    }
+
+    result = Engine_Main(argc, argv);
+    dlclose(engineLib);
+
+    return result;
 }
 #endif

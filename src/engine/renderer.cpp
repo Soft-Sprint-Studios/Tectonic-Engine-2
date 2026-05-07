@@ -39,7 +39,8 @@ CVar r_debug_lightmaps_directional("r_debug_lightmaps_directional", "0", "Visual
 CVar r_debug_vertexlight("r_debug_vertexlight", "0", "Visualize raw vertex lighting.", CVAR_NONE);
 CVar r_debug_vertexlight_directional("r_debug_vertexlight_directional", "0", "Visualize directional vertex lighting.", CVAR_NONE);
 
-CVar r_fov("fov", "75.0", "Vertical field of view.", CVAR_SAVE);
+CVar cl_showfps("cl_showfps", "0", "Draw the current frames per second at the top of the screen.", CVAR_SAVE);
+CVar cl_fov("cl_fov", "75.0", "Vertical field of view.", CVAR_SAVE);
 CVar r_skybox("r_skybox", "1", "Enable skybox rendering.", CVAR_SAVE);
 CVar r_particles("r_particles", "1", "Enable particle system rendering.", CVAR_SAVE);
 CVar r_water("r_water", "1", "Enable water rendering.", CVAR_SAVE);
@@ -291,7 +292,7 @@ void Renderer::Render(Camera& camera)
     int w, h;
     SDL_GetWindowSize(m_windowRef->Get(), &w, &h);
 
-    camera.SetFOV(r_fov.GetFloat());
+    camera.SetFOV(cl_fov.GetFloat());
     camera.SetAspectRatio((float)w / (float)h);
 
     R_State::SetWireframe(r_wireframe.GetInt() > 0);
