@@ -27,8 +27,6 @@ uniform vec3 u_cubemapMaxs;
 uniform bool u_useBump;
 uniform bool u_isModel;
 uniform vec3 u_viewPos;
-uniform int u_debugMode;
-uniform int u_fullbright;
 uniform mat4 u_view;
 
 uniform int u_mat_specular;
@@ -468,70 +466,5 @@ void main()
     vec3 finalDiffuse = albedo.rgb * (diffuseLight * 2.0 + dynDiffuse + sunFinal);
     vec3 finalSpecular = specularLight + dynSpecular;
 
-    if (u_fullbright == 1)
-    {
-        FragColor = vec4(albedo.rgb, albedo.a);
-    }
-    else
-    {
-        FragColor = vec4(finalDiffuse + finalSpecular, albedo.a);
-    }
-
-    // Debug Tools
-    if (u_debugMode == 1) // r_debug_lightmaps
-    {
-        if (!u_isModel) 
-        {
-            FragColor = vec4(texture(u_lightmap, LmCoord1).rgb, 1.0);
-        }
-        else 
-        {
-            FragColor = vec4(0.0, 0.0, 0.0, 1.0);
-        }
-    }
-    else if (u_debugMode == 2) // r_debug_lightmaps_directional
-    {
-        if (!u_isModel) 
-        {
-            float w1 = max(dot(tangentNormal, basis0), 0.0);
-            float w2 = max(dot(tangentNormal, basis1), 0.0);
-            float w3 = max(dot(tangentNormal, basis2), 0.0);
-
-            vec3 l1 = texture(u_lightmap, LmCoord2).rgb;
-            vec3 l2 = texture(u_lightmap, LmCoord3).rgb;
-            vec3 l3 = texture(u_lightmap, LmCoord4).rgb;
-
-            FragColor = vec4(l1 * w1 + l2 * w2 + l3 * w3, 1.0);
-        }
-        else 
-        {
-            FragColor = vec4(0.0, 0.0, 0.0, 1.0);
-        }
-    }
-    else if (u_debugMode == 3) // r_debug_vertexlight
-    {
-        if (u_isModel) 
-        {
-            FragColor = vec4(Color.rgb, 1.0);
-        }
-        else 
-        {
-            FragColor = vec4(0.0, 0.0, 0.0, 1.0);
-        }
-    }
-    else if (u_debugMode == 4) // r_debug_vertexlight_directional
-    {
-        if (u_isModel) 
-        {
-            float w1 = max(dot(tangentNormal, basis0), 0.0);
-            float w2 = max(dot(tangentNormal, basis1), 0.0);
-            float w3 = max(dot(tangentNormal, basis2), 0.0);
-
-            FragColor = vec4(Color.rgb * w1 + Color2.rgb * w2 + Color3.rgb * w3, 1.0);
-        }
-        else 
-        {
-            FragColor = vec4(0.0, 0.0, 0.0, 1.0);
-        }
-    }
+    FragColor = vec4(finalDiffuse + finalSpecular, albedo.a);
 }

@@ -34,11 +34,6 @@
 #include "concmd.h"
 #include <cstring>
 
-CVar r_debug_lightmaps("r_debug_lightmaps", "0", "Visualize raw lightmap data.", CVAR_NONE);
-CVar r_debug_lightmaps_directional("r_debug_lightmaps_directional", "0", "Visualize directional lightmap data.", CVAR_NONE);
-CVar r_debug_vertexlight("r_debug_vertexlight", "0", "Visualize raw vertex lighting.", CVAR_NONE);
-CVar r_debug_vertexlight_directional("r_debug_vertexlight_directional", "0", "Visualize directional vertex lighting.", CVAR_NONE);
-
 CVar cl_showfps("cl_showfps", "0", "Draw the current frames per second at the top of the screen.", CVAR_SAVE);
 CVar cl_fov("cl_fov", "75.0", "Vertical field of view.", CVAR_SAVE);
 CVar r_skybox("r_skybox", "1", "Enable skybox rendering.", CVAR_SAVE);
@@ -46,7 +41,6 @@ CVar r_particles("r_particles", "1", "Enable particle system rendering.", CVAR_S
 CVar r_water("r_water", "1", "Enable water rendering.", CVAR_SAVE);
 CVar r_sprites("r_sprites", "1", "Enable sprite rendering.", CVAR_SAVE);
 CVar r_wireframe("r_wireframe", "0", "Render the scene in wireframe mode.", CVAR_NONE);
-CVar r_fullbright("r_fullbright", "0", "Render the scene with no baked or dynamic lighting.", CVAR_NONE);
 CVar r_zprepass("r_zprepass", "1", "Use a depth-only prepass to reduce overdraw.", CVAR_SAVE);
 
 CVar mat_specular("mat_specular", "1", "Enable specular mapping on materials.", CVAR_SAVE);
@@ -145,7 +139,6 @@ void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater
     m_worldShader.SetMat4("u_view", camera.GetViewMatrix());
     m_worldShader.SetMat4("u_model", glm::mat4(1.0f));
     m_worldShader.SetVec3("u_viewPos", camera.position);
-    m_worldShader.SetInt("u_fullbright", r_fullbright.GetInt());
 
     m_worldShader.SetInt("u_mat_specular", mat_specular.GetInt());
     m_worldShader.SetInt("u_mat_bumpmap", mat_bumpmap.GetInt());
@@ -177,18 +170,6 @@ void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater
         glActiveTexture(GL_TEXTURE4);
         glBindTexture(GL_TEXTURE_CUBE_MAP, probe->textureID);
     }
-
-    // Determine debug mode
-    int debugMode = 0;
-    if (r_debug_lightmaps.GetInt())
-        debugMode = 1;
-    else if (r_debug_lightmaps_directional.GetInt())
-        debugMode = 2;
-    else if (r_debug_vertexlight.GetInt())
-        debugMode = 3;
-    else if (r_debug_vertexlight_directional.GetInt())
-        debugMode = 4;
-    m_worldShader.SetInt("u_debugMode", debugMode);
 
     if (m_lightRenderer)
     {

@@ -21,7 +21,6 @@ uniform mat4 u_reflectProj;
 
 uniform vec3 u_viewPos;
 uniform float u_time;
-uniform int u_debugMode;
 
 uniform bool u_useBump;
 uniform int u_mat_specular;
@@ -112,12 +111,6 @@ void main()
 
     vec3 finalColor = (reflection * fresnel) + specularLight;
     finalColor *= diffuseLight;
-	
-	if (u_debugMode == 1) 
-    {
-        FragColor = vec4(texture(u_lightmap, v_LmCoord).rgb * 2.0, 1.0);
-        return;
-    }
 
     FragColor = vec4(finalColor, 0.95);
 }

@@ -123,11 +123,6 @@ void R_Waters::Draw(const Camera& camera, GLuint vao, GLuint lightmap)
     m_shader.SetInt("u_mat_bumpmap", CVar::GetInt("mat_bumpmap"));
     m_shader.SetInt("u_useBump", 1);
 
-    int debugMode = 0;
-    if (CVar::GetInt("r_debug_lightmaps")) 
-        debugMode = 1;
-    m_shader.SetInt("u_debugMode", debugMode);
-
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_reflectTex);
     m_shader.SetInt("u_reflectionTexture", 0);
