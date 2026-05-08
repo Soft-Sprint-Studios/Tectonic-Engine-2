@@ -22,42 +22,33 @@
  * SOFTWARE.
  */
 #include "entities.h"
-#include "dynamic_sky.h"
+#include "sound.h"
+#include "sound_reverb.h"
 
-class Dynamic_Sky : public Entity
+class TriggerDSP : public Entity
 {
 public:
     void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
     {
         Entity::Spawn(keyvalues);
-        DynamicSky::SetEnabled(true);
-
-        glm::vec3 angles = GetVector("angles", { 0, 0, 0 });
-        float p = glm::radians(angles.x);
-        float y = glm::radians(angles.y);
-
-        float hx = cos(p) * cos(y);
-        float hy = cos(p) * sin(y);
-        float hz = -sin(p);
-
-        DynamicSky::SetSunDirection(glm::normalize(glm::vec3(-hx, hz, hy)));
-
-        glm::vec4 lightData = GetVector4("_light", glm::vec4(255, 255, 255, 255));
-        glm::vec3 color = glm::vec3(lightData.x, lightData.y, lightData.z) / 255.0f;
-        float intensity = lightData.w / 255.0f;
-
-        DynamicSky::SetSunColor(color * intensity);
-        DynamicSky::SetVolumetrics(GetFloat("volumetric_intensity", 0.0f), GetInt("volumetric_steps", 8));
-        DynamicSky::SetCSM(GetInt("hascsm", 1) != 0);
-    }   
-
-    void AcceptInput(const std::string& input, const std::string& param) override
-    {
-        if (input == "Enable")
-            DynamicSky::SetEnabled(true);
-        if (input == "Disable")
-            DynamicSky::SetEnabled(false);
+        m_styleID = GetInt("dsp", 0);
     }
+
+    void Touch(Entity* other) override
+    {
+        if (other && other->IsPlayer())
+        {
+            Sound::SetRoomStyle(m_styleID);
+        }
+    }
+
+    bool IsCollidable() const override
+    {
+        return false;
+    }
+
+private:
+    int m_styleID = 0;
 };
 
-LINK_ENTITY_TO_CLASS("dynamic_sky", Dynamic_Sky)
+LINK_ENTITY_TO_CLASS("trigger_dsp", TriggerDSP)

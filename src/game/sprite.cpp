@@ -24,7 +24,7 @@
 #include "entities.h"
 #include "sprite.h"
 
-class SpriteEmitter : public Entity
+class EnvSprite : public Entity
 {
 public:
     void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
@@ -52,9 +52,9 @@ public:
     void OnSave() override
     {
         Entity::OnSave();
-        AddSaveField(DATA_FIELD(SpriteEmitter, m_texturePath, FieldType::String));
+        AddSaveField(DATA_FIELD(EnvSprite, m_texturePath, FieldType::String));
         m_isVisible = m_sprite->IsActive();
-        AddSaveField(DATA_FIELD(SpriteEmitter, m_isVisible, FieldType::Bool));
+        AddSaveField(DATA_FIELD(EnvSprite, m_isVisible, FieldType::Bool));
     }
 
     void AcceptInput(const std::string& input, const std::string& param) override
@@ -75,4 +75,4 @@ private:
     bool m_isVisible = true;
 };
 
-LINK_ENTITY_TO_CLASS("sprite", SpriteEmitter)
+LINK_ENTITY_TO_CLASS("env_sprite", EnvSprite)

@@ -24,7 +24,7 @@
 #include "entities.h"
 #include "sound.h"
 
-class SoundEntity : public Entity
+class EnvSound : public Entity
 {
 public:
     void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
@@ -54,12 +54,12 @@ public:
     void OnSave() override
     {
         Entity::OnSave();
-        AddSaveField(DATA_FIELD(SoundEntity, m_soundName, FieldType::String));
-        AddSaveField(DATA_FIELD(SoundEntity, m_isLooping, FieldType::Bool));
-        AddSaveField(DATA_FIELD(SoundEntity, m_volume, FieldType::Float));
-        AddSaveField(DATA_FIELD(SoundEntity, m_pitch, FieldType::Float));
+        AddSaveField(DATA_FIELD(EnvSound, m_soundName, FieldType::String));
+        AddSaveField(DATA_FIELD(EnvSound, m_isLooping, FieldType::Bool));
+        AddSaveField(DATA_FIELD(EnvSound, m_volume, FieldType::Float));
+        AddSaveField(DATA_FIELD(EnvSound, m_pitch, FieldType::Float));
         m_isPlaying = m_source.IsPlaying();
-        AddSaveField(DATA_FIELD(SoundEntity, m_isPlaying, FieldType::Bool));
+        AddSaveField(DATA_FIELD(EnvSound, m_isPlaying, FieldType::Bool));
     }
 
     void AcceptInput(const std::string& inputName, const std::string& parameter) override
@@ -105,4 +105,4 @@ private:
     bool m_isPlaying = false;
 };
 
-LINK_ENTITY_TO_CLASS("sound", SoundEntity)
+LINK_ENTITY_TO_CLASS("env_sound", EnvSound)

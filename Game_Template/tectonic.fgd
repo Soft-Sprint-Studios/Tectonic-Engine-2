@@ -236,7 +236,7 @@
 	output OnPressed(void) : "Fired when the button is pressed by a player."
 ]
 
-@PointClass base(Targetname) iconsprite("editor/ambient_generic.vmt") = sound : 
+@PointClass base(Targetname) iconsprite("editor/ambient_generic.vmt") = env_sound : 
 	"A positional 3D sound entity."
 [
 	message(string) : "Sound Name" : "" : "File path relative to sounds/ folder (e.g. ambient/wind.wav)"
@@ -258,7 +258,7 @@
 	input ToggleLoop(void) : "Toggles the looping state."
 ]
 
-@PointClass base(Targetname) studio("models/editor/camera.mdl") = postprocess_controller : "Controls global post-processing effects."
+@PointClass base(Targetname) studio("models/editor/camera.mdl") = env_postprocess_controller : "Controls global post-processing effects."
 [
 	vignette(float) : "Vignette Strength" : "0.0" : "How strong the vignette effect is. Range 0.0 to 1.0."
 	chroma(float) : "Chromatic Aberration Strength" : "0.0" : "How strong the chromatic aberration is. Good values are around 0.001 to 0.01."
@@ -298,7 +298,7 @@
 	input DisableFog(void) : "Disables the fog effect. Other effects remain active."
 ]
 
-@PointClass base(Targetname, Angles) lightprop("models/editor/spot.mdl") lightcone() = particle_system : "Particle System Emitter"
+@PointClass base(Targetname, Angles) lightprop("models/editor/spot.mdl") lightcone() = env_particle_system : "Particle System Emitter"
 [
 	effect_name(string) : "Effect Name" : "" : "Name of the effect defined in particles.def"
 	spawnflags(flags) =
@@ -310,7 +310,7 @@
 	input Stop(void) : "Stop emitting particles."
 ]
 
-@PointClass base(Targetname) sprite() = sprite : "Sprite Entity"
+@PointClass base(Targetname) sprite() = env_sprite : "Sprite Entity"
 [
     texture(string) : "Sprite Texture" : "" : "File path of the texture (e.g. textures/sprites/glow.png)."
     scale(float) : "Scale" : "1.0"
@@ -356,7 +356,7 @@
 	fademaxdist(float) : "End Fade Dist" : 0 : "Maximum distance at which the overlay is visible (0 = don't fade out)."
 ]
 
-@PointClass base(Targetname, Angles) = dynamic_sky : "Procedural Atmosphere and CSM Controller"
+@PointClass base(Targetname, Angles) = env_dynamic_sky : "Procedural Atmosphere and CSM Controller"
 [
 	angles(angle) : "Sun Pitch Yaw Roll" : "0 0 0" : "The direction the sun is coming from. Pitch -90 is straight up, Yaw 45 is North-East."
 	_light(color255) : "Sun Color and Intensity" : "255 255 255 200" : "Color and intensity of the sunlight."
@@ -453,7 +453,7 @@
 	input Toggle(void) : "Toggle the beam state."
 ]
 
-@SolidClass base(Targetname) = trigger_sound : 
+@SolidClass base(Targetname) = trigger_dsp : 
 	"Sets the reverb environment for sounds loaded while the player is inside."
 [
 	dsp(choices) : "DSP Preset" : 0 =

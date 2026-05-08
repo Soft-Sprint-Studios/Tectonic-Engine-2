@@ -22,46 +22,42 @@
  * SOFTWARE.
  */
 #include "entities.h"
-#include "particles.h"
+#include "dynamic_sky.h"
 
-class ParticleEntity : public Entity
+class EnvDynamicSky : public Entity
 {
 public:
     void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
     {
         Entity::Spawn(keyvalues);
-        m_effect = GetValue("effect_name");
-        m_sys = Particles::CreateSystem(m_effect, m_origin);
-        if (m_sys) 
-        {
-            glm::vec3 angles = GetVector("angles");
-            m_sys->SetAngles(angles);
-            m_isActive = !HasSpawnFlag(1);
-            m_sys->SetActive(m_isActive);
-        }
-    }
+        DynamicSky::SetEnabled(true);
 
-    void OnSave() override
-    {
-        Entity::OnSave();
-        AddSaveField(DATA_FIELD(ParticleEntity, m_effect, FieldType::String));
-        AddSaveField(DATA_FIELD(ParticleEntity, m_isActive, FieldType::Bool));
-    }
+        glm::vec3 angles = GetVector("angles", { 0, 0, 0 });
+        float p = glm::radians(angles.x);
+        float y = glm::radians(angles.y);
+
+        float hx = cos(p) * cos(y);
+        float hy = cos(p) * sin(y);
+        float hz = -sin(p);
+
+        DynamicSky::SetSunDirection(glm::normalize(glm::vec3(-hx, hz, hy)));
+
+        glm::vec4 lightData = GetVector4("_light", glm::vec4(255, 255, 255, 255));
+        glm::vec3 color = glm::vec3(lightData.x, lightData.y, lightData.z) / 255.0f;
+        float intensity = lightData.w / 255.0f;
+
+        DynamicSky::SetSunColor(color * intensity);
+        DynamicSky::SetVolumetrics(GetFloat("volumetric_intensity", 0.0f), GetInt("volumetric_steps", 8));
+        DynamicSky::SetCSM(GetInt("hascsm", 1) != 0);
+    }   
 
     void AcceptInput(const std::string& input, const std::string& param) override
     {
-        if (!m_sys) 
-            return;
-        if (input == "Start") 
-            m_sys->SetActive(true);
-        if (input == "Stop") 
-            m_sys->SetActive(false);
+        if (input == "Enable")
+            DynamicSky::SetEnabled(true);
+        if (input == "Disable")
+            DynamicSky::SetEnabled(false);
     }
-
-private:
-    std::string m_effect;
-    std::shared_ptr<ParticleSystem> m_sys;
-    bool m_isActive = true;
 };
 
-LINK_ENTITY_TO_CLASS("particle_system", ParticleEntity)
+LINK_ENTITY_TO_CLASS("env_dynamic_sky", EnvDynamicSky)

@@ -22,33 +22,46 @@
  * SOFTWARE.
  */
 #include "entities.h"
-#include "sound.h"
-#include "sound_reverb.h"
+#include "particles.h"
 
-class TriggerSound : public Entity
+class EnvParticleSystem : public Entity
 {
 public:
     void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
     {
         Entity::Spawn(keyvalues);
-        m_styleID = GetInt("dsp", 0);
-    }
-
-    void Touch(Entity* other) override
-    {
-        if (other && other->IsPlayer())
+        m_effect = GetValue("effect_name");
+        m_sys = Particles::CreateSystem(m_effect, m_origin);
+        if (m_sys) 
         {
-            Sound::SetRoomStyle(m_styleID);
+            glm::vec3 angles = GetVector("angles");
+            m_sys->SetAngles(angles);
+            m_isActive = !HasSpawnFlag(1);
+            m_sys->SetActive(m_isActive);
         }
     }
 
-    bool IsCollidable() const override
+    void OnSave() override
     {
-        return false;
+        Entity::OnSave();
+        AddSaveField(DATA_FIELD(EnvParticleSystem, m_effect, FieldType::String));
+        AddSaveField(DATA_FIELD(EnvParticleSystem, m_isActive, FieldType::Bool));
+    }
+
+    void AcceptInput(const std::string& input, const std::string& param) override
+    {
+        if (!m_sys) 
+            return;
+        if (input == "Start") 
+            m_sys->SetActive(true);
+        if (input == "Stop") 
+            m_sys->SetActive(false);
     }
 
 private:
-    int m_styleID = 0;
+    std::string m_effect;
+    std::shared_ptr<ParticleSystem> m_sys;
+    bool m_isActive = true;
 };
 
-LINK_ENTITY_TO_CLASS("trigger_sound", TriggerSound)
+LINK_ENTITY_TO_CLASS("env_particle_system", EnvParticleSystem)

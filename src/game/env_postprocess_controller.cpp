@@ -24,7 +24,7 @@
 #include "entities.h"
 #include "postprocess.h"
 
-class PostProcessController : public Entity
+class EnvPostProcessController : public Entity
 {
 public:
     void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
@@ -54,20 +54,20 @@ public:
     void OnSave() override
     {
         Entity::OnSave();
-        AddSaveField(DATA_FIELD(PostProcessController, m_enabled, FieldType::Bool));
-        AddSaveField(DATA_FIELD(PostProcessController, m_vignette, FieldType::Float));
-        AddSaveField(DATA_FIELD(PostProcessController, m_chroma, FieldType::Float));
-        AddSaveField(DATA_FIELD(PostProcessController, m_grain, FieldType::Float));
-        AddSaveField(DATA_FIELD(PostProcessController, m_bw, FieldType::Float));
-        AddSaveField(DATA_FIELD(PostProcessController, m_negative, FieldType::Float));
-        AddSaveField(DATA_FIELD(PostProcessController, m_sepia, FieldType::Float));
-        AddSaveField(DATA_FIELD(PostProcessController, m_sharpen, FieldType::Float));
-        AddSaveField(DATA_FIELD(PostProcessController, m_lensDirtStrength, FieldType::Float));
-        AddSaveField(DATA_FIELD(PostProcessController, m_lensDirtTexture, FieldType::String));
-        AddSaveField(DATA_FIELD(PostProcessController, m_fogColor, FieldType::Vec3));
-        AddSaveField(DATA_FIELD(PostProcessController, m_fogStart, FieldType::Float));
-        AddSaveField(DATA_FIELD(PostProcessController, m_fogEnd, FieldType::Float));
-        AddSaveField(DATA_FIELD(PostProcessController, m_fogAffectsSky, FieldType::Bool));
+        AddSaveField(DATA_FIELD(EnvPostProcessController, m_enabled, FieldType::Bool));
+        AddSaveField(DATA_FIELD(EnvPostProcessController, m_vignette, FieldType::Float));
+        AddSaveField(DATA_FIELD(EnvPostProcessController, m_chroma, FieldType::Float));
+        AddSaveField(DATA_FIELD(EnvPostProcessController, m_grain, FieldType::Float));
+        AddSaveField(DATA_FIELD(EnvPostProcessController, m_bw, FieldType::Float));
+        AddSaveField(DATA_FIELD(EnvPostProcessController, m_negative, FieldType::Float));
+        AddSaveField(DATA_FIELD(EnvPostProcessController, m_sepia, FieldType::Float));
+        AddSaveField(DATA_FIELD(EnvPostProcessController, m_sharpen, FieldType::Float));
+        AddSaveField(DATA_FIELD(EnvPostProcessController, m_lensDirtStrength, FieldType::Float));
+        AddSaveField(DATA_FIELD(EnvPostProcessController, m_lensDirtTexture, FieldType::String));
+        AddSaveField(DATA_FIELD(EnvPostProcessController, m_fogColor, FieldType::Vec3));
+        AddSaveField(DATA_FIELD(EnvPostProcessController, m_fogStart, FieldType::Float));
+        AddSaveField(DATA_FIELD(EnvPostProcessController, m_fogEnd, FieldType::Float));
+        AddSaveField(DATA_FIELD(EnvPostProcessController, m_fogAffectsSky, FieldType::Bool));
     }
 
     void AcceptInput(const std::string& inputName, const std::string& parameter) override
@@ -183,4 +183,4 @@ private:
     bool m_enabled = false;
 };
 
-LINK_ENTITY_TO_CLASS("postprocess_controller", PostProcessController)
+LINK_ENTITY_TO_CLASS("env_postprocess_controller", EnvPostProcessController)
