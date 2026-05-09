@@ -778,3 +778,7 @@
 
 	output OnTrigger(void) : "Fired each time it repeats."
 ]
+
+@SolidClass = func_clip : "A brush entity that blocks movement but is completely invisible."
+[
+]
