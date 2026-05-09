@@ -66,6 +66,16 @@ public:
         return true; 
     }
 
+    virtual bool IsRenderable() const
+    {
+        return false;
+    }
+
+    int GetBModelIndex() const
+    {
+        return m_bmodelIndex;
+    }
+
     bool HasSpawnFlag(int bit) const;
     void SetSpawnFlag(int bit, bool state);
 
@@ -107,6 +117,7 @@ protected:
     std::string m_className;
     std::string m_targetName;
     int m_spawnflags = 0;
+    int m_bmodelIndex = -1;
     btCollisionObject* m_physObject = nullptr;
 
     std::unordered_map<std::string, std::string> m_keyvalues;

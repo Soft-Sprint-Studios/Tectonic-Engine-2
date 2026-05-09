@@ -225,7 +225,7 @@ namespace BSP
 
                 if (tex.flags & SURF_NODRAW || tex.flags & SURF_SKY || tex.flags & SURF_SKY2D)
                 {
-                    ProcessFace(faceIdx, false); // Collision only
+                    ProcessFace(faceIdx, nullptr, false); // Collision only
                     continue;
                 }
 
@@ -269,6 +269,47 @@ namespace BSP
             ParseOverlays();
 
             m_map.opaqueVertexCount = (uint32_t)m_map.renderVertices.size();
+
+            // Process sub-models for entities
+            for (auto& ent : m_map.entities)
+            {
+                auto modelIt = ent.keyvalues.find("model");
+                if (modelIt != ent.keyvalues.end() && modelIt->second[0] == '*')
+                {
+                    int modelIdx = std::stoi(modelIt->second.substr(1));
+                    ent.modelIndex = modelIdx;
+                    const Model& model = d_models[modelIdx];
+
+                    std::unordered_map<std::string, std::vector<int>> subBatches;
+                    for (int i = 0; i < model.numfaces; i++)
+                    {
+                        int fIdx = model.firstface + i;
+                        const TexInfo& tex = d_texinfos[d_faces[fIdx].texinfo];
+                        if (tex.flags & SURF_NODRAW) 
+                            continue;
+
+                        const TexData& td = d_texdatas[tex.texdata];
+                        std::string name = d_stringdata + d_stringtable[td.nameStringTableID];
+                        std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+                        subBatches[name].push_back(fIdx);
+                    }
+
+                    for (auto const& [texName, fIndices] : subBatches)
+                    {
+                        DrawCall dc;
+                        dc.textureName = texName;
+                        dc.start = (uint32_t)ent.renderVertices.size();
+                        dc.isBumped = (d_texinfos[d_faces[fIndices[0]].texinfo].flags & SURF_BUMPED) != 0;
+                        for (int fIdx : fIndices)
+                            ProcessFace(fIdx, &ent.renderVertices);
+                        dc.count = (uint32_t)ent.renderVertices.size() - dc.start;
+                        ent.drawCalls.push_back(dc);
+                    }
+
+                    m_map.brushModels.push_back(ent);
+                    ent.modelIndex = (int)m_map.brushModels.size() - 1;
+                }
+            }
 
             // Process water brush
             m_map.waterSurfaces.clear();
@@ -687,7 +728,7 @@ namespace BSP
             }
         }
 
-        void ProcessFace(int faceIdx, bool render = true)
+        void ProcessFace(int faceIdx, std::vector<Vertex>* outVerts = nullptr, bool render = true)
         {
             const Face& face = d_faces[faceIdx];
             const TexInfo& tex = d_texinfos[face.texinfo];
@@ -713,10 +754,12 @@ namespace BSP
                 }
             }
 
+            std::vector<Vertex>& target = outVerts ? *outVerts : m_map.renderVertices;
+
             if (face.dispinfo != -1)
-                LoadDisplacement(face, tex, td, axs, ays, hasLM, numMaps, render);
+                LoadDisplacement(face, tex, td, axs, ays, hasLM, numMaps, render, target);
             else
-                LoadBrush(face, tex, td, axs, ays, hasLM, numMaps, render);
+                LoadBrush(face, tex, td, axs, ays, hasLM, numMaps, render, target);
 
             // We must save for overlays to know where to get their lightmaps from
             FaceLightmapInfo lmInfo;
@@ -775,7 +818,7 @@ namespace BSP
             m_atlasX += w;
         }
 
-        void LoadBrush(const Face& face, const TexInfo& tex, const TexData& td, int* axs, int* ays, bool hasLM, int numMaps, bool render)
+        void LoadBrush(const Face& face, const TexInfo& tex, const TexData& td, int* axs, int* ays, bool hasLM, int numMaps, bool render, std::vector<Vertex>& outVerts)
         {
             std::vector<Vertex> verts;
             std::vector<uint32_t> indices;
@@ -835,9 +878,9 @@ namespace BSP
             {
                 if (render)
                 {
-                    m_map.renderVertices.push_back(verts[0]);
-                    m_map.renderVertices.push_back(verts[i + 1]);
-                    m_map.renderVertices.push_back(verts[i]);
+                    outVerts.push_back(verts[0]);
+                    outVerts.push_back(verts[i + 1]);
+                    outVerts.push_back(verts[i]);
                 }
 
                 if (!(tex.flags & SURF_WATER))
@@ -849,7 +892,7 @@ namespace BSP
             }
         }
 
-        void LoadDisplacement(const Face& face, const TexInfo& tex, const TexData& td, int* axs, int* ays, bool hasLM, int numMaps, bool render)
+        void LoadDisplacement(const Face& face, const TexInfo& tex, const TexData& td, int* axs, int* ays, bool hasLM, int numMaps, bool render, std::vector<Vertex>& outVerts)
         {
             const DispInfo& di = d_dispinfos[face.dispinfo];
             int size = (1 << di.power) + 1;
@@ -960,12 +1003,12 @@ namespace BSP
 
                     if (render)
                     {
-                        m_map.renderVertices.push_back(grid[i0]);
-                        m_map.renderVertices.push_back(grid[i1]);
-                        m_map.renderVertices.push_back(grid[i2]);
-                        m_map.renderVertices.push_back(grid[i0]);
-                        m_map.renderVertices.push_back(grid[i2]);
-                        m_map.renderVertices.push_back(grid[i3]);
+                        outVerts.push_back(grid[i0]);
+                        outVerts.push_back(grid[i1]);
+                        outVerts.push_back(grid[i2]);
+                        outVerts.push_back(grid[i0]);
+                        outVerts.push_back(grid[i2]);
+                        outVerts.push_back(grid[i3]);
                     }
 
                     if (!(tex.flags & SURF_WATER))

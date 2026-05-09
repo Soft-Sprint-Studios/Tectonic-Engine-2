@@ -262,6 +262,11 @@ std::shared_ptr<Entity> EntityManager::SpawnEntity(const std::string& className,
 
     std::shared_ptr<Entity> ent = it->second();
     ent->m_className = className;
+    auto modelIt = entData.keyvalues.find("model");
+    if (modelIt != entData.keyvalues.end() && modelIt->second[0] == '*')
+    {
+        ent->m_bmodelIndex = entData.modelIndex;
+    }
 
     auto originIt = entData.keyvalues.find("origin");
     if (originIt != entData.keyvalues.end())

@@ -48,6 +48,13 @@ struct BSPDrawCall
     glm::vec3 maxs;
 };
 
+struct BrushModel
+{
+    GLuint vao = 0;
+    GLuint vbo = 0;
+    std::vector<BSPDrawCall> drawCalls;
+};
+
 class R_BSP
 {
 public:
@@ -56,6 +63,7 @@ public:
 
     bool Init(const BSP::MapData& mapData);
     void Draw(const R_Shader& shader, const Frustum& frustum, bool depthOnly = false);
+    void DrawBModel(int index, const R_Shader& shader, const glm::mat4& transform, bool depthOnly = false);
     void Shutdown();
 
     GLuint GetVAO() const 
@@ -73,6 +81,7 @@ private:
     GLuint m_vbo;
     GLuint m_lightmapTexture = 0;
     std::vector<BSPDrawCall> m_drawCalls;
+    std::unordered_map<int, BrushModel> m_subModels;
     uint32_t m_totalVertexCount = 0;
     uint32_t m_opaqueVertexCount = 0;
 };

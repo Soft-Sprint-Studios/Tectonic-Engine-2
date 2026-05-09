@@ -115,6 +115,66 @@ bool R_BSP::Init(const BSP::MapData& map)
     m_totalVertexCount = (uint32_t)map.renderVertices.size();
     m_opaqueVertexCount = map.opaqueVertexCount;
 
+    m_subModels.clear();
+    for (const auto& ent : map.entities)
+    {
+        if (ent.modelIndex <= 0 || ent.renderVertices.empty()) 
+            continue;
+
+        if (m_subModels.count(ent.modelIndex))
+            continue;
+
+        BrushModel bm;
+        glGenVertexArrays(1, &bm.vao);
+        glGenBuffers(1, &bm.vbo);
+        glBindVertexArray(bm.vao);
+        glBindBuffer(GL_ARRAY_BUFFER, bm.vbo);
+        glBufferData(GL_ARRAY_BUFFER, ent.renderVertices.size() * sizeof(BSP::Vertex), ent.renderVertices.data(), GL_STATIC_DRAW);
+
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, uv));
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, lm_uv));
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, lm_uv2));
+        glEnableVertexAttribArray(4);
+        glVertexAttribPointer(4, 2, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, lm_uv3));
+        glEnableVertexAttribArray(5);
+        glVertexAttribPointer(5, 2, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, lm_uv4));
+        glEnableVertexAttribArray(6);
+        glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, color));
+        glEnableVertexAttribArray(9);
+        glVertexAttribPointer(9, 3, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, normal));
+        glEnableVertexAttribArray(10);
+        glVertexAttribPointer(10, 3, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, tangent));
+        glEnableVertexAttribArray(11);
+        glVertexAttribPointer(11, 3, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, bitangent));
+        glEnableVertexAttribArray(12);
+        glVertexAttribPointer(12, 2, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, lm_uv5));
+
+        for (auto& dc : ent.drawCalls)
+        {
+            BSPDrawCall draw;
+            draw.texture = Materials::GetTexture(dc.textureName);
+            draw.normalMap = Materials::GetNormalMap(dc.textureName);
+            draw.specularMap = Materials::GetSpecularMap(dc.textureName);
+            draw.heightMap = Materials::GetHeightMap(dc.textureName);
+            draw.texture2 = Materials::GetTexture2(dc.textureName) ? Materials::GetTexture2(dc.textureName) : draw.texture;
+            draw.normalMap2 = (Materials::GetTexture2(dc.textureName) && Materials::GetNormalMap2(dc.textureName)) ? Materials::GetNormalMap2(dc.textureName) : draw.normalMap;
+            draw.specularMap2 = (Materials::GetTexture2(dc.textureName) && Materials::GetSpecularMap2(dc.textureName)) ? Materials::GetSpecularMap2(dc.textureName) : draw.specularMap;
+            draw.heightMap2 = Materials::GetHeightMap2(dc.textureName);
+            draw.heightScale1 = Materials::GetHeightScale(dc.textureName);
+            draw.heightScale2 = Materials::GetHeightScale2(dc.textureName);
+            draw.isBumped = dc.isBumped;
+            draw.start = dc.start;
+            draw.count = dc.count;
+            bm.drawCalls.push_back(draw);
+        }
+        m_subModels[ent.modelIndex] = bm;
+    }
+
     return true;
 }
 
@@ -168,6 +228,53 @@ void R_BSP::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOnly)
     glBindVertexArray(0);
 }
 
+void R_BSP::DrawBModel(int index, const R_Shader& shader, const glm::mat4& transform, bool depthOnly)
+{
+    if (m_subModels.find(index) == m_subModels.end()) 
+        return;
+
+    const auto& bm = m_subModels[index];
+
+    if (bm.vao == 0)
+    {
+        return;
+    }
+
+    shader.SetMat4("u_model", transform);
+    shader.SetInt("u_isInstanced", 0);
+
+    if (!depthOnly)
+    {
+        shader.SetInt("u_isModel", 0);
+        if (m_lightmapTexture != 0)
+        {
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, m_lightmapTexture);
+        }
+    }
+
+    glBindVertexArray(bm.vao);
+    for (const auto& dc : bm.drawCalls)
+    {
+        if (!depthOnly)
+        {
+            shader.SetInt("u_useBump", dc.isBumped ? 1 : 0);
+            (dc.texture ? dc.texture : Materials::GetTexture(""))->Bind(0);
+            (dc.isBumped && dc.normalMap ? dc.normalMap : Materials::GetFlatNormal())->Bind(2);
+            (dc.isBumped && dc.specularMap ? dc.specularMap : Materials::GetWhiteTexture())->Bind(3);
+            (dc.heightMap ? dc.heightMap : Materials::GetWhiteTexture())->Bind(17);
+            (dc.texture2 ? dc.texture2 : Materials::GetTexture(""))->Bind(14);
+            (dc.isBumped && dc.normalMap2 ? dc.normalMap2 : Materials::GetFlatNormal())->Bind(15);
+            (dc.isBumped && dc.specularMap2 ? dc.specularMap2 : Materials::GetWhiteTexture())->Bind(16);
+            (dc.heightMap2 ? dc.heightMap2 : Materials::GetWhiteTexture())->Bind(18);
+            shader.SetFloat("u_heightScale1", dc.heightScale1);
+            shader.SetFloat("u_heightScale2", dc.heightScale2);
+        }
+
+        glDrawArrays(GL_TRIANGLES, dc.start, dc.count);
+    }
+}
+
 void R_BSP::Shutdown()
 {
     if (m_vao != 0) 
@@ -180,4 +287,12 @@ void R_BSP::Shutdown()
     m_vbo = 0; 
     m_lightmapTexture = 0;
     m_drawCalls.clear();
+    for (auto& [idx, bm] : m_subModels)
+    {
+        if (bm.vao) 
+            glDeleteVertexArrays(1, &bm.vao);
+        if (bm.vbo) 
+            glDeleteBuffers(1, &bm.vbo);
+    }
+    m_subModels.clear();
 }

@@ -260,6 +260,9 @@ namespace BSP
         std::string className;
         std::unordered_map<std::string, std::string> keyvalues;
         CollisionData brushCollision;
+        std::vector<Vertex> renderVertices;
+        std::vector<DrawCall> drawCalls;
+        int modelIndex = -1;
     };
 
     struct WaterSurface
@@ -278,6 +281,7 @@ namespace BSP
         std::vector<StaticPropInstance> staticProps;
         CollisionData collision;
         std::vector<EntityData> entities;
+        std::vector<EntityData> brushModels;
         std::string skyName = "";
         bool loaded = false;
 

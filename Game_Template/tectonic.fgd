@@ -644,3 +644,15 @@
 [
     speed(float) : "Climb Speed" : "3.0"
 ]
+
+@SolidClass = func_brush : "A generic brush entity that can be enabled/disabled."
+[
+    spawnflags(flags) =
+    [
+        1 : "Start Disabled" : 0
+    ]
+
+    input Enable(void) : "Enable the brush."
+    input Disable(void) : "Disable the brush."
+    input Toggle(void) : "Toggle the brush state."
+]

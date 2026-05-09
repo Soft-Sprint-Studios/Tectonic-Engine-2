@@ -185,6 +185,16 @@ void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater
     if (m_bspRenderer)
     {
         m_bspRenderer->Draw(m_worldShader, frustum);
+
+        // Also render all brush entities
+        for (auto& ent : EntityManager::GetEntities())
+        {
+            if (ent->IsRenderable() && ent->GetBModelIndex() > 0)
+            {
+                glm::mat4 model = glm::translate(glm::mat4(1.0f), ent->GetOrigin());
+                m_bspRenderer->DrawBModel(ent->GetBModelIndex(), m_worldShader, model);
+            }
+        }
     }
 
     // Draw models
@@ -240,6 +250,16 @@ void Renderer::DrawSceneDepth(R_Shader& shader, const Frustum& frustum, R_BSP* b
 {
     bsp->Draw(shader, frustum, true);
     models->Draw(shader, frustum, true);
+
+    // Also render all brush entities
+    for (auto& ent : EntityManager::GetEntities())
+    {
+        if (ent->IsRenderable() && ent->GetBModelIndex() >= 0)
+        {
+            glm::mat4 model = glm::translate(glm::mat4(1.0f), ent->GetOrigin());
+            bsp->DrawBModel(ent->GetBModelIndex(), shader, model, true);
+        }
+    }
 }
 
 void Renderer::DrawPrePass(Camera& camera)
