@@ -213,6 +213,8 @@ void Player::Think(float deltaTime)
     bool isSprinting = m_input->GetKey(SDL_SCANCODE_LSHIFT) && !m_isCrouching;
     float baseSpeed = isSprinting ? cl_sprint_speed.GetFloat() : cl_walk_speed.GetFloat();
 
+    baseSpeed *= m_moveMultiplier;
+
     if (m_isCrouching && !m_noclip)
     {
         baseSpeed = cl_crouch_speed.GetFloat();
@@ -249,11 +251,49 @@ void Player::Think(float deltaTime)
         m_character->getGhostObject()->setWorldTransform(trans);
         m_character->setWalkDirection(btVector3(0, 0, 0));
     }
+    else if (m_onLadder)
+    {
+        m_character->setGravity(btVector3(0, 0, 0));
+        m_character->setVelocityForTimeInterval(btVector3(0, 0, 0), 0);
+
+        bool isSprinting = m_input->GetKey(SDL_SCANCODE_LSHIFT);
+        float climbSpeed = m_climbSpeed * (isSprinting ? 1.6f : 1.0f);
+        glm::vec3 climbDir(0, 0, 0);
+
+        if (m_input->GetKey(SDL_SCANCODE_W))
+        {
+            climbDir.y += climbSpeed;
+        }
+        if (m_input->GetKey(SDL_SCANCODE_S))
+        {
+            climbDir.y -= climbSpeed;
+        }
+
+        if (m_input->GetKey(SDL_SCANCODE_A))
+        {
+            climbDir -= right * 1.5f;
+        }
+        if (m_input->GetKey(SDL_SCANCODE_D))
+        {
+            climbDir += right * 1.5f;
+        }
+
+        m_character->setWalkDirection(btVector3(climbDir.x * deltaTime, climbDir.y * deltaTime, climbDir.z * deltaTime));
+
+        btTransform currentTransform = m_character->getGhostObject()->getWorldTransform();
+        btVector3 bulletPos = currentTransform.getOrigin();
+        m_camera->position = glm::vec3(bulletPos.getX(), bulletPos.getY() + m_viewHeight, bulletPos.getZ());
+        m_origin = glm::vec3(bulletPos.x(), bulletPos.y(), bulletPos.z());
+    }
     else
     {
         float physicsStep = 1.0f / 60.0f;
         glm::vec3 walkDisplacement = wishDir * physicsStep;
-        m_character->setWalkDirection(btVector3(walkDisplacement.x, 0.0f, walkDisplacement.z));
+        glm::vec3 pushDisplacement = m_pushVelocity * physicsStep;
+
+        m_character->setWalkDirection(btVector3(walkDisplacement.x + pushDisplacement.x, 0.0f, walkDisplacement.z + pushDisplacement.z));
+
+        m_pushVelocity = glm::vec3(0.0f);
 
         float targetHeight = m_isCrouching ? cl_crouch_height.GetFloat() : cl_view_height.GetFloat();
         float interpFactor = 1.0f - exp(-cl_view_interp.GetFloat() * deltaTime);
@@ -352,6 +392,31 @@ void Player::SetFOV(float targetFov, float duration)
     {
         m_fovSpeed = std::abs(m_targetFOV - m_currentFOV) / duration;
     }
+}
+
+void Player::SetMoveMultiplier(float mul)
+{
+    m_moveMultiplier = mul;
+}
+
+void Player::SetOnLadder(bool state)
+{
+    m_onLadder = state;
+}
+
+void Player::ApplyPushVelocity(const glm::vec3& vel)
+{
+    m_pushVelocity += vel;
+}
+
+void Player::SetClimbSpeed(float speed)
+{
+    m_climbSpeed = speed;
+}
+
+bool Player::IsOnLadder() const
+{
+    return m_onLadder;
 }
 
 void Player::OnSave()

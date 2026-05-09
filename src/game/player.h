@@ -46,6 +46,11 @@ public:
     void SetOrigin(const glm::vec3& origin) override;
     void SetGravity(float newGravityY);
     void SetFOV(float targetFov, float duration);
+    void SetMoveMultiplier(float mul);
+    void SetOnLadder(bool state);
+    void ApplyPushVelocity(const glm::vec3& vel);
+    void SetClimbSpeed(float speed);
+    bool IsOnLadder() const;
     void RestoreDefaultGravity();
 
     bool IsNoclip() const 
@@ -84,4 +89,8 @@ private:
     Sound::AudioSource m_sndStep;
     Sound::AudioSource m_sndJump;
     Sound::AudioSource m_sndFlashlight;
+    float m_moveMultiplier = 1.0f;
+    glm::vec3 m_pushVelocity{ 0.0f };
+    bool m_onLadder = false;
+    float m_climbSpeed = 3.0f;
 };

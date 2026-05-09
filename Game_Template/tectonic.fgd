@@ -628,3 +628,19 @@
 [
 	input EndGame(void) : "Triggers the end of the game and disconnects from the map."
 ]
+
+@SolidClass = func_friction : "Friction Modifier"
+[
+    friction(float) : "Friction Percent" : "1.0" : "1.0 is normal, 0.1 is ice, 2.0 is mud."
+]
+
+@SolidClass = func_conveyor : "Conveyor Belt"
+[
+    movedir(angle) : "Move Direction" : "0 0 0"
+    speed(float) : "Conveyor Speed" : "100"
+]
+
+@SolidClass = func_ladder : "Climbable Ladder"
+[
+    speed(float) : "Climb Speed" : "3.0"
+]
