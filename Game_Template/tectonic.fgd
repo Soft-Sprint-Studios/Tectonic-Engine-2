@@ -717,3 +717,52 @@
 	output OnStarted(void) : "Fired when rotation starts."
 	output OnStopped(void) : "Fired when rotation stops."
 ]
+
+@SolidClass base(Targetname) = func_plat : "A moving platform."
+[
+	height(float) : "Travel altitude" : "0" : "The distance the platform moves (positive = up, negative = down)."
+	speed(float) : "Speed" : "50" : "Units per second."
+	wait(float) : "Wait Time" : "3" : "Time in seconds to wait at the top before returning down. -1 to stay until triggered."
+
+	input GoUp(void) : "Force the platform to go up."
+	input GoDown(void) : "Force the platform to go down."
+	input Toggle(void) : "Toggle the platform state."
+
+	spawnflags(flags) =
+    [
+		1 : "Toggle Only (No auto-trigger)" : 0
+	]
+]
+
+@SolidClass base(Targetname) = trigger_chance : "A trigger that fires its outputs based on a probability percentage."
+[
+	chance(float) : "Chance Percentage" : "50" : "The probability (0-100) that this entity will trigger its target."
+	wait(float) : "Delay Before Reset" : "1" : "Time in seconds before the trigger can be activated again. Set to -1 to fire only once."
+
+	spawnflags(flags) =
+	[
+		1 : "Start Disabled" : 0
+	]
+
+	input Enable(void) : "Enable the trigger."
+	input Disable(void) : "Disable the trigger."
+	input Toggle(void) : "Toggle the trigger state."
+	input Trigger(void) : "Force the trigger to calculate the chance and fire."
+
+	output OnPass(void) : "Fired when the probability check succeeds."
+	output OnFail(void) : "Fired when the probability check fails."
+]
+
+@SolidClass base(Targetname) = trigger_autosave : "A trigger volume that automatically saves the game when the player touches it."
+[
+	spawnflags(flags) =
+	[
+		1 : "Start Disabled" : 0
+	]
+
+	input Enable(void) : "Enable the trigger."
+	input Disable(void) : "Disable the trigger."
+	input Toggle(void) : "Toggle the trigger state."
+
+	output OnTrigger(void) : "Fired when the autosave is triggered."
+]
