@@ -21,14 +21,41 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#pragma once
-#include <glm/glm.hpp>
+#include "entities.h"
+#include "fade.h"
 
-namespace CameraShake
+class EnvFade : public Entity
 {
-    void Update(float dt);
-    void AddShake(const glm::vec3& center, float amplitude, float frequency, float duration, float radius);
-    
-    glm::vec3 GetPositionOffset();
-    glm::vec3 GetAngleOffset();
-}
+public:
+    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    {
+        Entity::Spawn(keyvalues);
+        m_duration = GetFloat("duration", 2.0f);
+        m_holdTime = GetFloat("holdtime", 0.0f);
+        
+        glm::vec3 col = GetVector("rendercolor", { 0, 0, 0 });
+        float alpha = GetFloat("renderamt", 255.0f) / 255.0f;
+        m_fadeColor = glm::vec4(col / 255.0f, alpha);
+    }
+
+    void AcceptInput(const std::string& input, const std::string& param) override
+    {
+        if (input == "Fade")
+        {
+            bool fadeIn = HasSpawnFlag(1);
+            Fade::Start(m_fadeColor, m_duration, m_holdTime, fadeIn);
+        }
+    }
+
+    bool IsCollidable() const override
+    {
+        return false;
+    }
+
+private:
+    float m_duration = 2.0f;
+    float m_holdTime = 0.0f;
+    glm::vec4 m_fadeColor{ 0, 0, 0, 1 };
+};
+
+LINK_ENTITY_TO_CLASS("env_fade", EnvFade)

@@ -21,14 +21,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#include "camera_shake.h"
+#include "shake.h"
 #include "timing.h"
 #include "entities.h"
 #include <vector>
 #include <cmath>
 #include <algorithm>
 
-namespace CameraShake
+namespace Shake
 {
     struct ShakeInstance
     {

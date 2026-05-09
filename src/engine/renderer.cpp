@@ -28,6 +28,7 @@
 #include "physics.h"
 #include "entities.h"
 #include "cubemap.h"
+#include "fade.h"
 #include <glm/glm.hpp>
 #include <stb_image_write.h>
 #include <ctime>
@@ -281,7 +282,6 @@ void Renderer::Render(Camera& camera)
     int w, h;
     SDL_GetWindowSize(m_windowRef->Get(), &w, &h);
 
-    camera.SetFOV(cl_fov.GetFloat());
     camera.SetAspectRatio((float)w / (float)h);
 
     R_State::SetWireframe(r_wireframe.GetInt() > 0);
@@ -307,6 +307,15 @@ void Renderer::Render(Camera& camera)
 
     if (m_uiRenderer)
     {
+        // Handle env_fade
+        glm::vec4 fade = Fade::GetCurrentFade();
+        if (fade.a > 0.001f)
+        {
+            int w, h;
+            SDL_GetWindowSize(m_windowRef->Get(), &w, &h);
+            m_uiRenderer->DrawRect(0, 0, (float)w, (float)h, fade);
+        }
+
         m_uiRenderer->Render();
     }
 

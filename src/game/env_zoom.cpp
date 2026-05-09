@@ -22,25 +22,40 @@
  * SOFTWARE.
  */
 #include "entities.h"
-#include "shake.h"
+#include "player.h"
+#include "cvar.h"
 
-class EnvShake : public Entity
+class EnvZoom : public Entity
 {
 public:
     void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
     {
         Entity::Spawn(keyvalues);
-        m_amplitude = GetFloat("amplitude", 4.0f) * (1.0f / 32.0f); 
-        m_frequency = GetFloat("frequency", 2.5f);
-        m_duration = GetFloat("duration", 1.0f);
-        m_radius = GetFloat("radius", 500.0f) * (1.0f / 32.0f);
+        m_targetFov = GetFloat("FOV", 75.0f);
+        m_rate = GetFloat("Rate", 1.0f);
     }
 
     void AcceptInput(const std::string& input, const std::string& param) override
     {
-        if (input == "StartShake")
+        auto ent = EntityManager::FindEntityByClass("info_player_start");
+        if (!ent)
         {
-            Shake::AddShake(m_origin, m_amplitude, m_frequency, m_duration, m_radius);
+            return;
+        }
+
+        auto player = std::dynamic_pointer_cast<Player>(ent);
+        if (!player)
+        {
+            return;
+        }
+
+        if (input == "Zoom")
+        {
+            player->SetFOV(m_targetFov, m_rate);
+        }
+        else if (input == "UnZoom")
+        {
+            player->SetFOV(CVar::GetFloat("cl_fov"), m_rate);
         }
     }
 
@@ -50,10 +65,8 @@ public:
     }
 
 private:
-    float m_amplitude = 0.0f;
-    float m_frequency = 0.0f;
-    float m_duration = 0.0f;
-    float m_radius = 0.0f;
+    float m_targetFov = 75.0f;
+    float m_rate = 1.0f;
 };
 
-LINK_ENTITY_TO_CLASS("env_shake", EnvShake)
+LINK_ENTITY_TO_CLASS("env_zoom", EnvZoom)

@@ -495,3 +495,27 @@
 	
 	input StartShake(void) : "Activates the shake effect."
 ]
+
+@PointClass base(Targetname) = env_zoom : "Controls the player's FOV (Field of View)."
+[
+	FOV(integer) : "Target FOV" : 40 : "The FOV to reach when zoomed."
+	Rate(float) : "Rate" : "1.0" : "Seconds to reach target FOV."
+
+	input Zoom(void) : "Start the zoom transition."
+	input UnZoom(void) : "Stop controlling the FOV and return to normal."
+]
+
+@PointClass base(Targetname) = env_fade : "Controls screen fading effects."
+[
+	rendercolor(color255) : "Fade Color (R G B)" : "0 0 0"
+	renderamt(integer) : "Fade Alpha (0-255)" : 255
+	duration(float) : "Fade Duration" : "2.0" : "Seconds to fade in or out."
+	holdtime(float) : "Hold Time" : "0.0" : "Seconds to hold the fade at its peak."
+	
+	spawnflags(flags) =
+	[
+		1 : "Fade From Color (Fade In)" : 0
+	]
+
+	input Fade(void) : "Start the fade effect."
+]

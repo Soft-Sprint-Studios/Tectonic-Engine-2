@@ -28,7 +28,7 @@
 #include "cvar.h"
 #include "concmd.h"
 #include "dynamic_light.h"
-#include "camera_shake.h"
+#include "shake.h"
 #include <glm/gtx/string_cast.hpp>
 
 CVar cl_sensitivity("cl_sensitivity", "1.0", "Mouse sensitivity multiplier.", CVAR_SAVE);
@@ -80,6 +80,8 @@ void Player::LinkInput(Input* input)
 void Player::Spawn(const std::unordered_map<std::string, std::string>& keyvalues)
 {
     m_character = Physics::CreateCharacter(m_origin, this);
+    m_currentFOV = CVar::GetFloat("cl_fov", 75.0f);
+    m_targetFOV = m_currentFOV;
 
     // Force immediate warp to the spawn position to clear penetration state
     btTransform startTrans;
@@ -105,6 +107,28 @@ void Player::Think(float deltaTime)
     {
         return;
     }
+
+    // Handle env_zoom
+    if (std::abs(m_currentFOV - m_targetFOV) > 0.01f)
+    {
+        float dir = (m_targetFOV > m_currentFOV) ? 1.0f : -1.0f;
+        m_currentFOV += dir * m_fovSpeed * deltaTime;
+
+        if ((dir > 0.0f && m_currentFOV > m_targetFOV) || (dir < 0.0f && m_currentFOV < m_targetFOV))
+        {
+            m_currentFOV = m_targetFOV;
+        }
+    }
+    else
+    {
+        if (m_targetFOV == m_currentFOV && m_fovSpeed == 0.0f)
+        {
+            m_currentFOV = CVar::GetFloat("cl_fov", 75.0f);
+            m_targetFOV = m_currentFOV;
+        }
+    }
+
+    m_camera->SetFOV(m_currentFOV);
 
     if (m_saveYaw != 0.0f || m_savePitch != 0.0f)
     {
@@ -234,8 +258,8 @@ void Player::Think(float deltaTime)
         m_camera->position = glm::vec3(bulletPos.getX(), bulletPos.getY() + m_viewHeight, bulletPos.getZ());
 
         // Apply env_shake
-        m_camera->position += CameraShake::GetPositionOffset();
-        glm::vec3 angShake = CameraShake::GetAngleOffset();
+        m_camera->position += Shake::GetPositionOffset();
+        glm::vec3 angShake = Shake::GetAngleOffset();
         m_camera->pitch += angShake.x;
         m_camera->yaw += angShake.y;
 
@@ -289,6 +313,20 @@ void Player::RestoreDefaultGravity()
     {
         float defaultGravity = CVar::GetFloat("sv_gravity");
         m_character->setGravity(btVector3(0, defaultGravity, 0));
+    }
+}
+
+void Player::SetFOV(float targetFov, float duration)
+{
+    m_targetFOV = targetFov;
+    if (duration <= 0.0f)
+    {
+        m_currentFOV = targetFov;
+        m_fovSpeed = 0.0f;
+    }
+    else
+    {
+        m_fovSpeed = std::abs(m_targetFOV - m_currentFOV) / duration;
     }
 }
 

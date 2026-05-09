@@ -44,6 +44,7 @@ public:
     void SetNoclip(bool state);
     void SetOrigin(const glm::vec3& origin) override;
     void SetGravity(float newGravityY);
+    void SetFOV(float targetFov, float duration);
     void RestoreDefaultGravity();
 
     bool IsNoclip() const 
@@ -67,6 +68,10 @@ public:
     float m_saveYaw = 0.0f;
     float m_savePitch = 0.0f;
     float m_bobTimer = 0.0f;
+
+    float m_currentFOV = 75.0f;
+    float m_targetFOV = 75.0f;
+    float m_fovSpeed = 0.0f;
 
 private:
     Camera* m_camera = nullptr;
