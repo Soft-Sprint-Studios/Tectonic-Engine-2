@@ -66,7 +66,7 @@ public:
         }
     }
 
-    bool IsCollidable() const
+    bool IsCollidable() const override
     {
         return false;
     }
