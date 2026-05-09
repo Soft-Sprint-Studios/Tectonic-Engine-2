@@ -113,6 +113,10 @@
 		12 : "Underwater light mutation"
 	]
     shadow_res(integer) : "Shadow Map Resolution" : 512
+
+    input Enable(void) : "Enables the light"
+    input Disable(void) : "Disables the light"
+    input Toggle(void) : "Toggles the light on/off"
 ]
 
 @PointClass base(Targetname, Angles) lightprop("models/editor/spot.mdl") lightcone() = light_dynamic_spot :
@@ -148,6 +152,10 @@
 		12 : "Underwater light mutation"
 	]
     shadow_res(integer) : "Shadow Map Resolution" : 512
+
+    input Enable(void) : "Enables the light"
+    input Disable(void) : "Disables the light"
+    input Toggle(void) : "Toggles the light on/off"
 ]
 
 //-------------------------------------------------------------------------
@@ -518,4 +526,105 @@
 	]
 
 	input Fade(void) : "Start the fade effect."
+]
+
+@PointClass base(Targetname, Angles) = func_video_display : "An entity that displays an MPEG-1 (.mpg) video on a flat quad."
+[
+	origin(origin) : "Origin (X Y Z)" : : "The position of this entity's center in the world. Rotating entities typically rotate around their origin."
+	video(string) : "Video File" : "" : "The filename of the video inside the 'videos/' folder (e.g. 'intro.mpg')."
+	loop(choices) : "Looping" : 1 =
+	[
+		0 : "No"
+		1 : "Yes"
+	]
+	scale(vector) : "Scale (W H D)" : "1 1 1" : "The physical size of the video quad in the world."
+
+	spawnflags(flags) =
+	[
+		1 : "Start Disabled" : 0
+	]
+
+	input Enable(void) : "Shows the video and starts playback."
+	input Disable(void) : "Hides the video and stops playback."
+]
+
+@PointClass base(Targetname) = logic_compare : "Compares two values and fires outputs."
+[
+	InitialValue(float) : "Initial Value" : "0.0"
+	CompareValue(float) : "Comparison Value" : "0.0"
+	
+	input SetValue(float) : "Sets the main value."
+	input SetCompareValue(float) : "Sets the value to compare against."
+	input Compare(void) : "Forces a comparison."
+	
+	output OnEqualTo(void) : "Fired if values are equal."
+	output OnNotEqualTo(void) : "Fired if values are NOT equal."
+	output OnGreaterThan(void) : "Fired if main value > comparison value."
+	output OnLessThan(void) : "Fired if main value < comparison value."
+	output OnGreaterOrEqual(void) : "Fired if main value >= comparison value."
+	output OnLessOrEqual(void) : "Fired if main value <= comparison value."
+]
+
+@PointClass base(Targetname) = logic_branch : "Stores a boolean state (True/False)."
+[
+	InitialValue(choices) : "Initial Value" : 0 =
+	[
+		0 : "False"
+		1 : "True"
+	]
+	
+	input SetValue(integer) : "Sets the state (0 or 1)."
+	input SetValueTest(integer) : "Sets the state and then tests it immediately."
+	input Toggle(void) : "Flips the state."
+	input ToggleTest(void) : "Flips the state and then tests it immediately."
+	input Test(void) : "Fires OnTrue or OnFalse based on current state."
+	
+	output OnTrue(void) : "Fired when Test is called and state is True."
+	output OnFalse(void) : "Fired when Test is called and state is False."
+]
+
+@PointClass base(Targetname) = logic_case : "Compares an input to up to 16 values and fires corresponding outputs."
+[
+	Case01(string) : "Case 01" : ""
+	Case02(string) : "Case 02" : ""
+	Case03(string) : "Case 03" : ""
+	Case04(string) : "Case 04" : ""
+	Case05(string) : "Case 05" : ""
+	Case06(string) : "Case 06" : ""
+	Case07(string) : "Case 07" : ""
+	Case08(string) : "Case 08" : ""
+	Case09(string) : "Case 09" : ""
+	Case10(string) : "Case 10" : ""
+	Case11(string) : "Case 11" : ""
+	Case12(string) : "Case 12" : ""
+	Case13(string) : "Case 13" : ""
+	Case14(string) : "Case 14" : ""
+	Case15(string) : "Case 15" : ""
+	Case16(string) : "Case 16" : ""
+
+	input InValue(string) : "Check this value against the cases."
+	input PickRandom(void) : "Fire one of the defined cases at random."
+
+	output OnCase01(void) : "Fired when InValue matches Case 01."
+	output OnCase02(void) : "Fired when InValue matches Case 02."
+	output OnCase03(void) : "Fired when InValue matches Case 03."
+	output OnCase04(void) : "Fired when InValue matches Case 04."
+	output OnCase05(void) : "Fired when InValue matches Case 05."
+	output OnCase06(void) : "Fired when InValue matches Case 06."
+	output OnCase07(void) : "Fired when InValue matches Case 07."
+	output OnCase08(void) : "Fired when InValue matches Case 08."
+	output OnCase09(void) : "Fired when InValue matches Case 09."
+	output OnCase10(void) : "Fired when InValue matches Case 10."
+	output OnCase11(void) : "Fired when InValue matches Case 11."
+	output OnCase12(void) : "Fired when InValue matches Case 12."
+	output OnCase13(void) : "Fired when InValue matches Case 13."
+	output OnCase14(void) : "Fired when InValue matches Case 14."
+	output OnCase15(void) : "Fired when InValue matches Case 15."
+	output OnCase16(void) : "Fired when InValue matches Case 16."
+	output OnDefault(void) : "Fired when InValue matches none of the cases."
+]
+
+@PointClass base(Targetname) = game_end : "An entity that ends the current game session and returns the player to the main menu."
+[
+	input EndGame(void) : "Triggers the end of the game and disconnects from the map."
 ]

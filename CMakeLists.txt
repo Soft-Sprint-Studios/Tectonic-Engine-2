@@ -20,6 +20,7 @@ set(OPENAL_PATH ${CMAKE_SOURCE_DIR}/libs/openal-soft-1.24.3)
 set(MINIMP3_PATH ${CMAKE_SOURCE_DIR}/libs/minimp3)
 set(DISCORDRPC_PATH ${CMAKE_SOURCE_DIR}/libs/DiscordRPC)
 set(SENTRY_PATH ${CMAKE_SOURCE_DIR}/libs/sentry)
+set(PLMPEG_PATH ${CMAKE_SOURCE_DIR}/libs/pl_mpeg)
 
 # ---- Detect 32/64-bit ----
 if(WIN32)
@@ -65,6 +66,7 @@ target_include_directories(Engine PRIVATE
     ${MINIMP3_PATH}/include
     ${DISCORDRPC_PATH}/include
     ${SENTRY_PATH}/include
+    ${PLMPEG_PATH}/include
     src/engine
     src/game
 )

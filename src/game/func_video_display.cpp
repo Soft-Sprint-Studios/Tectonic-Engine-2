@@ -21,18 +21,50 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#pragma once
-#include <string>
+#include "entities.h"
+#include "video.h"
 
-class Renderer;
-class Camera;
-class Input;
-
-namespace Maps
+class FuncVideoDisplay : public Entity
 {
-    void Init(Renderer* renderer, Camera* camera, Input* input);
-    void Load(const std::string& mapName);
-    void Disconnect();
-    std::string GetCurrentMapName();
-    bool HasMapLoaded();
-}
+public:
+    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    {
+        Entity::Spawn(keyvalues);
+
+        VideoDef def;
+        def.videoPath = GetValue("video");
+        def.position = m_origin;
+        def.angles = GetVector("angles", { 0, 0, 0 });
+        def.scale = GetVector("scale", { 1, 1, 1 });
+        def.loop = GetInt("loop", 1) != 0;
+
+        m_handle = Videos::CreateVideo(def);
+        if (m_handle)
+        {
+            m_handle->SetActive(!HasSpawnFlag(1));
+        }
+    }
+
+    void AcceptInput(const std::string& input, const std::string& param) override
+    {
+        if (!m_handle)
+        {
+            return;
+        }
+
+        if (input == "Enable")
+            m_handle->SetActive(true);
+        if (input == "Disable") 
+            m_handle->SetActive(false);
+    }
+
+    bool IsCollidable() const override
+    {
+        return true;
+    }
+
+private:
+    std::shared_ptr<Video> m_handle;
+};
+
+LINK_ENTITY_TO_CLASS("func_video_display", FuncVideoDisplay)

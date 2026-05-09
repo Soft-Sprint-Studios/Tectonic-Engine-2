@@ -22,17 +22,46 @@
  * SOFTWARE.
  */
 #pragma once
+#include <glm/glm.hpp>
 #include <string>
+#include <vector>
+#include <memory>
 
-class Renderer;
-class Camera;
-class Input;
-
-namespace Maps
+struct VideoDef
 {
-    void Init(Renderer* renderer, Camera* camera, Input* input);
-    void Load(const std::string& mapName);
-    void Disconnect();
-    std::string GetCurrentMapName();
-    bool HasMapLoaded();
+    std::string videoPath;
+    glm::vec3 position;
+    glm::vec3 angles;
+    glm::vec3 scale{ 1.0f };
+    bool loop = true;
+    bool active = true;
+};
+
+class Video
+{
+public:
+    Video(const VideoDef& def);
+    ~Video();
+
+    void Update(float dt);
+    VideoDef& GetDef();
+
+    bool IsActive() const;
+    void SetActive(bool state);
+
+    class R_VideoInstance* GetInternalPlayer();
+
+private:
+    VideoDef m_def;
+    std::unique_ptr<class R_VideoInstance> m_player;
+};
+
+namespace Videos
+{
+    void Init();
+    void Update(float dt);
+    void Clear();
+
+    std::shared_ptr<Video> CreateVideo(const VideoDef& def);
+    const std::vector<std::shared_ptr<Video>>& GetActiveVideos();
 }

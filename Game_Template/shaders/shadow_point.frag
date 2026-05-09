@@ -4,8 +4,13 @@ in vec4 FragPos;
 uniform vec3 u_lightPos;
 uniform float u_farPlane;
 
+const float EVSM_EXP = 40.0;
+
 void main()
 {
     float depth = length(FragPos.xyz - u_lightPos) / u_farPlane;
-    FragColor = vec2(depth, depth * depth);
+    float exponent = 10.0;
+    float warpedDepth = exp(exponent * depth);
+    
+    FragColor = vec2(warpedDepth, warpedDepth * warpedDepth);
 }

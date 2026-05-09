@@ -21,18 +21,29 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#pragma once
-#include <string>
+#include "entities.h"
+#include "maps.h"
 
-class Renderer;
-class Camera;
-class Input;
-
-namespace Maps
+class GameEnd : public Entity
 {
-    void Init(Renderer* renderer, Camera* camera, Input* input);
-    void Load(const std::string& mapName);
-    void Disconnect();
-    std::string GetCurrentMapName();
-    bool HasMapLoaded();
-}
+public:
+    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    {
+        Entity::Spawn(keyvalues);
+    }
+
+    void AcceptInput(const std::string& input, const std::string& param) override
+    {
+        if (input == "EndGame")
+        {
+            Maps::Disconnect();
+        }
+    }
+
+    bool IsCollidable() const override
+    {
+        return false;
+    }
+};
+
+LINK_ENTITY_TO_CLASS("game_end", GameEnd)

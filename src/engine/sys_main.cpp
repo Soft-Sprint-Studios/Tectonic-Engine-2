@@ -59,6 +59,7 @@
 #include "sound_reverb.h"
 #include "shake.h"
 #include "fade.h"
+#include "video.h"
 
 namespace Sys
 {
@@ -163,6 +164,7 @@ namespace Sys
         {
             Particles::Update(dt);
             DynamicLights::Update();
+            Videos::Update(dt);
             Shake::Update(dt);
             Fade::Update(dt);
             LightStyles::Update(Time::TotalTime());

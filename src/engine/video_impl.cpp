@@ -21,18 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#pragma once
-#include <string>
-
-class Renderer;
-class Camera;
-class Input;
-
-namespace Maps
-{
-    void Init(Renderer* renderer, Camera* camera, Input* input);
-    void Load(const std::string& mapName);
-    void Disconnect();
-    std::string GetCurrentMapName();
-    bool HasMapLoaded();
-}
+// this is sort of hack to avoid compile errors, anyway around this?
+#define PL_MPEG_IMPLEMENTATION
+#include <cstdio>
+#include "pl_mpeg.h"

@@ -102,57 +102,48 @@ vec3 ParallaxCorrect(vec3 R, vec3 fragPos, vec3 boxMin, vec3 boxMax, vec3 probeP
     return normalize(intersectPos - probePos);
 }
 
-float ChebyshevUpperBound(vec2 moments, float t)
+const float EVSM_EXP = 10.0;
+
+float linstep(float min, float max, float v)
 {
-    if (t <= moments.x)
-    {
+    return clamp((v - min) / (max - min), 0.0, 1.0);
+}
+
+float ChebyshevUpperBound(vec2 moments, float warpedDepth)
+{
+    if (warpedDepth <= moments.x) 
         return 1.0;
-    }
 
-    float mean = moments.x;
-    float meanSquared = mean * mean;
+    float variance = moments.y - (moments.x * moments.x);
+    variance = max(variance, 0.00001);
 
-    float variance = moments.y - meanSquared;
-
-    variance = max(variance, 0.000002);
-
-    float d = t - mean;
-
+    float d = warpedDepth - moments.x;
     float pMax = variance / (variance + d * d);
 
-    return pMax;
+    return linstep(0.2, 1.0, pMax); 
 }
 
 float SpotShadowCalc(vec4 fragPosLightSpace, sampler2D shadowMap)
 {
-    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-
-    projCoords = projCoords * 0.5 + 0.5;
-
-    if (projCoords.z > 1.0)
-    {
+    vec3 projCoords = (fragPosLightSpace.xyz / fragPosLightSpace.w) * 0.5 + 0.5;
+    if (projCoords.z > 1.0) 
         return 0.0;
-    }
 
     vec2 moments = texture(shadowMap, projCoords.xy).rg;
-
-    float shadow = ChebyshevUpperBound(moments, projCoords.z);
-
-    return 1.0 - shadow;
+    float warpedDepth = exp(EVSM_EXP * projCoords.z);
+    
+    return 1.0 - ChebyshevUpperBound(moments, warpedDepth);
 }
 
 float PointShadowCalc(vec3 fragPos, vec3 lightPos, float far_plane, samplerCube shadowMap)
 {
     vec3 fragToLight = fragPos - lightPos;
-
-    float distanceToLight = length(fragToLight);
-    float currentDepth = distanceToLight / far_plane;
-
+    float depth = length(fragToLight) / far_plane;
+    
     vec2 moments = texture(shadowMap, fragToLight).rg;
+    float warpedDepth = exp(EVSM_EXP * depth);
 
-    float shadow = ChebyshevUpperBound(moments, currentDepth);
-
-    return 1.0 - shadow;
+    return 1.0 - ChebyshevUpperBound(moments, warpedDepth);
 }
 
 float CalculateSunShadow(vec3 fragPosWorld, vec3 N, vec3 L)
