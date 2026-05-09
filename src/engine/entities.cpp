@@ -38,6 +38,7 @@ void Entity::Spawn(const std::unordered_map<std::string, std::string>& keyvalues
 {
     m_keyvalues = keyvalues;
     m_targetName = GetValue("targetname");
+    m_angles = GetVector("angles", { 0, 0, 0 });
     m_spawnflags = GetInt("spawnflags", 0);
 
     for (auto const& [key, val] : keyvalues)
@@ -145,6 +146,11 @@ glm::vec3 Entity::GetOrigin() const
 void Entity::SetOrigin(const glm::vec3& origin)
 {
     m_origin = origin;
+}
+
+glm::vec3 Entity::GetAngles() const
+{
+    return m_angles;
 }
 
 std::string Entity::GetClassName() const

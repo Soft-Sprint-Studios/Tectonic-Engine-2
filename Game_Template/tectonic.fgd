@@ -647,6 +647,8 @@
 
 @SolidClass = func_brush : "A generic brush entity that can be enabled/disabled."
 [
+    targetname(target_source) : "Name" : : "The name that other entities refer to this entity by."
+
     spawnflags(flags) =
     [
         1 : "Start Disabled" : 0
@@ -655,4 +657,39 @@
     input Enable(void) : "Enable the brush."
     input Disable(void) : "Disable the brush."
     input Toggle(void) : "Toggle the brush state."
+]
+
+@SolidClass = func_door : "Sliding Door"
+[
+    targetname(target_source) : "Name" : : "The name that other entities refer to this entity by."
+    angles(angle) : "Direction" : "0 0 0" : "The direction the door will move when opened. Use -1 for UP and -2 for DOWN."
+    speed(float) : "Speed" : "100" : "Units per second."
+    movedistance(float) : "Move Distance" : "0" : "How many units the door should move. If 0, it uses its own size."
+    wait(float) : "Wait Time" : "4" : "Seconds before auto-closing. Use -1 to stay open."
+
+    spawnflags(flags) =
+    [
+        1 : "Start Open" : 0
+        2 : "Use Only" : 0
+    ]
+
+    input Open(void) : "Force door open."
+    input Close(void) : "Force door closed."
+    input Toggle(void) : "Toggle door state."
+
+    output OnOpen(void) : "Starts opening."
+    output OnClose(void) : "Starts closing."
+    output OnFullyOpen(void) : "Reaches open position."
+    output OnFullyClosed(void) : "Reaches closed position."
+]
+
+@SolidClass = func_illusionary : "A brush entity that is always visible but has no collision." []
+
+@SolidClass = trigger_teleport : "A volume that teleports the player to a target entity."
+[
+    target(target_destination) : "Remote Destination" : "" : "The name of an info_target to teleport to."
+    spawnflags(flags) = [ 1 : "Start Disabled" : 0 ]
+    input Enable(void) : "Enable the teleport."
+    input Disable(void) : "Disable the teleport."
+    output OnTeleport(void) : "Fired when someone is teleported."
 ]

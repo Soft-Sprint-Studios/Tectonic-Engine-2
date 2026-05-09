@@ -192,6 +192,10 @@ void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater
             if (ent->IsRenderable() && ent->GetBModelIndex() > 0)
             {
                 glm::mat4 model = glm::translate(glm::mat4(1.0f), ent->GetOrigin());
+                glm::vec3 ang = ent->GetAngles();
+                model = glm::rotate(model, glm::radians(ang.y), glm::vec3(0, 1, 0));
+                model = glm::rotate(model, glm::radians(ang.x), glm::vec3(1, 0, 0));
+                model = glm::rotate(model, glm::radians(ang.z), glm::vec3(0, 0, 1));
                 m_bspRenderer->DrawBModel(ent->GetBModelIndex(), m_worldShader, model);
             }
         }
@@ -257,6 +261,10 @@ void Renderer::DrawSceneDepth(R_Shader& shader, const Frustum& frustum, R_BSP* b
         if (ent->IsRenderable() && ent->GetBModelIndex() >= 0)
         {
             glm::mat4 model = glm::translate(glm::mat4(1.0f), ent->GetOrigin());
+            glm::vec3 ang = ent->GetAngles();
+            model = glm::rotate(model, glm::radians(ang.y), glm::vec3(0, 1, 0));
+            model = glm::rotate(model, glm::radians(ang.x), glm::vec3(1, 0, 0));
+            model = glm::rotate(model, glm::radians(ang.z), glm::vec3(0, 0, 1));
             bsp->DrawBModel(ent->GetBModelIndex(), shader, model, true);
         }
     }

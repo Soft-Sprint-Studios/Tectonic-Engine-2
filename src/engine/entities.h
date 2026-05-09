@@ -83,6 +83,7 @@ public:
 
     glm::vec3 GetOrigin() const;
     virtual void SetOrigin(const glm::vec3& origin);
+    glm::vec3 GetAngles() const;
     std::string GetClassName() const;
     std::string GetTargetName() const;
 
@@ -116,6 +117,7 @@ public:
 
 protected:
     glm::vec3 m_origin{ 0.0f, 0.0f, 0.0f };
+    glm::vec3 m_angles{ 0.0f, 0.0f, 0.0f };
     std::string m_className;
     std::string m_targetName;
     int m_spawnflags = 0;
