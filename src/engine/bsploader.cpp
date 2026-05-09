@@ -282,18 +282,6 @@ namespace BSP
 
                     std::unordered_map<std::string, std::vector<int>> subBatches;
 
-                    glm::vec3 modelOrigin(0.0f);
-                    auto originIt = ent.keyvalues.find("origin");
-                    if (originIt != ent.keyvalues.end())
-                    {
-                        std::stringstream ss(originIt->second);
-                        glm::vec3 rawPos;
-                        if (ss >> rawPos.x >> rawPos.y >> rawPos.z)
-                        {
-                            modelOrigin = ToEngineSpace(rawPos);
-                        }
-                    }
-
                     for (int i = 0; i < model.numfaces; i++)
                     {
                         int fIdx = model.firstface + i;
@@ -319,16 +307,6 @@ namespace BSP
                         }
                         dc.count = (uint32_t)ent.renderVertices.size() - dc.start;
                         ent.drawCalls.push_back(dc);
-                    }
-
-                    for (auto& v : ent.renderVertices)
-                    {
-                        v.position -= modelOrigin;
-                    }
-
-                    for (auto& v : ent.brushCollision.vertices)
-                    {
-                        v -= modelOrigin;
                     }
 
                     m_map.brushModels.push_back(ent);

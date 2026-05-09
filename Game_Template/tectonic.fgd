@@ -693,3 +693,27 @@
     input Disable(void) : "Disable the teleport."
     output OnTeleport(void) : "Fired when someone is teleported."
 ]
+
+@SolidClass base(Targetname) = func_rotating : "A brush entity that rotates around its origin."
+[
+    origin(origin) : "Origin (X Y Z)" : : "The pivot point of the rotation."
+    targetname(target_source) : "Name" : : "The name that other entities refer to this entity by."
+	speed(float) : "Max Rotation Speed" : "100" : "Degrees per second."
+	fan_friction(float) : "Friction" : "1" : "How quickly the object reaches max speed (1-100)."
+	
+	spawnflags(flags) =
+	[
+		1 : "Start ON" : 0
+		2 : "Reverse Direction" : 0
+		4 : "X Axis" : 0
+		8 : "Y Axis" : 0
+	]
+
+	input Start(void) : "Start rotating."
+	input Stop(void) : "Stop rotating."
+	input Toggle(void) : "Toggle rotation."
+	input Reverse(void) : "Reverse rotation direction."
+
+	output OnStarted(void) : "Fired when rotation starts."
+	output OnStopped(void) : "Fired when rotation stops."
+]
