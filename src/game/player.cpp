@@ -150,7 +150,7 @@ void Player::Think(float deltaTime)
         m_flashlight->SetActive(m_flashlightOn);
         m_sndFlashlight.SetPosition(m_camera->position);
         m_sndFlashlight.SetVolume(0.3f);
-        m_sndFlashlight.Play("flashlight_toggle.wav");
+        m_sndFlashlight.Play("flashlight_toggle.mp3");
     }
 
     if (m_flashlightOn && m_flashlight) 
@@ -168,7 +168,7 @@ void Player::Think(float deltaTime)
         m_character->jump(btVector3(0, cl_jump_force.GetFloat(), 0));
         m_sndJump.SetPosition(m_origin);
         m_sndJump.SetVolume(0.5f);
-        m_sndJump.Play("jump.wav");
+        m_sndJump.Play("jump.mp3");
     }
 
     bool wantCrouch = m_input->GetKey(SDL_SCANCODE_LCTRL);
@@ -272,7 +272,7 @@ void Player::Think(float deltaTime)
             {
                 m_sndStep.SetPosition(m_origin);
                 m_sndStep.SetVolume(m_isCrouching ? 0.2f : (isSprinting ? 0.6f : 0.4f));
-                m_sndStep.Play("footstep.wav");
+                m_sndStep.Play("footstep.mp3");
                 m_stepTimer = 0.0f;
             }
         }
