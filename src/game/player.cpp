@@ -89,6 +89,8 @@ void Player::Spawn(const std::unordered_map<std::string, std::string>& keyvalues
     m_character->getGhostObject()->setWorldTransform(startTrans);
     m_character->reset(Physics::GetDynamicsWorld());
 
+    RestoreDefaultGravity();
+
     // Initialize flashlight
     m_flashlight = DynamicLights::CreateSpotLight(m_origin, glm::vec3(0, 0, 1), glm::vec3(1.0f, 1.0f, 0.9f), 4.0f, 15.0f, 30.0f);
     if (m_flashlight)
@@ -288,6 +290,23 @@ void Player::SetOrigin(const glm::vec3& origin)
         m_character->getGhostObject()->setWorldTransform(trans);
 
         m_character->reset(Physics::GetDynamicsWorld());
+    }
+}
+
+void Player::SetGravity(float newGravityY)
+{
+    if (m_character)
+    {
+        m_character->setGravity(btVector3(0, newGravityY, 0));
+    }
+}
+
+void Player::RestoreDefaultGravity()
+{
+    if (m_character)
+    {
+        float defaultGravity = CVar::GetFloat("sv_gravity");
+        m_character->setGravity(btVector3(0, defaultGravity, 0));
     }
 }
 

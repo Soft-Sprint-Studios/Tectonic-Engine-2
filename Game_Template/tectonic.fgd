@@ -472,6 +472,11 @@
 	]
 ]
 
+@SolidClass = trigger_gravity : "A trigger volume that modifies the player's gravity."
+[
+	gravity(float) : "New Gravity" : "-9.81" : "The absolute new gravity value to apply to the player while inside the trigger. Standard earth gravity is -9.81. A value of 0 is zero-g. The player's gravity restores to the map's default when they leave."
+]
+
 @PointClass base(Targetname) = env_cable : 
 	"A hanging cable that sags between two points using a Bezier curve."
 [

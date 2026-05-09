@@ -21,57 +21,46 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#pragma once
-#include "camera.h"
-#include "input.h"
 #include "entities.h"
-#include "dynamic_light.h"
+#include "player.h"
 
-#include <BulletDynamics/Character/btKinematicCharacterController.h>
-
-class Player : public Entity
+class TriggerGravity : public Entity
 {
 public:
-    Player();
-    ~Player();
-
-    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override;
-    void Think(float deltaTime) override;
-
-    void LinkCamera(Camera* cam);
-    void LinkInput(Input* input);
-
-    void SetNoclip(bool state);
-    void SetOrigin(const glm::vec3& origin) override;
-    void SetGravity(float newGravityY);
-    void RestoreDefaultGravity();
-
-    bool IsNoclip() const 
-    { 
-        return m_noclip; 
+    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    {
+        Entity::Spawn(keyvalues);
+        m_gravityValue = GetFloat("gravity", -9.81f);
     }
 
-    bool IsPlayer() const override 
-    { 
-        return true; 
+    void Touch(Entity* other) override
+    {
+        if (other && other->IsPlayer() && !m_playerInside)
+        {
+            m_playerInside = true;
+            Player* player = static_cast<Player*>(other);
+            player->SetGravity(m_gravityValue);
+        }
     }
 
-    void OnSave() override;
+    void EndTouch(Entity* other) override
+    {
+        if (other && other->IsPlayer() && m_playerInside)
+        {
+            m_playerInside = false;
+            Player* player = static_cast<Player*>(other);
+            player->RestoreDefaultGravity();
+        }
+    }
 
-    std::shared_ptr<DynamicLight> m_flashlight;
-    bool m_flashlightOn = false;
-
-    float m_viewHeight = 1.5f;
-    bool m_isCrouching = false;
-
-    float m_saveYaw = 0.0f;
-    float m_savePitch = 0.0f;
-    float m_bobTimer = 0.0f;
+    bool IsCollidable() const override
+    {
+        return false;
+    }
 
 private:
-    Camera* m_camera = nullptr;
-    Input* m_input = nullptr;
-    btKinematicCharacterController* m_character = nullptr;
-    bool m_noclip = false;
-    glm::vec3 m_smoothedFlashlightDir;
+    float m_gravityValue = -9.81f;
+    bool m_playerInside = false;
 };
+
+LINK_ENTITY_TO_CLASS("trigger_gravity", TriggerGravity)
