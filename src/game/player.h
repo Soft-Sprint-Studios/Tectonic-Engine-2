@@ -26,6 +26,7 @@
 #include "input.h"
 #include "entities.h"
 #include "dynamic_light.h"
+#include "sound.h"
 
 #include <BulletDynamics/Character/btKinematicCharacterController.h>
 
@@ -79,4 +80,8 @@ private:
     btKinematicCharacterController* m_character = nullptr;
     bool m_noclip = false;
     glm::vec3 m_smoothedFlashlightDir;
+    float m_stepTimer = 0.0f;
+    Sound::AudioSource m_sndStep;
+    Sound::AudioSource m_sndJump;
+    Sound::AudioSource m_sndFlashlight;
 };

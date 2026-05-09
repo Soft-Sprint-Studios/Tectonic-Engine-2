@@ -66,6 +66,7 @@ namespace Maps
         Sprites::Clear();
         Beams::Clear();
         DynamicSky::Reset();
+        Sound::SetRoomStyle(0);
 
         Physics::Init();
         EntityManager::Init();
@@ -103,6 +104,7 @@ namespace Maps
         Beams::Clear();
         Cables::Clear();
         DynamicSky::Reset();
+        Sound::SetRoomStyle(0);
 
         Discord::UpdatePresence("Main Menu", "");
         MainMenu::SetActive(true);

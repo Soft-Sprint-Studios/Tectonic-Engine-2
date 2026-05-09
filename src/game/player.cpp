@@ -148,6 +148,9 @@ void Player::Think(float deltaTime)
     {
         m_flashlightOn = !m_flashlightOn;
         m_flashlight->SetActive(m_flashlightOn);
+        m_sndFlashlight.SetPosition(m_camera->position);
+        m_sndFlashlight.SetVolume(0.3f);
+        m_sndFlashlight.Play("flashlight_toggle.wav");
     }
 
     if (m_flashlightOn && m_flashlight) 
@@ -163,6 +166,9 @@ void Player::Think(float deltaTime)
     if (m_input->GetKeyDown(SDL_SCANCODE_SPACE) && m_character->onGround() && !m_noclip)
     {
         m_character->jump(btVector3(0, cl_jump_force.GetFloat(), 0));
+        m_sndJump.SetPosition(m_origin);
+        m_sndJump.SetVolume(0.5f);
+        m_sndJump.Play("jump.wav");
     }
 
     bool wantCrouch = m_input->GetKey(SDL_SCANCODE_LCTRL);
@@ -256,6 +262,24 @@ void Player::Think(float deltaTime)
         btTransform currentTransform = m_character->getGhostObject()->getWorldTransform();
         btVector3 bulletPos = currentTransform.getOrigin();
         m_camera->position = glm::vec3(bulletPos.getX(), bulletPos.getY() + m_viewHeight, bulletPos.getZ());
+
+        if (m_character->onGround() && glm::length(wishDir) > 0.1f)
+        {
+            float stepInterval = m_isCrouching ? 0.6f : (isSprinting ? 0.3f : 0.45f);
+            m_stepTimer += deltaTime;
+
+            if (m_stepTimer >= stepInterval)
+            {
+                m_sndStep.SetPosition(m_origin);
+                m_sndStep.SetVolume(m_isCrouching ? 0.2f : (isSprinting ? 0.6f : 0.4f));
+                m_sndStep.Play("footstep.wav");
+                m_stepTimer = 0.0f;
+            }
+        }
+        else
+        {
+            m_stepTimer = 0.0f;
+        }
 
         // Apply env_shake
         m_camera->position += Shake::GetPositionOffset();

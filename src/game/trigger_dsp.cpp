@@ -42,6 +42,14 @@ public:
         }
     }
 
+    void EndTouch(Entity* other) override
+    {
+        if (other && other->IsPlayer())
+        {
+            Sound::SetRoomStyle(0);
+        }
+    }
+
     bool IsCollidable() const override
     {
         return false;

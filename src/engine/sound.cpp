@@ -190,10 +190,11 @@ namespace Sound
     {
         // always in sounds folders
         std::string fullPath = "sounds/" + fileName;
+        std::string cacheKey = fullPath + "_" + std::to_string(s_currentStyle);
 
-        if (s_bufferCache.count(fullPath))
+        if (s_bufferCache.count(cacheKey))
         {
-            return s_bufferCache[fullPath];
+            return s_bufferCache[cacheKey];
         }
 
         ALuint buffer = 0;
@@ -209,7 +210,7 @@ namespace Sound
 
         if (buffer != 0)
         {
-            s_bufferCache[fullPath] = buffer;
+            s_bufferCache[cacheKey] = buffer;
         }
         else
         {
