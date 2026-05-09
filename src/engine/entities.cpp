@@ -209,6 +209,21 @@ glm::vec4 Entity::GetVector4(const std::string& key, const glm::vec4& defaultVal
     return defaultVal;
 }
 
+void Entity::UpdatePhysicsState()
+{
+    if (m_physObject)
+    {
+        if (IsCollidable())
+        {
+            m_physObject->setCollisionFlags(m_physObject->getCollisionFlags() & ~btCollisionObject::CF_NO_CONTACT_RESPONSE);
+        }
+        else
+        {
+            m_physObject->setCollisionFlags(m_physObject->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
+        }
+    }
+}
+
 void EntityManager::Init()
 {
 }
@@ -287,14 +302,7 @@ std::shared_ptr<Entity> EntityManager::SpawnEntity(const std::string& className,
         {
             ent->m_physObject->setUserPointer(ent.get());
 
-            if (!ent->IsCollidable())
-            {
-                ent->m_physObject->setCollisionFlags(ent->m_physObject->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
-            }
-            else
-            {
-                ent->m_physObject->setCollisionFlags(ent->m_physObject->getCollisionFlags() & ~btCollisionObject::CF_NO_CONTACT_RESPONSE);
-            }
+            ent->UpdatePhysicsState();
         }
     }
 

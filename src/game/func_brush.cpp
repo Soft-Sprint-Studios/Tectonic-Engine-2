@@ -53,6 +53,8 @@ public:
         {
             m_enabled = !m_enabled;
         }
+
+        UpdatePhysicsState();
     }
 
     bool IsRenderable() const override
