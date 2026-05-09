@@ -485,3 +485,13 @@
 	slack(float) : "Cable Sag (Slack)" : "16.0" : "How low the cable hangs in the middle."
 	segments(integer) : "Segments" : 16 : "Number of divisions for the curve."
 ]
+
+@PointClass base(Targetname) = env_shake : "Triggers a screen shake effect."
+[
+	amplitude(float) : "Amplitude" : "4.0" : "The intensity of the shake jitter."
+	frequency(float) : "Frequency" : "2.5" : "The speed of the vibration."
+	duration(float) : "Duration" : "1.0" : "How long the shake lasts in seconds."
+	radius(float) : "Radius" : "500.0" : "Radius of effect. 0 means global (affects player anywhere)."
+	
+	input StartShake(void) : "Activates the shake effect."
+]

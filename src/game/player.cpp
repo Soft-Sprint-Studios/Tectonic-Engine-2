@@ -28,6 +28,7 @@
 #include "cvar.h"
 #include "concmd.h"
 #include "dynamic_light.h"
+#include "camera_shake.h"
 #include <glm/gtx/string_cast.hpp>
 
 CVar cl_sensitivity("cl_sensitivity", "1.0", "Mouse sensitivity multiplier.", CVAR_SAVE);
@@ -39,8 +40,6 @@ CVar cl_jump_force("cl_jump_force", "5.0", "Initial upward velocity of a jump.",
 CVar cl_view_height("cl_view_height", "1.5", "Standing eye level height.", CVAR_SAVE);
 CVar cl_crouch_height("cl_crouch_height", "0.7", "Crouching eye level height.", CVAR_SAVE);
 CVar cl_view_interp("cl_view_interp", "12.0", "Speed of view height interpolation.", CVAR_SAVE);
-CVar cl_viewbob("cl_viewbob", "0", "Enable view bobbing movement.", CVAR_SAVE);
-CVar cl_viewbob_scale("cl_viewbob_scale", "1.0", "Strength of the view bobbing effect.", CVAR_SAVE);
 CVar cl_showpos("cl_showpos", "0", "Draw current position and angles at the top of the screen.", CVAR_SAVE);
 
 CON_COMMAND(noclip, "Toggles player noclip mode")
@@ -234,28 +233,11 @@ void Player::Think(float deltaTime)
         btVector3 bulletPos = currentTransform.getOrigin();
         m_camera->position = glm::vec3(bulletPos.getX(), bulletPos.getY() + m_viewHeight, bulletPos.getZ());
 
-        // Apply View Bobbing
-        if (cl_viewbob.GetInt() > 0 && m_character->onGround() && !m_noclip)
-        {
-            float horizontalSpeed = glm::length(glm::vec2(wishDir.x, wishDir.z));
-            if (horizontalSpeed > 0.1f)
-            {
-                float speedFactor = isSprinting ? 1.4f : 1.0f;
-                m_bobTimer += deltaTime * 10.0f * speedFactor;
-
-                float amount = 0.035f * cl_viewbob_scale.GetFloat();
-
-                m_camera->position.y += sin(m_bobTimer) * amount;
-
-                glm::vec3 forward = m_camera->GetForward();
-                glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0, 1, 0)));
-                m_camera->position += right * (cos(m_bobTimer * 0.5f) * (amount * 0.4f));
-            }
-            else
-            {
-                m_bobTimer = glm::mix(m_bobTimer, 0.0f, deltaTime * 5.0f);
-            }
-        }
+        // Apply env_shake
+        m_camera->position += CameraShake::GetPositionOffset();
+        glm::vec3 angShake = CameraShake::GetAngleOffset();
+        m_camera->pitch += angShake.x;
+        m_camera->yaw += angShake.y;
 
         m_origin = glm::vec3(bulletPos.x(), bulletPos.y(), bulletPos.z());
     }

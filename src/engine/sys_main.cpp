@@ -57,6 +57,7 @@
 #include "discord.h"
 #include "sentry.h"
 #include "sound_reverb.h"
+#include "camera_shake.h"
 
 namespace Sys
 {
@@ -161,6 +162,7 @@ namespace Sys
         {
             Particles::Update(dt);
             DynamicLights::Update();
+            CameraShake::Update(dt);
             LightStyles::Update(Time::TotalTime());
             Sprites::Update();
             Beams::Update();
