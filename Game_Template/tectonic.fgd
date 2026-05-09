@@ -766,3 +766,15 @@
 
 	output OnTrigger(void) : "Fired when the autosave is triggered."
 ]
+
+@SolidClass base(Targetname) = trigger_repeat : "Repeatedly fires its target when triggered or touched."
+[
+	delay(float) : "Delay between triggers" : "1.0" : "The delay in seconds between triggers."
+	repeats(float) : "Number of repeats" : "-1" : "The number of times to trigger. A value of -1 will keep triggering indefinitely."
+
+	input Trigger(void) : "Start the repeat sequence."
+	input Start(void) : "Start the repeat sequence."
+	input Stop(void) : "Stop the repeat sequence."
+
+	output OnTrigger(void) : "Fired each time it repeats."
+]
