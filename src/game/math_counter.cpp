@@ -52,6 +52,19 @@ public:
         {
             UpdateValue(m_currentValue - val);
         }
+        else if (input == "Multiply")
+        {
+            UpdateValue(m_currentValue * val);
+        }
+        else if (input == "Divide")
+        {
+            if (val == 0.0f)
+            {
+                return;
+            }
+
+            UpdateValue(m_currentValue / val);
+        }
         else if (input == "SetValue")
         {
             UpdateValue(val);

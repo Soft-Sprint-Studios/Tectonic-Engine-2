@@ -390,6 +390,8 @@
 
 	input Add(float) : "Add to the value."
 	input Subtract(float) : "Subtract from the value."
+	input Multiply(float) : "Multiply the value."
+	input Divide(float) : "Divide the value."
 	input SetValue(float) : "Set the value directly."
 
 	output OutValue(float) : "Fired when the value changes."
