@@ -105,6 +105,10 @@ void Entity::EndTouch(Entity* other)
 {
 }
 
+void Entity::Stay(Entity* other)
+{
+}
+
 void Entity::OnPress(Entity* activator)
 {
 }

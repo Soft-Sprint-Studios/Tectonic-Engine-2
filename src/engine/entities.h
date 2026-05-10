@@ -53,6 +53,7 @@ public:
 
     virtual void Touch(Entity* other);
     virtual void EndTouch(Entity* other);
+    virtual void Stay(Entity* other);
     virtual void OnPress(Entity* activator);
     virtual void OnSave();
 

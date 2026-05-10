@@ -129,6 +129,20 @@ namespace Physics
                 }
             }
         }
+
+        // OnStay API
+        for (const auto& pair : currentFramePairs)
+        {
+            Entity* entA = static_cast<Entity*>(pair.first->getUserPointer());
+            Entity* entB = static_cast<Entity*>(pair.second->getUserPointer());
+
+            if (entA->IsEnabled() && entB->IsEnabled())
+            {
+                entA->Stay(entB);
+                entB->Stay(entA);
+            }
+        }
+
         s_lastFramePairs = currentFramePairs;
     }
 
