@@ -56,7 +56,7 @@ bool R_Lights::Init()
     m_cascade = std::make_unique<R_Cascade>();
     m_cascade->Init(r_csm_res.GetInt());
 
-    float dummyData[] = { 1.0f, 1.0f };
+    float dummyData[] = { 1e10f, 1e20f };
 
     glGenTextures(1, &m_SpotShadow);
     glBindTexture(GL_TEXTURE_2D, m_SpotShadow);
@@ -173,7 +173,7 @@ void R_Lights::RenderShadowMaps(Camera& camera, R_BSP* bsp, R_Models* models)
 
         R_State::SetViewport(0, 0, def.shadowRes, def.shadowRes);
         glBindFramebuffer(GL_FRAMEBUFFER, def.shadowFBO);
-        R_State::SetClearColor({ 1.0f, 1.0f, 0.0f, 0.0f });
+        R_State::SetClearColor({ 1e10f, 1e20f, 0.0f, 0.0f });
         R_State::Clear(true, true, false);
 
         if (def.type == LightType::Spot)
@@ -253,7 +253,7 @@ void R_Lights::RenderShadowMaps(Camera& camera, R_BSP* bsp, R_Models* models)
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    R_State::SetClearColor({ 0.0f, 0.0f, 0.0f, 1.0f });
+    R_State::SetClearColor({ 0.0f, 0.0f, 0.0f, 0.0f });
 }
 
 void R_Lights::Bind(const R_Shader& shader)

@@ -39,23 +39,15 @@ public:
         def.loop = GetInt("loop", 1) != 0;
 
         m_handle = Videos::CreateVideo(def);
-        if (m_handle)
-        {
-            m_handle->SetActive(!HasSpawnFlag(1));
-        }
     }
 
-    void AcceptInput(const std::string& input, const std::string& param) override
+    void SetEnabled(bool state) override
     {
-        if (!m_handle)
+        Entity::SetEnabled(state);
+        if (m_handle)
         {
-            return;
+            m_handle->SetActive(state);
         }
-
-        if (input == "Enable")
-            m_handle->SetActive(true);
-        if (input == "Disable") 
-            m_handle->SetActive(false);
     }
 
     bool IsCollidable() const override

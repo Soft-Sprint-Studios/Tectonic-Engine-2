@@ -105,8 +105,12 @@ namespace Physics
             {
                 Entity* entA = static_cast<Entity*>(pair.first->getUserPointer());
                 Entity* entB = static_cast<Entity*>(pair.second->getUserPointer());
-                entA->Touch(entB);
-                entB->Touch(entA);
+
+                if (entA->IsEnabled() && entB->IsEnabled())
+                {
+                    entA->Touch(entB);
+                    entB->Touch(entA);
+                }
             }
         }
 
@@ -117,8 +121,12 @@ namespace Physics
             {
                 Entity* entA = static_cast<Entity*>(pair.first->getUserPointer());
                 Entity* entB = static_cast<Entity*>(pair.second->getUserPointer());
-                entA->EndTouch(entB);
-                entB->EndTouch(entA);
+
+                if (entA->IsEnabled() && entB->IsEnabled())
+                {
+                    entA->EndTouch(entB);
+                    entB->EndTouch(entA);
+                }
             }
         }
         s_lastFramePairs = currentFramePairs;

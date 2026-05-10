@@ -78,15 +78,11 @@ public:
 
         m_targetOrigin = m_startOrigin + (m_moveDir * m_moveDistance);
 
-        if (HasSpawnFlag(1)) // Start Open
+        if (HasSpawnFlag(2))
         {
             m_origin = m_targetOrigin;
             m_state = Open;
             UpdatePhysicsTransform();
-        }
-        else
-        {
-            m_state = Closed;
         }
 
         UpdatePhysicsState();
@@ -121,7 +117,7 @@ public:
     {
         if (other && other->IsPlayer())
         {
-            if (!HasSpawnFlag(2)) // Use Only
+            if (!HasSpawnFlag(4)) // Use Only
             {
                 Trigger();
             }

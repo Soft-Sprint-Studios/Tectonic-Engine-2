@@ -26,49 +26,15 @@
 class FuncBrush : public Entity
 {
 public:
-    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
-    {
-        Entity::Spawn(keyvalues);
-
-        m_enabled = !HasSpawnFlag(1);
-    }
-
-    void OnSave() override
-    {
-        Entity::OnSave();
-        AddSaveField(DATA_FIELD(FuncBrush, m_enabled, FieldType::Bool));
-    }
-
-    void AcceptInput(const std::string& input, const std::string& param) override
-    {
-        if (input == "Enable")
-        {
-            m_enabled = true;
-        }
-        else if (input == "Disable")
-        {
-            m_enabled = false;
-        }
-        else if (input == "Toggle")
-        {
-            m_enabled = !m_enabled;
-        }
-
-        UpdatePhysicsState();
-    }
-
     bool IsRenderable() const override
     {
-        return m_enabled;
+        return IsEnabled();
     }
 
     bool IsCollidable() const override
     {
-        return m_enabled;
+        return IsEnabled();
     }
-
-private:
-    bool m_enabled = true;
 };
 
 LINK_ENTITY_TO_CLASS("func_brush", FuncBrush)

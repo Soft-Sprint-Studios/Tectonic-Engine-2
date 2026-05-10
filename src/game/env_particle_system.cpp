@@ -32,12 +32,19 @@ public:
         Entity::Spawn(keyvalues);
         m_effect = GetValue("effect_name");
         m_sys = Particles::CreateSystem(m_effect, m_origin);
-        if (m_sys) 
+        if (m_sys)
         {
             glm::vec3 angles = GetVector("angles");
             m_sys->SetAngles(angles);
-            m_isActive = !HasSpawnFlag(1);
-            m_sys->SetActive(m_isActive);
+        }
+    }
+
+    void SetEnabled(bool state) override
+    {
+        Entity::SetEnabled(state);
+        if (m_sys)
+        {
+            m_sys->SetActive(state);
         }
     }
 
@@ -45,23 +52,11 @@ public:
     {
         Entity::OnSave();
         AddSaveField(DATA_FIELD(EnvParticleSystem, m_effect, FieldType::String));
-        AddSaveField(DATA_FIELD(EnvParticleSystem, m_isActive, FieldType::Bool));
-    }
-
-    void AcceptInput(const std::string& input, const std::string& param) override
-    {
-        if (!m_sys) 
-            return;
-        if (input == "Start") 
-            m_sys->SetActive(true);
-        if (input == "Stop") 
-            m_sys->SetActive(false);
     }
 
 private:
     std::string m_effect;
     std::shared_ptr<ParticleSystem> m_sys;
-    bool m_isActive = true;
 };
 
 LINK_ENTITY_TO_CLASS("env_particle_system", EnvParticleSystem)

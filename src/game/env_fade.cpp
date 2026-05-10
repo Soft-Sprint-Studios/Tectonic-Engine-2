@@ -40,9 +40,10 @@ public:
 
     void AcceptInput(const std::string& input, const std::string& param) override
     {
+        Entity::AcceptInput(input, param);
         if (input == "Fade")
         {
-            bool fadeIn = HasSpawnFlag(1);
+            bool fadeIn = HasSpawnFlag(2);
             Fade::Start(m_fadeColor, m_duration, m_holdTime, fadeIn);
         }
     }

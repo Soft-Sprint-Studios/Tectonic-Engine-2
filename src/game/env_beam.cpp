@@ -39,9 +39,14 @@ public:
         def.color = col / 255.0f;
 
         m_beam = Beams::CreateBeam(def);
+    }
+
+    void SetEnabled(bool state) override
+    {
+        Entity::SetEnabled(state);
         if (m_beam)
         {
-            m_beam->SetActive(!HasSpawnFlag(1));
+            m_beam->SetActive(state);
         }
     }
 
@@ -63,19 +68,6 @@ public:
                 m_beam->GetDef().endPos = m_origin;
             }
         }
-    }
-
-    void AcceptInput(const std::string& inputName, const std::string& parameter) override
-    {
-        if (!m_beam)
-            return;
-
-        if (inputName == "TurnOn")
-            m_beam->SetActive(true);
-        else if (inputName == "TurnOff")
-            m_beam->SetActive(false);
-        else if (inputName == "Toggle")
-            m_beam->SetActive(!m_beam->IsActive());
     }
 
     bool IsCollidable() const override

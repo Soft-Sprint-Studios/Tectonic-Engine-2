@@ -44,8 +44,15 @@ public:
             float alpha = GetFloat("renderamt", 255.0f);
             def.color = glm::vec4(color / 255.0f, alpha / 255.0f);
 
-            m_isVisible = !HasSpawnFlag(1);
-            m_sprite->SetActive(m_isVisible);
+        }
+    }
+
+    void SetEnabled(bool state) override
+    {
+        Entity::SetEnabled(state);
+        if (m_sprite)
+        {
+            m_sprite->SetActive(state);
         }
     }
 
@@ -53,26 +60,11 @@ public:
     {
         Entity::OnSave();
         AddSaveField(DATA_FIELD(EnvSprite, m_texturePath, FieldType::String));
-        m_isVisible = m_sprite->IsActive();
-        AddSaveField(DATA_FIELD(EnvSprite, m_isVisible, FieldType::Bool));
-    }
-
-    void AcceptInput(const std::string& input, const std::string& param) override
-    {
-        if (!m_sprite) 
-            return;
-        if (input == "ShowSprite") 
-            m_sprite->SetActive(true);
-        if (input == "HideSprite") 
-            m_sprite->SetActive(false);
-        if (input == "ToggleSprite") 
-            m_sprite->SetActive(!m_sprite->IsActive());
     }
 
 private:
     std::shared_ptr<Sprite> m_sprite;
     std::string m_texturePath;
-    bool m_isVisible = true;
 };
 
 LINK_ENTITY_TO_CLASS("env_sprite", EnvSprite)

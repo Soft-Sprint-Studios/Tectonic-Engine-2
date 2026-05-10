@@ -43,7 +43,7 @@ public:
 
     void OnPress(Entity* activator) override
     {
-        if (Time::TotalTime() < m_nextUseTime) 
+        if (!IsEnabled() || Time::TotalTime() < m_nextUseTime)
             return;
 
         FireOutput("OnPressed");

@@ -30,7 +30,6 @@ public:
     void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
     {
         Entity::Spawn(keyvalues);
-        m_enabled = !HasSpawnFlag(1);
         m_refireTime = GetFloat("refire", 1.0f);
         m_nextFire = (float)Time::TotalTime() + m_refireTime;
     }
@@ -38,17 +37,11 @@ public:
     void OnSave() override
     {
         Entity::OnSave();
-        AddSaveField(DATA_FIELD(LogicTimer, m_enabled, FieldType::Bool));
         AddSaveField(DATA_FIELD(LogicTimer, m_nextFire, FieldType::Float));
     }
 
     void Think(float deltaTime) override
     {
-        if (!m_enabled)
-        {
-            return;
-        }
-
         if (Time::TotalTime() >= m_nextFire)
         {
             FireOutput("OnTimer");
@@ -58,19 +51,9 @@ public:
 
     void AcceptInput(const std::string& input, const std::string& param) override
     {
-        if (input == "Enable")
-        {
-            m_enabled = true;
-        }
-        else if (input == "Disable")
-        {
-            m_enabled = false;
-        }
-        else if (input == "Toggle")
-        {
-            m_enabled = !m_enabled;
-        }
-        else if (input == "SetTimer" && !param.empty())
+        Entity::AcceptInput(input, param);
+
+        if (input == "SetTimer" && !param.empty())
         {
             m_refireTime = std::stof(param);
         }
@@ -82,7 +65,6 @@ public:
     }
 
 private:
-    bool m_enabled = true;
     float m_refireTime = 1.0f;
     float m_nextFire = 0.0f;
 };

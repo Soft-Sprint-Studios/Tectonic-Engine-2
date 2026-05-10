@@ -71,10 +71,10 @@ public:
         return false;
     }
 
-    int GetBModelIndex() const
-    {
-        return m_bmodelIndex;
-    }
+    bool IsEnabled() const;
+    virtual void SetEnabled(bool state);
+
+    int GetBModelIndex() const;
 
     bool HasSpawnFlag(int bit) const;
     void SetSpawnFlag(int bit, bool state);
@@ -116,6 +116,7 @@ public:
     }
 
 protected:
+    bool m_enabled = true;
     glm::vec3 m_origin{ 0.0f, 0.0f, 0.0f };
     glm::vec3 m_angles{ 0.0f, 0.0f, 0.0f };
     std::string m_className;

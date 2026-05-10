@@ -44,17 +44,34 @@ public:
         m_fogEnd = GetFloat("fog_end", 200.0f);
         m_fogAffectsSky = GetInt("fog_affects_sky", 1) != 0;
 
-        if (!HasSpawnFlag(1))
+        if (IsEnabled())
         {
             ApplySettings();
-            m_enabled = true;
+        }
+    }
+
+    void SetEnabled(bool state) override
+    {
+        Entity::SetEnabled(state);
+        if (state)
+        {
+            ApplySettings();
+        }
+        else
+        {
+            PostProcess::SetVignette(0.0f);
+            PostProcess::SetChroma(0.0f);
+            PostProcess::SetGrain(0.0f);
+            PostProcess::SetBW(0.0f);
+            PostProcess::SetSharpen(0.0f);
+            PostProcess::SetLensDirt(0.0f, "");
+            PostProcess::SetFog(false, { 0,0,0 }, 0, 0, false);
         }
     }
 
     void OnSave() override
     {
         Entity::OnSave();
-        AddSaveField(DATA_FIELD(EnvPostProcessController, m_enabled, FieldType::Bool));
         AddSaveField(DATA_FIELD(EnvPostProcessController, m_vignette, FieldType::Float));
         AddSaveField(DATA_FIELD(EnvPostProcessController, m_chroma, FieldType::Float));
         AddSaveField(DATA_FIELD(EnvPostProcessController, m_grain, FieldType::Float));
@@ -72,29 +89,9 @@ public:
 
     void AcceptInput(const std::string& inputName, const std::string& parameter) override
     {
-        if (inputName == "Enable")
-        {
-            ApplySettings();
-            m_enabled = true;
-        }
-        else if (inputName == "Disable")
-        {
-            PostProcess::SetVignette(0.0f);
-            PostProcess::SetChroma(0.0f);
-            PostProcess::SetGrain(0.0f);
-            PostProcess::SetBW(0.0f);
-            PostProcess::SetSharpen(0.0f);
-            PostProcess::SetLensDirt(0.0f, "");
-            m_enabled = false;
-        }
-        else if (inputName == "Toggle")
-        {
-            if (m_enabled) 
-                AcceptInput("Disable", "");
-            else 
-                AcceptInput("Enable", "");
-        }
-        else if (inputName == "SetVignette")
+        Entity::AcceptInput(inputName, parameter);
+
+        if (inputName == "SetVignette")
         {
             m_vignette = std::stof(parameter);
             if (m_enabled) 

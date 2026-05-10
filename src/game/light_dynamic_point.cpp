@@ -41,8 +41,7 @@ public:
         m_light = DynamicLights::CreatePointLight(m_origin, m_baseColor, radius);
         if (m_light)
         {
-            m_isActive = !HasSpawnFlag(1);
-            m_light->SetActive(m_isActive);
+            m_light->SetActive(IsEnabled());
             auto& def = const_cast<DynamicLightDef&>(m_light->GetDef());
             def.castsShadows = HasSpawnFlag(2);
             def.isStaticShadow = HasSpawnFlag(4);
@@ -56,8 +55,15 @@ public:
     {
         Entity::OnSave();
         AddSaveField(DATA_FIELD(LightDynamicPoint, m_baseColor, FieldType::Vec3));
-        m_isActive = m_light->IsActive();
-        AddSaveField(DATA_FIELD(LightDynamicPoint, m_isActive, FieldType::Bool));
+    }
+
+    void SetEnabled(bool state) override
+    {
+        Entity::SetEnabled(state);
+        if (m_light)
+        {
+            m_light->SetActive(state);
+        }
     }
 
     void Think(float deltaTime) override
@@ -69,29 +75,7 @@ public:
 
             int styleIndex = GetInt("style", 0);
             float mod = LightStyles::GetModifier(styleIndex);
-
             m_light->GetDef().color = m_baseColor * mod;
-        }
-    }
-
-    void AcceptInput(const std::string& input, const std::string& param) override
-    {
-        if (!m_light)
-        {
-            return;
-        }
-
-        if (input == "Enable")
-        {
-            m_light->SetActive(true);
-        }
-        else if (input == "Disable")
-        {
-            m_light->SetActive(false);
-        }
-        else if (input == "Toggle")
-        {
-            m_light->SetActive(!m_light->IsActive());
         }
     }
 
@@ -100,10 +84,9 @@ public:
         return false;
     }
 
-protected:
+private:
     std::shared_ptr<DynamicLight> m_light;
     glm::vec3 m_baseColor;
-    bool m_isActive = true;
 };
 
-LINK_ENTITY_TO_CLASS("light_dynamic_point", LightDynamicPoint)
+LINK_ENTITY_TO_CLASS("light_dynamic_point", LightDynamicPoint)  

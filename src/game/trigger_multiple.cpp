@@ -39,14 +39,10 @@ public:
         Entity::OnSave();
         AddSaveField(DATA_FIELD(TriggerMultiple, m_wait, FieldType::Float));
         AddSaveField(DATA_FIELD(TriggerMultiple, m_nextFireTime, FieldType::Float));
-        AddSaveField(DATA_FIELD(TriggerMultiple, m_disabled, FieldType::Bool));
     }
 
     void Touch(Entity* other) override
     {
-        if (m_disabled) 
-            return;
-
         if (other && other->IsPlayer())
         {
             if (Time::TotalTime() >= m_nextFireTime)
@@ -64,16 +60,6 @@ public:
                 }
             }
         }
-    }
-
-    void AcceptInput(const std::string& input, const std::string& param) override
-    {
-        if (input == "Enable") 
-            m_disabled = false;
-        if (input == "Disable") 
-            m_disabled = true;
-        if (input == "Toggle") 
-            m_disabled = !m_disabled;
     }
 
     bool IsCollidable() const override 

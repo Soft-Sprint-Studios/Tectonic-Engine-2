@@ -36,7 +36,7 @@ public:
 
     void Touch(Entity* other) override
     {
-        if (m_enabled && other && other->IsPlayer())
+        if (IsEnabled() && other && other->IsPlayer())
         {
             auto dest = EntityManager::FindEntityByName(m_targetNameStr);
             if (dest)
@@ -47,26 +47,8 @@ public:
         }
     }
 
-    void AcceptInput(const std::string& input, const std::string& param) override
-    {
-        if (input == "Enable")
-        {
-            m_enabled = true;
-        }
-        else if (input == "Disable")
-        {
-            m_enabled = false;
-        }
-    }
-
-    bool IsCollidable() const override
-    {
-        return false;
-    }
-
 private:
     std::string m_targetNameStr;
-    bool m_enabled = true;
 };
 
 LINK_ENTITY_TO_CLASS("trigger_teleport", TriggerTeleport)

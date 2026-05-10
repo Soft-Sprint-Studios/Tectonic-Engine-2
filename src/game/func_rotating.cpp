@@ -53,13 +53,9 @@ public:
             m_maxSpeed *= -1.0f;
         }
 
-        if (HasSpawnFlag(1))
+        if (IsEnabled())
         {
             m_targetSpeed = m_maxSpeed;
-        }
-        else
-        {
-            m_targetSpeed = 0.0f;
         }
 
         m_currentSpeed = m_targetSpeed;

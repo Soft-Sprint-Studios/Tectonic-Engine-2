@@ -44,7 +44,7 @@ public:
         m_isLooping = HasSpawnFlag(2);
         m_source.SetLooping(m_isLooping);
 
-        if (!HasSpawnFlag(1))
+        if (IsEnabled())
         {
             m_source.Play(m_soundName, m_isLooping);
             m_isPlaying = true;
@@ -60,6 +60,19 @@ public:
         AddSaveField(DATA_FIELD(EnvSound, m_pitch, FieldType::Float));
         m_isPlaying = m_source.IsPlaying();
         AddSaveField(DATA_FIELD(EnvSound, m_isPlaying, FieldType::Bool));
+    }
+
+    void SetEnabled(bool state) override
+    {
+        Entity::SetEnabled(state);
+        if (!state)
+        {
+            m_source.Stop();
+        }
+        else if (m_isPlaying)
+        {
+            m_source.Play(m_soundName, m_isLooping);
+        }
     }
 
     void AcceptInput(const std::string& inputName, const std::string& parameter) override

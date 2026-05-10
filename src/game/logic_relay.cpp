@@ -26,39 +26,16 @@
 class LogicRelay : public Entity
 {
 public:
-    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
-    {
-        Entity::Spawn(keyvalues);
-        m_disabled = HasSpawnFlag(1);
-    }
-
-    void OnSave() override
-    {
-        Entity::OnSave();
-        AddSaveField(DATA_FIELD(LogicRelay, m_disabled, FieldType::Bool));
-    }
-
     void AcceptInput(const std::string& input, const std::string& param) override
     {
-        if (input == "Enable")
-        {
-            m_disabled = false;
-        }
-        else if (input == "Disable")
-        {
-            m_disabled = true;
-        }
-        else if (input == "Toggle")
-        {
-            m_disabled = !m_disabled;
-        }
+        Entity::AcceptInput(input, param);
 
-        if (input == "Trigger" && !m_disabled)
+        if (input == "Trigger" && IsEnabled())
         {
             FireOutput("OnTrigger");
             if (HasSpawnFlag(2))
             {
-                m_disabled = true;
+                SetEnabled(false);
             }
         }
     }
@@ -67,9 +44,6 @@ public:
     {
         return false;
     }
-
-private:
-    bool m_disabled = false;
 };
 
 LINK_ENTITY_TO_CLASS("logic_relay", LogicRelay)

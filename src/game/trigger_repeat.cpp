@@ -32,7 +32,6 @@ public:
         Entity::Spawn(keyvalues);
         m_delay = GetFloat("delay", 1.0f);
         m_totalRepeats = GetInt("repeats", -1);
-        m_isActive = false;
         m_repeatsRemaining = 0;
         m_nextFireTime = 0.0f;
     }
@@ -40,7 +39,6 @@ public:
     void OnSave() override
     {
         Entity::OnSave();
-        AddSaveField(DATA_FIELD(TriggerRepeat, m_isActive, FieldType::Bool));
         AddSaveField(DATA_FIELD(TriggerRepeat, m_delay, FieldType::Float));
         AddSaveField(DATA_FIELD(TriggerRepeat, m_totalRepeats, FieldType::Int32));
         AddSaveField(DATA_FIELD(TriggerRepeat, m_repeatsRemaining, FieldType::Int32));
@@ -49,7 +47,7 @@ public:
 
     void Think(float deltaTime) override
     {
-        if (m_isActive && Time::TotalTime() >= m_nextFireTime)
+        if (IsEnabled() && Time::TotalTime() >= m_nextFireTime)
         {
             FireNow();
         }
@@ -57,23 +55,27 @@ public:
 
     void Touch(Entity* other) override
     {
-        if (!m_isActive && other && other->IsPlayer())
+        if (!IsEnabled() && other && other->IsPlayer())
         {
-            AcceptInput("Start", "");
+            SetEnabled(true);
+            m_repeatsRemaining = m_totalRepeats;
+            FireNow();
         }
     }
 
     void AcceptInput(const std::string& input, const std::string& param) override
     {
+        Entity::AcceptInput(input, param);
+
         if (input == "Trigger" || input == "Start")
         {
-            m_isActive = true;
+            SetEnabled(true);
             m_repeatsRemaining = m_totalRepeats;
             FireNow();
         }
         else if (input == "Stop")
         {
-            m_isActive = false;
+            SetEnabled(false);
         }
     }
 
@@ -85,29 +87,12 @@ public:
 private:
     void FireNow()
     {
-        if (!m_isActive)
+        if (!IsEnabled())
         {
             return;
         }
-
-        FireOutput("OnTrigger");
-
-        if (m_repeatsRemaining > 0)
-        {
-            m_repeatsRemaining--;
-        }
-
-        if (m_repeatsRemaining == 0)
-        {
-            m_isActive = false;
-        }
-        else
-        {
-            m_nextFireTime = (float)Time::TotalTime() + m_delay;
-        }
     }
 
-    bool m_isActive = false;
     float m_delay = 1.0f;
     int m_totalRepeats = -1;
     int m_repeatsRemaining = 0;

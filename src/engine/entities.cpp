@@ -41,6 +41,12 @@ void Entity::Spawn(const std::unordered_map<std::string, std::string>& keyvalues
     m_angles = GetVector("angles", { 0, 0, 0 });
     m_spawnflags = GetInt("spawnflags", 0);
 
+    // Start disabled flag
+    if (HasSpawnFlag(1))
+    {
+        m_enabled = false;
+    }
+
     for (auto const& [key, val] : keyvalues)
     {
         // outputs have \x1b escape must read to not corrupt outputs
@@ -74,8 +80,21 @@ void Entity::Think(float deltaTime)
 {
 }
 
+// Handle the base entity enable/disable
 void Entity::AcceptInput(const std::string& inputName, const std::string& parameter)
 {
+    if (inputName == "Enable")
+    {
+        SetEnabled(true);
+    }
+    else if (inputName == "Disable")
+    {
+        SetEnabled(false);
+    }
+    else if (inputName == "Toggle")
+    {
+        SetEnabled(!m_enabled);
+    }
 }
 
 void Entity::Touch(Entity* other)
@@ -92,6 +111,23 @@ void Entity::OnPress(Entity* activator)
 
 void Entity::OnSave()
 {
+    AddSaveField(DATA_FIELD(Entity, m_enabled, FieldType::Bool));
+}
+
+int Entity::GetBModelIndex() const
+{
+    return m_bmodelIndex;
+}
+
+bool Entity::IsEnabled() const
+{
+    return m_enabled;
+}
+
+void Entity::SetEnabled(bool state)
+{
+    m_enabled = state;
+    UpdatePhysicsState();
 }
 
 bool Entity::HasSpawnFlag(int bit) const
@@ -255,7 +291,10 @@ void EntityManager::UpdateAll(float deltaTime)
 
     for (auto& ent : s_entities)
     {
-        ent->Think(deltaTime);
+        if (ent->IsEnabled())
+        {
+            ent->Think(deltaTime);
+        }
     }
 }
 

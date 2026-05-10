@@ -11,6 +11,10 @@
 @BaseClass = Targetname
 [
 	targetname(target_source) : "Name" : : "The name that other entities refer to this entity by."
+	spawnflags(flags) = [ 1 : "Start Disabled" : 0 ]
+    input Enable(void) : "Enable this entity."
+    input Disable(void) : "Disable this entity."
+    input Toggle(void) : "Toggle enabled state."
 ]
 
 @BaseClass = Angles
@@ -92,7 +96,6 @@
     
     spawnflags(flags) =
 	[
-		1 : "Start Disabled" : 0
 		2 : "Cast Shadows" : 0
 		4 : "Static Shadows (Render Once)" : 0
 	]
@@ -113,10 +116,6 @@
 		12 : "Underwater light mutation"
 	]
     shadow_res(integer) : "Shadow Map Resolution" : 512
-
-    input Enable(void) : "Enables the light"
-    input Disable(void) : "Disables the light"
-    input Toggle(void) : "Toggles the light on/off"
 ]
 
 @PointClass base(Targetname, Angles) lightprop("models/editor/spot.mdl") lightcone() = light_dynamic_spot :
@@ -131,7 +130,6 @@
 
     spawnflags(flags) =
 	[
-		1 : "Start Disabled" : 0
 		2 : "Cast Shadows" : 0
 		4 : "Static Shadows (Render Once)" : 0
 	]
@@ -152,10 +150,6 @@
 		12 : "Underwater light mutation"
 	]
     shadow_res(integer) : "Shadow Map Resolution" : 512
-
-    input Enable(void) : "Enables the light"
-    input Disable(void) : "Disables the light"
-    input Toggle(void) : "Toggles the light on/off"
 ]
 
 //-------------------------------------------------------------------------
@@ -218,10 +212,6 @@
 	"A trigger volume that can be fired multiple times."
 [
 	wait(float) : "Delay Before Reset" : "1" : "Time in seconds before the trigger can be activated again. Set to -1 to fire only once."
-	
-	input Enable(void) : "Enable the trigger."
-	input Disable(void) : "Disable the trigger."
-	input Toggle(void) : "Toggle the trigger state."
 
 	output OnTrigger(void) : "Fired when a player enters the trigger."
 ]
@@ -229,9 +219,6 @@
 @SolidClass base(Targetname) = trigger_once : 
 	"A trigger volume that removes itself/disables after one use."
 [
-	input Enable(void) : "Enable the trigger."
-	input Disable(void) : "Disable the trigger."
-	input Toggle(void) : "Toggle the trigger state."
 
 	output OnTrigger(void) : "Fired when a player enters the trigger."
 ]
@@ -254,7 +241,6 @@
 
 	spawnflags(flags) =
 	[
-		1 : "Start Silent" : 0
 		2 : "Looping" : 0
 	]
 
@@ -286,14 +272,6 @@
 		1 : "Yes"
 	]
 
-	spawnflags(flags) =
-	[
-		1 : "Start Disabled" : 0
-	]
-
-	input Enable(void) : "Enables the post-processing effects with its settings. Also enables fog."
-	input Disable(void) : "Disables all post-processing effects, including fog."
-	input Toggle(void) : "Toggles the post-processing effects on and off."
 	input SetVignette(float) : "Sets a new vignette strength."
 	input SetChroma(float) : "Sets a new chromatic aberration strength."
 	input SetGrain(float) : "Sets a new film grain strength."
@@ -377,9 +355,6 @@
 
 	volumetric_intensity(float) : "Sun Volumetric Intensity" : "0.0" : "Intensity of the sun's volumetric lighting. Set to 0 to disable."
 	volumetric_steps(integer) : "Sun Volumetric Steps" : 8 : "Number of ray-marching steps for the sun's volumetrics. Higher values are smoother but slower."
-
-	input Enable(void) : "Enable procedural sky"
-	input Disable(void) : "Disable procedural sky and return to cubemap"
 ]
 
 @PointClass base(Targetname) iconsprite("editor/logic_auto.vmt") = logic_auto : 
@@ -391,15 +366,6 @@
 @PointClass base(Targetname) iconsprite("editor/logic_relay.vmt") = logic_relay :
 	"A message forwarder. Use this to fire multiple outputs from one input."
 [
-	spawnflags(flags) =
-	[
-		1 : "Start Disabled" : 0
-		2 : "Only fire once" : 0
-	]
-
-	input Enable(void) : "Enable the relay."
-	input Disable(void) : "Disable the relay."
-	input Toggle(void) : "Toggle the relay."
 	input Trigger(void) : "Trigger the relay."
 
 	output OnTrigger(void) : "Fired when the relay is triggered."
@@ -409,15 +375,7 @@
 	"Fires an output at regular intervals."
 [
 	refire(float) : "Refire Interval" : "1.0" : "Time between timer fires in seconds."
-	
-	spawnflags(flags) =
-	[
-		1 : "Start Disabled" : 0
-	]
 
-	input Enable(void) : "Enable the timer."
-	input Disable(void) : "Disable the timer."
-	input Toggle(void) : "Toggle the timer."
 	input SetTimer(float) : "Change the refire interval."
 
 	output OnTimer(void) : "Fired every interval."
@@ -450,15 +408,6 @@
 	LightningEnd(target_destination) : "Ending Entity" : "" : "Name of the entity where the beam ends."
 	width(float) : "Beam Width" : "2.0"
 	rendercolor(color255) : "Beam Color" : "255 255 255"
-	
-	spawnflags(flags) =
-	[
-		1 : "Start Disabled" : 0
-	]
-
-	input TurnOn(void) : "Enable the beam."
-	input TurnOff(void) : "Disable the beam."
-	input Toggle(void) : "Toggle the beam state."
 ]
 
 @SolidClass base(Targetname) = trigger_dsp : 
@@ -522,7 +471,7 @@
 	
 	spawnflags(flags) =
 	[
-		1 : "Fade From Color (Fade In)" : 0
+		2 : "Fade From Color (Fade In)" : 0
 	]
 
 	input Fade(void) : "Start the fade effect."
@@ -538,14 +487,6 @@
 		1 : "Yes"
 	]
 	scale(vector) : "Scale (W H D)" : "1 1 1" : "The physical size of the video quad in the world."
-
-	spawnflags(flags) =
-	[
-		1 : "Start Disabled" : 0
-	]
-
-	input Enable(void) : "Shows the video and starts playback."
-	input Disable(void) : "Hides the video and stops playback."
 ]
 
 @PointClass base(Targetname) = logic_compare : "Compares two values and fires outputs."
@@ -629,39 +570,28 @@
 	input EndGame(void) : "Triggers the end of the game and disconnects from the map."
 ]
 
-@SolidClass = func_friction : "Friction Modifier"
+@SolidClass base(Targetname) = func_friction : "Friction Modifier"
 [
     friction(float) : "Friction Percent" : "1.0" : "1.0 is normal, 0.1 is ice, 2.0 is mud."
 ]
 
-@SolidClass = func_conveyor : "Conveyor Belt"
+@SolidClass base(Targetname) = func_conveyor : "Conveyor Belt"
 [
     movedir(angle) : "Move Direction" : "0 0 0"
     speed(float) : "Conveyor Speed" : "100"
 ]
 
-@SolidClass = func_ladder : "Climbable Ladder"
+@SolidClass base(Targetname) = func_ladder : "Climbable Ladder"
 [
     speed(float) : "Climb Speed" : "3.0"
 ]
 
-@SolidClass = func_brush : "A generic brush entity that can be enabled/disabled."
+@SolidClass base(Targetname) = func_brush : "A generic brush entity that can be enabled/disabled."
 [
-    targetname(target_source) : "Name" : : "The name that other entities refer to this entity by."
-
-    spawnflags(flags) =
-    [
-        1 : "Start Disabled" : 0
-    ]
-
-    input Enable(void) : "Enable the brush."
-    input Disable(void) : "Disable the brush."
-    input Toggle(void) : "Toggle the brush state."
 ]
 
-@SolidClass = func_door : "Sliding Door"
+@SolidClass base(Targetname) = func_door : "Sliding Door"
 [
-    targetname(target_source) : "Name" : : "The name that other entities refer to this entity by."
     angles(angle) : "Direction" : "0 0 0" : "The direction the door will move when opened. Use -1 for UP and -2 for DOWN."
     speed(float) : "Speed" : "100" : "Units per second."
     movedistance(float) : "Move Distance" : "0" : "How many units the door should move. If 0, it uses its own size."
@@ -669,8 +599,8 @@
 
     spawnflags(flags) =
     [
-        1 : "Start Open" : 0
-        2 : "Use Only" : 0
+        2 : "Start Open" : 0
+        4 : "Use Only" : 0
     ]
 
     input Open(void) : "Force door open."
@@ -683,27 +613,22 @@
     output OnFullyClosed(void) : "Reaches closed position."
 ]
 
-@SolidClass = func_illusionary : "A brush entity that is always visible but has no collision." []
+@SolidClass base(Targetname) = func_illusionary : "A brush entity that is always visible but has no collision." []
 
-@SolidClass = trigger_teleport : "A volume that teleports the player to a target entity."
+@SolidClass base(Targetname) = trigger_teleport : "A volume that teleports the player to a target entity."
 [
     target(target_destination) : "Remote Destination" : "" : "The name of an info_target to teleport to."
-    spawnflags(flags) = [ 1 : "Start Disabled" : 0 ]
-    input Enable(void) : "Enable the teleport."
-    input Disable(void) : "Disable the teleport."
     output OnTeleport(void) : "Fired when someone is teleported."
 ]
 
 @SolidClass base(Targetname) = func_rotating : "A brush entity that rotates around its origin."
 [
     origin(origin) : "Origin (X Y Z)" : : "The pivot point of the rotation."
-    targetname(target_source) : "Name" : : "The name that other entities refer to this entity by."
 	speed(float) : "Max Rotation Speed" : "100" : "Degrees per second."
 	fan_friction(float) : "Friction" : "1" : "How quickly the object reaches max speed (1-100)."
 	
 	spawnflags(flags) =
 	[
-		1 : "Start ON" : 0
 		2 : "Reverse Direction" : 0
 		4 : "X Axis" : 0
 		8 : "Y Axis" : 0
@@ -739,14 +664,6 @@
 	chance(float) : "Chance Percentage" : "50" : "The probability (0-100) that this entity will trigger its target."
 	wait(float) : "Delay Before Reset" : "1" : "Time in seconds before the trigger can be activated again. Set to -1 to fire only once."
 
-	spawnflags(flags) =
-	[
-		1 : "Start Disabled" : 0
-	]
-
-	input Enable(void) : "Enable the trigger."
-	input Disable(void) : "Disable the trigger."
-	input Toggle(void) : "Toggle the trigger state."
 	input Trigger(void) : "Force the trigger to calculate the chance and fire."
 
 	output OnPass(void) : "Fired when the probability check succeeds."
@@ -755,15 +672,6 @@
 
 @SolidClass base(Targetname) = trigger_autosave : "A trigger volume that automatically saves the game when the player touches it."
 [
-	spawnflags(flags) =
-	[
-		1 : "Start Disabled" : 0
-	]
-
-	input Enable(void) : "Enable the trigger."
-	input Disable(void) : "Disable the trigger."
-	input Toggle(void) : "Toggle the trigger state."
-
 	output OnTrigger(void) : "Fired when the autosave is triggered."
 ]
 
@@ -779,6 +687,6 @@
 	output OnTrigger(void) : "Fired each time it repeats."
 ]
 
-@SolidClass = func_clip : "A brush entity that blocks movement but is completely invisible."
+@SolidClass base(Targetname) = func_clip : "A brush entity that blocks movement but is completely invisible."
 [
 ]
