@@ -22,57 +22,15 @@
  * SOFTWARE.
  */
 #pragma once
-#include "window.h"
-#include "r_shader.h"
 #include <string>
-#include <vector>
-#include <unordered_map>
 #include <glm/glm.hpp>
-#include <SDL3_ttf/SDL_ttf.h>
-#include <glad/glad.h>
 
-class R_UI
+class Renderer;
+
+namespace ScreenText
 {
-public:
-    R_UI();
-    ~R_UI();
-
-    void Init(Window* window);
-    void Shutdown();
-    void OnWindowResize(int w, int h);
-    
-    void DrawText(const std::string& text, float x, float y, const glm::vec4& color, float scale = 1.0f);
-    void DrawRect(float x, float y, float w, float h, const glm::vec4& color);
-    bool IsMouseOver(float x, float y, float w, float h) const;
-    void Render();
-
-private:
-    struct TextDrawCommand
-    {
-        std::string text;
-        float x, y;
-        glm::vec4 color;
-        float scale;
-    };
-
-    struct CachedText
-    {
-        GLuint textureID;
-        int width, height;
-    };
-
-    struct RectDrawCommand
-    {
-        float x, y, w, h;
-        glm::vec4 color;
-    };
-
-    R_Shader m_shader;
-    GLuint m_vao = 0, m_vbo = 0;
-    TTF_Font* m_font = nullptr;
-    glm::mat4 m_projection;
-    std::vector<TextDrawCommand> m_commands;
-    std::unordered_map<std::string, CachedText> m_textCache;
-    std::vector<RectDrawCommand> m_rectCommands;
-    float m_mouseX, m_mouseY;
-};
+    void Add(const std::string& text, float x, float y, const glm::vec4& color, float fadeIn, float hold, float fadeOut, float scale);
+    void Update(float dt);
+    void Draw(Renderer* renderer);
+    void Clear();
+}

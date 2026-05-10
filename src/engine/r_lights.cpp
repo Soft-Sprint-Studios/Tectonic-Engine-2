@@ -193,6 +193,8 @@ void R_Lights::RenderShadowMaps(Camera& camera, R_BSP* bsp, R_Models* models)
 
             m_shadowSpotShader.SetMat4("u_lightSpaceMatrix", def.lightSpaceMatrix);
             m_shadowSpotShader.SetMat4("u_model", glm::mat4(1.0f));
+            m_shadowSpotShader.SetVec3("u_lightPos", light->GetPosition());
+            m_shadowSpotShader.SetFloat("u_farPlane", def.radius);
 
             Renderer::DrawSceneDepth(m_shadowSpotShader, lightFrustum, bsp, models);
         }

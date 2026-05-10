@@ -99,9 +99,9 @@ void R_UI::OnWindowResize(int w, int h)
     m_projection = glm::ortho(0.0f, (float)w, (float)h, 0.0f);
 }
 
-void R_UI::DrawText(const std::string& text, float x, float y, const glm::vec4& color)
+void R_UI::DrawText(const std::string& text, float x, float y, const glm::vec4& color, float scale)
 {
-    m_commands.push_back({text, x, y, color});
+    m_commands.push_back({ text, x, y, color, scale });
 }
 
 void R_UI::DrawRect(float x, float y, float w, float h, const glm::vec4& color)
@@ -194,8 +194,8 @@ void R_UI::Render()
 
         float xpos = cmd.x;
         float ypos = cmd.y;
-        float w = (float)cached.width;
-        float h = (float)cached.height;
+        float w = (float)cached.width * cmd.scale;
+        float h = (float)cached.height * cmd.scale;
 
         // Vertices for the text
         float vertices[6][4] = 

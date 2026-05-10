@@ -60,6 +60,7 @@
 #include "shake.h"
 #include "fade.h"
 #include "video.h"
+#include "screen_text.h"
 
 namespace Sys
 {
@@ -167,6 +168,7 @@ namespace Sys
             Videos::Update(dt);
             Shake::Update(dt);
             Fade::Update(dt);
+            ScreenText::Update(dt);
             LightStyles::Update(Time::TotalTime());
             Sprites::Update();
             Beams::Update();
@@ -249,6 +251,7 @@ namespace Sys
         {
             MainMenu::Draw(&s_renderer);
             Console::Draw(&s_renderer);
+            ScreenText::Draw(&s_renderer);
         }
 
         // Framerate Limiter

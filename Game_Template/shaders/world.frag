@@ -123,14 +123,18 @@ float ChebyshevUpperBound(vec2 moments, float warpedDepth)
     return linstep(0.2, 1.0, pMax); 
 }
 
-float SpotShadowCalc(vec4 fragPosLightSpace, sampler2D shadowMap)
+float SpotShadowCalc(vec3 fragPosWorld, vec3 lightPos, float radius, mat4 lightSpaceMatrix, sampler2D shadowMap)
 {
+    vec4 fragPosLightSpace = lightSpaceMatrix * vec4(fragPosWorld, 1.0);
     vec3 projCoords = (fragPosLightSpace.xyz / fragPosLightSpace.w) * 0.5 + 0.5;
+    
     if (projCoords.z > 1.0) 
         return 0.0;
 
+    float linearDepth = (distance(fragPosWorld, lightPos) / radius) - 0.001;
+    float warpedDepth = exp(EVSM_EXP * linearDepth);
+    
     vec2 moments = texture(shadowMap, projCoords.xy).rg;
-    float warpedDepth = exp(EVSM_EXP * projCoords.z);
     
     return 1.0 - ChebyshevUpperBound(moments, warpedDepth);
 }
@@ -138,7 +142,7 @@ float SpotShadowCalc(vec4 fragPosLightSpace, sampler2D shadowMap)
 float PointShadowCalc(vec3 fragPos, vec3 lightPos, float far_plane, samplerCube shadowMap)
 {
     vec3 fragToLight = fragPos - lightPos;
-    float depth = length(fragToLight) / far_plane;
+    float depth = (length(fragToLight) / far_plane) - 0.001;
     
     vec2 moments = texture(shadowMap, fragToLight).rg;
     float warpedDepth = exp(EVSM_EXP * depth);
@@ -382,7 +386,7 @@ void main()
         float intensity = clamp((theta - u_spotLights[i].outerAngle) / epsilon, 0.0, 1.0);
         float attenuation = 1.0 - (dist / u_spotLights[i].radius);
 
-        float shadow = SpotShadowCalc(u_spotLights[i].lightSpaceMatrix * vec4(FragPos, 1.0), u_spotShadowMaps[i]);
+        float shadow = SpotShadowCalc(FragPos, u_spotLights[i].pos, u_spotLights[i].radius, u_spotLights[i].lightSpaceMatrix, u_spotShadowMaps[i]);
 
         vec3 lightEnergy = u_spotLights[i].color * intensity * attenuation * (1.0 - shadow);
 
