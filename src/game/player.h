@@ -52,6 +52,7 @@ public:
     void SetClimbSpeed(float speed);
     bool IsOnLadder() const;
     void RestoreDefaultGravity();
+    glm::vec3 GetViewForward() const;
 
     bool IsNoclip() const 
     { 

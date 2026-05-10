@@ -380,6 +380,11 @@ void Player::RestoreDefaultGravity()
     }
 }
 
+glm::vec3 Player::GetViewForward() const
+{
+    return m_camera ? m_camera->GetForward() : glm::vec3(0.0f, 0.0f, 1.0f);
+}
+
 void Player::SetFOV(float targetFov, float duration)
 {
     m_targetFOV = targetFov;

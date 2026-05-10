@@ -690,3 +690,23 @@
 @SolidClass base(Targetname) = func_clip : "A brush entity that blocks movement but is completely invisible."
 [
 ]
+
+@SolidClass base(Targetname) = trigger_look : "Fires an output when the player is inside the volume and looking at a specific target entity."
+[
+	target(target_destination) : "Look Target" : "" : "The name of the entity (e.g. info_target) the player must look at."
+	looktime(float) : "Look Sensitivity (0-1)" : "0.9" : "How directly the player must look at the target. 1.0 is perfect, 0.8 is roughly facing it."
+	lookduration(float) : "Look Duration" : "0.5" : "How many seconds the player must hold the gaze on the target to fire."
+	lookdist(float) : "Look Distance" : "500" : "Maximum distance in units the player can be from the target entity for this to fire."
+
+	spawnflags(flags) =
+	[
+		2 : "Fire once" : 0
+	]
+
+	output OnLookingAt(void) : "Fired when the player looks at the target."
+]
+
+@PointClass base(Targetname) = point_command : "An entity that executes console commands passed to its Command input."
+[
+	input Command(string) : "Executes the parameter string as a console command."
+]
