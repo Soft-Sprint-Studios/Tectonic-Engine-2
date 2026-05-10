@@ -108,6 +108,9 @@ void R_Waters::Draw(const Camera& camera, GLuint vao, GLuint lightmap)
     if (m_surfaces.empty() || m_starts.empty())
         return;
 
+    R_State::SetDepthTest(true);
+    R_State::SetDepthMask(true);
+
     R_State::SetBlending(true);
     R_State::SetBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
