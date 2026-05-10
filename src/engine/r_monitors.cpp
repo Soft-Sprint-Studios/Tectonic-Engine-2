@@ -1,0 +1,203 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2025-2026 Soft Sprint Studios
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+#include "r_monitors.h"
+#include "renderer.h"
+#include "entities.h"
+#include "r_state.h"
+#include <glm/gtc/matrix_transform.hpp>
+
+void R_Monitors::Init()
+{
+    m_shader.Load("shaders/monitor.vert", "shaders/monitor.frag");
+
+    float verts[] = 
+    {
+        -0.5f,  0.5f, 0.0f, 0.0f, 1.0f,
+        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
+         0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+         0.5f,  0.5f, 0.0f, 1.0f, 1.0f
+    };
+
+    glGenVertexArrays(1, &m_vao);
+    glGenBuffers(1, &m_vbo);
+    glBindVertexArray(m_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
+    
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), 0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+}
+
+R_Monitors::RenderTarget& R_Monitors::GetTarget(Monitor* m)
+{
+    auto& def = m->GetDef();
+    
+    // Create new FBO if it doesnt exist or resolution changed
+    if (m_targets.find(m) == m_targets.end() || m_targets[m].res != def.resolution)
+    {
+        RenderTarget& rt = m_targets[m];
+        if (rt.fbo) 
+        {
+            glDeleteFramebuffers(1, &rt.fbo);
+            glDeleteTextures(1, &rt.texture);
+            glDeleteRenderbuffers(1, &rt.rbo);
+        }
+
+        rt.res = def.resolution;
+        glGenFramebuffers(1, &rt.fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, rt.fbo);
+
+        glGenTextures(1, &rt.texture);
+        glBindTexture(GL_TEXTURE_2D, rt.texture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, rt.res, rt.res, 0, GL_RGB, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rt.texture, 0);
+
+        glGenRenderbuffers(1, &rt.rbo);
+        glBindRenderbuffer(GL_RENDERBUFFER, rt.rbo);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, rt.res, rt.res);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rt.rbo);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+    return m_targets[m];
+}
+
+void R_Monitors::RenderTextures(Renderer* renderer)
+{
+    auto monitors = Monitors::GetActiveMonitors();
+    for (auto& m : monitors)
+    {
+        if (!m->IsActive()) 
+        {
+            continue;
+        }
+
+        if (m->GetDef().isStatic && m->HasRenderedOnce())
+        {
+            continue;
+        }
+
+        auto camEnt = EntityManager::FindEntityByName(m->GetDef().cameraName);
+        if (!camEnt) 
+        {
+            continue;
+        }
+
+        RenderTarget& rt = GetTarget(m.get());
+        
+        // Setup a temporary camera
+        float fov = camEnt->GetFloat("fov", 75.0f);
+        float radius = camEnt->GetFloat("radius", 2000.0f);
+
+        Camera cam(fov, 1.0f, 0.1f, radius);
+        cam.position = camEnt->GetOrigin();
+        glm::vec3 entAngles = camEnt->GetAngles();
+        glm::mat4 rotation = glm::mat4(1.0f);
+
+        rotation = glm::rotate(rotation, glm::radians(entAngles.y + 90.0f), glm::vec3(0, 1, 0));
+        rotation = glm::rotate(rotation, glm::radians(-entAngles.x), glm::vec3(1, 0, 0));
+        rotation = glm::rotate(rotation, glm::radians(entAngles.z), glm::vec3(0, 0, 1));
+
+        glm::vec3 forward = glm::vec3(rotation * glm::vec4(0.0f, 0.0f, 1.0f, 0.0f));
+
+        cam.pitch = glm::degrees(asin(forward.y));
+        cam.yaw = glm::degrees(atan2(forward.z, forward.x));
+
+        R_State::SetViewport(0, 0, rt.res, rt.res);
+        glBindFramebuffer(GL_FRAMEBUFFER, rt.fbo);
+
+        renderer->RenderWorld(cam, 0, true);
+
+        if (m->GetDef().isStatic)
+        {
+            m->SetRenderedOnce(true);
+        }
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void R_Monitors::Draw(const Camera& camera, const std::vector<std::shared_ptr<Monitor>>& monitors)
+{
+    if (monitors.empty()) 
+    {
+        return;
+    }
+
+    R_State::SetDepthTest(true);
+    R_State::SetDepthMask(true);
+
+    m_shader.Bind();
+    m_shader.SetMat4("u_view", camera.GetViewMatrix());
+    m_shader.SetMat4("u_projection", camera.GetProjectionMatrix());
+    glBindVertexArray(m_vao);
+
+    for (auto& m : monitors)
+    {
+        if (!m->IsActive()) 
+        {
+            continue;
+        }
+
+        auto it = m_targets.find(m.get());
+        if (it == m_targets.end()) 
+        {
+            continue;
+        }
+
+        auto& def = m->GetDef();
+        glm::mat4 model = glm::translate(glm::mat4(1.0f), def.position);
+        model = glm::rotate(model, glm::radians(def.angles.y + 90.0f), glm::vec3(0, 1, 0));
+        model = glm::rotate(model, glm::radians(-def.angles.x), glm::vec3(1, 0, 0));
+        model = glm::rotate(model, glm::radians(def.angles.z), glm::vec3(0, 0, 1));
+        model = glm::scale(model, def.scale);
+
+        m_shader.SetMat4("u_model", model);
+        m_shader.SetInt("u_grayscale", def.grayscale ? 1 : 0);
+        
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, it->second.texture);
+        
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    }
+}
+
+void R_Monitors::Shutdown()
+{
+    for (auto& pair : m_targets)
+    {
+        glDeleteFramebuffers(1, &pair.second.fbo);
+        glDeleteTextures(1, &pair.second.texture);
+        glDeleteRenderbuffers(1, &pair.second.rbo);
+    }
+    m_targets.clear();
+
+    if (m_vao) 
+        glDeleteVertexArrays(1, &m_vao);
+    if (m_vbo) 
+        glDeleteBuffers(1, &m_vbo);
+}

@@ -38,6 +38,7 @@
 #include "r_beams.h"
 #include "r_cables.h"
 #include "r_video.h"
+#include "r_monitors.h"
 #include "cubemap.h"
 #include "video.h"
 #include <memory>
@@ -80,6 +81,7 @@ private:
     std::unique_ptr<R_Beams> m_beamRenderer;
     std::unique_ptr<R_Cables> m_cableRenderer;
     std::unique_ptr<R_Video> m_videoRenderer;
+    std::unique_ptr<R_Monitors> m_monitorRenderer;
     std::unique_ptr<R_Waters> m_waterRenderer;
     std::unique_ptr<R_UI> m_uiRenderer;
 };

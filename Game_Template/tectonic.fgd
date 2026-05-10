@@ -710,3 +710,30 @@
 [
 	input Command(string) : "Executes the parameter string as a console command."
 ]
+
+@PointClass base(Targetname, Angles) = info_monitorcamera : "The camera viewpoint for a func_monitor." 
+[
+	fov(float) : "Field of view" : "75" : "The vertical field of view for the camera."
+	radius(float) : "Radius" : "2000" : "The maximum distance (far plane) for the camera view. Useful for performance."
+]
+
+@PointClass base(Targetname, Angles) = func_monitor : "Displays a live view from an info_monitorcamera on a quad."
+[
+	camera(target_destination) : "Camera Name" : "" : "The name of the info_monitorcamera to view from."
+	resolution(choices) : "Resolution" : 512 =
+	[
+		256 : "256x256 (Low)"
+		512 : "512x512 (Default)"
+		1024: "1024x1024 (High)"
+	]
+	effects(choices) : "Effects" : 0 =
+	[
+		0 : "Color"
+		1 : "Grayscale"
+	]
+	scale(vector) : "Scale (W H D)" : "1 1 1" : "The physical size of the monitor quad."
+	spawnflags(flags) =
+	[
+		2 : "Static (Render Once)" : 0
+	]
+]

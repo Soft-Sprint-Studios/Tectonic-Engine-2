@@ -89,6 +89,7 @@ bool Renderer::Init(Window& window)
     m_beamRenderer = std::make_unique<R_Beams>();
     m_cableRenderer = std::make_unique<R_Cables>();
     m_videoRenderer = std::make_unique<R_Video>();
+    m_monitorRenderer = std::make_unique<R_Monitors>();
 
     m_waterRenderer = std::make_unique<R_Waters>();
     m_waterRenderer->Init(ww, wh);
@@ -118,6 +119,7 @@ bool Renderer::LoadMap(const std::string& path)
     m_beamRenderer->Init();
     m_cableRenderer->Init();
     m_videoRenderer->Init();
+    m_monitorRenderer->Init();
 
     m_waterRenderer->ClearSurfaces();
     for (const auto& s : map.waterSurfaces)
@@ -248,6 +250,12 @@ void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater
     {
         m_videoRenderer->Draw(camera, Videos::GetActiveVideos());
     }
+
+    // Draw monitors
+    if (m_monitorRenderer)
+    {
+        m_monitorRenderer->Draw(camera, Monitors::GetActiveMonitors());
+    }
 }
 
 void Renderer::DrawSceneDepth(R_Shader& shader, const Frustum& frustum, R_BSP* bsp, R_Models* models)
@@ -313,6 +321,11 @@ void Renderer::Render(Camera& camera)
     if (m_lightRenderer)
     {
         m_lightRenderer->RenderShadowMaps(camera, m_bspRenderer.get(), m_modelRenderer.get());
+    }
+
+    if (m_monitorRenderer)
+    {
+        m_monitorRenderer->RenderTextures(this);
     }
 
     int w, h;
@@ -418,6 +431,24 @@ void Renderer::Shutdown()
     {
         m_beamRenderer->Shutdown();
         m_beamRenderer.reset();
+    }
+
+    if (m_cableRenderer)
+    {
+        m_cableRenderer->Shutdown();
+        m_cableRenderer.reset();
+    }
+
+    if (m_videoRenderer)
+    {
+        m_videoRenderer->Shutdown();
+        m_videoRenderer.reset();
+    }
+
+    if (m_monitorRenderer)
+    {
+        m_monitorRenderer->Shutdown();
+        m_monitorRenderer.reset();
     }
 
     if (m_waterRenderer)
