@@ -739,3 +739,18 @@
 		2 : "Static (Render Once)" : 0
 	]
 ]
+
+@SolidClass base(Targetname) = func_pendulum : "A brush entity that oscillates back and forth on a fixed axis."
+[
+	origin(origin) : "Origin (X Y Z)" : : "The pivot point the pendulum swings around."
+	speed(float) : "Speed" : "50" : "How fast the pendulum swings."
+	distance(float) : "Swing Distance" : "90" : "The maximum angle (in degrees) of the swing from the center."
+	
+	spawnflags(flags) =
+	[
+		4 : "X Axis" : 0
+		8 : "Y Axis" : 0
+	]
+    
+    // Note: Enable/Disable/Toggle inputs are inherited from the Targetname base class
+]
