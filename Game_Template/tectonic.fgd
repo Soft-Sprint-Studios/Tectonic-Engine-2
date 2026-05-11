@@ -751,6 +751,24 @@
 		4 : "X Axis" : 0
 		8 : "Y Axis" : 0
 	]
-    
-    // Note: Enable/Disable/Toggle inputs are inherited from the Targetname base class
+]
+
+@PointClass base(Targetname) = game_text : "An entity that displays text messages on the player's screen."
+[
+	message(string) : "Message Text" : "" : "The text to display."
+	x(float) : "X Position (0 to 1)" : "-1" : "Horizontal position on screen. 0 is left, 1 is right, -1 is center."
+	y(float) : "Y Position (0 to 1)" : "-1" : "Vertical position on screen. 0 is top, 1 is bottom, -1 is center."
+	color(color255) : "Color" : "255 255 255"
+	fadein(float) : "Fade In Time" : "0.5"
+	holdtime(float) : "Hold Time" : "4.0"
+	fadeout(float) : "Fade Out Time" : "0.5"
+	scale(float) : "Text Scale" : "1.0" : "Multiplier for the text size."
+
+	input Display(void) : "Display the message to the player."
+]
+
+@SolidClass base(Targetname) = func_glass : "A transparent, refractive glass brush."
+[
+	refractamount(float) : "Refraction Amount" : "0.05" : "Strength of the distortion caused by the normal map."
+	normal(string) : "Normal Map" : "water_normal.png" : "The PNG filename in the textures/ folder to use for refraction."
 ]

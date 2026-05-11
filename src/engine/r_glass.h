@@ -22,54 +22,20 @@
  * SOFTWARE.
  */
 #pragma once
-#include "r_bloom.h"
-#include "r_volumetrics.h"
-#include "r_autoexposure.h"
-#include "r_ssao.h"
-#include "camera.h"
 #include "r_shader.h"
 #include <glad/glad.h>
-#include <memory>
 
-class R_PostProcess
+class R_Glass
 {
 public:
-    R_PostProcess();
-    ~R_PostProcess();
-
-    bool Init(int width, int height);
-    void Begin();
-    void End();
-    void Draw(const Camera& camera, class R_Lights* lights);
-    void Rescale(int width, int height);
+    void Init(int width, int height);
+    void CaptureScreen(GLuint screenFBO, int width, int height);
+    void Draw(const class Camera& camera, class R_BSP* bsp);
     void Shutdown();
-
-    GLuint GetDepthTexture() 
-    { 
-        return m_depthTexture;
-    }
-
-    GLuint GetActiveFBO();
+    void Rescale(int width, int height);
 
 private:
-    GLuint m_fbo;
-    GLuint m_texture;
-    GLuint m_depthTexture;
-
-    GLuint m_msFbo;
-    GLuint m_msTexture;
-    GLuint m_msRbo;
-
-    GLuint m_quadVAO;
-    GLuint m_quadVBO;
     R_Shader m_shader;
-
-    int m_width, m_height;
-    void SetupBuffers();
-
-    // Postprocess subrenderers
-    std::unique_ptr<R_Bloom> m_bloom;
-    std::unique_ptr<R_Volumetrics> m_volumetrics;
-    std::unique_ptr<R_AutoExposure> m_autoExposure;
-    std::unique_ptr<R_SSAO> m_ssao;
+    GLuint m_refractTex = 0;
+    GLuint m_fbo = 0;
 };

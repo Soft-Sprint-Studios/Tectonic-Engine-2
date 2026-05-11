@@ -21,55 +21,26 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#pragma once
-#include "r_bloom.h"
-#include "r_volumetrics.h"
-#include "r_autoexposure.h"
-#include "r_ssao.h"
-#include "camera.h"
-#include "r_shader.h"
-#include <glad/glad.h>
-#include <memory>
+#include "entities.h"
 
-class R_PostProcess
+class FuncGlass : public Entity
 {
 public:
-    R_PostProcess();
-    ~R_PostProcess();
-
-    bool Init(int width, int height);
-    void Begin();
-    void End();
-    void Draw(const Camera& camera, class R_Lights* lights);
-    void Rescale(int width, int height);
-    void Shutdown();
-
-    GLuint GetDepthTexture() 
-    { 
-        return m_depthTexture;
+    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    {
+        Entity::Spawn(keyvalues);
     }
 
-    GLuint GetActiveFBO();
+    // Must be false because we render in r_glass
+    bool IsRenderable() const override
+    {
+        return false;
+    }
 
-private:
-    GLuint m_fbo;
-    GLuint m_texture;
-    GLuint m_depthTexture;
-
-    GLuint m_msFbo;
-    GLuint m_msTexture;
-    GLuint m_msRbo;
-
-    GLuint m_quadVAO;
-    GLuint m_quadVBO;
-    R_Shader m_shader;
-
-    int m_width, m_height;
-    void SetupBuffers();
-
-    // Postprocess subrenderers
-    std::unique_ptr<R_Bloom> m_bloom;
-    std::unique_ptr<R_Volumetrics> m_volumetrics;
-    std::unique_ptr<R_AutoExposure> m_autoExposure;
-    std::unique_ptr<R_SSAO> m_ssao;
+    bool IsCollidable() const override
+    {
+        return IsEnabled();
+    }
 };
+
+LINK_ENTITY_TO_CLASS("func_glass", FuncGlass)

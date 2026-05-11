@@ -91,6 +91,9 @@ bool Renderer::Init(Window& window)
     m_videoRenderer = std::make_unique<R_Video>();
     m_monitorRenderer = std::make_unique<R_Monitors>();
 
+    m_glassRenderer = std::make_unique<R_Glass>();
+    m_glassRenderer->Init(ww, wh);
+
     m_waterRenderer = std::make_unique<R_Waters>();
     m_waterRenderer->Init(ww, wh);
 
@@ -345,6 +348,12 @@ void Renderer::Render(Camera& camera)
 
     RenderWorld(camera, 0);
 
+    if (m_glassRenderer && m_postProcess)
+    {
+        m_glassRenderer->CaptureScreen(m_postProcess->GetActiveFBO(), w, h);
+        m_glassRenderer->Draw(camera, m_bspRenderer.get());
+    }
+
     m_postProcess->End();
 
     R_State::SetWireframe(false);
@@ -380,6 +389,10 @@ void Renderer::OnWindowResize(int w, int h)
     if (m_postProcess)
     {
         m_postProcess->Rescale(w, h);
+    }
+    if (m_glassRenderer)
+    {
+        m_glassRenderer->Rescale(w, h);
     }
 }
 
@@ -449,6 +462,12 @@ void Renderer::Shutdown()
     {
         m_monitorRenderer->Shutdown();
         m_monitorRenderer.reset();
+    }
+
+    if (m_glassRenderer)
+    {
+        m_glassRenderer->Shutdown();
+        m_glassRenderer.reset();
     }
 
     if (m_waterRenderer)

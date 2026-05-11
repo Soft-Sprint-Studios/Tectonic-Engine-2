@@ -335,3 +335,14 @@ void R_PostProcess::Shutdown()
 
     m_fbo = m_msFbo = 0;
 }
+
+// Used for r_glass
+GLuint R_PostProcess::GetActiveFBO()
+{
+    bool useMSAA = false;
+    if (CVar* cvMSAA = CVar::Find("r_multisample"))
+    {
+        useMSAA = cvMSAA->GetInt() > 0;
+    }
+    return (useMSAA && m_msFbo != 0) ? m_msFbo : m_fbo;
+}
