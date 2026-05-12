@@ -28,6 +28,9 @@
 #include "video.h"
 #include "filesystem.h"
 #include "console.h"
+#include "r_bsp.h"
+#include "entities.h"
+#include "func_video.h"
 #include <glm/gtc/matrix_transform.hpp>
 
 R_VideoInstance::R_VideoInstance()
@@ -59,7 +62,7 @@ bool R_VideoInstance::Load(const std::string& path, bool loop)
 
     if (w == 0 || h == 0)
     {
-        Console::Error("Video: " + path + " has 0 dimensions. Invalid MPEG");
+        Console::Error("Video: " + path + " has 0 dimensions.");
         return false;
     }
 
@@ -67,24 +70,24 @@ bool R_VideoInstance::Load(const std::string& path, bool loop)
     glBindTexture(GL_TEXTURE_2D, m_texY);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, w, h, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
 
     glGenTextures(1, &m_texCb);
     glBindTexture(GL_TEXTURE_2D, m_texCb);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, w / 2, h / 2, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
 
     glGenTextures(1, &m_texCr);
     glBindTexture(GL_TEXTURE_2D, m_texCr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, w / 2, h / 2, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
 
     return true;
@@ -106,10 +109,8 @@ void R_VideoInstance::Update(float dt)
         {
             glBindTexture(GL_TEXTURE_2D, m_texY);
             glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, frame->width, frame->height, GL_RED, GL_UNSIGNED_BYTE, frame->y.data);
-
             glBindTexture(GL_TEXTURE_2D, m_texCb);
             glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, frame->width / 2, frame->height / 2, GL_RED, GL_UNSIGNED_BYTE, frame->cb.data);
-
             glBindTexture(GL_TEXTURE_2D, m_texCr);
             glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, frame->width / 2, frame->height / 2, GL_RED, GL_UNSIGNED_BYTE, frame->cr.data);
 
@@ -126,11 +127,11 @@ void R_VideoInstance::Update(float dt)
 
 void R_VideoInstance::BindTextures()
 {
-    glActiveTexture(GL_TEXTURE0);
+    glActiveTexture(GL_TEXTURE10);
     glBindTexture(GL_TEXTURE_2D, m_texY);
-    glActiveTexture(GL_TEXTURE1);
+    glActiveTexture(GL_TEXTURE11);
     glBindTexture(GL_TEXTURE_2D, m_texCb);
-    glActiveTexture(GL_TEXTURE2);
+    glActiveTexture(GL_TEXTURE12);
     glBindTexture(GL_TEXTURE_2D, m_texCr);
 }
 
@@ -152,34 +153,10 @@ void R_VideoInstance::Shutdown()
 void R_Video::Init()
 {
     m_shader.Load("shaders/video.vert", "shaders/video.frag");
-
-    float verts[] =
-    {
-        -0.5f,  0.5f, 0.0f, 0.0f, 0.0f,
-        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
-         0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
-         0.5f,  0.5f, 0.0f, 1.0f, 0.0f
-    };
-
-    glGenVertexArrays(1, &m_vao);
-    glGenBuffers(1, &m_vbo);
-    glBindVertexArray(m_vao);
-    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
-
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), 0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 }
 
-void R_Video::Draw(const Camera& camera, const std::vector<std::shared_ptr<Video>>& videos)
+void R_Video::Draw(const Camera& camera, R_BSP* bsp)
 {
-    if (videos.empty())
-    {
-        return;
-    }
-
     R_State::SetDepthTest(true);
     R_State::SetDepthMask(true);
     R_State::SetBlending(false);
@@ -187,37 +164,43 @@ void R_Video::Draw(const Camera& camera, const std::vector<std::shared_ptr<Video
     m_shader.Bind();
     m_shader.SetMat4("u_view", camera.GetViewMatrix());
     m_shader.SetMat4("u_projection", camera.GetProjectionMatrix());
-    m_shader.SetInt("texY", 0);
-    m_shader.SetInt("texCb", 1);
-    m_shader.SetInt("texCr", 2);
 
-    glBindVertexArray(m_vao);
+    m_shader.SetInt("texY", 10);
+    m_shader.SetInt("texCb", 11);
+    m_shader.SetInt("texCr", 12);
 
-    for (auto& v : videos)
+    for (const auto& ent : EntityManager::GetEntities())
     {
-        if (!v->IsActive())
+        if (ent->GetClassName() != "func_video" || !ent->IsEnabled())
         {
             continue;
         }
 
-        auto& def = v->GetDef();
-        glm::mat4 model = glm::translate(glm::mat4(1.0f), def.position);
-        model = glm::rotate(model, glm::radians(def.angles.y + 90.0f), glm::vec3(0, 1, 0));
-        model = glm::rotate(model, glm::radians(-def.angles.x), glm::vec3(1, 0, 0));
-        model = glm::rotate(model, glm::radians(def.angles.z), glm::vec3(0, 0, 1));
-        model = glm::scale(model, def.scale);
+        auto video_ent = std::dynamic_pointer_cast<FuncVideo>(ent);
+        if (!video_ent)
+        {
+            continue;
+        }
+
+        auto video_handle = video_ent->GetHandle();
+        if (!video_handle || !video_handle->IsActive())
+        {
+            continue;
+        }
+
+        glm::mat4 model = glm::translate(glm::mat4(1.0f), ent->GetOrigin());
+        glm::vec3 ang = ent->GetAngles();
+        model = glm::rotate(model, glm::radians(ang.y), glm::vec3(0, 1, 0));
+        model = glm::rotate(model, glm::radians(ang.x), glm::vec3(1, 0, 0));
+        model = glm::rotate(model, glm::radians(ang.z), glm::vec3(0, 0, 1));
 
         m_shader.SetMat4("u_model", model);
-        v->GetInternalPlayer()->BindTextures();
+        video_handle->GetInternalPlayer()->BindTextures();
 
-        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+        bsp->DrawBModel(ent->GetBModelIndex(), m_shader, model, true);
     }
 }
 
 void R_Video::Shutdown()
 {
-    if (m_vao) 
-        glDeleteVertexArrays(1, &m_vao);
-    if (m_vbo) 
-        glDeleteBuffers(1, &m_vbo);
 }

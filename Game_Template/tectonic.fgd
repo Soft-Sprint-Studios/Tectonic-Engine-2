@@ -479,16 +479,14 @@
 	input Fade(void) : "Start the fade effect."
 ]
 
-@PointClass base(Targetname, Angles) = func_video_display : "An entity that displays an MPEG-1 (.mpg) video on a flat quad."
+@SolidClass base(Targetname) = func_video : "A brush entity that displays an MPEG-1 (.mpg) video on its surfaces."
 [
-	origin(origin) : "Origin (X Y Z)" : : "The position of this entity's center in the world. Rotating entities typically rotate around their origin."
 	video(string) : "Video File" : "" : "The filename of the video inside the 'videos/' folder (e.g. 'intro.mpg')."
 	loop(choices) : "Looping" : 1 =
 	[
 		0 : "No"
 		1 : "Yes"
 	]
-	scale(vector) : "Scale (W H D)" : "1 1 1" : "The physical size of the video quad in the world."
 ]
 
 @PointClass base(Targetname) = logic_compare : "Compares two values and fires outputs."

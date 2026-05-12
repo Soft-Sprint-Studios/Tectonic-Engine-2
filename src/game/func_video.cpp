@@ -21,42 +21,38 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#include "entities.h"
+#include "func_video.h"
 #include "video.h"
 
-class FuncVideoDisplay : public Entity
+void FuncVideo::Spawn(const std::unordered_map<std::string, std::string>& keyvalues)
 {
-public:
-    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    Entity::Spawn(keyvalues);
+
+    VideoDef def;
+    def.videoPath = GetValue("video");
+    def.loop = GetInt("loop", 1) != 0;
+
+    m_handle = Videos::CreateVideo(def);
+}
+
+void FuncVideo::SetEnabled(bool state)
+{
+    Entity::SetEnabled(state);
+    if (m_handle)
     {
-        Entity::Spawn(keyvalues);
-
-        VideoDef def;
-        def.videoPath = GetValue("video");
-        def.position = m_origin;
-        def.angles = GetVector("angles", { 0, 0, 0 });
-        def.scale = GetVector("scale", { 1, 1, 1 });
-        def.loop = GetInt("loop", 1) != 0;
-
-        m_handle = Videos::CreateVideo(def);
+        m_handle->SetActive(state);
     }
+}
 
-    void SetEnabled(bool state) override
-    {
-        Entity::SetEnabled(state);
-        if (m_handle)
-        {
-            m_handle->SetActive(state);
-        }
-    }
+// Must be false because we render in r_video
+bool FuncVideo::IsRenderable() const
+{
+    return false;
+}
 
-    bool IsCollidable() const override
-    {
-        return true;
-    }
+bool FuncVideo::IsCollidable() const
+{
+    return true;
+}
 
-private:
-    std::shared_ptr<Video> m_handle;
-};
-
-LINK_ENTITY_TO_CLASS("func_video_display", FuncVideoDisplay)
+LINK_ENTITY_TO_CLASS("func_video", FuncVideo)

@@ -22,42 +22,24 @@
  * SOFTWARE.
  */
 #pragma once
-#include <string>
-#include <vector>
+#include "entities.h"
 #include <memory>
-#include <glad/glad.h>
-#include "r_shader.h"
-#include "camera.h"
 
-#include <cstdio>
-#include "pl_mpeg.h"
+class Video;
 
-class R_VideoInstance
+class FuncVideo : public Entity
 {
 public:
-    R_VideoInstance();
-    ~R_VideoInstance();
+    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override;
+    void SetEnabled(bool state) override;
+    bool IsRenderable() const override;
+    bool IsCollidable() const override;
 
-    bool Load(const std::string& path, bool loop);
-    void Update(float dt);
-    void BindTextures();
-    void Shutdown();
-
-private:
-    plm_t* m_plm = nullptr;
-    GLuint m_texY = 0, m_texCb = 0, m_texCr = 0;
-    bool m_loop = false;
-    double m_time = 0.0;
-    double m_nextFrameTime = 0.0;
-};
-
-class R_Video
-{
-public:
-    void Init();
-    void Draw(const Camera& camera, class R_BSP* bsp);
-    void Shutdown();
+    std::shared_ptr<Video> GetHandle() 
+    { 
+        return m_handle; 
+    }
 
 private:
-    R_Shader m_shader;
+    std::shared_ptr<Video> m_handle;
 };

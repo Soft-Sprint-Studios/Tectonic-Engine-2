@@ -30,9 +30,6 @@
 struct VideoDef
 {
     std::string videoPath;
-    glm::vec3 position;
-    glm::vec3 angles;
-    glm::vec3 scale{ 1.0f };
     bool loop = true;
     bool active = true;
 };
