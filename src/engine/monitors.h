@@ -30,9 +30,6 @@
 struct MonitorDef
 {
     std::string cameraName;
-    glm::vec3 position;
-    glm::vec3 angles;
-    glm::vec3 scale{ 1.0f };
     int resolution = 512;
     bool grayscale = false;
     bool isStatic = false;
@@ -44,14 +41,19 @@ class Monitor
 public:
     Monitor(const MonitorDef& def);
 
-    MonitorDef& GetDef() 
-    { 
-        return m_def; 
+    MonitorDef& GetDef()
+    {
+        return m_def;
     }
 
-    bool IsActive() const 
-    { 
-        return m_def.active; 
+    bool IsActive() const
+    {
+        return m_def.active;
+    }
+
+    void SetActive(bool state)
+    {
+        m_def.active = state;
     }
 
     bool HasRenderedOnce() const

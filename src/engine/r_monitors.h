@@ -28,12 +28,14 @@
 #include <glad/glad.h>
 #include <map>
 
+class R_BSP;
+
 class R_Monitors
 {
 public:
     void Init();
     void RenderTextures(class Renderer* renderer);
-    void Draw(const Camera& camera, const std::vector<std::shared_ptr<Monitor>>& monitors);
+    void Draw(const Camera& camera, R_BSP* bsp);
     void Shutdown();
 
 private:
@@ -48,6 +50,5 @@ private:
     RenderTarget& GetTarget(Monitor* monitor);
 
     R_Shader m_shader;
-    GLuint m_vao = 0, m_vbo = 0;
     std::map<Monitor*, RenderTarget> m_targets;
 };

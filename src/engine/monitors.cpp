@@ -31,7 +31,7 @@ namespace Monitors
 {
     static std::vector<std::shared_ptr<Monitor>> s_monitors;
 
-    void Init() 
+    void Init()
     {
     }
 

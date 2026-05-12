@@ -257,7 +257,7 @@ void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater
     // Draw monitors
     if (m_monitorRenderer)
     {
-        m_monitorRenderer->Draw(camera, Monitors::GetActiveMonitors());
+        m_monitorRenderer->Draw(camera, m_bspRenderer.get());
     }
 }
 

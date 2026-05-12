@@ -6,7 +6,7 @@ uniform int u_grayscale;
 
 void main()
 {
-    vec4 texColor = texture(u_texture, TexCoord);
+    vec4 texColor = texture(u_texture, vec2(TexCoord.x, 1.0 - TexCoord.y));
     
     if (u_grayscale == 1)
     {

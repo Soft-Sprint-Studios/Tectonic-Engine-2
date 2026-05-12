@@ -21,41 +21,25 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#pragma once
 #include "entities.h"
-#include "func_monitor.h"
-#include "monitors.h"
+#include <memory>
 
-void FuncMonitor::Spawn(const std::unordered_map<std::string, std::string>& keyvalues)
+class Monitor;
+
+class FuncMonitor : public Entity
 {
-    Entity::Spawn(keyvalues);
+public:
+    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override;
+    void SetEnabled(bool state) override;
+    bool IsRenderable() const override;
+    bool IsCollidable() const override;
 
-    MonitorDef def;
-    def.cameraName = GetValue("camera");
-    def.resolution = GetInt("resolution", 512);
-    def.grayscale = (GetInt("effects") == 1);
-    def.isStatic = HasSpawnFlag(2);
-
-    m_handle = Monitors::CreateMonitor(def);
-}
-
-void FuncMonitor::SetEnabled(bool state)
-{
-    Entity::SetEnabled(state);
-    if (m_handle)
-    {
-        m_handle->SetActive(state);
+    std::shared_ptr<Monitor> GetHandle() 
+    { 
+        return m_handle; 
     }
-}
 
-// Must be false because we render in r_monitors
-bool FuncMonitor::IsRenderable() const
-{
-    return false;
-}
-
-bool FuncMonitor::IsCollidable() const
-{
-    return true;
-}
-
-LINK_ENTITY_TO_CLASS("func_monitor", FuncMonitor)
+private:
+    std::shared_ptr<Monitor> m_handle;
+};
