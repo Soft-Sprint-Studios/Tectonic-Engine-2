@@ -119,6 +119,7 @@ void R_Sky::LoadCubemap(const std::string& skyName)
 void R_Sky::Draw(const Camera& camera)
 {
     R_State::SetDepthFunc(GL_LEQUAL);
+    R_State::SetDepthMask(false);
     m_shader.Bind();
     
     // Remove translation from view matrix so sky stays at infinity
@@ -141,6 +142,7 @@ void R_Sky::Draw(const Camera& camera)
     glBindTexture(GL_TEXTURE_CUBE_MAP, m_cubemapTexture);
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glBindVertexArray(0);
+    R_State::SetDepthMask(true);
     R_State::SetDepthFunc(GL_LESS);
 }
 
