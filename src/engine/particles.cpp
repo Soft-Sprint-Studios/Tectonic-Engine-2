@@ -223,6 +223,11 @@ void ParticleSystem::SetAngles(const glm::vec3& angles)
     m_rotationMatrix = glm::mat3(rot);
 }
 
+ParticleDef& ParticleSystem::GetDef()
+{ 
+    return m_def; 
+}
+
 const ParticleDef& ParticleSystem::GetDef() const
 {
     return m_def;

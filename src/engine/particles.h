@@ -63,6 +63,7 @@ public:
     void SetOrigin(const glm::vec3& pos);
     void SetAngles(const glm::vec3& angles);
 
+    ParticleDef& GetDef();
     const ParticleDef& GetDef() const;
     const std::vector<ParticleInstance>& GetParticles() const;
 

@@ -769,3 +769,27 @@
 	refractamount(float) : "Refraction Amount" : "0.05" : "Strength of the distortion caused by the normal map."
 	normal(string) : "Normal Map" : "water_normal.png" : "The PNG filename in the textures/ folder to use for refraction."
 ]
+
+@SolidClass base(Targetname) = func_movelinear : "A brush that moves along a specified direction."
+[
+	movedir(angle) : "Move Direction" : "0 0 0" : "The direction the brush will move."
+	movedistance(float) : "Move Distance" : "128" : "The distance in units the brush will move."
+	speed(float) : "Speed" : "100" : "Units per second."
+	startposition(float) : "Start Position (0-1)" : "0" : "Initial position, where 0 is the start and 1 is the end."
+
+	input Open(void) : "Move to the end position."
+	input Close(void) : "Move to the start position."
+	input Toggle(void) : "Toggle movement between start and end."
+
+	output OnFullyOpen(void) : "Fired when the brush reaches the end position."
+	output OnFullyClosed(void) : "Fired when the brush reaches the start position."
+]
+
+@SolidClass base(Targetname) = func_precipitation : "A volume that creates precipitation effects like rain or snow. Requires 'rain' and 'snow' particle systems to be defined in particles.def."
+[
+	preciptype(choices) : "Precipitation Type" : 0 =
+	[
+		0 : "Rain"
+		1 : "Snow"
+	]
+]
