@@ -800,3 +800,42 @@
 	damagewait(float) : "Damage Interval" : "0.5" : "Seconds between damage ticks."
 	output OnHurtPlayer(void) : "Fired every time the player is damaged."
 ]
+
+@SolidClass base(Targetname) = trigger_still : "Fires an output when the player stands still inside this volume for a specific amount of time."
+[
+	waittime(float) : "Wait Time" : "3.0" : "How many seconds the player must stand still to fire the output."
+	
+	output OnStill(void) : "Fired when the player has been still for the required duration."
+	output OnMoving(void) : "Fired if the player starts moving again before the timer reaches Wait Time."
+]
+
+@PointClass base(Targetname) = logic_multicompare : "Fires an output based on the comparison of multiple input values."
+[
+	numinputs(integer) : "Number of Inputs" : 2 : "How many inputs (1-16) to track."
+	ShouldSatisfyAll(choices) : "Logic Mode" : 1 =
+	[
+		0 : "OR (Any input matches target)"
+		1 : "AND (All inputs must match target)"
+	]
+	TargetValue(float) : "Target Value" : 1 : "The value the inputs are compared against."
+
+	input SetInput01(float) : "Set value for input 1."
+	input SetInput02(float) : "Set value for input 2."
+	input SetInput03(float) : "Set value for input 3."
+	input SetInput04(float) : "Set value for input 4."
+	input SetInput05(float) : "Set value for input 5."
+	input SetInput06(float) : "Set value for input 6."
+	input SetInput07(float) : "Set value for input 7."
+	input SetInput08(float) : "Set value for input 8."
+	input SetInput09(float) : "Set value for input 9."
+	input SetInput10(float) : "Set value for input 10."
+	input SetInput11(float) : "Set value for input 11."
+	input SetInput12(float) : "Set value for input 12."
+	input SetInput13(float) : "Set value for input 13."
+	input SetInput14(float) : "Set value for input 14."
+	input SetInput15(float) : "Set value for input 15."
+	input SetInput16(float) : "Set value for input 16."
+
+	output OnTrue(void) : "Fired when the logic condition is met."
+	output OnFalse(void) : "Fired when the logic condition is no longer met."
+]
