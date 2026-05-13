@@ -30,6 +30,7 @@
 #include "dynamic_light.h"
 #include "shake.h"
 #include <glm/gtx/string_cast.hpp>
+#include "maps.h"
 
 CVar cl_sensitivity("cl_sensitivity", "1.0", "Mouse sensitivity multiplier.", CVAR_SAVE);
 CVar cl_walk_speed("cl_walk_speed", "3.64", "Player walking speed.", CVAR_SAVE);
@@ -385,6 +386,26 @@ glm::vec3 Player::GetViewForward() const
     return m_camera ? m_camera->GetForward() : glm::vec3(0.0f, 0.0f, 1.0f);
 }
 
+void Player::TakeDamage(float amount)
+{
+    if (m_noclip || !IsEnabled())
+        return;
+
+    m_health -= amount;
+    if (m_health <= 0)
+    {
+        m_health = 0;
+        Console::Log("Player Died!.");
+        // todo actually reload map without crashing
+        return;
+    }
+}
+
+float Player::GetHealth() const
+{
+    return m_health; 
+}
+
 void Player::SetFOV(float targetFov, float duration)
 {
     m_targetFOV = targetFov;
@@ -440,6 +461,7 @@ void Player::OnSave()
     AddSaveField(DATA_FIELD(Player, m_noclip, FieldType::Bool));
     AddSaveField(DATA_FIELD(Player, m_saveYaw, FieldType::Float));
     AddSaveField(DATA_FIELD(Player, m_savePitch, FieldType::Float));
+    AddSaveField(DATA_FIELD(Player, m_health, FieldType::Float));
 }
 
 LINK_ENTITY_TO_CLASS("info_player_start", Player)

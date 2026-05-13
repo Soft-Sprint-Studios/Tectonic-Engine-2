@@ -244,6 +244,19 @@ namespace Sys
             s_renderer.GetUI()->DrawText(buf, 10.0f, 30.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
         }
 
+        if (!MainMenu::IsActive() && Maps::HasMapLoaded() && s_renderer.GetUI())
+        {
+            auto ent = EntityManager::FindEntityByClass("info_player_start");
+            if (ent)
+            {
+                auto player = std::dynamic_pointer_cast<Player>(ent);
+                std::string healthStr = "Health: " + std::to_string((int)player->GetHealth());
+                int w, h;
+                SDL_GetWindowSize(s_window.Get(), &w, &h);
+                s_renderer.GetUI()->DrawText(healthStr, 20.0f, (float)h - 40.0f, { 1.0f, 0.2f, 0.2f, 1.0f }, 1.5f);
+            }
+        }
+
         // Rendering
         s_renderer.Render(s_camera);
 

@@ -54,6 +54,9 @@ public:
     void RestoreDefaultGravity();
     glm::vec3 GetViewForward() const;
 
+    void TakeDamage(float amount);
+    float GetHealth() const;
+
     bool IsNoclip() const 
     { 
         return m_noclip; 
@@ -79,6 +82,8 @@ public:
     float m_currentFOV = 75.0f;
     float m_targetFOV = 75.0f;
     float m_fovSpeed = 0.0f;
+
+    float m_health = 100.0f;
 
 private:
     Camera* m_camera = nullptr;

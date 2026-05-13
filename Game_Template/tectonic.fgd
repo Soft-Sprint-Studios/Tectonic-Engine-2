@@ -793,3 +793,10 @@
 		1 : "Snow"
 	]
 ]
+
+@SolidClass base(Targetname) = trigger_hurt : "A volume that damages the player while they are inside."
+[
+	damage(float) : "Damage" : "10" : "Amount of damage to deal per interval."
+	damagewait(float) : "Damage Interval" : "0.5" : "Seconds between damage ticks."
+	output OnHurtPlayer(void) : "Fired every time the player is damaged."
+]
