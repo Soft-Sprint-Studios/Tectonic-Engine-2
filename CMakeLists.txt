@@ -21,6 +21,7 @@ set(MINIMP3_PATH ${CMAKE_SOURCE_DIR}/libs/minimp3)
 set(DISCORDRPC_PATH ${CMAKE_SOURCE_DIR}/libs/DiscordRPC)
 set(SENTRY_PATH ${CMAKE_SOURCE_DIR}/libs/sentry)
 set(PLMPEG_PATH ${CMAKE_SOURCE_DIR}/libs/pl_mpeg)
+set(VTFLIB_PATH ${CMAKE_SOURCE_DIR}/libs/VTFLib)
 
 # ---- Detect 32/64-bit ----
 if(WIN32)
@@ -99,22 +100,53 @@ if(WIN32)
 endif()
 
 # ---- LAUNCHER ----
-add_executable(Launcher ${CMAKE_SOURCE_DIR}/launcher/launcher.cpp)
+add_executable(Launcher ${CMAKE_SOURCE_DIR}/src/launcher/launcher.cpp)
 target_include_directories(Launcher PRIVATE src/engine src/game)
 target_link_libraries(Launcher PRIVATE Engine)
 
 if(WIN32)
-    set(LAUNCHER_ICON_RC "${CMAKE_CURRENT_SOURCE_DIR}/launcher/resources/launcher.rc")
-    set(LAUNCHER_MANIFEST "${CMAKE_CURRENT_SOURCE_DIR}/launcher/resources/launcher.manifest")
+    set(LAUNCHER_ICON_RC "${CMAKE_CURRENT_SOURCE_DIR}/src/launcher/resources/launcher.rc")
+    set(LAUNCHER_MANIFEST "${CMAKE_CURRENT_SOURCE_DIR}/src/launcher/resources/launcher.manifest")
     target_sources(Launcher PRIVATE ${LAUNCHER_ICON_RC} ${LAUNCHER_MANIFEST})
     target_link_options(Launcher PRIVATE "/LARGEADDRESSAWARE")
     target_link_options(Engine PRIVATE "/LARGEADDRESSAWARE")
-     if(MSVC AND NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
+    if(MSVC AND NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
         target_link_options(Engine PRIVATE "/SAFESEH:NO")
         target_link_options(Launcher PRIVATE "/SAFESEH:NO")
         target_link_options(Game PRIVATE "/SAFESEH:NO")
     endif()
     target_link_options(Launcher PRIVATE "/MANIFEST:EMBED" "/MANIFESTINPUT:${LAUNCHER_MANIFEST}" /subsystem:windows)
+endif()
+
+# for now 64 bit only as havent built vtflib for linux and 32 bit win
+if(WIN32 AND CMAKE_SIZEOF_VOID_P EQUAL 8)
+
+    set(TOOL_SRC "src/tools/importer/main.cpp")
+    add_executable(TectonicImport ${TOOL_SRC})
+
+    target_include_directories(TectonicImport PRIVATE 
+        ${GLM_PATH}/include
+        ${CGLTF_PATH}/include
+        ${VTFLIB_PATH}/include
+        ${STB_IMAGE_PATH}/include
+    )
+
+    target_link_libraries(TectonicImport PRIVATE
+        ${VTFLIB_PATH}/lib/${ARCH_FOLDER}/VTFLib.lib
+    )
+
+    add_custom_command(TARGET TectonicImport POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "$<TARGET_FILE:Engine>"
+        "$<TARGET_FILE_DIR:TectonicImport>"
+    )
+
+    add_custom_command(TARGET TectonicImport POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${VTFLIB_PATH}/lib/${ARCH_FOLDER}/VTFLib.dll"
+        $<TARGET_FILE_DIR:TectonicImport>
+    )
+
 endif()
 
 # ---- DLL COPY ----

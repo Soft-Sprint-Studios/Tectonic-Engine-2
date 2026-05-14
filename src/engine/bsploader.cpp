@@ -429,6 +429,7 @@ namespace BSP
                             inst.modelPath = modelPaths[propType];
                             inst.position = ToEngineSpace(*origin);
                             inst.angles = *angles;
+                            inst.angles.y += 180.0f;
                             inst.scale = uniformScale;
 
                             m_map.staticProps.push_back(inst);

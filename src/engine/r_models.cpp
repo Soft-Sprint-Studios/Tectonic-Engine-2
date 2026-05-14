@@ -95,7 +95,7 @@ bool R_Models::Init(const BSP::MapData& mapData)
             m_visual = glm::rotate(m_visual, glm::radians(prop->angles.z), glm::vec3(0, 0, 1));
 
             glm::mat4 m_physics = m_visual;
-            m_visual = glm::scale(m_visual, glm::vec3(prop->scale * BSP::MAPSCALE));
+            m_visual = glm::scale(m_visual, glm::vec3(prop->scale));
 
             transforms.push_back(m_visual);
 
@@ -232,7 +232,7 @@ void R_Models::LoadModel(const std::string& path)
                         glm::vec3 pos(p[0], p[1], p[2]);
                         group.localMins = glm::min(group.localMins, pos);
                         group.localMaxs = glm::max(group.localMaxs, pos);
-                        physicsPositions.push_back(pos * BSP::MAPSCALE);
+                        physicsPositions.push_back(pos);
                     }
                 }
                 else if (attr.type == cgltf_attribute_type_texcoord)
