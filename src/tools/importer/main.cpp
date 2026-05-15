@@ -354,6 +354,18 @@ namespace AssetTool
             vmtFile << "\t\"$bumpmap\" \"models/tectonic/" << modelName << "/" << matName << "_normal\"\n}\n";
             vmtFile.close();
 
+            std::filesystem::path sdkMaterialDir = std::filesystem::path(g_config.sdkGamePath) / "materials/models/tectonic" / modelName;
+            std::filesystem::create_directories(sdkMaterialDir);
+
+            for (const auto& entry : std::filesystem::directory_iterator(workDir))
+            {
+                std::string ext = entry.path().extension().string();
+                if (ext == ".vmt" || ext == ".vtf")
+                {
+                    std::filesystem::copy_file(entry.path(), sdkMaterialDir / entry.path().filename(), std::filesystem::copy_options::overwrite_existing);
+                }
+            }
+
             UpdateGlobalMaterialDef(matName, paths);
         }
 
