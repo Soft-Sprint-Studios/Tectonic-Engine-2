@@ -65,13 +65,72 @@ bool R_Models::Init(const BSP::MapData& mapData)
 
         if (!props.empty())
         {
-            group.hasBumpedLighting = props[0]->hasBumpedLighting;
+            group.hasBumpedLighting = props[0]->hasBumpedLighting || !props[0]->lmDirData[0].empty();
         }
 
         std::vector<glm::mat4> transforms;
         transforms.reserve(group.instanceCount);
 
-        std::vector<glm::vec4> packedColors(group.instanceCount * group.totalVertices * 3, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+        std::vector<int32_t> lmIndices;
+        lmIndices.reserve(group.instanceCount);
+
+        int firstWithLM = -1;
+        for (int i = 0; i < props.size(); ++i)
+        {
+            if (!props[i]->lmData.empty())
+            {
+                firstWithLM = i;
+                break;
+            }
+        }
+
+        if (firstWithLM != -1)
+        {
+            group.hasLightmap = true;
+            glGenTextures(1, &group.lmTextureArray);
+            glBindTexture(GL_TEXTURE_2D_ARRAY, group.lmTextureArray);
+
+            glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGB8, props[firstWithLM]->lmWidth, props[firstWithLM]->lmHeight, (GLsizei)props.size(), 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+
+            for (size_t i = 0; i < props.size(); i++)
+            {
+                if (!props[i]->lmData.empty())
+                {
+                    glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, (GLint)i, props[i]->lmWidth, props[i]->lmHeight, 1, GL_RGB, GL_UNSIGNED_BYTE, props[i]->lmData.data());
+                    lmIndices.push_back((int32_t)i);
+                }
+                else
+                {
+                    lmIndices.push_back(-1);
+                }
+            }
+
+            glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+
+            if (group.hasBumpedLighting)
+            {
+                glGenTextures(1, &group.lmDirTextureArray);
+                glBindTexture(GL_TEXTURE_2D_ARRAY, group.lmDirTextureArray);
+                glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGB8, props[firstWithLM]->lmWidth, props[firstWithLM]->lmHeight, (GLsizei)props.size() * 3, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+
+                for (size_t i = 0; i < props.size(); i++)
+                {
+                    for (int r = 0; r < 3; r++)
+                    {
+                        if (!props[i]->lmDirData[r].empty())
+                        {
+                            glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, (GLint)(i * 3 + r), props[i]->lmWidth, props[i]->lmHeight, 1, GL_RGB, GL_UNSIGNED_BYTE, props[i]->lmDirData[r].data());
+                        }
+                    }
+                }
+
+                glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+            }
+        }
 
         glm::vec3 corners[8] =
         {
@@ -110,26 +169,18 @@ bool R_Models::Init(const BSP::MapData& mapData)
             {
                 Physics::AddStaticBody(group.physicsShape, m_physics, glm::vec3(prop->scale));
             }
-
-            for (int stream = 0; stream < 3; ++stream)
-            {
-                if (!prop->vertexColors[stream].empty())
-                {
-                    for (size_t v = 0; v < prop->vertexColors[stream].size() && v < group.totalVertices; ++v)
-                    {
-                        packedColors[(i * group.totalVertices + v) * 3 + stream] = prop->vertexColors[stream][v];
-                    }
-                }
-            }
         }
 
         glGenBuffers(1, &group.transformSSBO);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, group.transformSSBO);
         glBufferData(GL_SHADER_STORAGE_BUFFER, transforms.size() * sizeof(glm::mat4), transforms.data(), GL_STATIC_DRAW);
 
-        glGenBuffers(1, &group.colorSSBO);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, group.colorSSBO);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, packedColors.size() * sizeof(glm::vec4), packedColors.data(), GL_STATIC_DRAW);
+        if (group.hasLightmap)
+        {
+            glGenBuffers(1, &group.lmIndexSSBO);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, group.lmIndexSSBO);
+            glBufferData(GL_SHADER_STORAGE_BUFFER, lmIndices.size() * sizeof(int32_t), lmIndices.data(), GL_STATIC_DRAW);
+        }
     }
 
     return true;
@@ -242,13 +293,13 @@ void R_Models::LoadModel(const std::string& path)
                 }
                 else if (attr.type == cgltf_attribute_type_normal)
                 {
-                    glEnableVertexAttribArray(9);
-                    glVertexAttribPointer(9, 3, GL_FLOAT, GL_FALSE, stride, 0);
+                    glEnableVertexAttribArray(7);
+                    glVertexAttribPointer(7, 3, GL_FLOAT, GL_FALSE, stride, 0);
                 }
                 else if (attr.type == cgltf_attribute_type_tangent)
                 {
-                    glEnableVertexAttribArray(10);
-                    glVertexAttribPointer(10, 3, GL_FLOAT, GL_FALSE, stride, 0);
+                    glEnableVertexAttribArray(8);
+                    glVertexAttribPointer(8, 3, GL_FLOAT, GL_FALSE, stride, 0);
                 }
             }
 
@@ -318,7 +369,6 @@ void R_Models::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOn
 
         if (!depthOnly)
         {
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, group.colorSSBO);
             shader.SetInt("u_totalVertices", group.totalVertices);
         }
 
@@ -341,8 +391,23 @@ void R_Models::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOn
             }
             else
             {
-                glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, group.colorSSBO);
                 shader.SetInt("u_totalVertices", group.totalVertices);
+
+                shader.SetInt("u_hasLM", group.hasLightmap ? 1 : 0);
+                if (group.hasLightmap)
+                {
+                    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, group.lmIndexSSBO);
+                    glActiveTexture(GL_TEXTURE19);
+                    glBindTexture(GL_TEXTURE_2D_ARRAY, group.lmTextureArray);
+                    shader.SetInt("u_lmTextureArray", 19);
+
+                    if (group.hasBumpedLighting)
+                    {
+                        glActiveTexture(GL_TEXTURE20);
+                        glBindTexture(GL_TEXTURE_2D_ARRAY, group.lmDirTextureArray);
+                        shader.SetInt("u_lmDirTextureArray", 20);
+                    }
+                }
 
                 for (auto& mesh : group.meshes)
                 {
@@ -392,8 +457,12 @@ void R_Models::Shutdown()
         if (group.transformSSBO != 0)
             glDeleteBuffers(1, &group.transformSSBO);
 
-        if (group.colorSSBO != 0)
-            glDeleteBuffers(1, &group.colorSSBO);
+        if (group.lmIndexSSBO != 0)
+            glDeleteBuffers(1, &group.lmIndexSSBO);
+        if (group.lmTextureArray != 0)
+            glDeleteTextures(1, &group.lmTextureArray);
+        if (group.lmDirTextureArray != 0)
+            glDeleteTextures(1, &group.lmDirTextureArray);
 
         group.physicsShape = nullptr;
     }

@@ -4,9 +4,9 @@ layout (location = 2) in vec2 aLmCoord;
 layout (location = 3) in vec2 aLmCoord2;
 layout (location = 4) in vec2 aLmCoord3;
 layout (location = 5) in vec2 aLmCoord4;
-layout (location = 9) in vec3 aNormal;
-layout (location = 10) in vec3 aTangent;
-layout (location = 11) in vec3 aBitangent;
+layout (location = 7) in vec3 aNormal;
+layout (location = 8) in vec3 aTangent;
+layout (location = 9) in vec3 aBitangent;
 
 uniform mat4 u_projection;
 uniform mat4 u_view;

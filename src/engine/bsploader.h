@@ -239,8 +239,10 @@ namespace BSP
         glm::vec3 position;
         glm::vec3 angles;
         float scale = 1.0f;
-        std::vector<glm::vec4> vertexColors[3];
         bool hasBumpedLighting = false;
+        std::vector<uint8_t> lmData;
+        std::vector<uint8_t> lmDirData[3];
+        int lmWidth = 0, lmHeight = 0;
     };
 
     struct OverlayBatch

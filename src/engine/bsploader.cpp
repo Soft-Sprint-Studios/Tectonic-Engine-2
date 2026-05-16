@@ -432,6 +432,12 @@ namespace BSP
                             inst.angles.y += 180.0f;
                             inst.scale = uniformScale;
 
+                            if (entries[i].version >= 10)
+                            {
+                                inst.lmWidth = *(uint16_t*)(sprpPtr + 64);
+                                inst.lmHeight = *(uint16_t*)(sprpPtr + 66);
+                            }
+
                             m_map.staticProps.push_back(inst);
                         }
                         sprpPtr += stride;
@@ -449,8 +455,7 @@ namespace BSP
             const uint8_t* pakData = m_buffer.data() + m_header->lumps[LUMP_PAKFILE].offset;
             int pakLength = m_header->lumps[LUMP_PAKFILE].length;
 
-            // vertex lighting is stored in zip
-            std::map<std::string, const uint8_t*> vhvFiles;
+            std::map<std::string, const uint8_t*> lmFiles, rnmFiles;
             int offset = 0;
             while (offset + 30 <= pakLength)
             {
@@ -464,81 +469,69 @@ namespace BSP
                 std::string path((const char*)(pakData + offset + 30), nameLen);
                 std::string name = path.substr(path.find_last_of("/\\") + 1);
 
-                // Collect VHV
-                if (*(uint16_t*)(pakData + offset + 8) == 0 &&
-                    name.find(".vhv") != std::string::npos)
+                if (*(uint16_t*)(pakData + offset + 8) == 0)
                 {
-                    vhvFiles[name] = pakData + offset + 30 + nameLen + extraLen;
+                    if (name.find("_rnm.ppl") != std::string::npos)
+                    {
+                        rnmFiles[name] = pakData + offset + 30 + nameLen + extraLen;
+                    }
+                    else if (name.find(".ppl") != std::string::npos)
+                    {
+                        lmFiles[name] = pakData + offset + 30 + nameLen + extraLen;
+                    }
                 }
+
                 offset += 30 + nameLen + extraLen + compSize;
             }
 
-            constexpr int VHV_FILE_HEADER_SIZE = 40;
-            constexpr int VHV_MESH_HEADER_SIZE = 28;
-
             for (size_t i = 0; i < m_map.staticProps.size(); i++)
             {
-                std::string vhvName = (m_header->version >= 21) ? "sp_hdr_" + std::to_string(i) + ".vhv" : "sp_" + std::to_string(i) + ".vhv";
-                if (vhvFiles.find(vhvName) == vhvFiles.end() && m_header->version >= 21) vhvName = "sp_" + std::to_string(i) + ".vhv";
+                std::string lmName = (m_header->version >= 21) ? "texelslighting_hdr_" + std::to_string(i) + ".ppl" : "texelslighting_" + std::to_string(i) + ".ppl";
+                if (lmFiles.find(lmName) == lmFiles.end()) lmName = "texelslighting_" + std::to_string(i) + ".ppl";
 
-                if (vhvFiles.count(vhvName))
+                if (lmFiles.count(lmName))
                 {
-                    const uint8_t* vhvData = vhvFiles[vhvName];
-                    int32_t vertexSize = *(int32_t*)(vhvData + 12);
-                    int32_t totalVerts = *(int32_t*)(vhvData + 16);
-                    int32_t numMeshes = *(int32_t*)(vhvData + 20);
+                    const uint8_t* lmFile = lmFiles[lmName];
 
-                    if (*(int32_t*)vhvData != 2)
-                        continue;
+                    int nMeshes = *(int*)(lmFile + 12);
 
-                    int numStreams = (vertexSize >= 12) ? 3 : 1;
-                    m_map.staticProps[i].hasBumpedLighting = (numStreams == 3);
-
-                    for (int s = 0; s < 3; s++)
-                        m_map.staticProps[i].vertexColors[s].assign(totalVerts, glm::vec4(1.0f));
-
-                    uint32_t colorIdx = 0;
-                    for (int m = 0; m < numMeshes; m++)
+                    if (nMeshes > 0)
                     {
-                        const uint8_t* meshPtr = vhvData + VHV_FILE_HEADER_SIZE + (m * VHV_MESH_HEADER_SIZE);
-                        uint32_t count = *(uint32_t*)(meshPtr + 4);
-                        uint32_t rawOfs = *(uint32_t*)(meshPtr + 8);
-                        if (count == 0 || rawOfs == 0)
-                            continue;
+                        const uint8_t* meshPtr = lmFile + 32;
+                        uint32_t dataOffset = *(uint32_t*)(meshPtr + 4);
+                        uint32_t dataBytes = *(uint32_t*)(meshPtr + 8);
+                        uint32_t lmW = *(uint32_t*)(meshPtr + 12);
+                        uint32_t lmH = *(uint32_t*)(meshPtr + 16);
 
-                        const uint8_t* colors = (rawOfs < VHV_FILE_HEADER_SIZE) ?
-                            (vhvData + VHV_FILE_HEADER_SIZE + (numMeshes * VHV_MESH_HEADER_SIZE) + rawOfs) : (vhvData + rawOfs);
-
-                        for (uint32_t v = 0; v < count && colorIdx < (uint32_t)totalVerts; v++)
+                        if (dataBytes > 0 && lmW > 0)
                         {
-                            if (numStreams == 3)
-                            {
-                                for (int s = 0; s < 3; s++)
-                                {
-                                    int offset = (v * 3 + s) * 4;
-                                    // They are stored in BGRA for some reason..
-                                    float b = colors[offset + 0] / 255.0f;
-                                    float g = colors[offset + 1] / 255.0f;
-                                    float r = colors[offset + 2] / 255.0f;
-                                    float a = colors[offset + 3] / 255.0f;
-                                    m_map.staticProps[i].vertexColors[s][colorIdx] = glm::vec4(r, g, b, a);
-                                }
-                            }
-                            else
-                            {
-                                int offset = v * 4;
-                                // They are stored in BGRA for some reason..
-                                float b = colors[offset + 0] / 255.0f;
-                                float g = colors[offset + 1] / 255.0f;
-                                float r = colors[offset + 2] / 255.0f;
-                                float a = colors[offset + 3] / 255.0f;
-                                glm::vec4 flatColor(r, g, b, a);
+                            m_map.staticProps[i].lmWidth = (int)lmW;
+                            m_map.staticProps[i].lmHeight = (int)lmH;
+                            m_map.staticProps[i].lmData.assign(lmFile + dataOffset, lmFile + dataOffset + dataBytes);
+                        }
+                    }
+                }
 
-                                m_map.staticProps[i].vertexColors[0][colorIdx] = flatColor;
-                                m_map.staticProps[i].vertexColors[1][colorIdx] = flatColor;
-                                m_map.staticProps[i].vertexColors[2][colorIdx] = flatColor;
+                std::string rnmName = (m_header->version >= 21) ? "texelslighting_hdr_" + std::to_string(i) + "_rnm.ppl" : "texelslighting_" + std::to_string(i) + "_rnm.ppl";
+                if (rnmFiles.find(rnmName) == rnmFiles.end()) rnmName = "texelslighting_" + std::to_string(i) + "_rnm.ppl";
+
+                if (rnmFiles.count(rnmName))
+                {
+                    m_map.staticProps[i].hasBumpedLighting = true;
+                    const uint8_t* rnmFile = rnmFiles[rnmName];
+                    int nMeshes = *(int*)(rnmFile + 12);
+                    if (nMeshes > 0)
+                    {
+                        const uint8_t* meshPtr = rnmFile + 32;
+                        for (int m = 0; m < 3 && m < nMeshes; m++)
+                        {
+                            uint32_t dataOffset = *(uint32_t*)(meshPtr + 4);
+                            uint32_t dataBytes = *(uint32_t*)(meshPtr + 8);
+                            if (dataBytes > 0)
+                            {
+                                m_map.staticProps[i].lmDirData[m].assign(rnmFile + dataOffset, rnmFile + dataOffset + dataBytes);
                             }
-                            colorIdx++;
+                            meshPtr += 32;
                         }
                     }
                 }

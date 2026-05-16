@@ -1,8 +1,8 @@
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec2 aTexCoord;
-layout (location = 9) in vec3 aNormal;
-layout (location = 10) in vec3 aTangent;
-layout (location = 11) in vec3 aBitangent;
+layout (location = 7) in vec3 aNormal;
+layout (location = 8) in vec3 aTangent;
+layout (location = 9) in vec3 aBitangent;
 
 out vec2 TexCoord;
 out vec4 ScreenPos;
