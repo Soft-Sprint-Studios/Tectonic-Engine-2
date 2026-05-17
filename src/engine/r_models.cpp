@@ -424,7 +424,6 @@ void R_Models::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOn
                     (mesh.specularMap ? mesh.specularMap : Materials::GetWhiteTexture())->Bind(3);
                     (mesh.heightMap ? mesh.heightMap : Materials::GetWhiteTexture())->Bind(17);
 
-                    glVertexAttrib3f(11, 0.0f, 0.0f, 0.0f);
                     glDrawElementsInstanced(GL_TRIANGLES, mesh.indexCount, mesh.indexType, 0, group.instanceCount);
                 }
             }
