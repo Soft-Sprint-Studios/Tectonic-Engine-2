@@ -38,7 +38,6 @@ public:
     void Rescale(int width, int height);
     void Bind(const R_Shader& shader);
     void Render(GLuint sourceTexture, GLuint quadVAO, int screenW, int screenH);
-    GLuint GetResultTexture() const;
 
 private:
     struct Mip

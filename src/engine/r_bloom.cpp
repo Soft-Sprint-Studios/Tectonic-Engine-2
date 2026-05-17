@@ -160,8 +160,3 @@ void R_Bloom::Bind(const R_Shader& shader)
         shader.SetInt("u_bloom_enabled", 0);
     }
 }
-
-GLuint R_Bloom::GetResultTexture() const
-{
-    return m_mipChain.empty() ? 0 : m_mipChain[0].texture;
-}
