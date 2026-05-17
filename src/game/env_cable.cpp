@@ -45,7 +45,7 @@ public:
         if (!m_cable) 
             return;
         
-        m_cable->GetDef().startPos = m_origin;
+        m_cable->GetDef().startPos = GetOrigin();
         auto target = EntityManager::FindEntityByName(m_cable->GetDef().targetEntity);
         if (target)
         {

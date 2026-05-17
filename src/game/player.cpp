@@ -80,21 +80,22 @@ void Player::LinkInput(Input* input)
 
 void Player::Spawn(const std::unordered_map<std::string, std::string>& keyvalues)
 {
-    m_character = Physics::CreateCharacter(m_origin, this);
+    m_character = Physics::CreateCharacter(GetOrigin(), this);
     m_currentFOV = CVar::GetFloat("cl_fov", 75.0f);
     m_targetFOV = m_currentFOV;
 
     // Force immediate warp to the spawn position to clear penetration state
     btTransform startTrans;
     startTrans.setIdentity();
-    startTrans.setOrigin(btVector3(m_origin.x, m_origin.y, m_origin.z));
+    glm::vec3 spawnPos = GetOrigin();
+    startTrans.setOrigin(btVector3(spawnPos.x, spawnPos.y, spawnPos.z));
     m_character->getGhostObject()->setWorldTransform(startTrans);
     m_character->reset(Physics::GetDynamicsWorld());
 
     RestoreDefaultGravity();
 
     // Initialize flashlight
-    m_flashlight = DynamicLights::CreateSpotLight(m_origin, glm::vec3(0, 0, 1), glm::vec3(1.0f, 1.0f, 0.9f), 4.0f, 15.0f, 30.0f);
+    m_flashlight = DynamicLights::CreateSpotLight(GetOrigin(), glm::vec3(0, 0, 1), glm::vec3(1.0f, 1.0f, 0.9f), 4.0f, 15.0f, 30.0f);
     if (m_flashlight)
     {
         m_flashlight->SetActive(false);
@@ -167,7 +168,7 @@ void Player::Think(float deltaTime)
     if (m_input->GetKeyDown(SDL_SCANCODE_SPACE) && m_character->onGround() && !m_noclip)
     {
         m_character->jump(btVector3(0, cl_jump_force.GetFloat(), 0));
-        m_sndJump.SetPosition(m_origin);
+        m_sndJump.SetPosition(GetOrigin());
         m_sndJump.SetVolume(0.5f);
         m_sndJump.Play("jump.mp3");
     }
@@ -284,7 +285,11 @@ void Player::Think(float deltaTime)
         btTransform currentTransform = m_character->getGhostObject()->getWorldTransform();
         btVector3 bulletPos = currentTransform.getOrigin();
         m_camera->position = glm::vec3(bulletPos.getX(), bulletPos.getY() + m_viewHeight, bulletPos.getZ());
-        m_origin = glm::vec3(bulletPos.x(), bulletPos.y(), bulletPos.z());
+        glm::vec3 worldPos = glm::vec3(bulletPos.x(), bulletPos.y(), bulletPos.z());
+        if (m_parent)
+            m_vecOrigin = worldPos - m_parent->GetOrigin();
+        else
+            m_vecOrigin = worldPos;
     }
     else
     {
@@ -311,7 +316,7 @@ void Player::Think(float deltaTime)
 
             if (m_stepTimer >= stepInterval)
             {
-                m_sndStep.SetPosition(m_origin);
+                m_sndStep.SetPosition(GetOrigin());
                 m_sndStep.SetVolume(m_isCrouching ? 0.2f : (isSprinting ? 0.6f : 0.4f));
                 m_sndStep.Play("footstep.mp3");
                 m_stepTimer = 0.0f;
@@ -328,7 +333,11 @@ void Player::Think(float deltaTime)
         m_camera->pitch += angShake.x;
         m_camera->yaw += angShake.y;
 
-        m_origin = glm::vec3(bulletPos.x(), bulletPos.y(), bulletPos.z());
+        glm::vec3 worldPos = glm::vec3(bulletPos.x(), bulletPos.y(), bulletPos.z());
+        if (m_parent)
+            m_vecOrigin = worldPos - m_parent->GetOrigin();
+        else
+            m_vecOrigin = worldPos;
     }
 }
 
@@ -351,16 +360,22 @@ void Player::SetNoclip(bool state)
 
 void Player::SetOrigin(const glm::vec3& origin)
 {
-    m_origin = origin;
-
-    if (m_character)
+    if (glm::distance(GetOrigin(), origin) > 0.1f)
     {
-        btTransform trans;
-        trans.setIdentity();
-        trans.setOrigin(btVector3(origin.x, origin.y, origin.z));
-        m_character->getGhostObject()->setWorldTransform(trans);
+        Entity::SetOrigin(origin);
 
-        m_character->reset(Physics::GetDynamicsWorld());
+        if (m_character)
+        {
+            btTransform trans;
+            trans.setIdentity();
+            trans.setOrigin(btVector3(origin.x, origin.y, origin.z));
+            m_character->getGhostObject()->setWorldTransform(trans);
+            m_character->reset(Physics::GetDynamicsWorld());
+        }
+    }
+    else
+    {
+        Entity::SetOrigin(origin);
     }
 }
 

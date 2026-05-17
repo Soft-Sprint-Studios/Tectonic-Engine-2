@@ -50,7 +50,7 @@ public:
 
         m_direction = glm::normalize(glm::vec3(rot * glm::vec4(0, 0, -1, 0.0f)));
 
-        m_light = DynamicLights::CreateSpotLight(m_origin, m_direction, m_baseColor, radius, inner, outer);
+        m_light = DynamicLights::CreateSpotLight(GetOrigin(), m_direction, m_baseColor, radius, inner, outer);
         if (m_light)
         {
             m_light->SetActive(IsEnabled());
@@ -84,7 +84,7 @@ public:
         Entity::Think(deltaTime);
         if (m_light)
         {
-            m_light->SetPosition(m_origin);
+            m_light->SetPosition(GetOrigin());
 
             int styleIndex = GetInt("style", 0);
             float mod = LightStyles::GetModifier(styleIndex);

@@ -49,7 +49,7 @@ public:
             m_axis = glm::vec3(0, 0, 1);
         }
 
-        m_baseAngles = m_angles;
+        m_baseAngles = GetAngles();
     }
 
     void OnSave() override
@@ -63,7 +63,7 @@ public:
         float time = (float)Time::TotalTime();
         float currentSwing = m_distance * sin(time * (m_speed * 0.1f));
 
-        m_angles = m_baseAngles + (m_axis * currentSwing);
+        SetAngles(m_baseAngles + (m_axis * currentSwing));
 
         UpdatePhysicsTransform();
     }
@@ -81,7 +81,8 @@ private:
             btTransform trans = m_physObject->getWorldTransform();
 
             btQuaternion rot;
-            rot.setEuler(glm::radians(m_angles.y), glm::radians(m_angles.x), glm::radians(m_angles.z));
+            glm::vec3 ang = GetAngles();
+            rot.setEuler(glm::radians(ang.y), glm::radians(ang.x), glm::radians(ang.z));
 
             trans.setRotation(rot);
             m_physObject->setWorldTransform(trans);

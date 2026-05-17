@@ -11,10 +11,13 @@
 @BaseClass = Targetname
 [
 	targetname(target_source) : "Name" : : "The name that other entities refer to this entity by."
+	parentname(target_destination) : "Parent" : : "The name of this entity's parent in the movement hierarchy. Entities with a parent move with their parent."
 	spawnflags(flags) = [ 1 : "Start Disabled" : 0 ]
     input Enable(void) : "Enable this entity."
     input Disable(void) : "Disable this entity."
     input Toggle(void) : "Toggle enabled state."
+	input SetParent(string) : "Changes the entity's parent to the specified entity."
+    input ClearParent(void) : "Removes the entity's parent."
 ]
 
 @BaseClass = Angles

@@ -40,7 +40,7 @@ public:
             type = "snow";
         }
 
-        m_sys = Particles::CreateSystem(type, m_origin);
+        m_sys = Particles::CreateSystem(type, GetOrigin());
 
         if (m_physObject && m_sys)
         {

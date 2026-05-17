@@ -38,7 +38,7 @@ public:
 
         float radius = GetFloat("distance", 500.0f) * BSP::MAPSCALE;
 
-        m_light = DynamicLights::CreatePointLight(m_origin, m_baseColor, radius);
+        m_light = DynamicLights::CreatePointLight(GetOrigin(), m_baseColor, radius);
         if (m_light)
         {
             m_light->SetActive(IsEnabled());
@@ -71,7 +71,7 @@ public:
         Entity::Think(deltaTime);
         if (m_light)
         {
-            m_light->SetPosition(m_origin);
+            m_light->SetPosition(GetOrigin());
 
             int styleIndex = GetInt("style", 0);
             float mod = LightStyles::GetModifier(styleIndex);

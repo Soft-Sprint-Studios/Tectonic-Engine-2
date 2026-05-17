@@ -87,10 +87,12 @@ public:
 
         if (std::abs(m_currentSpeed) > 0.01f)
         {
-            m_angles += m_axis * m_currentSpeed * deltaTime;
+            glm::vec3 ang = GetAngles();
+            ang += m_axis * m_currentSpeed * deltaTime;
 
             // Wrap angles
-            m_angles = glm::mod(m_angles + 360.0f, 360.0f);
+            ang = glm::mod(ang + 360.0f, 360.0f);
+            SetAngles(ang);
 
             UpdatePhysicsTransform();
         }
@@ -143,7 +145,8 @@ private:
             btTransform trans = m_physObject->getWorldTransform();
 
             btQuaternion rot;
-            rot.setEuler(glm::radians(m_angles.y), glm::radians(m_angles.x), glm::radians(m_angles.z));
+            glm::vec3 ang = GetAngles();
+            rot.setEuler(glm::radians(ang.y), glm::radians(ang.x), glm::radians(ang.z));
             
             trans.setRotation(rot);
             m_physObject->setWorldTransform(trans);

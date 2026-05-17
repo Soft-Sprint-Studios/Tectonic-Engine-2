@@ -85,6 +85,9 @@ public:
     glm::vec3 GetOrigin() const;
     virtual void SetOrigin(const glm::vec3& origin);
     glm::vec3 GetAngles() const;
+    void SetAngles(const glm::vec3& angles);
+    Entity* GetParent() const;
+    void SetParent(Entity* parent);
     std::string GetClassName() const;
     std::string GetTargetName() const;
 
@@ -118,8 +121,10 @@ public:
 
 protected:
     bool m_enabled = true;
-    glm::vec3 m_origin{ 0.0f, 0.0f, 0.0f };
-    glm::vec3 m_angles{ 0.0f, 0.0f, 0.0f };
+    glm::vec3 m_vecOrigin{ 0.0f, 0.0f, 0.0f };
+    glm::vec3 m_vecAngles{ 0.0f, 0.0f, 0.0f };
+    Entity* m_parent = nullptr;
+    std::string m_parentName;
     std::string m_className;
     std::string m_targetName;
     int m_spawnflags = 0;

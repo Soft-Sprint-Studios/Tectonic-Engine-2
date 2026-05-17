@@ -50,10 +50,10 @@ public:
         glm::mat4 rot = glm::rotate(glm::mat4(1.0f), glm::radians(angles.y), glm::vec3(0, 1, 0));
         m_moveDir = glm::vec3(rot * glm::vec4(1, 0, 0, 0));
 
-        m_startOrigin = m_origin;
+        m_startOrigin = GetOrigin();
         m_endOrigin = m_startOrigin + (m_moveDir * moveDistance);
 
-        m_origin = glm::mix(m_startOrigin, m_endOrigin, startPosition);
+        SetOrigin(glm::mix(m_startOrigin, m_endOrigin, startPosition));
         m_state = (startPosition > 0.5f) ? Open : Closed;
         
         UpdatePhysicsTransform();
@@ -109,12 +109,12 @@ public:
 private:
     void MoveTo(const glm::vec3& target, float dt, State arriveState)
     {
-        float dist = glm::distance(m_origin, target);
+        float dist = glm::distance(GetOrigin(), target);
         float step = m_speed * dt;
 
         if (step >= dist)
         {
-            m_origin = target;
+            SetOrigin(target);
             m_state = arriveState;
 
             if (m_state == Open)
@@ -128,7 +128,7 @@ private:
         }
         else
         {
-            m_origin += glm::normalize(target - m_origin) * step;
+            SetOrigin(GetOrigin() + glm::normalize(target - GetOrigin()) * step);
         }
 
         UpdatePhysicsTransform();
@@ -140,7 +140,8 @@ private:
         {
             btTransform trans;
             trans.setIdentity();
-            trans.setOrigin({ m_origin.x, m_origin.y, m_origin.z });
+            glm::vec3 worldPos = GetOrigin();
+            trans.setOrigin({ worldPos.x, worldPos.y, worldPos.z });
             m_physObject->setWorldTransform(trans);
         }
     }

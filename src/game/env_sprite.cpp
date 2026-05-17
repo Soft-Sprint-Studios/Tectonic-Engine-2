@@ -32,7 +32,7 @@ public:
         Entity::Spawn(keyvalues);
 
         m_texturePath = GetValue("texture");
-        m_sprite = Sprites::CreateSprite(m_origin, m_texturePath);
+        m_sprite = Sprites::CreateSprite(GetOrigin(), m_texturePath);
 
         if (m_sprite)
         {

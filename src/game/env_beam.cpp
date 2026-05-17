@@ -56,7 +56,7 @@ public:
 
         if (m_beam)
         {
-            m_beam->GetDef().startPos = m_origin;
+            m_beam->GetDef().startPos = GetOrigin();
 
             auto target = EntityManager::FindEntityByName(m_beam->GetDef().endEntity);
             if (target)
@@ -65,7 +65,7 @@ public:
             }
             else
             {
-                m_beam->GetDef().endPos = m_origin;
+                m_beam->GetDef().endPos = GetOrigin();
             }
         }
     }

@@ -31,7 +31,7 @@ public:
     {
         Entity::Spawn(keyvalues);
         m_effect = GetValue("effect_name");
-        m_sys = Particles::CreateSystem(m_effect, m_origin);
+        m_sys = Particles::CreateSystem(m_effect, GetOrigin());
         if (m_sys)
         {
             glm::vec3 angles = GetVector("angles");

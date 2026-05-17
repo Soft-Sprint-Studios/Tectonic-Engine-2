@@ -46,7 +46,7 @@ public:
         
         float height = GetFloat("height", 0.0f);
 
-        m_startOrigin = m_origin;
+        m_startOrigin = GetOrigin();
 
         m_targetOrigin = m_startOrigin + glm::vec3(0.0f, height * BSP::MAPSCALE, 0.0f);
         m_state = Bottom;
@@ -137,12 +137,12 @@ private:
 
     void MoveTo(const glm::vec3& target, float dt, State arriveState)
     {
-        float dist = glm::distance(m_origin, target);
+        float dist = glm::distance(GetOrigin(), target);
         float step = m_speed * dt;
 
         if (step >= dist)
         {
-            m_origin = target;
+            SetOrigin(target);
             m_state = arriveState;
 
             if (m_state == Top)
@@ -152,7 +152,7 @@ private:
         }
         else
         {
-            m_origin += glm::normalize(target - m_origin) * step;
+            SetOrigin(GetOrigin() + glm::normalize(target - GetOrigin()) * step);
         }
 
         UpdatePhysicsTransform();
@@ -163,7 +163,8 @@ private:
         if (m_physObject)
         {
             btTransform trans = m_physObject->getWorldTransform();
-            trans.setOrigin({ m_origin.x, m_origin.y, m_origin.z });
+            glm::vec3 worldPos = GetOrigin();
+            trans.setOrigin({ worldPos.x, worldPos.y, worldPos.z });
             m_physObject->setWorldTransform(trans);
         }
     }

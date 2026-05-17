@@ -40,7 +40,7 @@ public:
     {
         if (input == "StartShake")
         {
-            Shake::AddShake(m_origin, m_amplitude, m_frequency, m_duration, m_radius);
+            Shake::AddShake(GetOrigin(), m_amplitude, m_frequency, m_duration, m_radius);
         }
     }
 

@@ -62,7 +62,7 @@ public:
             m_moveDir = glm::vec3(cos(yaw), 0, -sin(yaw));
         }
 
-        m_startOrigin = m_origin;
+        m_startOrigin = GetOrigin();
 
         if (customDist <= 0.001f && m_physObject)
         {
@@ -80,7 +80,7 @@ public:
 
         if (HasSpawnFlag(2))
         {
-            m_origin = m_targetOrigin;
+            SetOrigin(m_targetOrigin);
             m_state = Open;
             UpdatePhysicsTransform();
         }
@@ -187,12 +187,12 @@ private:
 
     void MoveTo(const glm::vec3& target, float dt, State arriveState)
     {
-        float dist = glm::distance(m_origin, target);
+        float dist = glm::distance(GetOrigin(), target);
         float step = m_speed * dt;
 
         if (step >= dist)
         {
-            m_origin = target;
+            SetOrigin(target);
             m_state = arriveState;
 
             if (m_state == Open)
@@ -207,7 +207,7 @@ private:
         }
         else
         {
-            m_origin += glm::normalize(target - m_origin) * step;
+            SetOrigin(GetOrigin() + glm::normalize(target - GetOrigin()) * step);
         }
 
         UpdatePhysicsTransform();
@@ -219,7 +219,8 @@ private:
         {
             btTransform trans;
             trans.setIdentity();
-            trans.setOrigin({ m_origin.x, m_origin.y, m_origin.z });
+            glm::vec3 worldPos = GetOrigin();
+            trans.setOrigin({ worldPos.x, worldPos.y, worldPos.z });
             m_physObject->setWorldTransform(trans);
         }
     }

@@ -36,7 +36,7 @@ public:
         m_pitch = GetFloat("pitch", 100.0f) / 100.0f;
         float radius = GetFloat("radius", 1250.0f) * BSP::MAPSCALE;
 
-        m_source.SetPosition(m_origin * BSP::MAPSCALE);
+        m_source.SetPosition(GetOrigin() * BSP::MAPSCALE);
         m_source.SetVolume(m_volume);
         m_source.SetPitch(m_pitch);
         m_source.SetRadius(radius * 0.1f, radius);

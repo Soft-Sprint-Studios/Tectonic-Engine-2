@@ -38,7 +38,8 @@ void Entity::Spawn(const std::unordered_map<std::string, std::string>& keyvalues
 {
     m_keyvalues = keyvalues;
     m_targetName = GetValue("targetname");
-    m_angles = GetVector("angles", { 0, 0, 0 });
+    m_parentName = GetValue("parentname");
+    m_vecAngles = GetVector("angles", { 0, 0, 0 });
     m_spawnflags = GetInt("spawnflags", 0);
 
     // Start disabled flag
@@ -94,6 +95,16 @@ void Entity::AcceptInput(const std::string& inputName, const std::string& parame
     else if (inputName == "Toggle")
     {
         SetEnabled(!m_enabled);
+    }
+    else if (inputName == "SetParent")
+    {
+        auto parent = EntityManager::FindEntityByName(parameter);
+        if (parent) 
+            SetParent(parent.get());
+    }
+    else if (inputName == "ClearParent")
+    {
+        SetParent(nullptr);
     }
 }
 
@@ -178,19 +189,62 @@ void Entity::FireOutput(const std::string& outputName)
     }
 }
 
+Entity* Entity::GetParent() const 
+{ 
+    return m_parent; 
+}
+
+void Entity::SetParent(Entity* parent)
+{
+    glm::vec3 worldPos = GetOrigin();
+    glm::vec3 worldAng = GetAngles();
+
+    m_parent = parent;
+
+    if (m_parent)
+    {
+        m_vecOrigin = worldPos - m_parent->GetOrigin();
+        m_vecAngles = worldAng - m_parent->GetAngles();
+    }
+    else
+    {
+        m_vecOrigin = worldPos;
+        m_vecAngles = worldAng;
+    }
+}
+
 glm::vec3 Entity::GetOrigin() const
 {
-    return m_origin;
+    if (m_parent)
+    {
+        return m_parent->GetOrigin() + m_vecOrigin;
+    }
+    return m_vecOrigin;
 }
 
 void Entity::SetOrigin(const glm::vec3& origin)
 {
-    m_origin = origin;
+    if (m_parent)
+        m_vecOrigin = origin - m_parent->GetOrigin();
+    else
+        m_vecOrigin = origin;
+
+    UpdatePhysicsState();
 }
 
 glm::vec3 Entity::GetAngles() const
 {
-    return m_angles;
+    if (m_parent)
+        return m_parent->GetAngles() + m_vecAngles;
+    return m_vecAngles;
+}
+
+void Entity::SetAngles(const glm::vec3& angles)
+{
+    if (m_parent)
+        m_vecAngles = angles - m_parent->GetAngles();
+    else
+        m_vecAngles = angles;
 }
 
 std::string Entity::GetClassName() const
@@ -298,6 +352,22 @@ void EntityManager::UpdateAll(float deltaTime)
         if (ent->IsEnabled())
         {
             ent->Think(deltaTime);
+
+            // Handle parenting
+            if (ent->GetParent() && ent->GetPhysObject())
+            {
+                btTransform trans;
+                trans.setIdentity();
+                glm::vec3 origin = ent->GetOrigin();
+                trans.setOrigin({ origin.x, origin.y, origin.z });
+
+                glm::vec3 ang = ent->GetAngles();
+                btQuaternion rot;
+                rot.setEuler(glm::radians(ang.y), glm::radians(ang.x), glm::radians(ang.z));
+                trans.setRotation(rot);
+
+                ent->GetPhysObject()->setWorldTransform(trans);
+            }
         }
     }
 }
@@ -339,7 +409,7 @@ std::shared_ptr<Entity> EntityManager::SpawnEntity(const std::string& className,
         glm::vec3 rawPos;
         if (ss >> rawPos.x >> rawPos.y >> rawPos.z)
         {
-            ent->SetOrigin(BSP::ToEngineSpace(rawPos));
+            ent->m_vecOrigin = BSP::ToEngineSpace(rawPos);
         }
     }
 

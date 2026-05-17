@@ -85,6 +85,19 @@ namespace Maps
                 player->LinkCamera(s_camera);
                 player->LinkInput(s_input);
             }
+
+            // Link parents
+            for (auto& ent : EntityManager::GetEntities())
+            {
+                if (!ent->GetValue("parentname").empty())
+                {
+                    auto parent = EntityManager::FindEntityByName(ent->GetValue("parentname"));
+                    if (parent)
+                    {
+                        ent->SetParent(parent.get());
+                    }
+                }
+            }
         }
     }
 
