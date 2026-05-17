@@ -202,6 +202,13 @@
 		0 : "No"
 		1 : "Yes"
 	]
+	generatelightmaps(choices) : "Generate (and use) lightmaps for this static prop" : 1 =
+	[
+		0 : "No"
+		1 : "Yes"
+	]
+	lightmapresolutionx(integer) : "Lightmap Resolution X" : 32 : "The resolution of the generated lightmap in the X (or U) direction (only used if Generate Lightmaps is Yes) "
+	lightmapresolutiony(integer) : "Lightmap Resolution Y" : 32 : "The resolution of the generated lightmap in the Y (or V) direction (only used if Generate Lightmaps is Yes) "
 ]
 
 //-------------------------------------------------------------------------
