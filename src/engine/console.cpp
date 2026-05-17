@@ -93,7 +93,6 @@ namespace Console
 
     void Init()
     {
-        Log("Tectonic Console Initialized.");
     }
 
     void Update()

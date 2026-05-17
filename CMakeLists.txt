@@ -22,6 +22,7 @@ set(DISCORDRPC_PATH ${CMAKE_SOURCE_DIR}/libs/DiscordRPC)
 set(SENTRY_PATH ${CMAKE_SOURCE_DIR}/libs/sentry)
 set(PLMPEG_PATH ${CMAKE_SOURCE_DIR}/libs/pl_mpeg)
 set(VTFLIB_PATH ${CMAKE_SOURCE_DIR}/libs/VTFLib)
+set(MINISPEC_PATH ${CMAKE_SOURCE_DIR}/libs/minispec)
 
 # ---- Detect 32/64-bit ----
 if(WIN32)
@@ -68,6 +69,7 @@ target_include_directories(Engine PRIVATE
     ${DISCORDRPC_PATH}/include
     ${SENTRY_PATH}/include
     ${PLMPEG_PATH}/include
+    ${MINISPEC_PATH}/include
     src/engine
     src/game
 )

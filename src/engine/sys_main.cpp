@@ -61,6 +61,8 @@
 #include "fade.h"
 #include "video.h"
 #include "screen_text.h"
+#define MINISPEC_IMPLEMENTATION
+#include "minispec.h"
 
 namespace Sys
 {
@@ -134,6 +136,14 @@ namespace Sys
         }
 
         CommandLine::ExecuteInitialCommands();
+
+        Console::Log("Tectonic Engine 2 Initialized.");
+        Console::Log(std::string("CPU: ") + minispec_cpu_brand());
+        Console::Log(std::string("RAM: ") + std::to_string(static_cast<long long>(std::round(minispec_memory_bytes() / (1024.0 * 1024.0 * 1024.0)))) + " GB");
+        Console::Log(std::string("GPU Vendor: ") + (const char*)glGetString(GL_VENDOR));
+        Console::Log(std::string("GPU Renderer: ") + (const char*)glGetString(GL_RENDERER));
+        Console::Log(std::string("OpenGL Version: ") + (const char*)glGetString(GL_VERSION));
+        Console::Log(std::string("GLSL Version: ") + (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
         if (!Maps::HasMapLoaded())
         {
