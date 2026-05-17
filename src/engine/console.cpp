@@ -21,6 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#define MINISPEC_IMPLEMENTATION
+#include "minispec.h"
 #include "platform.h"
 #include "console.h"
 #include "build_date.h"
@@ -355,6 +357,12 @@ namespace Console
         Console::Log("Date: " + std::string(Build::GetCompileDate()) + " " + std::string(Build::GetCompileTime()));
         Console::Log("Platform: " OS_STRING " (" ARCH_STRING ")");
         Console::Log("Compiler: " COMPILER_STRING);
+        Console::Log(std::string("CPU: ") + minispec_cpu_brand());
+        Console::Log(std::string("RAM: ") + std::to_string(static_cast<long long>(std::round(minispec_memory_bytes() / (1024.0 * 1024.0 * 1024.0)))) + " GB");
+        Console::Log(std::string("GPU Vendor: ") + (const char*)glGetString(GL_VENDOR));
+        Console::Log(std::string("GPU Renderer: ") + (const char*)glGetString(GL_RENDERER));
+        Console::Log(std::string("OpenGL Version: ") + (const char*)glGetString(GL_VERSION));
+        Console::Log(std::string("GLSL Version: ") + (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
     }
 
     CON_COMMAND(exec, "Executes a script file")
