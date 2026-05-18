@@ -106,7 +106,12 @@ void R_UI::DrawText(const std::string& text, float x, float y, const glm::vec4& 
 
 void R_UI::DrawRect(float x, float y, float w, float h, const glm::vec4& color)
 {
-    m_rectCommands.push_back({ x, y, w, h, color });
+    m_rectCommands.push_back({ x, y, w, h, color, 0 });
+}
+
+void R_UI::DrawCircle(float x, float y, float w, float h, const glm::vec4& color)
+{
+    m_rectCommands.push_back({ x, y, w, h, color, 1 });
 }
 
 bool R_UI::IsMouseOver(float x, float y, float w, float h) const
@@ -140,6 +145,7 @@ void R_UI::Render()
     for (const auto& rect : m_rectCommands)
     {
         m_shader.SetVec4("textColor", rect.color);
+        m_shader.SetInt("u_type", rect.type);
         float vertices[6][4] = 
         {
             { rect.x,          rect.y + rect.h, 0.0f, 1.0f },
@@ -158,6 +164,8 @@ void R_UI::Render()
     // Render Text
     for (const auto& cmd : m_commands)
     {
+        m_shader.SetInt("u_type", 0);
+
         // Check for cache, else prase and convert it
         if (m_textCache.find(cmd.text) == m_textCache.end())
         {

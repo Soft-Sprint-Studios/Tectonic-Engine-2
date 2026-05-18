@@ -36,6 +36,8 @@
 #include <cstring>
 
 CVar cl_showfps("cl_showfps", "0", "Draw the current frames per second at the top of the screen.", CVAR_SAVE);
+CVar cl_showpos("cl_showpos", "0", "Draw current position and angles at the top of the screen.", CVAR_SAVE);
+CVar cl_crosshair("cl_crosshair", "1", "Toggle the crosshair overlay.", CVAR_SAVE);
 CVar cl_fov("cl_fov", "75.0", "Vertical field of view.", CVAR_SAVE);
 CVar r_skybox("r_skybox", "1", "Enable skybox rendering.", CVAR_SAVE);
 CVar r_particles("r_particles", "1", "Enable particle system rendering.", CVAR_SAVE);

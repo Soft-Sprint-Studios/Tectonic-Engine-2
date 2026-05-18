@@ -41,7 +41,6 @@ CVar cl_jump_force("cl_jump_force", "5.0", "Initial upward velocity of a jump.",
 CVar cl_view_height("cl_view_height", "1.5", "Standing eye level height.", CVAR_SAVE);
 CVar cl_crouch_height("cl_crouch_height", "0.7", "Crouching eye level height.", CVAR_SAVE);
 CVar cl_view_interp("cl_view_interp", "12.0", "Speed of view height interpolation.", CVAR_SAVE);
-CVar cl_showpos("cl_showpos", "0", "Draw current position and angles at the top of the screen.", CVAR_SAVE);
 
 CON_COMMAND(noclip, "Toggles player noclip mode")
 {

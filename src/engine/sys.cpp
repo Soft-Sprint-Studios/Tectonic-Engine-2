@@ -246,6 +246,15 @@ namespace Sys
 
         if (!MainMenu::IsActive() && Maps::HasMapLoaded() && s_renderer.GetUI())
         {
+            if (CVar::GetInt("cl_crosshair") > 0)
+            {
+                int w, h;
+                SDL_GetWindowSize(s_window.Get(), &w, &h);
+                float cx = (float)w * 0.5f;
+                float cy = (float)h * 0.5f;
+                s_renderer.GetUI()->DrawCircle(cx - 5, cy - 5, 10, 10, { 1, 1, 1, 0.5f });
+            }
+
             auto ent = EntityManager::FindEntityByClass("info_player_start");
             if (ent)
             {

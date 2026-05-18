@@ -43,6 +43,7 @@ public:
     
     void DrawText(const std::string& text, float x, float y, const glm::vec4& color, float scale = 1.0f);
     void DrawRect(float x, float y, float w, float h, const glm::vec4& color);
+    void DrawCircle(float x, float y, float w, float h, const glm::vec4& color);
     bool IsMouseOver(float x, float y, float w, float h) const;
     void Render();
 
@@ -65,6 +66,7 @@ private:
     {
         float x, y, w, h;
         glm::vec4 color;
+        int type;
     };
 
     R_Shader m_shader;
