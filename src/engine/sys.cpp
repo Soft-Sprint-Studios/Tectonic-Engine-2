@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#include "sys_main.h"
+#include "sys.h"
 #include "engine_api.h"
 #include "platform.h"
 #include "build_date.h"

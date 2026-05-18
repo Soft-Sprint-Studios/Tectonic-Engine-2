@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 #include "engine_api.h"
-#include "sys_main.h"
+#include "sys.h"
 
 ENGINE_API int Engine_Main(int argc, char** argv)
 {
