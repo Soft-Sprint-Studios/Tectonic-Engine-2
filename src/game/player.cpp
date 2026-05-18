@@ -214,6 +214,15 @@ void Player::Think(float deltaTime)
     bool isSprinting = m_input->GetKey(SDL_SCANCODE_LSHIFT) && !m_isCrouching;
     float baseSpeed = isSprinting ? cl_sprint_speed.GetFloat() : cl_walk_speed.GetFloat();
 
+    float fovMod = isSprinting ? 5.0f : 0.0f;
+    float targetBaseFOV = CVar::GetFloat("cl_fov");
+
+    if (m_targetFOV == targetBaseFOV || m_targetFOV == targetBaseFOV + 5.0f)
+    {
+        m_targetFOV = targetBaseFOV + fovMod;
+        m_fovSpeed = 15.0f;
+    }
+
     baseSpeed *= m_moveMultiplier;
 
     if (m_isCrouching && !m_noclip)
