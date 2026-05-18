@@ -127,6 +127,9 @@ void Entity::OnPress(Entity* activator)
 void Entity::OnSave()
 {
     AddSaveField(DATA_FIELD(Entity, m_enabled, FieldType::Bool));
+    AddSaveField(DATA_FIELD(Entity, m_parentName, FieldType::String));
+    AddSaveField(DATA_FIELD(Entity, m_vecOrigin, FieldType::Vec3));
+    AddSaveField(DATA_FIELD(Entity, m_vecAngles, FieldType::Vec3));
 }
 
 int Entity::GetBModelIndex() const
@@ -455,35 +458,28 @@ std::shared_ptr<Entity> EntityManager::FindEntityByName(const std::string& name)
     return nullptr;
 }
 
-CON_COMMAND(ent_dump, "Lists all entities and their targetnames")
+void EntityManager::RelinkAllParents(bool recalculateOffsets)
 {
-    Console::Log("--- Entity Dump ---");
-    for (auto const& ent : EntityManager::GetEntities())
+    for (auto& ent : s_entities)
     {
-        Console::Log("Class: " + ent->GetClassName() + " | Name: " + ent->GetTargetName());
-    }
-    Console::Log("-------------------");
-}
-
-CON_COMMAND(ent_fire, "Fires an entity input: ent_fire <target> <input> <parameter>")
-{
-    if (args.size() < 3) 
-    {
-        Console::Log("Usage: ent_fire <target> <input> <optional_param>");
-        return;
-    }
-
-    auto ent = EntityManager::FindEntityByName(args[1]);
-    if (!ent) 
-        ent = EntityManager::FindEntityByClass(args[1]);
-
-    if (ent) 
-    {
-        ent->AcceptInput(args[2], args.size() > 3 ? args[3] : "");
-        Console::Log("Fired " + args[2] + " at " + args[1]);
-    }
-    else 
-    {
-        Console::Warn("Target not found!");
+        if (!ent->m_parentName.empty())
+        {
+            auto parent = FindEntityByName(ent->m_parentName);
+            if (parent)
+            {
+                if (recalculateOffsets)
+                {
+                    ent->SetParent(parent.get());
+                }
+                else
+                {
+                    ent->m_parent = parent.get();
+                }
+            }
+        }
+        else
+        {
+            ent->m_parent = nullptr;
+        }
     }
 }

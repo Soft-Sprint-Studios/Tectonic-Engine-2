@@ -157,6 +157,7 @@ public:
 
     static std::shared_ptr<Entity> FindEntityByClass(const std::string& className);
     static std::shared_ptr<Entity> FindEntityByName(const std::string& name);
+    static void RelinkAllParents(bool recalculateOffsets);
 
     static void AddDelayedInput(const DelayedInput& di)
     {

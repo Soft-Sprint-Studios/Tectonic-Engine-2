@@ -202,6 +202,8 @@ namespace Save
             }
         }
 
+        EntityManager::RelinkAllParents(false);
+
         Console::Log("Loaded game: " + name);
     }
 
