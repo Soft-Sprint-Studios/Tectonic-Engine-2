@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 project(TectonicEngine2)
 
 if(MSVC)
-    add_compile_options(/we4013)
+    add_compile_options(/we4013 /MP)
 endif()
 
 set(CMAKE_CXX_STANDARD 20)
