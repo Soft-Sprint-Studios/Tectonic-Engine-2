@@ -67,9 +67,7 @@ private:
         uint32_t totalVertices = 0;
 
         GLuint transformSSBO = 0;
-        GLuint lmIndexSSBO = 0;
-        GLuint lmTextureArray = 0;
-        GLuint lmDirTextureArray = 0;
+        GLuint lmUVSSBO = 0;
         bool hasLightmap = false;
         bool hasBumpedLighting = false;
 

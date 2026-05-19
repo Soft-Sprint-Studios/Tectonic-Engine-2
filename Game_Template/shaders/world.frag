@@ -7,7 +7,6 @@ in centroid vec2 LmCoord5;
 in centroid vec4 Color;
 in vec3 FragPos;
 in centroid mat3 TBN;
-flat in int fPplIndex;
 
 uniform sampler2D u_diffuse;
 uniform sampler2D u_normal;
@@ -76,10 +75,6 @@ uniform mat4 u_csmMatrices[4];
 uniform float u_csmSplits[5];
 uniform vec3 u_sunColor;
 uniform vec3 u_sunDir;
-
-uniform int u_hasLM;
-uniform sampler2DArray u_lmTextureArray;
-uniform sampler2DArray u_lmDirTextureArray;
 
 out vec4 FragColor;
 
@@ -319,23 +314,10 @@ void main()
         w2 /= sumW;
         w3 /= sumW;
 
-        if (u_isModel)
-        {
-            if (u_hasLM == 1 && fPplIndex >= 0)
-            {
-                vec3 l1 = texture(u_lmDirTextureArray, vec3(TexCoord, fPplIndex * 3 + 0)).rgb;
-                vec3 l2 = texture(u_lmDirTextureArray, vec3(TexCoord, fPplIndex * 3 + 1)).rgb;
-                vec3 l3 = texture(u_lmDirTextureArray, vec3(TexCoord, fPplIndex * 3 + 2)).rgb;
-                diffuseLight = l1 * w1 + l2 * w2 + l3 * w3;
-            }
-        }
-        else
-        {
-            vec3 l1 = texture(u_lightmap, LmCoord2).rgb;
-            vec3 l2 = texture(u_lightmap, LmCoord3).rgb;
-            vec3 l3 = texture(u_lightmap, LmCoord4).rgb;
-            diffuseLight = l1 * w1 + l2 * w2 + l3 * w3;
-        }
+        vec3 l1 = texture(u_lightmap, LmCoord2).rgb;
+        vec3 l2 = texture(u_lightmap, LmCoord3).rgb;
+        vec3 l3 = texture(u_lightmap, LmCoord4).rgb;
+        diffuseLight = l1 * w1 + l2 * w2 + l3 * w3;
 
         vec3 L1 = normalize(TBN * basis0);
         vec3 L2 = normalize(TBN * basis1);
@@ -348,17 +330,7 @@ void main()
     }
     else
     {
-        if (u_isModel)
-        {
-            if (u_hasLM == 1 && fPplIndex >= 0)
-            {
-                diffuseLight = texture(u_lmTextureArray, vec3(TexCoord, fPplIndex)).rgb;
-            }
-        }
-        else
-        {
-            diffuseLight = texture(u_lightmap, LmCoord1).rgb;
-        }
+        diffuseLight = texture(u_lightmap, LmCoord1).rgb;
     }
 
     // Environmental Lighting Phase

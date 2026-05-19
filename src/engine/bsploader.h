@@ -242,6 +242,7 @@ namespace BSP
         bool hasBumpedLighting = false;
         std::vector<uint8_t> lmData;
         std::vector<uint8_t> lmDirData[3];
+        glm::vec4 lmUVTransform[4];
         int lmWidth = 0, lmHeight = 0;
     };
 

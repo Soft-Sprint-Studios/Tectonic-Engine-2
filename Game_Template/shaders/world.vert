@@ -29,7 +29,7 @@ layout(std430, binding = 5) readonly buffer InstanceColors
 
 layout(std430, binding = 7) readonly buffer InstanceLM 
 {
-    int lmIndices[];
+    vec4 lmTransforms[];
 };
 
 out centroid vec2 TexCoord;
@@ -41,7 +41,6 @@ out centroid vec2 LmCoord5;
 out centroid vec4 Color;
 out vec3 FragPos;
 out centroid mat3 TBN;
-flat out int fPplIndex;
 
 void main()
 {
@@ -67,9 +66,14 @@ void main()
 
     if (u_isInstanced == 1) 
     {
-        int baseIdx = (gl_InstanceID * u_totalVertices + u_vertexOffset + gl_VertexID) * 3;
+        int baseIdx = (gl_InstanceID * u_totalVertices + u_vertexOffset + gl_VertexID);
         c1 = vertColors[baseIdx];
-        fPplIndex = lmIndices[gl_InstanceID];
+        
+        int transBase = gl_InstanceID * 4;
+        LmCoord1 = aTexCoord * lmTransforms[transBase + 0].zw + lmTransforms[transBase + 0].xy;
+        LmCoord2 = aTexCoord * lmTransforms[transBase + 1].zw + lmTransforms[transBase + 1].xy;
+        LmCoord3 = aTexCoord * lmTransforms[transBase + 2].zw + lmTransforms[transBase + 2].xy;
+        LmCoord4 = aTexCoord * lmTransforms[transBase + 3].zw + lmTransforms[transBase + 3].xy;
     }
 
     Color = c1;

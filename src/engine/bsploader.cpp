@@ -51,11 +51,11 @@ namespace BSP
             }
 
             SetupLumpPointers();
-            SetupLightmapAtlas();
             ParseEntities();
-            GenerateGeometry();
             ProcessGameLumps();
             ProcessPakFile();
+            SetupLightmapAtlas();
+            GenerateGeometry();
 
             m_map.loaded = true;
             return m_map;
@@ -155,6 +155,29 @@ namespace BSP
             m_map.lightmapAtlasWidth = 4096;
             m_map.lightmapAtlasHeight = 4096;
             m_map.lightmapAtlas.assign(m_map.lightmapAtlasWidth * m_map.lightmapAtlasHeight * 4, 1.0f);
+
+            // Setup model lightmap
+            for (auto& prop : m_map.staticProps)
+            {
+                if (prop.lmData.empty())
+                    continue;
+
+                auto pack = [&](const uint8_t* data, int idx) 
+                    {
+                    int ax, ay;
+                    PackLightmap(data, prop.lmWidth, prop.lmHeight, ax, ay, true);
+                    float tw = (float)m_map.lightmapAtlasWidth;
+                    float th = (float)m_map.lightmapAtlasHeight;
+                    prop.lmUVTransform[idx] = glm::vec4((float)ax / tw, (float)ay / th, (float)prop.lmWidth / tw, (float)prop.lmHeight / th);
+                    };
+
+                pack(prop.lmData.data(), 0);
+                if (prop.hasBumpedLighting)
+                {
+                    for (int i = 0; i < 3; i++) 
+                        pack(prop.lmDirData[i].data(), i + 1);
+                }
+            }
         }
 
         void ParseEntities()
@@ -707,7 +730,7 @@ namespace BSP
             {
                 for (int m = 0; m < totalMaps; m++)
                 {
-                    PackLightmap(face.lightofs + (m * lw * lh * 4), lw, lh, axs[m], ays[m], (m == 4));
+                    PackLightmap(d_lighting + face.lightofs + (m * lw * lh * 4), lw, lh, axs[m], ays[m], false, (m == 4));
                 }
             }
 
@@ -730,7 +753,7 @@ namespace BSP
             m_faceLightmaps[faceIdx] = lmInfo;
         }
 
-        void PackLightmap(int offset, int w, int h, int& outX, int& outY, bool isRawAlpha = false)
+        void PackLightmap(const uint8_t* data, int w, int h, int& outX, int& outY, bool isModel = false, bool isRawAlpha = false)
         {
             if (m_atlasX + w > m_map.lightmapAtlasWidth)
             {
@@ -744,16 +767,24 @@ namespace BSP
             outX = m_atlasX;
             outY = m_atlasY;
 
-            const uint8_t* src = d_lighting + offset;
+            const uint8_t* src = data;
             for (int y = 0; y < h; y++)
             {
                 for (int x = 0; x < w; x++)
                 {
                     int dest = ((outY + y) * m_map.lightmapAtlasWidth + (outX + x)) * 4;
-                    int pixelIdx = (y * w + x) * 4;
 
-                    if (isRawAlpha)
+                    if (isModel)
                     {
+                        int pixelIdx = (y * w + x) * 3;
+                        m_map.lightmapAtlas[dest + 0] = src[pixelIdx + 0] / 255.0f;
+                        m_map.lightmapAtlas[dest + 1] = src[pixelIdx + 1] / 255.0f;
+                        m_map.lightmapAtlas[dest + 2] = src[pixelIdx + 2] / 255.0f;
+                        m_map.lightmapAtlas[dest + 3] = 1.0f;
+                    }
+                    else if (isRawAlpha)
+                    {
+                        int pixelIdx = (y * w + x) * 4;
                         m_map.lightmapAtlas[dest + 0] = src[pixelIdx + 0] / 255.0f;
                         m_map.lightmapAtlas[dest + 1] = src[pixelIdx + 1] / 255.0f;
                         m_map.lightmapAtlas[dest + 2] = src[pixelIdx + 2] / 255.0f;
@@ -761,6 +792,7 @@ namespace BSP
                     }
                     else
                     {
+                        int pixelIdx = (y * w + x) * 4;
                         const Color* c = (const Color*)(src + pixelIdx);
                         float power = std::pow(2.0f, c->exponent);
                         m_map.lightmapAtlas[dest + 0] = (c->r / 255.0f) * power;
