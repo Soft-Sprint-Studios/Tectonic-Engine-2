@@ -243,7 +243,7 @@ namespace BSP
         std::vector<uint8_t> lmData;
         std::vector<uint8_t> lmDirData[3];
         glm::vec4 lmUVTransform[4];
-        int lmWidth = 0, lmHeight = 0;
+        int lmWidth = 0, lmHeight = 0, lmFormat = 0;
     };
 
     struct OverlayBatch

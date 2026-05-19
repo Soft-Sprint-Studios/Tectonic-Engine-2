@@ -165,7 +165,7 @@ namespace BSP
                 auto pack = [&](const uint8_t* data, int idx) 
                     {
                     int ax, ay;
-                    PackLightmap(data, prop.lmWidth, prop.lmHeight, ax, ay, true);
+                    PackLightmap(data, prop.lmWidth, prop.lmHeight, ax, ay, true, false, prop.lmFormat);
                     float tw = (float)m_map.lightmapAtlasWidth;
                     float th = (float)m_map.lightmapAtlasHeight;
                     prop.lmUVTransform[idx] = glm::vec4((float)ax / tw, (float)ay / th, (float)prop.lmWidth / tw, (float)prop.lmHeight / th);
@@ -530,6 +530,7 @@ namespace BSP
                         {
                             m_map.staticProps[i].lmWidth = (int)lmW;
                             m_map.staticProps[i].lmHeight = (int)lmH;
+                            m_map.staticProps[i].lmFormat = *(int*)(lmFile + 8);
                             m_map.staticProps[i].lmData.assign(lmFile + dataOffset, lmFile + dataOffset + dataBytes);
                         }
                     }
@@ -753,7 +754,7 @@ namespace BSP
             m_faceLightmaps[faceIdx] = lmInfo;
         }
 
-        void PackLightmap(const uint8_t* data, int w, int h, int& outX, int& outY, bool isModel = false, bool isRawAlpha = false)
+        void PackLightmap(const uint8_t* data, int w, int h, int& outX, int& outY, bool isModel = false, bool isRawAlpha = false, int format = 0)
         {
             if (m_atlasX + w > m_map.lightmapAtlasWidth)
             {
@@ -774,7 +775,15 @@ namespace BSP
                 {
                     int dest = ((outY + y) * m_map.lightmapAtlasWidth + (outX + x)) * 4;
 
-                    if (isModel)
+                    if (isModel && format == 29)
+                    {
+                        const float* pixelIdx = (const float*)data + (y * w + x) * 4;
+                        m_map.lightmapAtlas[dest + 0] = pow(pixelIdx[0], 2.2f) * 2.0f;
+                        m_map.lightmapAtlas[dest + 1] = pow(pixelIdx[1], 2.2f) * 2.0f;
+                        m_map.lightmapAtlas[dest + 2] = pow(pixelIdx[2], 2.2f) * 2.0f;
+                        m_map.lightmapAtlas[dest + 3] = 1.0f;
+                    }
+                    else if (isModel)
                     {
                         int pixelIdx = (y * w + x) * 3;
                         m_map.lightmapAtlas[dest + 0] = src[pixelIdx + 0] / 255.0f;
