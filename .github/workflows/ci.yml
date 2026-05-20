@@ -1,7 +1,7 @@
 name: CMake Build
 
 permissions:
-  contents: read
+  contents: write
   actions: write
 
 on:
@@ -152,3 +152,70 @@ jobs:
         with:
           name: linux-x64-relwithdebinfo
           path: build
+
+  create-release:
+    name: Create Release
+    needs:
+      - build-windows-x64-release
+      - build-windows-x86-release
+      - build-linux-x64-release
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Windows x64 Release
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-x64-release
+          path: artifacts/windows-x64
+
+      - name: Download Windows x86 Release
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-x86-release
+          path: artifacts/windows-x86
+
+      - name: Download Linux x64 Release
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-x64-release
+          path: artifacts/linux-x64
+
+      - name: Prepare release folders
+        run: |
+          mkdir -p release/windows-x64
+          mkdir -p release/windows-x86
+          mkdir -p release/linux-x64
+
+      - name: Copy Game Template
+        run: |
+          cp -r Game_Template/* release/windows-x64/
+          cp -r Game_Template/* release/windows-x86/
+          cp -r Game_Template/* release/linux-x64/
+
+      - name: Merge build artifacts
+        run: |
+          cp -r artifacts/windows-x64/* release/windows-x64/
+          cp -r artifacts/windows-x86/* release/windows-x86/
+          cp -r artifacts/linux-x64/* release/linux-x64/
+
+      - name: Create archives
+        run: |
+          cd release
+          zip -r windows-x64.zip windows-x64
+          zip -r windows-x86.zip windows-x86
+          zip -r linux-x64.zip linux-x64
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: auto-${{ github.run_number }}
+          name: Automated Release ${{ github.run_number }}
+          files: |
+            release/windows-x64.zip
+            release/windows-x86.zip
+            release/linux-x64.zip
