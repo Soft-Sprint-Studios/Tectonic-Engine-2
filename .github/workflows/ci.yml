@@ -210,6 +210,11 @@ jobs:
           zip -r windows-x86.zip windows-x86
           zip -r linux-x64.zip linux-x64
 
+      - name: Recreate release tag
+        run: |
+          git tag -f automated-release
+          git push origin automated-release --force
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
