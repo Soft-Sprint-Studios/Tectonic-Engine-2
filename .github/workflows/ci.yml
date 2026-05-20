@@ -216,7 +216,7 @@ jobs:
           tag_name: automated-release
           name: Automated Release
           body: |
-            Build Date: ${{ github.run_id }}
+            Build Date: ${{ github.event.head_commit.timestamp }}
           files: |
             release/windows-x64.zip
             release/windows-x86.zip
