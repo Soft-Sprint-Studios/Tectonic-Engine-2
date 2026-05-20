@@ -141,7 +141,6 @@ void R_Sky::Draw(const Camera& camera)
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, m_cubemapTexture);
     glDrawArrays(GL_TRIANGLES, 0, 36);
-    glBindVertexArray(0);
     R_State::SetDepthMask(true);
     R_State::SetDepthFunc(GL_LESS);
 }

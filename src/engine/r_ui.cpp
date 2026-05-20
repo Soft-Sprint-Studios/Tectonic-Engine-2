@@ -66,7 +66,6 @@ void R_UI::Init(Window* window)
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
 }
 
 void R_UI::Shutdown()
@@ -221,7 +220,6 @@ void R_UI::Render()
         glDrawArrays(GL_TRIANGLES, 0, 6);
     }
 
-    glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
     R_State::SetDepthTest(true);
     R_State::SetBlending(false);

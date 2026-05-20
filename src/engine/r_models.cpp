@@ -367,7 +367,6 @@ void R_Models::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOn
         }
     }
 
-    glBindVertexArray(0);
     shader.SetInt("u_isInstanced", 0);
 
     if (!depthOnly)

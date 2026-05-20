@@ -157,7 +157,6 @@ void R_Waters::Draw(const Camera& camera, GLuint vao, GLuint lightmap)
         glDrawArrays(GL_TRIANGLES, s.start, s.count);
     }
 
-    glBindVertexArray(0);
     R_State::SetBlending(false);
 }
 

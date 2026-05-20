@@ -76,8 +76,6 @@ bool R_BSP::Init(const BSP::MapData& map)
     glEnableVertexAttribArray(10);
     glVertexAttribPointer(10, 2, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, lm_uv5));
 
-    glBindVertexArray(0);
-
     if (!map.lightmapAtlas.empty())
     {
         glGenTextures(1, &m_lightmapTexture);
@@ -190,7 +188,6 @@ void R_BSP::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOnly)
     if (depthOnly)
     {
         glDrawArrays(GL_TRIANGLES, 0, m_opaqueVertexCount);
-        glBindVertexArray(0);
         return;
     }
 
@@ -225,7 +222,6 @@ void R_BSP::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOnly)
 
         glDrawArrays(GL_TRIANGLES, dc.start, dc.count);
     }
-    glBindVertexArray(0);
 }
 
 void R_BSP::DrawBModel(int index, const R_Shader& shader, const glm::mat4& transform, bool depthOnly)

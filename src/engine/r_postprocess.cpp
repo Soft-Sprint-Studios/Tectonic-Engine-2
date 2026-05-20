@@ -93,7 +93,6 @@ bool R_PostProcess::Init(int width, int height)
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
-    glBindVertexArray(0);
     return true;
 }
 
@@ -275,7 +274,6 @@ void R_PostProcess::Draw(const Camera& camera, R_Lights* lights)
     glBindTexture(GL_TEXTURE_2D, m_depthTexture);
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
-    glBindVertexArray(0);
 }
 
 void R_PostProcess::Rescale(int width, int height)

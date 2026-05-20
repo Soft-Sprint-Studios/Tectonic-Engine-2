@@ -203,7 +203,6 @@ void R_SSAO::Render(GLuint depthTexture, const Camera& camera, GLuint quadVAO, i
     
     glBindVertexArray(quadVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
-    glBindVertexArray(0);
 
     // Blur pass
     glBindFramebuffer(GL_FRAMEBUFFER, m_blurFbo);
@@ -215,7 +214,6 @@ void R_SSAO::Render(GLuint depthTexture, const Camera& camera, GLuint quadVAO, i
 
     glBindVertexArray(quadVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
-    glBindVertexArray(0);
 
     R_State::SetViewport(0, 0, screenW, screenH);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
