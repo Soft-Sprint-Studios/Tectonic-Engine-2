@@ -12,3 +12,29 @@
     
     color       1.0 0.8 0.2 1.0   1.0 0.2 0.0 0.0
 }
+
+"rain"
+{
+    texture     "rain"
+    lifetime    2.0
+    size        0.01 0.01
+    gravity     1.0
+    rate        5000
+    additive    0
+    speed       10.0 12.0
+    spread      0.5
+    color       200 200 255 150  200 200 255 0
+}
+
+"snow"
+{
+    texture     "snow"
+    lifetime    5.0
+    size        0.04 0.02
+    gravity     0.05
+    rate        1000
+    additive    0
+    speed       1.5 2.0
+    spread      5.0
+    color       255 255 255 200  255 255 255 0
+}

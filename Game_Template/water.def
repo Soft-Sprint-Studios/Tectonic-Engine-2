@@ -1,0 +1,6 @@
+"dev/dev_water2"
+{
+    normal = "water_normal.png"
+    dudv   = "water_dudv.png"
+    flowspeed = 0.1
+}

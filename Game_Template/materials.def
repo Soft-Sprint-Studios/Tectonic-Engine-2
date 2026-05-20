@@ -13,4 +13,45 @@
     diffuse = "dev_bumptest.png"
     normal = "dev_bumptest_normal.png"
     specular = "dev_bumptest_specular.png"
+	height = "dev_bumptest_height.png"
+	heightscale = 0.05
+}
+
+"dev/dev_blendmeasure"
+{
+    diffuse = "dev_measuregeneric01.png"
+    diffuse2 = "dev_measuregeneric01b.png"
+}
+
+"particles/fire"
+{
+    diffuse = "fire_01.png"
+}
+"Barrel_01"
+{
+	diffuse = "Barrel_01/Barrel_01_diffuse.png"
+	normal = "Barrel_01/Barrel_01_normal.png"
+	specular = "Barrel_01/Barrel_01_specular.png"
+}
+
+
+"Television_01"
+{
+	diffuse = "Television_01/Television_01_diffuse.png"
+	normal = "Television_01/Television_01_normal.png"
+	specular = "Television_01/Television_01_specular.png"
+}
+
+"Barrel_02"
+{
+	diffuse = "Barrel_02/Barrel_02_diffuse.png"
+	normal = "Barrel_02/Barrel_02_normal.png"
+	specular = "Barrel_02/Barrel_02_specular.png"
+}
+
+"wooden_table_02"
+{
+	diffuse = "wooden_table_02/wooden_table_02_diffuse.png"
+	normal = "wooden_table_02/wooden_table_02_normal.png"
+	specular = "wooden_table_02/wooden_table_02_specular.png"
 }
