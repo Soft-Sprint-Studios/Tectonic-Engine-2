@@ -111,11 +111,6 @@ namespace BSP
                 Console::Error("BSP: Invalid identifier");
                 return false;
             }
-            if (m_header->version < VBSP_VERSION_MIN)
-            {
-                Console::Error("BSP: Version too old");
-                return false;
-            }
             return true;
         }
 
@@ -244,13 +239,13 @@ namespace BSP
                 const Face& face = d_faces[faceIdx];
                 const TexInfo& tex = d_texinfos[face.texinfo];
 
-                if (tex.flags & SURF_WATER) // If we are water
+                if (tex.flags & 0x0008) // If we are water
                 {
                     waterFaces.push_back(faceIdx);
                     continue;
                 }
 
-                if (tex.flags & SURF_NODRAW || tex.flags & SURF_SKY || tex.flags & SURF_SKY2D)
+                if (tex.flags & 0x0080 || tex.flags & 0x0004 || tex.flags & 0x0002)
                 {
                     ProcessFace(faceIdx, m_map.renderVertices, &m_map.collision, false);  // Collision only
                     continue;
@@ -274,7 +269,7 @@ namespace BSP
                 // Determine if this entire batch is bumped based on the first face
                 const Face& firstFace = d_faces[faceIndices[0]];
                 const TexInfo& firstTex = d_texinfos[firstFace.texinfo];
-                dc.isBumped = (firstTex.flags & SURF_BUMPED) != 0;
+                dc.isBumped = (firstTex.flags & 0x0800) != 0;
 
                 for (int faceIdx : faceIndices)
                 {
@@ -313,7 +308,7 @@ namespace BSP
                     {
                         int fIdx = model.firstface + i;
                         const TexInfo& tex = d_texinfos[d_faces[fIdx].texinfo];
-                        if (tex.flags & SURF_NODRAW) 
+                        if (tex.flags & 0x0080)
                             continue;
 
                         const TexData& td = d_texdatas[tex.texdata];
@@ -327,7 +322,7 @@ namespace BSP
                         DrawCall dc;
                         dc.textureName = texName;
                         dc.start = (uint32_t)ent.renderVertices.size();
-                        dc.isBumped = (d_texinfos[d_faces[fIndices[0]].texinfo].flags & SURF_BUMPED) != 0;
+                        dc.isBumped = (d_texinfos[d_faces[fIndices[0]].texinfo].flags & 0x0800) != 0;
                         for (int fIdx : fIndices)
                         {
                             ProcessFace(fIdx, ent.renderVertices, &ent.brushCollision);
@@ -722,7 +717,7 @@ namespace BSP
             int lw = face.lightmapTextureSizeInLuxels[0] + 1;
             int lh = face.lightmapTextureSizeInLuxels[1] + 1;
 
-            bool isBumped = (tex.flags & SURF_BUMPED) != 0;
+            bool isBumped = (tex.flags & 0x0800) != 0;
             int numMaps = isBumped ? 4 : 1;
 
             bool hasAlphaStream = isBumped && (m_header->version >= 21);
@@ -901,7 +896,7 @@ namespace BSP
                     outVerts.push_back(verts[i]);
                 }
 
-                if (!(tex.flags & SURF_WATER) && outCollision)
+                if (!(tex.flags & 0x0008) && outCollision)
                 {
                     if (outCollision != &m_map.collision)
                     {
@@ -1043,7 +1038,7 @@ namespace BSP
                         outVerts.push_back(grid[i3]);
                     }
 
-                    if (!(tex.flags & SURF_WATER))
+                    if (!(tex.flags & 0x0008))
                     {
                         m_map.collision.indices.push_back(baseIdx + i0);
                         m_map.collision.indices.push_back(baseIdx + i1);

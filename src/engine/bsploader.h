@@ -35,16 +35,9 @@ namespace BSP
     constexpr int32_t VBSP_IDENT = (('P' << 24) + ('S' << 16) + ('B' << 8) + 'V');
     constexpr int32_t SPRP_IDENT = (('s' << 24) + ('p' << 16) + ('r' << 8) + 'p');
     constexpr int32_t ZIP_IDENT = (0x04 << 24) | (0x03 << 16) | ('K' << 8) | 'P';
-    constexpr int32_t VBSP_VERSION_MIN = 19;
     constexpr int32_t HEADER_LUMPS = 64;
 
     constexpr float MAPSCALE = 1.0f / 32.0f;
-
-    constexpr int32_t SURF_SKY2D = 0x0002; // Skybox
-    constexpr int32_t SURF_SKY = 0x0004; // Also skybox?
-    constexpr int32_t SURF_WATER = 0x0008; // Seems to be water
-    constexpr int32_t SURF_NODRAW = 0x0080; // Nodraw
-    constexpr int32_t SURF_BUMPED = 0x0800; // Bumped lightmaps
 
     enum LumpType
     {
@@ -74,7 +67,8 @@ namespace BSP
 #pragma pack(push, 1)
     struct Lump
     {
-        int32_t offset, length, version, uncompressedSize;
+        int32_t offset, length, version;
+        char pad0[4];
     };
 
     struct Header
@@ -87,17 +81,15 @@ namespace BSP
     struct Face
     {
         uint16_t planenum;
-        uint8_t side, onNode;
+        char pad0[2];
         int32_t firstedge;
-        int16_t numedges, texinfo, dispinfo, surfaceFogVolumeID;
-        uint8_t styles[4];
+        int16_t numedges, texinfo, dispinfo;
+        char pad1[6];
         int32_t lightofs;
-        float area;
+        char pad2[4];
         int32_t lightmapTextureMinsInLuxels[2];
         int32_t lightmapTextureSizeInLuxels[2];
-        int32_t origFace;
-        uint16_t numPrims, firstPrimID;
-        uint32_t smoothingGroups;
+        char pad3[12];
     };
 
     struct Edge
@@ -114,9 +106,10 @@ namespace BSP
 
     struct TexData
     {
-        glm::vec3 reflectivity;
+        char pad0[12];
         int32_t nameStringTableID;
-        int32_t width, height, view_width, view_height;
+        int32_t width, height;
+        char pad1[8];
     };
 
     struct Color
@@ -129,7 +122,7 @@ namespace BSP
     {
         glm::vec3 normal;
         float dist;
-        int32_t type;
+        char pad0[4];
     };
 
     struct DispVert
@@ -138,39 +131,13 @@ namespace BSP
         float dist, alpha;
     };
 
-    struct DispNeighbor
-    {
-        uint16_t neighborIndex;
-        unsigned char neighborOrientation;
-        unsigned char span;
-        unsigned char neighborSpan;
-        unsigned char pad;
-    };
-
-    struct DispCornerNeighbors
-    {
-        uint16_t neighborIndices[4];
-        unsigned char nNeighbors;
-        unsigned char pad;
-    };
-
     struct DispInfo
     {
         glm::vec3 startPosition;
         int32_t dispVertStart;
         int32_t dispTriStart;
         int32_t power;
-        int32_t minTess;
-        float smoothingAngle;
-        int32_t contents;
-        uint16_t mapFace;
-        uint16_t padding1;
-        int32_t lightmapAlphaStart;
-        int32_t lightmapSamplePositionStart;
-        DispNeighbor edgeNeighbors[4];
-        DispCornerNeighbors cornerNeighbors[4];
-        uint32_t allowedVerts[10];
-        char padding2[24];
+        char pad0[152];
     };
 
     struct GameLump
