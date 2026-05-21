@@ -30,44 +30,19 @@ public:
     void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
     {
         Entity::Spawn(keyvalues);
-        m_disabled = HasSpawnFlag(1);
     }
 
     void OnSave() override
     {
         Entity::OnSave();
-        AddSaveField(DATA_FIELD(TriggerAutosave, m_disabled, FieldType::Bool));
     }
 
     void Touch(Entity* other) override
     {
-        if (m_disabled)
-        {
-            return;
-        }
-
         if (other && other->IsPlayer())
         {
             FireOutput("OnTrigger");
             Save::Write("autosave");
-
-            m_disabled = true;
-        }
-    }
-
-    void AcceptInput(const std::string& input, const std::string& param) override
-    {
-        if (input == "Enable")
-        {
-            m_disabled = false;
-        }
-        else if (input == "Disable")
-        {
-            m_disabled = true;
-        }
-        else if (input == "Toggle")
-        {
-            m_disabled = !m_disabled;
         }
     }
 
@@ -75,9 +50,6 @@ public:
     {
         return false;
     }
-
-private:
-    bool m_disabled = false;
 };
 
 LINK_ENTITY_TO_CLASS("trigger_autosave", TriggerAutosave)

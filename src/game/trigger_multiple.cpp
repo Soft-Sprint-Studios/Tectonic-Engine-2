@@ -52,7 +52,7 @@ public:
                 // If wait is -1 it behaves like a trigger_once
                 if (m_wait < 0)
                 {
-                    m_disabled = true;
+                    SetEnabled(true);
                 }
                 else
                 {
@@ -70,7 +70,6 @@ public:
 protected:
     float m_wait = 0.0f;
     float m_nextFireTime = 0.0f;
-    bool m_disabled = false;
 };
 
 LINK_ENTITY_TO_CLASS("trigger_multiple", TriggerMultiple)

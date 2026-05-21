@@ -33,24 +33,17 @@ public:
         Entity::Spawn(keyvalues);
         m_chance = GetFloat("chance", 50.0f);
         m_wait = GetFloat("wait", 1.0f);
-        m_disabled = HasSpawnFlag(1);
         m_nextFireTime = 0.0f;
     }
 
     void OnSave() override
     {
         Entity::OnSave();
-        AddSaveField(DATA_FIELD(TriggerChance, m_disabled, FieldType::Bool));
         AddSaveField(DATA_FIELD(TriggerChance, m_nextFireTime, FieldType::Float));
     }
 
     void Touch(Entity* other) override
     {
-        if (m_disabled)
-        {
-            return;
-        }
-
         if (other && other->IsPlayer())
         {
             if (Time::TotalTime() >= m_nextFireTime)
@@ -59,7 +52,7 @@ public:
 
                 if (m_wait < 0.0f)
                 {
-                    m_disabled = true;
+                    SetEnabled(true);
                 }
                 else
                 {
@@ -71,21 +64,9 @@ public:
 
     void AcceptInput(const std::string& input, const std::string& param) override
     {
-        if (input == "Enable")
+        if (input == "Trigger")
         {
-            m_disabled = false;
-        }
-        else if (input == "Disable")
-        {
-            m_disabled = true;
-        }
-        else if (input == "Toggle")
-        {
-            m_disabled = !m_disabled;
-        }
-        else if (input == "Trigger")
-        {
-            if (!m_disabled)
+            if (!IsEnabled())
             {
                 CalculateChance();
             }
@@ -116,7 +97,6 @@ private:
     float m_chance = 50.0f;
     float m_wait = 1.0f;
     float m_nextFireTime = 0.0f;
-    bool m_disabled = false;
 };
 
 LINK_ENTITY_TO_CLASS("trigger_chance", TriggerChance)

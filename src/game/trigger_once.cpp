@@ -29,46 +29,26 @@ public:
     void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
     {
         Entity::Spawn(keyvalues);
-        m_disabled = HasSpawnFlag(1);
     }
 
     void OnSave() override
     {
         Entity::OnSave();
-        AddSaveField(DATA_FIELD(TriggerOnce, m_disabled, FieldType::Bool));
     }
 
     void Touch(Entity* other) override
     {
-        if (m_disabled)
-        {
-            return;
-        }
-
         if (other && other->IsPlayer())
         {
             FireOutput("OnTrigger");
-            m_disabled = true;
+            SetEnabled(true);
         }
-    }
-
-    void AcceptInput(const std::string& input, const std::string& param) override
-    {
-        if (input == "Enable")
-            m_disabled = false;
-        if (input == "Disable")
-            m_disabled = true;
-        if (input == "Toggle")
-            m_disabled = !m_disabled;
     }
 
     bool IsCollidable() const override
     {
         return false;
     }
-
-private:
-    bool m_disabled = false;
 };
 
 LINK_ENTITY_TO_CLASS("trigger_once", TriggerOnce)
