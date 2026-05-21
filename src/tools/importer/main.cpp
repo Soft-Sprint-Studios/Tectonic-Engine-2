@@ -223,7 +223,7 @@ namespace AssetTool
         return stbi_load_from_memory(raw, (int)tex->image->buffer_view->size, w, h, nullptr, 4);
     }
 
-    void UpdateGlobalMaterialDef(const std::string& matName, const MaterialTexturePaths& paths)
+    void UpdateGlobalMaterialDef(const std::string& matName, const MaterialTexturePaths& paths, const std::string& subFolder)
     {
         std::filesystem::path defPath = std::filesystem::path(g_config.enginePath) / "materials.def";
         std::string content;
@@ -234,7 +234,8 @@ namespace AssetTool
             inFile.close();
         }
 
-        if (content.find("\"" + matName + "\"") != std::string::npos)
+        std::string fullKey = subFolder + "/" + matName;
+        if (content.find("\"" + fullKey + "\"") != std::string::npos)
         {
             return;
         }
@@ -242,15 +243,15 @@ namespace AssetTool
         std::ofstream outFile(defPath, std::ios::app);
         if (outFile.is_open())
         {
-            outFile << "\n\"" << matName << "\"\n{\n";
-            if (!paths.diffuse.empty()) outFile << "\tdiffuse = \"" << matName << "/" << paths.diffuse << "\"\n";
-            if (!paths.normal.empty()) outFile << "\tnormal = \"" << matName << "/" << paths.normal << "\"\n";
-            if (!paths.specular.empty()) outFile << "\tspecular = \"" << matName << "/" << paths.specular << "\"\n";
+            outFile << "\n\"" << fullKey << "\"\n{\n";
+            if (!paths.diffuse.empty()) outFile << "\tdiffuse = \"" << subFolder << "/" << paths.diffuse << "\"\n";
+            if (!paths.normal.empty()) outFile << "\tnormal = \"" << subFolder << "/" << paths.normal << "\"\n";
+            if (!paths.specular.empty()) outFile << "\tspecular = \"" << subFolder << "/" << paths.specular << "\"\n";
             outFile << "}\n";
         }
     }
 
-    void CopyToEngine(const std::string& modelName, const std::string& glbPath, const std::filesystem::path& workDir)
+    void CopyToEngine(const std::string& modelName, const std::string& glbPath, const std::filesystem::path& workDir, const std::string& subFolder)
     {
         if (!glbPath.empty())
         {
@@ -264,10 +265,8 @@ namespace AssetTool
             if (entry.path().extension() == ".png")
             {
                 std::string stem = entry.path().stem().string();
-                size_t suffixPos = stem.find_last_of('_');
-                std::string matFolder = (suffixPos != std::string::npos) ? stem.substr(0, suffixPos) : stem;
+                std::filesystem::path engineTexDir = std::filesystem::path(g_config.enginePath) / "textures" / subFolder;
 
-                std::filesystem::path engineTexDir = std::filesystem::path(g_config.enginePath) / "textures" / matFolder;
                 std::filesystem::create_directories(engineTexDir);
                 std::filesystem::copy_file(entry.path(), engineTexDir / entry.path().filename(), std::filesystem::copy_options::overwrite_existing);
             }
@@ -366,12 +365,12 @@ namespace AssetTool
                 }
             }
 
-            UpdateGlobalMaterialDef(matName, paths);
+            UpdateGlobalMaterialDef(matName, paths, matName);
         }
 
         std::string cmd = "\"\"" + g_config.sdkBinPath + "/studiomdl.exe\" -game \"" + g_config.sdkGamePath + "\" \"" + qcPath + "\"\"";
         system(cmd.c_str());
-        CopyToEngine(modelName, glbPath, workDir);
+        CopyToEngine(modelName, glbPath, workDir, modelName);
         cgltf_free(data);
         std::cout << "--- Model Import Complete ---" << std::endl;
     }
@@ -415,6 +414,7 @@ namespace AssetTool
             {
                 paths.diffuse = matName + "_diffuse.png";
                 stbi_write_png((workDir / paths.diffuse).string().c_str(), w, h, 4, diff, w * 4);
+                ConvertToVTF(matName + "_diffuse", diff, w, h, workDir, false);
                 stbi_image_free(diff);
             }
 
@@ -422,6 +422,7 @@ namespace AssetTool
             {
                 paths.normal = matName + "_normal.png";
                 stbi_write_png((workDir / paths.normal).string().c_str(), w, h, 4, norm, w * 4);
+                ConvertToVTF(matName + "_normal", norm, w, h, workDir, true);
                 stbi_image_free(norm);
             }
 
@@ -445,10 +446,37 @@ namespace AssetTool
                 stbi_image_free(pbr);
             }
 
-            UpdateGlobalMaterialDef(matName, paths);
+            std::string vmtPath = (workDir / (matName + ".vmt")).string();
+            std::ofstream vmtFile(vmtPath);
+            if (vmtFile.is_open())
+            {
+                vmtFile << "\"LightmappedGeneric\"\n{\n";
+                vmtFile << "\t\"$basetexture\" \"tectonic_world/" << matName << "_diffuse\"\n";
+                if (!paths.normal.empty())
+                {
+                    vmtFile << "\t\"$bumpmap\" \"tectonic_world/" << matName << "_normal\"\n";
+                }
+                vmtFile << "\t\"$surfaceprop\" \"concrete\"\n";
+                vmtFile << "}\n";
+                vmtFile.close();
+            }
+
+            std::filesystem::path sdkMaterialDir = std::filesystem::path(g_config.sdkGamePath) / "materials/tectonic_world";
+            std::filesystem::create_directories(sdkMaterialDir);
+
+            for (const auto& entry : std::filesystem::directory_iterator(workDir))
+            {
+                std::string ext = entry.path().extension().string();
+                if (ext == ".vmt" || ext == ".vtf")
+                {
+                    std::filesystem::copy_file(entry.path(), sdkMaterialDir / entry.path().filename(), std::filesystem::copy_options::overwrite_existing);
+                }
+            }
+
+            UpdateGlobalMaterialDef(matName, paths, "tectonic_world");
         }
 
-        CopyToEngine(modelName, "", workDir);
+        CopyToEngine(modelName, "", workDir, "tectonic_world");
         cgltf_free(data);
         std::cout << "--- Texture Import Complete ---" << std::endl;
     }
