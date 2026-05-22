@@ -134,10 +134,10 @@ namespace BSP
             d_stringdata = GetLump<char>(LUMP_TEXDATA_STRING_DATA);
             d_entities = GetLump<char>(LUMP_ENTITIES);
             d_dispinfos = GetLump<DispInfo>(LUMP_DISPINFO);
-            d_dispverts = GetLump<DispVert>(LUMP_DISP_VERTS);
-            d_overlays = GetLump<Overlay>(LUMP_OVERLAYS);
             d_vertnormals = GetLump<glm::vec3>(LUMP_VERTNORMALS);
             d_vertnormalindices = GetLump<uint16_t>(LUMP_VERTNORMALINDICES);
+            d_dispverts = GetLump<DispVert>(LUMP_DISP_VERTS);
+            d_overlays = GetLump<Overlay>(LUMP_OVERLAYS);
         }
 
         void SetupLightmapAtlas()
@@ -553,7 +553,7 @@ namespace BSP
                             if (dataBytes > 0)
                             {
                                 m_map.staticProps[i].lmDirData[m].assign(rnmFile + dataOffset, rnmFile + dataOffset + dataBytes);
-                            }
+                             }
                             meshPtr += 32;
                         }
                     }
@@ -836,18 +836,10 @@ namespace BSP
                 v.position = ToEngineSpace(pos);
 
                 const Plane& plane = d_planes[face.planenum];
-                bool hasSmoothNormals = m_header->lumps[LUMP_VERTNORMALINDICES].length > 0;
 
-                if (hasSmoothNormals)
-                {
-                    uint16_t nIdx = d_vertnormalindices[normalBaseIndex + i];
-                    glm::vec3 n = d_vertnormals[nIdx];
-                    v.normal = glm::vec3(n.x, n.z, -n.y);
-                }
-                else
-                {
-                    v.normal = glm::vec3(plane.normal.x, plane.normal.z, -plane.normal.y);
-                }
+                uint16_t nIdx = d_vertnormalindices[normalBaseIndex + i];
+                glm::vec3 n = d_vertnormals[nIdx];
+                v.normal = glm::vec3(n.x, n.z, -n.y);
 
                 glm::vec3 s_axis = glm::vec3(tex.textureVecs[0][0], tex.textureVecs[0][1], tex.textureVecs[0][2]);
                 glm::vec3 t_axis = glm::vec3(tex.textureVecs[1][0], tex.textureVecs[1][1], tex.textureVecs[1][2]);
