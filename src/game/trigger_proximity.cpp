@@ -23,55 +23,50 @@
  */
 #include "entities.h"
 #include "player.h"
-#include <glm/gtc/matrix_transform.hpp>
-#include <set>
 
-class FuncConveyor : public Entity
+class TriggerProximity : public Entity
 {
 public:
-    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues)
+    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
     {
         Entity::Spawn(keyvalues);
-        m_speed = GetFloat("speed", 100.0f) * BSP::MAPSCALE;
-
-        glm::vec3 angles = GetVector("movedir", { 0, 0, 0 });
-
-        float p = glm::radians(angles.x);
-        float y = glm::radians(angles.y);
-        float hX = cos(p) * cos(y);
-        float hY = cos(p) * sin(y);
-        float hZ = -sin(p);
-
-        m_direction = glm::normalize(glm::vec3(hX, hZ, -hY));
+        m_radius = GetFloat("radius", 128.0f) * BSP::MAPSCALE;
     }
 
-    void Touch(Entity* other)
+    void OnSave() override
     {
-        if (other)
+        Entity::OnSave();
+        AddSaveField(DATA_FIELD(TriggerProximity, m_radius, FieldType::Float));
+        AddSaveField(DATA_FIELD(TriggerProximity, m_playerInside, FieldType::Bool));
+    }
+
+    void Think(float deltaTime) override
+    {
+        Entity::Think(deltaTime);
+
+        auto ent = EntityManager::FindEntityByClass("info_player_start");
+        if (!ent)
         {
-            m_targets.insert(other);
+            return;
         }
-    }
 
-    void EndTouch(Entity* other)
-    {
-        if (other)
-        {
-            m_targets.erase(other);
-        }
-    }
+        auto player = std::dynamic_pointer_cast<Player>(ent);
+        float dist = glm::distance(GetOrigin(), player->GetOrigin());
 
-    void Think(float dt)
-    {
-        for (auto* ent : m_targets)
+        if (dist <= m_radius)
         {
-            if (ent->IsPlayer())
+            if (!m_playerInside)
             {
-                static_cast<Player*>(ent)->ApplyPushVelocity(m_direction * m_speed);
+                m_playerInside = true;
+                FireOutput("OnNearest");
             }
-            else
+        }
+        else
+        {
+            if (m_playerInside)
             {
-                ent->SetOrigin(ent->GetOrigin() + (m_direction * m_speed * dt));
+                m_playerInside = false;
+                FireOutput("OnFarther");
             }
         }
     }
@@ -82,9 +77,8 @@ public:
     }
 
 private:
-    float m_speed;
-    glm::vec3 m_direction;
-    std::set<Entity*> m_targets;
+    float m_radius = 0.0f;
+    bool m_playerInside = false;
 };
 
-LINK_ENTITY_TO_CLASS("func_conveyor", FuncConveyor)
+LINK_ENTITY_TO_CLASS("trigger_proximity", TriggerProximity)

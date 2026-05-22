@@ -24,15 +24,14 @@
 #include "entities.h"
 #include "player.h"
 #include <glm/gtc/matrix_transform.hpp>
-#include <set>
 
-class FuncConveyor : public Entity
+class TriggerPush : public Entity
 {
 public:
     void Spawn(const std::unordered_map<std::string, std::string>& keyvalues)
     {
         Entity::Spawn(keyvalues);
-        m_speed = GetFloat("speed", 100.0f) * BSP::MAPSCALE;
+        m_speed = GetFloat("speed", 400.0f) * BSP::MAPSCALE;
 
         glm::vec3 angles = GetVector("movedir", { 0, 0, 0 });
 
@@ -42,37 +41,20 @@ public:
         float hY = cos(p) * sin(y);
         float hZ = -sin(p);
 
-        m_direction = glm::normalize(glm::vec3(hX, hZ, -hY));
+        glm::vec3 dir;
+        dir.x = hX;
+        dir.y = hZ;
+        dir.z = -hY;
+
+        m_pushDir = glm::normalize(dir);
     }
 
-    void Touch(Entity* other)
+    void Stay(Entity* other) override
     {
-        if (other)
+        if (IsEnabled() && other && other->IsPlayer())
         {
-            m_targets.insert(other);
-        }
-    }
-
-    void EndTouch(Entity* other)
-    {
-        if (other)
-        {
-            m_targets.erase(other);
-        }
-    }
-
-    void Think(float dt)
-    {
-        for (auto* ent : m_targets)
-        {
-            if (ent->IsPlayer())
-            {
-                static_cast<Player*>(ent)->ApplyPushVelocity(m_direction * m_speed);
-            }
-            else
-            {
-                ent->SetOrigin(ent->GetOrigin() + (m_direction * m_speed * dt));
-            }
+            Player* p = static_cast<Player*>(other);
+            p->ApplyPushVelocity(m_pushDir * m_speed);
         }
     }
 
@@ -82,9 +64,8 @@ public:
     }
 
 private:
-    float m_speed;
-    glm::vec3 m_direction;
-    std::set<Entity*> m_targets;
+    float m_speed = 0.0f;
+    glm::vec3 m_pushDir;
 };
 
-LINK_ENTITY_TO_CLASS("func_conveyor", FuncConveyor)
+LINK_ENTITY_TO_CLASS("trigger_push", TriggerPush)
