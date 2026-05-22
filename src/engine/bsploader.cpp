@@ -553,7 +553,7 @@ namespace BSP
                             if (dataBytes > 0)
                             {
                                 m_map.staticProps[i].lmDirData[m].assign(rnmFile + dataOffset, rnmFile + dataOffset + dataBytes);
-                             }
+                            }
                             meshPtr += 32;
                         }
                     }
