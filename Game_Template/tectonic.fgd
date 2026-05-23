@@ -909,3 +909,8 @@
     output OnFullyOpen(void) : "Reaches open position."
     output OnFullyClosed(void) : "Reaches closed position."
 ]
+
+@PointClass studio("models/editor/ground_node.mdl") color(232 219 8) = info_node :
+	"Navigation node for navmesh"
+[
+]

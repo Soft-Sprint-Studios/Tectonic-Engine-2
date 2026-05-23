@@ -37,6 +37,7 @@
 #include "beams.h"
 #include "screen_overlay.h"
 #include "main_menu.h"
+#include "nodegraph.h"
 
 namespace Maps
 {
@@ -72,11 +73,13 @@ namespace Maps
 
         Physics::Init();
         EntityManager::Init();
+        Nodegraph::Get()->Clear();
 
         Cubemap::LoadForMap(mapName);
         std::string path = "maps/" + mapName + ".bsp";
         if (s_renderer->LoadMap(path))
         {
+            Nodegraph::Get()->BuildLinks();
             Discord::UpdatePresence("Playing Singleplayer", "Map: " + mapName);
 
             // Link the new player entity
