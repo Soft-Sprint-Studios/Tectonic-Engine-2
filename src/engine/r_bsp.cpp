@@ -116,7 +116,7 @@ bool R_BSP::Init(const BSP::MapData& map)
     m_subModels.clear();
     for (const auto& ent : map.entities)
     {
-        if (ent.modelIndex <= 0 || ent.renderVertices.empty()) 
+        if (ent.modelIndex < 0 || ent.renderVertices.empty()) 
             continue;
 
         if (m_subModels.count(ent.modelIndex))
