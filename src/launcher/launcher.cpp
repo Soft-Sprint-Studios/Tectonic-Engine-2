@@ -68,7 +68,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 int main(int argc, char* argv[]) 
 {
     int result = 0;
-    void* engineLib = dlopen("./libengine.so", RTLD_NOW);
+    void* engineLib = dlopen("./libEngine.so", RTLD_NOW | RTLD_GLOBAL);
     if (!engineLib)
     {
         std::cerr << "Failed to load libengine.so: " << dlerror() << std::endl;

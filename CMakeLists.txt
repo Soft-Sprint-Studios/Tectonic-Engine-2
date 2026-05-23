@@ -99,12 +99,27 @@ if(WIN32)
         OpenGL::GL
         ws2_32
     )
+elseif(UNIX)
+    target_link_libraries(Engine PRIVATE Game)
+    target_link_options(Engine PRIVATE "-Wl,--whole-archive" "Game" "-Wl,--no-whole-archive")
+
+    target_link_libraries(Engine PRIVATE
+        SDL3
+        SDL3_ttf
+        BulletDynamics
+        BulletCollision
+        LinearMath
+        openal
+        discord-rpc
+        sentry
+        OpenGL::GL
+        ${CMAKE_DL_LIBS}
+    )
 endif()
 
 # ---- LAUNCHER ----
 add_executable(Launcher ${CMAKE_SOURCE_DIR}/src/launcher/launcher.cpp)
 target_include_directories(Launcher PRIVATE src/engine src/game)
-target_link_libraries(Launcher PRIVATE Engine)
 
 if(WIN32)
     set(LAUNCHER_ICON_RC "${CMAKE_CURRENT_SOURCE_DIR}/src/launcher/resources/launcher.rc")
