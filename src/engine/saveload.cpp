@@ -199,6 +199,8 @@ namespace Save
                         file.read(dataPtr, f.size);
                     }
                 }
+
+                ent->UpdatePhysicsState();
             }
         }
 

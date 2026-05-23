@@ -322,8 +322,3 @@ CON_COMMAND(quit, "Quits the engine")
 {
     Sys::Quit();
 }
-
-CON_COMMAND(exit, "Quits the engine")
-{
-    Sys::Quit();
-}
