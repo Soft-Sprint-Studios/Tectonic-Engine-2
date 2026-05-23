@@ -241,7 +241,7 @@
 	output OnPressed(void) : "Fired when the button is pressed by a player."
 ]
 
-@PointClass base(Targetname) iconsprite("editor/ambient_generic.vmt") = env_sound : 
+@PointClass base(Targetname) sphere(radius) iconsprite("editor/ambient_generic.vmt") = env_sound : 
 	"A positional 3D sound entity."
 [
 	message(string) : "Sound Name" : "" : "File path relative to sounds/ folder (e.g. ambient/wind.wav)"
@@ -317,13 +317,6 @@
         0 : "Spherical"
         1 : "Cylindrical"
     ]
-    spawnflags(flags) =
-    [
-        1 : "Start Hidden" : 0
-    ]
-    input ShowSprite(void) : "Show the sprite."
-    input HideSprite(void) : "Hide the sprite."
-    input ToggleSprite(void) : "Toggle visibility."
 ]
 
 @SolidClass base(Targetname) = env_cubemap_box : "An environment cubemap probe. The cubemap is captured from the center of this brush's volume. Models will use the nearest cubemap for reflections. The volume of this brush is used for parallax correction."
