@@ -56,7 +56,14 @@ target_include_directories(Game PRIVATE
 
 # ---- ENGINE DLL ----
 add_library(Engine SHARED ${ENGINE_SRC} ${ENGINE_HDR} ${GLAD_SRC})
+
+if(UNIX)
+    set_target_properties(Engine PROPERTIES INSTALL_RPATH "$ORIGIN")
+    set_target_properties(Engine PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
+endif()
+
 target_compile_definitions(Engine PRIVATE GLM_ENABLE_EXPERIMENTAL ENGINE_BUILD)
+
 target_include_directories(Engine PRIVATE
     ${SDL3_PATH}/include
     ${SDL_TTF_PATH}/include
@@ -107,7 +114,7 @@ elseif(UNIX)
         "${BULLET_PATH}/lib/linux/libLinearMath.a"
         "${DISCORDRPC_PATH}/lib/linux/libdiscord-rpc.a"
         "${SENTRY_PATH}/lib/linux/libsentry.so"
-        openal
+        "${OPENAL_PATH}/lib/linux/libopenal.a"
         OpenGL::GL
         ${CMAKE_DL_LIBS}
         pthread
@@ -176,9 +183,11 @@ if (WIN32)
     )
 elseif(UNIX)
     add_custom_command(TARGET Engine POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${SENTRY_PATH}/lib/linux/libsentry.so"
-        "${SENTRY_PATH}/lib/linux/crashpad_handler"
-        $<TARGET_FILE_DIR:Engine>
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SENTRY_PATH}/lib/linux/libsentry.so" $<TARGET_FILE_DIR:Engine>
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SENTRY_PATH}/lib/linux/crashpad_handler" $<TARGET_FILE_DIR:Engine>
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SDL3_PATH}/lib/linux/libSDL3.so" $<TARGET_FILE_DIR:Engine>/libSDL3.so.0
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SDL3_PATH}/lib/linux/libSDL3.so" $<TARGET_FILE_DIR:Engine>/libSDL3.so
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SDL_TTF_PATH}/lib/linux/libSDL3_ttf.so" $<TARGET_FILE_DIR:Engine>/libSDL3_ttf.so.0
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SDL_TTF_PATH}/lib/linux/libSDL3_ttf.so" $<TARGET_FILE_DIR:Engine>/libSDL3_ttf.so
     )
 endif()
