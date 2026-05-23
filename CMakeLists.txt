@@ -104,7 +104,7 @@ elseif(UNIX)
         "${BULLET_PATH}/lib/linux/libBulletDynamics.a"
         "${BULLET_PATH}/lib/linux/libBulletCollision.a"
         "${BULLET_PATH}/lib/linux/libLinearMath.a"
-        "${DISCORDRPC_PATH}/lib/linux/libdiscord-rpc.so"
+        "${DISCORDRPC_PATH}/lib/linux/libdiscord-rpc.a"
         "${SENTRY_PATH}/lib/linux/libsentry.so"
         openal
         OpenGL::GL
