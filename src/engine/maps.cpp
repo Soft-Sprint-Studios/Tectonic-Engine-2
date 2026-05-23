@@ -66,6 +66,7 @@ namespace Maps
         Particles::Shutdown();
         Sprites::Clear();
         Beams::Clear();
+        ScreenOverlay::Clear();
         DynamicSky::Reset();
         Sound::SetRoomStyle(0);
 
