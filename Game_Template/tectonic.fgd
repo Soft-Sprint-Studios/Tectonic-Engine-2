@@ -603,7 +603,6 @@
     spawnflags(flags) =
     [
         2 : "Start Open" : 0
-        4 : "Use Only" : 0
     ]
 
     input Open(void) : "Force door open."
@@ -885,4 +884,28 @@
 @PointClass base(Targetname, Angles) studio("models/editor/camera.mdl") = point_viewcamera : 
 	"Takes control of the player's camera." 
 [
+]
+
+@SolidClass base(Targetname) = func_door_rotating : "A brush door that rotates around an origin."
+[
+	origin(origin) : "Origin (X Y Z)" : : "The pivot point of the rotation."
+    distance(float) : "Rotation Distance (deg)" : "90" : "The amount, in degrees, that the door should rotate."
+    speed(float) : "Speed" : "100" : "Degrees per second."
+    wait(float) : "Wait Time" : "4" : "Seconds before auto-closing. Use -1 to stay open."
+    
+    spawnflags(flags) =
+    [
+        2 : "Reverse Direction" : 0
+        4 : "X Axis" : 0
+        8 : "Y Axis" : 0
+    ]
+
+    input Open(void) : "Force door open."
+    input Close(void) : "Force door closed."
+    input Toggle(void) : "Toggle door state."
+
+    output OnOpen(void) : "Starts opening."
+    output OnClose(void) : "Starts closing."
+    output OnFullyOpen(void) : "Reaches open position."
+    output OnFullyClosed(void) : "Reaches closed position."
 ]

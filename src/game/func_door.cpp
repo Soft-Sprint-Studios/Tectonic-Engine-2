@@ -110,17 +110,9 @@ public:
 
     void OnPress(Entity* activator) override
     {
-        Trigger();
-    }
-
-    void Touch(Entity* other) override
-    {
-        if (other && other->IsPlayer())
+        if (activator && activator->IsPlayer())
         {
-            if (!HasSpawnFlag(4)) // Use Only
-            {
-                Trigger();
-            }
+            Trigger();
         }
     }
 
