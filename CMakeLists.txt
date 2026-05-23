@@ -43,6 +43,7 @@ file(GLOB_RECURSE GAME_HDR "src/game/*.h")
 
 # ---- GAME STATIC LIB ----
 add_library(Game STATIC ${GAME_SRC} ${GAME_HDR})
+set_target_properties(Game PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_compile_definitions(Game PRIVATE GLM_ENABLE_EXPERIMENTAL ENGINE_BUILD)
 target_include_directories(Game PRIVATE
     ${SDL3_PATH}/include
