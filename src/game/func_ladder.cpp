@@ -27,9 +27,9 @@
 class FuncLadder : public Entity
 {
 public:
-    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues)
+    void Spawn(const BSP::EntityData& entData)
     {
-        Entity::Spawn(keyvalues);
+        Entity::Spawn(entData);
         m_speed = GetFloat("speed", 3.0f);
     }
 

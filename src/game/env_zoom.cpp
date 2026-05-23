@@ -28,9 +28,9 @@
 class EnvZoom : public Entity
 {
 public:
-    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    void Spawn(const BSP::EntityData& entData) override
     {
-        Entity::Spawn(keyvalues);
+        Entity::Spawn(entData);
         m_targetFov = GetFloat("FOV", 75.0f);
         m_rate = GetFloat("Rate", 1.0f);
     }

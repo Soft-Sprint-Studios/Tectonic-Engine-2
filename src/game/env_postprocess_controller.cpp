@@ -27,9 +27,9 @@
 class EnvPostProcessController : public Entity
 {
 public:
-    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    void Spawn(const BSP::EntityData& entData) override
     {
-        Entity::Spawn(keyvalues);
+        Entity::Spawn(entData);
         m_vignette = GetFloat("vignette", 0.0f);
         m_chroma = GetFloat("chroma", 0.0f);
         m_grain = GetFloat("grain", 0.0f);

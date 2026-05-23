@@ -25,9 +25,9 @@
 #include "func_monitor.h"
 #include "monitors.h"
 
-void FuncMonitor::Spawn(const std::unordered_map<std::string, std::string>& keyvalues)
+void FuncMonitor::Spawn(const BSP::EntityData& entData)
 {
-    Entity::Spawn(keyvalues);
+    Entity::Spawn(entData);
 
     MonitorDef def;
     def.cameraName = GetValue("camera");

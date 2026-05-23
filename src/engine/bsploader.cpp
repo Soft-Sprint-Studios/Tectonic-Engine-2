@@ -201,6 +201,7 @@ namespace BSP
                             std::string key = line.substr(kStart, kEnd - kStart);
                             std::string val = line.substr(vStart, vEnd - vStart);
                             ent.keyvalues[key] = val;
+                            ent.rawKeyValues.push_back({ key, val });
                             if (key == "classname")
                                 ent.className = val;
                             if (key == "skyname")

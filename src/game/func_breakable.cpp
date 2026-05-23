@@ -27,9 +27,9 @@
 class FuncBreakable : public Entity
 {
 public:
-    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    void Spawn(const BSP::EntityData& entData) override
     {
-        Entity::Spawn(keyvalues);
+        Entity::Spawn(entData);
         m_health = GetFloat("health", 1.0f);
         m_breakSound = GetValue("break_sound", "glass_break.mp3");
     }

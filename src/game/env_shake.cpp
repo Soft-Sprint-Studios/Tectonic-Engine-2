@@ -27,9 +27,9 @@
 class EnvShake : public Entity
 {
 public:
-    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    void Spawn(const BSP::EntityData& entData) override
     {
-        Entity::Spawn(keyvalues);
+        Entity::Spawn(entData);
         m_amplitude = GetFloat("amplitude", 4.0f) * (1.0f / 32.0f); 
         m_frequency = GetFloat("frequency", 2.5f);
         m_duration = GetFloat("duration", 1.0f);

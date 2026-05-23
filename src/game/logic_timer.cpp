@@ -27,9 +27,9 @@
 class LogicTimer : public Entity
 {
 public:
-    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    void Spawn(const BSP::EntityData& entData) override
     {
-        Entity::Spawn(keyvalues);
+        Entity::Spawn(entData);
         m_refireTime = GetFloat("refire", 1.0f);
         m_nextFire = (float)Time::TotalTime() + m_refireTime;
     }

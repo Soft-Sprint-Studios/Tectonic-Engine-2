@@ -37,9 +37,9 @@ public:
         Down
     };
 
-    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    void Spawn(const BSP::EntityData& entData) override
     {
-        Entity::Spawn(keyvalues);
+        Entity::Spawn(entData);
 
         m_speed = GetFloat("speed", 50.0f) * BSP::MAPSCALE;
         m_wait = GetFloat("wait", 3.0f);

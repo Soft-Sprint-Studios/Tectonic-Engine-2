@@ -28,9 +28,9 @@
 class TriggerHurt : public Entity
 {
 public:
-    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    void Spawn(const BSP::EntityData& entData) override
     {
-        Entity::Spawn(keyvalues);
+        Entity::Spawn(entData);
         m_damage = GetFloat("damage", 10.0f);
         m_delay = GetFloat("damagewait", 0.5f);
     }

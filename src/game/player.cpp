@@ -78,7 +78,7 @@ void Player::LinkInput(Input* input)
     m_input = input;
 }
 
-void Player::Spawn(const std::unordered_map<std::string, std::string>& keyvalues)
+void Player::Spawn(const BSP::EntityData& entData)
 {
     m_character = Physics::CreateCharacter(GetOrigin(), this);
     m_currentFOV = CVar::GetFloat("cl_fov", 75.0f);

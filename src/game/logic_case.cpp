@@ -28,9 +28,9 @@
 class LogicCase : public Entity
 {
 public:
-    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    void Spawn(const BSP::EntityData& entData) override
     {
-        Entity::Spawn(keyvalues);
+        Entity::Spawn(entData);
 
         // Load 16 possible cases
         for (int i = 1; i <= 16; ++i)

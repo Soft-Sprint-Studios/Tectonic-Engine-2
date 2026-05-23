@@ -29,9 +29,9 @@
 class FuncConveyor : public Entity
 {
 public:
-    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues)
+    void Spawn(const BSP::EntityData& entData)
     {
-        Entity::Spawn(keyvalues);
+        Entity::Spawn(entData);
         m_speed = GetFloat("speed", 100.0f) * BSP::MAPSCALE;
 
         glm::vec3 angles = GetVector("movedir", { 0, 0, 0 });

@@ -231,6 +231,7 @@ namespace BSP
     {
         std::string className;
         std::unordered_map<std::string, std::string> keyvalues;
+        std::vector<std::pair<std::string, std::string>> rawKeyValues;
         CollisionData brushCollision;
         std::vector<Vertex> renderVertices;
         std::vector<DrawCall> drawCalls;

@@ -30,7 +30,7 @@ class Monitor;
 class FuncMonitor : public Entity
 {
 public:
-    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override;
+    void Spawn(const BSP::EntityData& entData) override;
     void SetEnabled(bool state) override;
     bool IsRenderable() const override;
     bool IsCollidable() const override;

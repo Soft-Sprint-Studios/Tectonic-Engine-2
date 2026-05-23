@@ -27,9 +27,9 @@
 class TriggerGravity : public Entity
 {
 public:
-    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    void Spawn(const BSP::EntityData& entData) override
     {
-        Entity::Spawn(keyvalues);
+        Entity::Spawn(entData);
         m_gravityValue = GetFloat("gravity", -9.81f);
     }
 

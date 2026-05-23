@@ -27,9 +27,9 @@
 class EnvParticleSystem : public Entity
 {
 public:
-    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    void Spawn(const BSP::EntityData& entData) override
     {
-        Entity::Spawn(keyvalues);
+        Entity::Spawn(entData);
         m_effect = GetValue("effect_name");
         m_sys = Particles::CreateSystem(m_effect, GetOrigin());
         if (m_sys)

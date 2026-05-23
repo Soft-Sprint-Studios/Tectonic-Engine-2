@@ -24,9 +24,9 @@
 #include "func_video.h"
 #include "video.h"
 
-void FuncVideo::Spawn(const std::unordered_map<std::string, std::string>& keyvalues)
+void FuncVideo::Spawn(const BSP::EntityData& entData)
 {
-    Entity::Spawn(keyvalues);
+    Entity::Spawn(entData);
 
     VideoDef def;
     def.videoPath = GetValue("video");

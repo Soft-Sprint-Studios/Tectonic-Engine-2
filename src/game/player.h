@@ -36,7 +36,7 @@ public:
     Player();
     ~Player();
 
-    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override;
+    void Spawn(const BSP::EntityData& entData) override;
     void Think(float deltaTime) override;
 
     void LinkCamera(Camera* cam);

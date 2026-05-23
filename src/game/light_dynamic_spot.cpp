@@ -29,9 +29,9 @@
 class LightDynamicSpot : public Entity
 {
 public:
-    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    void Spawn(const BSP::EntityData& entData) override
     {
-        Entity::Spawn(keyvalues);
+        Entity::Spawn(entData);
 
         glm::vec4 colorData = GetVector4("_light", glm::vec4(255.0f, 255.0f, 255.0f, 200.0f));
         m_baseColor = glm::vec3(colorData.x, colorData.y, colorData.z) / 255.0f;

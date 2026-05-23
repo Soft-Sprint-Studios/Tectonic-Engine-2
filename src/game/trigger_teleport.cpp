@@ -27,9 +27,9 @@
 class TriggerTeleport : public Entity
 {
 public:
-    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    void Spawn(const BSP::EntityData& entData) override
     {
-        Entity::Spawn(keyvalues);
+        Entity::Spawn(entData);
         m_targetNameStr = GetValue("target");
         m_enabled = !HasSpawnFlag(1);
     }

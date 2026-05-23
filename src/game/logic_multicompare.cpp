@@ -26,9 +26,9 @@
 class LogicMulticompare : public Entity
 {
 public:
-    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    void Spawn(const BSP::EntityData& entData) override
     {
-        Entity::Spawn(keyvalues);
+        Entity::Spawn(entData);
         
         m_numInputs = GetInt("numinputs", 2);
         m_targetValue = GetFloat("TargetValue", 1.0f);

@@ -28,9 +28,9 @@
 class TriggerChance : public Entity
 {
 public:
-    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    void Spawn(const BSP::EntityData& entData) override
     {
-        Entity::Spawn(keyvalues);
+        Entity::Spawn(entData);
         m_chance = GetFloat("chance", 50.0f);
         m_wait = GetFloat("wait", 1.0f);
         m_nextFireTime = 0.0f;

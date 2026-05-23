@@ -30,9 +30,9 @@
 class FuncPrecipitation : public Entity
 {
 public:
-    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    void Spawn(const BSP::EntityData& entData) override
     {
-        Entity::Spawn(keyvalues);
+        Entity::Spawn(entData);
 
         std::string type = "rain";
         if (GetInt("preciptype", 0) == 1)

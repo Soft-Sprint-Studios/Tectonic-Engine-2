@@ -27,9 +27,9 @@
 class EnvDynamicSky : public Entity
 {
 public:
-    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    void Spawn(const BSP::EntityData& entData) override
     {
-        Entity::Spawn(keyvalues);
+        Entity::Spawn(entData);
         DynamicSky::SetEnabled(true);
 
         glm::vec3 angles = GetVector("angles", { 0, 0, 0 });

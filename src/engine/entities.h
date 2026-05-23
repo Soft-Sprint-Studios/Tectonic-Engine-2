@@ -47,7 +47,7 @@ class Entity
 public:
     virtual ~Entity() = default;
 
-    virtual void Spawn(const std::unordered_map<std::string, std::string>& keyvalues);
+    virtual void Spawn(const BSP::EntityData& entData);
     virtual void Think(float deltaTime);
     virtual void AcceptInput(const std::string& inputName, const std::string& parameter);
 

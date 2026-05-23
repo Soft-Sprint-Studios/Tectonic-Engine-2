@@ -28,9 +28,9 @@
 class FuncRotating : public Entity
 {
 public:
-    void Spawn(const std::unordered_map<std::string, std::string>& keyvalues) override
+    void Spawn(const BSP::EntityData& entData) override
     {
-        Entity::Spawn(keyvalues);
+        Entity::Spawn(entData);
 
         m_maxSpeed = GetFloat("speed", 100.0f);
         m_friction = GetFloat("fan_friction", 1.0f);

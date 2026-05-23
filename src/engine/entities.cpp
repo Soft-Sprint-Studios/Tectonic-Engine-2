@@ -34,9 +34,9 @@
 std::vector<std::shared_ptr<Entity>> EntityManager::s_entities;
 std::vector<EntityManager::DelayedInput> EntityManager::s_delayedInputs;
 
-void Entity::Spawn(const std::unordered_map<std::string, std::string>& keyvalues)
+void Entity::Spawn(const BSP::EntityData& entData)
 {
-    m_keyvalues = keyvalues;
+    m_keyvalues = entData.keyvalues;
     m_targetName = GetValue("targetname");
     m_parentName = GetValue("parentname");
     m_vecAngles = GetVector("angles", { 0, 0, 0 });
@@ -48,7 +48,7 @@ void Entity::Spawn(const std::unordered_map<std::string, std::string>& keyvalues
         m_enabled = false;
     }
 
-    for (auto const& [key, val] : keyvalues)
+    for (auto const& [key, val] : entData.rawKeyValues)
     {
         // outputs have \x1b escape must read to not corrupt outputs
         if (val.find('\x1b') != std::string::npos)
@@ -432,7 +432,7 @@ std::shared_ptr<Entity> EntityManager::SpawnEntity(const std::string& className,
         }
     }
 
-    ent->Spawn(entData.keyvalues);
+    ent->Spawn(entData);
     s_entities.push_back(ent);
 
     return ent;
