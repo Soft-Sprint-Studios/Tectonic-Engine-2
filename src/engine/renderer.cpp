@@ -92,6 +92,7 @@ bool Renderer::Init(Window& window)
     m_cableRenderer = std::make_unique<R_Cables>();
     m_videoRenderer = std::make_unique<R_Video>();
     m_monitorRenderer = std::make_unique<R_Monitors>();
+    m_overlayRenderer = std::make_unique<R_Overlay>();
 
     m_glassRenderer = std::make_unique<R_Glass>();
     m_glassRenderer->Init(ww, wh);
@@ -125,6 +126,7 @@ bool Renderer::LoadMap(const std::string& path)
     m_cableRenderer->Init();
     m_videoRenderer->Init();
     m_monitorRenderer->Init();
+    m_overlayRenderer->Init();
 
     m_waterRenderer->ClearSurfaces();
     for (const auto& s : map.waterSurfaces)
@@ -363,6 +365,7 @@ void Renderer::Render(Camera& camera)
     // Draw postprocessing
     R_State::SetDepthTest(false);
     m_postProcess->Draw(camera, m_lightRenderer.get());
+    m_overlayRenderer->Draw();
     R_State::SetDepthTest(true);
 
     if (m_uiRenderer)
@@ -464,6 +467,12 @@ void Renderer::Shutdown()
     {
         m_monitorRenderer->Shutdown();
         m_monitorRenderer.reset();
+    }
+
+    if (m_overlayRenderer)
+    {
+        m_overlayRenderer->Shutdown();
+        m_overlayRenderer.reset();
     }
 
     if (m_glassRenderer)

@@ -40,6 +40,7 @@
 #include "r_video.h"
 #include "r_monitors.h"
 #include "r_glass.h"
+#include "r_overlay.h"
 #include "cubemap.h"
 #include "video.h"
 #include <memory>
@@ -83,6 +84,7 @@ private:
     std::unique_ptr<R_Cables> m_cableRenderer;
     std::unique_ptr<R_Video> m_videoRenderer;
     std::unique_ptr<R_Monitors> m_monitorRenderer;
+    std::unique_ptr<R_Overlay> m_overlayRenderer;
     std::unique_ptr<R_Glass> m_glassRenderer;
     std::unique_ptr<R_Waters> m_waterRenderer;
     std::unique_ptr<R_UI> m_uiRenderer;

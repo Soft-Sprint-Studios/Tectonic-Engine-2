@@ -35,6 +35,7 @@
 #include "dynamic_sky.h"
 #include "particles.h"
 #include "beams.h"
+#include "screen_overlay.h"
 #include "main_menu.h"
 
 namespace Maps
@@ -105,6 +106,7 @@ namespace Maps
         Sprites::Clear();
         Beams::Clear();
         Cables::Clear();
+        ScreenOverlay::Clear();
         DynamicSky::Reset();
         Sound::SetRoomStyle(0);
 

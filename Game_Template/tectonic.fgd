@@ -864,3 +864,16 @@
 	speed(float) : "Speed" : 400 : "The force of the push."
 	movedir(angle) : "Push Direction" : "0 0 0" : "Direction to push the player."
 ]
+
+@PointClass base(Targetname) = env_screenoverlay : 
+	"Draws a full-screen material overlay."
+[
+	overlayname1(string) : "Overlay Material" : "" : "The texture name"
+	rendermode(choices) : "Render Mode" : 1 =
+	[
+		0 : "Additive (Glow)"
+		1 : "Alpha Blend (Transparent)"
+		2 : "Modulate (Multiply)"
+		3 : "Screen (Brighten)"
+	]
+]
