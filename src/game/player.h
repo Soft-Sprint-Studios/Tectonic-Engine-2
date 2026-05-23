@@ -54,6 +54,9 @@ public:
     void RestoreDefaultGravity();
     glm::vec3 GetViewForward() const;
 
+    void SetViewOverride(Entity* ent);
+    Entity* GetViewOverride() const;
+
     void TakeDamage(float amount);
     float GetHealth() const;
 
@@ -101,4 +104,5 @@ private:
     float m_climbSpeed = 3.0f;
     float m_spawnYaw = 0.0f;
     float m_spawnPitch = 0.0f;
+    Entity* m_viewOverride = nullptr;
 };

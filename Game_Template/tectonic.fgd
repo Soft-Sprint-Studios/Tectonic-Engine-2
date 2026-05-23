@@ -881,3 +881,8 @@
 
 	input Break(void) : "Forces the entity to break."
 ]
+
+@PointClass base(Targetname, Angles) studio("models/editor/camera.mdl") = point_viewcamera : 
+	"Takes control of the player's camera." 
+[
+]

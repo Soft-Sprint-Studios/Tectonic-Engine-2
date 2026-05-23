@@ -123,6 +123,15 @@ void Player::Think(float deltaTime)
         return;
     }
 
+    if (m_viewOverride)
+    {
+        m_camera->position = m_viewOverride->GetOrigin();
+        glm::vec3 ang = m_viewOverride->GetAngles();
+        m_camera->pitch = -ang.x;
+        m_camera->yaw = -ang.y;
+        return;
+    }
+
     // Handle env_zoom
     if (std::abs(m_currentFOV - m_targetFOV) > 0.01f)
     {
@@ -430,6 +439,16 @@ void Player::RestoreDefaultGravity()
 glm::vec3 Player::GetViewForward() const
 {
     return m_camera ? m_camera->GetForward() : glm::vec3(0.0f, 0.0f, 1.0f);
+}
+
+void Player::SetViewOverride(Entity* ent)
+{
+    m_viewOverride = ent;
+}
+
+Entity* Player::GetViewOverride() const
+{
+    return m_viewOverride;
 }
 
 void Player::TakeDamage(float amount)
