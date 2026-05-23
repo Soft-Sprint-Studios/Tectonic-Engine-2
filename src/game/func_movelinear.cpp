@@ -131,19 +131,7 @@ private:
             SetOrigin(GetOrigin() + glm::normalize(target - GetOrigin()) * step);
         }
 
-        UpdatePhysicsTransform();
-    }
-
-    void UpdatePhysicsTransform()
-    {
-        if (m_physObject)
-        {
-            btTransform trans;
-            trans.setIdentity();
-            glm::vec3 worldPos = GetOrigin();
-            trans.setOrigin({ worldPos.x, worldPos.y, worldPos.z });
-            m_physObject->setWorldTransform(trans);
-        }
+        Entity::UpdatePhysicsTransform();
     }
 
     State m_state = Closed;

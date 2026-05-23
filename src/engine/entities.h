@@ -99,6 +99,7 @@ public:
     glm::vec4 GetVector4(const std::string& key, const glm::vec4& defaultVal = glm::vec4(0.0f)) const;
 
     void UpdatePhysicsState();
+    void UpdatePhysicsTransform();
 
     void AddSaveField(const SaveField& field)
     {

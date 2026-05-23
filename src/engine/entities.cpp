@@ -134,6 +134,7 @@ void Entity::OnSave()
     AddSaveField(DATA_FIELD(Entity, m_parentName, FieldType::String));
     AddSaveField(DATA_FIELD(Entity, m_vecOrigin, FieldType::Vec3));
     AddSaveField(DATA_FIELD(Entity, m_vecAngles, FieldType::Vec3));
+    AddSaveField(DATA_FIELD(Entity, m_bmodelIndex, FieldType::Int32));
 }
 
 int Entity::GetBModelIndex() const
@@ -328,6 +329,24 @@ void Entity::UpdatePhysicsState()
         {
             m_physObject->setCollisionFlags(m_physObject->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
         }
+    }
+}
+
+void Entity::UpdatePhysicsTransform()
+{
+    if (m_physObject)
+    {
+        btTransform trans;
+        trans.setIdentity();
+        glm::vec3 worldPos = GetOrigin();
+        trans.setOrigin({ worldPos.x, worldPos.y, worldPos.z });
+
+        glm::vec3 ang = GetAngles();
+        btQuaternion rot;
+        rot.setEuler(glm::radians(ang.y), glm::radians(ang.x), glm::radians(ang.z));
+        trans.setRotation(rot);
+
+        m_physObject->setWorldTransform(trans);
     }
 }
 

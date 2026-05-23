@@ -200,6 +200,7 @@ namespace Save
                     }
                 }
 
+                ent->UpdatePhysicsTransform();
                 ent->UpdatePhysicsState();
             }
         }
