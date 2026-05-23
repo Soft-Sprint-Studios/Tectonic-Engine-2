@@ -99,4 +99,6 @@ private:
     glm::vec3 m_pushVelocity{ 0.0f };
     bool m_onLadder = false;
     float m_climbSpeed = 3.0f;
+    float m_spawnYaw = 0.0f;
+    float m_spawnPitch = 0.0f;
 };

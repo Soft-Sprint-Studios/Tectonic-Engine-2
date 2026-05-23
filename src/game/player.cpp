@@ -71,6 +71,11 @@ Player::~Player()
 void Player::LinkCamera(Camera* cam)
 {
     m_camera = cam;
+    if (m_camera)
+    {
+        m_camera->yaw = m_spawnYaw;
+        m_camera->pitch = m_spawnPitch;
+    }
 }
 
 void Player::LinkInput(Input* input)
@@ -80,9 +85,14 @@ void Player::LinkInput(Input* input)
 
 void Player::Spawn(const BSP::EntityData& entData)
 {
+    Entity::Spawn(entData);
+
     m_character = Physics::CreateCharacter(GetOrigin(), this);
     m_currentFOV = CVar::GetFloat("cl_fov", 75.0f);
     m_targetFOV = m_currentFOV;
+
+    m_spawnYaw = -m_vecAngles.y;
+    m_spawnPitch = -m_vecAngles.x;
 
     // Force immediate warp to the spawn position to clear penetration state
     btTransform startTrans;
