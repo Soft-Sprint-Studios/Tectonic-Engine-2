@@ -80,11 +80,7 @@ find_package(OpenGL REQUIRED)
 if(WIN32)
     target_link_libraries(Engine PRIVATE Game)
 
-    if(MSVC)
-        target_link_options(Engine PRIVATE "/WHOLEARCHIVE:Game")
-    else()
-        target_link_options(Engine PRIVATE "-Wl,--whole-archive" "Game" "-Wl,--no-whole-archive")
-    endif()
+    target_link_options(Engine PRIVATE "/WHOLEARCHIVE:Game")
 
     target_link_libraries(Engine PRIVATE
         ${SDL3_PATH}/lib/${ARCH_FOLDER}/SDL3.lib
@@ -100,20 +96,20 @@ if(WIN32)
         ws2_32
     )
 elseif(UNIX)
-    target_link_libraries(Engine PRIVATE Game)
-    target_link_options(Engine PRIVATE "-Wl,--whole-archive" "Game" "-Wl,--no-whole-archive")
+    target_link_libraries(Engine PRIVATE -Wl,--whole-archive Game -Wl,--no-whole-archive)
 
     target_link_libraries(Engine PRIVATE
-        SDL3
-        SDL3_ttf
-        BulletDynamics
-        BulletCollision
-        LinearMath
+        "${SDL3_PATH}/lib/linux/libSDL3.so"
+        "${SDL_TTF_PATH}/lib/linux/libSDL3_ttf.so"
+        "${BULLET_PATH}/lib/linux/libBulletDynamics.a"
+        "${BULLET_PATH}/lib/linux/libBulletCollision.a"
+        "${BULLET_PATH}/lib/linux/libLinearMath.a"
+        "${DISCORDRPC_PATH}/lib/linux/libdiscord-rpc.so"
+        "${SENTRY_PATH}/lib/linux/libsentry.so"
         openal
-        discord-rpc
-        sentry
         OpenGL::GL
         ${CMAKE_DL_LIBS}
+        pthread
     )
 endif()
 
