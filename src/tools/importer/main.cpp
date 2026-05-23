@@ -65,10 +65,11 @@ namespace AssetTool
         std::cout << "Modes:\n";
         std::cout << "  -model      Full model import (SMD, QC, VMT, VTF)\n";
         std::cout << "  -texture    Texture-only import (Extracts textures for brushes)\n\n";
+        std::cout << "  -sound      Sound import (MP3)\n\n";
         std::cout << "Batch Support:\n";
-        std::cout << "  [path] can be a direct path to a single .glb file or a folder path.\n";
-        std::cout << "  If a folder is provided, the tool will automatically batch process\n";
-        std::cout << "  every .glb file found inside that directory.\n\n";
+        std::cout << "  [path] can be a file or a folder.\n";
+        std::cout << "  Folders will batch process all files matching the mode's extension\n";
+        std::cout << "  (.glb for models/textures, .mp3 for sounds).\n\n";
     }
 
     bool LoadConfig()
@@ -375,7 +376,7 @@ namespace AssetTool
         std::cout << "--- Model Import Complete ---" << std::endl;
     }
 
-    void ProcessTexturesOnly(const std::string& glbPath)
+    void ProcessTextures(const std::string& glbPath)
     {
         std::filesystem::path p(glbPath);
         if (!std::filesystem::exists(p))
@@ -480,6 +481,63 @@ namespace AssetTool
         cgltf_free(data);
         std::cout << "--- Texture Import Complete ---" << std::endl;
     }
+
+    void ProcessSound(const std::string& mp3Path)
+    {
+        std::filesystem::path p(mp3Path);
+        if (!std::filesystem::exists(p) || p.extension() != ".mp3")
+        {
+            return;
+        }
+
+        std::filesystem::path engineSoundDir = std::filesystem::path(g_config.enginePath) / "sounds";
+        std::filesystem::path sdkSoundDir = std::filesystem::path(g_config.sdkGamePath) / "sound";
+
+        std::filesystem::create_directories(engineSoundDir);
+        std::filesystem::create_directories(sdkSoundDir);
+
+        std::filesystem::copy_file(p, engineSoundDir / p.filename(), std::filesystem::copy_options::overwrite_existing);
+        std::filesystem::copy_file(p, sdkSoundDir / p.filename(), std::filesystem::copy_options::overwrite_existing);
+
+        std::cout << "--- Sound Import Complete: " << p.filename() << " ---" << std::endl;
+    }
+}
+
+std::vector<std::string> CollectFiles(const std::filesystem::path& inputPath, const std::string& mode)
+{
+    std::vector<std::string> files;
+    std::string targetExt;
+    if (mode == "-sound") 
+        targetExt = ".mp3";
+    else if (mode == "-model" || mode == "-texture") 
+        targetExt = ".glb";
+    else return 
+        files;
+
+    if (std::filesystem::is_directory(inputPath))
+    {
+        std::cout << "Batch processing directory: " << inputPath.string() << " for extension " << targetExt << "..." << std::endl;
+        for (const auto& entry : std::filesystem::directory_iterator(inputPath))
+        {
+            if (entry.path().extension() == targetExt)
+            {
+                files.push_back(entry.path().string());
+            }
+        }
+    }
+    else
+    {
+        if (inputPath.extension() == targetExt)
+        {
+            files.push_back(inputPath.string());
+        }
+        else
+        {
+            std::cerr << "Error: File " << inputPath.filename() << " does not match required extension " << targetExt << " for mode " << mode << std::endl;
+        }
+    }
+
+    return files;
 }
 
 int main(int argc, char** argv)
@@ -492,14 +550,13 @@ int main(int argc, char** argv)
 
     if (!AssetTool::LoadConfig())
     {
-        std::cerr << "Error: config.txt is missing or invalid." << std::endl;
-        std::cerr << "Please ensure it contains paths for sdk_bin, sdk_game, and engine_path." << std::endl;
+        std::cerr << "Error: config.txt is missing or invalid. Check paths for sdk_bin, sdk_game, and engine_path." << std::endl;
         return 1;
     }
 
     if (!vlInitialize())
     {
-        std::cerr << "Error: Could not initialize VTFLib. Ensure VTFLib.dll is present." << std::endl;
+        std::cerr << "Error: Could not initialize VTFLib." << std::endl;
         return 1;
     }
 
@@ -508,54 +565,32 @@ int main(int argc, char** argv)
 
     if (!std::filesystem::exists(inputPath))
     {
-        std::cerr << "Error: The provided path does not exist: " << inputPath.string() << std::endl;
+        std::cerr << "Error: Path does not exist: " << inputPath.string() << std::endl;
         vlShutdown();
         return 1;
     }
 
-    std::vector<std::string> processQueue;
-
-    if (std::filesystem::is_directory(inputPath))
-    {
-        std::cout << "Mode: Batch Processing Directory -> " << inputPath.string() << std::endl;
-
-        for (const auto& entry : std::filesystem::directory_iterator(inputPath))
-        {
-            if (entry.path().extension() == ".glb")
-            {
-                processQueue.push_back(entry.path().string());
-            }
-        }
-    }
-    else
-    {
-        if (inputPath.extension() == ".glb")
-        {
-            processQueue.push_back(inputPath.string());
-        }
-        else
-        {
-            std::cerr << "Error: Input file must be a .glb file." << std::endl;
-            vlShutdown();
-            return 1;
-        }
-    }
+    std::vector<std::string> processQueue = CollectFiles(inputPath, mode);
 
     if (processQueue.empty())
     {
-        std::cout << "No .glb files were found in the specified path." << std::endl;
+        std::cout << "No valid files found to process." << std::endl;
     }
     else
     {
-        for (const std::string& glbFile : processQueue)
+        for (const std::string& file : processQueue)
         {
             if (mode == "-model")
             {
-                AssetTool::ProcessModel(glbFile);
+                AssetTool::ProcessModel(file);
             }
             else if (mode == "-texture")
             {
-                AssetTool::ProcessTexturesOnly(glbFile);
+                AssetTool::ProcessTextures(file);
+            }
+            else if (mode == "-sound")
+            {
+                AssetTool::ProcessSound(file);
             }
             else
             {
@@ -566,6 +601,5 @@ int main(int argc, char** argv)
     }
 
     vlShutdown();
-
     return 0;
 }
