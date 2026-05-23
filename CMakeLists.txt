@@ -183,7 +183,7 @@ if (WIN32)
     )
 elseif(UNIX)
     add_custom_command(TARGET Engine POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SENTRY_PATH}/lib/Linux/libsentry.so" $<TARGET_FILE_DIR:Engine>
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SENTRY_PATH}/lib/linux/libsentry.so" $<TARGET_FILE_DIR:Engine>
         COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENAL_PATH}/lib/Linux/libopenal.a" $<TARGET_FILE_DIR:Engine>
         COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SENTRY_PATH}/lib/linux/crashpad_handler" $<TARGET_FILE_DIR:Engine>
         COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SDL3_PATH}/lib/linux/libSDL3.so" $<TARGET_FILE_DIR:Engine>/libSDL3.so.0
