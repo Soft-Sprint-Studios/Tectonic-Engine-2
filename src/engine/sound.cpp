@@ -42,82 +42,6 @@ namespace Sound
     static std::unordered_map<std::string, ALuint> s_bufferCache;
     static int s_currentStyle = 0;
 
-    static ALuint Internal_LoadWAV(const std::string& path)
-    {
-        std::vector<uint8_t> fileData = Filesystem::ReadBinary(path);
-        if (fileData.empty()) 
-        {
-            return 0;
-        }
-
-        const uint8_t* ptr = fileData.data();
-        const uint8_t* end = ptr + fileData.size();
-
-        if (strncmp((const char*)ptr, "RIFF", 4) != 0) return 0;
-        ptr += 8;
-        if (strncmp((const char*)ptr, "WAVE", 4) != 0) return 0;
-        ptr += 4;
-
-        bool foundFmt = false;
-        bool foundData = false;
-        uint16_t audioFormat = 0, numChannels = 0, bitsPerSample = 0;
-        uint32_t sampleRate = 0, dataSize = 0;
-        const uint8_t* audioData = nullptr;
-
-        while (ptr + 8 <= end)
-        {
-            char chunkId[5] = {0};
-            std::memcpy(chunkId, ptr, 4);
-            uint32_t chunkSize = *(uint32_t*)(ptr + 4);
-            ptr += 8;
-
-            if (strcmp(chunkId, "fmt ") == 0)
-            {
-                foundFmt = true;
-                audioFormat = *(uint16_t*)ptr;
-                numChannels = *(uint16_t*)(ptr + 2);
-                sampleRate = *(uint32_t*)(ptr + 4);
-                bitsPerSample = *(uint16_t*)(ptr + 14);
-            }
-            else if (strcmp(chunkId, "data") == 0)
-            {
-                foundData = true;
-                dataSize = chunkSize;
-                audioData = ptr;
-            }
-            
-            ptr += chunkSize;
-        }
-
-        if (!foundFmt || !foundData || !audioData) 
-            return 0;
-
-        ALenum format;
-        if (numChannels == 1) 
-            format = (bitsPerSample == 8) ? AL_FORMAT_MONO8 : AL_FORMAT_MONO16;
-        else 
-            format = (bitsPerSample == 8) ? AL_FORMAT_STEREO8 : AL_FORMAT_STEREO16;
-
-        ALuint bufferID;
-        alGenBuffers(1, &bufferID);
-
-        if (s_currentStyle != 0 && bitsPerSample == 16)
-        {
-            int processedCount = 0;
-            int16_t* processedData = Reverb::ProcessAsync((const int16_t*)audioData, (int)(dataSize / 2), (int)sampleRate, s_currentStyle, processedCount);
-
-            if (processedData)
-            {
-                alBufferData(bufferID, format, processedData, processedCount * 2, sampleRate);
-                delete[] processedData;
-                return bufferID;
-            }
-        }
-
-        alBufferData(bufferID, format, audioData, dataSize, sampleRate);
-        return bufferID;
-    }
-
     static ALuint Internal_LoadMP3(const std::string& path)
     {
         std::vector<uint8_t> fileData = Filesystem::ReadBinary(path);
@@ -199,11 +123,7 @@ namespace Sound
 
         ALuint buffer = 0;
 
-        if (fullPath.find(".wav") != std::string::npos)
-        {
-            buffer = Internal_LoadWAV(fullPath);
-        }
-        else if (fullPath.find(".mp3") != std::string::npos)
+        if (fullPath.find(".mp3") != std::string::npos)
         {
             buffer = Internal_LoadMP3(fullPath);
         }

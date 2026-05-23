@@ -124,6 +124,10 @@ void Entity::OnPress(Entity* activator)
 {
 }
 
+void Entity::TakeDamage(float damage, Entity* attacker)
+{
+}
+
 void Entity::OnSave()
 {
     AddSaveField(DATA_FIELD(Entity, m_enabled, FieldType::Bool));

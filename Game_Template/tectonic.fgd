@@ -877,3 +877,14 @@
 		3 : "Screen (Brighten)"
 	]
 ]
+
+@SolidClass base(Targetname) = func_breakable : "A brush that can be broken by damage."
+[
+	health(float) : "Health" : 100 : "Amount of damage the brush can take before breaking."
+	break_sound(string) : "Break Sound" : "" : "Sound to play when broken."
+
+	output OnDamaged(void) : "Fired when the entity takes damage."
+	output OnBreak(void) : "Fired when the entity is destroyed."
+
+	input Break(void) : "Forces the entity to break."
+]

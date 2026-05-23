@@ -23,6 +23,7 @@
  */
 #include "physics.h"
 #include "player.h"
+#include "weapons.h"
 #include "physics.h"
 #include "console.h"
 #include "cvar.h"
@@ -100,6 +101,9 @@ void Player::Spawn(const std::unordered_map<std::string, std::string>& keyvalues
         m_flashlight->SetActive(false);
         m_flashlight->GetDef().castsShadows = false;
     }
+
+    Weapons::Init();
+    Weapons::SelectWeapon(0);
 }
 
 void Player::Think(float deltaTime)
@@ -170,6 +174,15 @@ void Player::Think(float deltaTime)
         m_sndJump.SetPosition(GetOrigin());
         m_sndJump.SetVolume(0.5f);
         m_sndJump.Play("jump.mp3");
+    }
+
+    // Handle weapons
+    if (m_input->GetKeyDown(SDL_SCANCODE_1)) 
+        Weapons::SelectWeapon(0);
+
+    if (!m_noclip && (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_MASK(SDL_BUTTON_LEFT)))
+    {
+        Weapons::Fire(m_camera->position, m_camera->GetForward(), this);
     }
 
     bool wantCrouch = m_input->GetKey(SDL_SCANCODE_LCTRL);

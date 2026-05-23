@@ -55,6 +55,7 @@ public:
     virtual void EndTouch(Entity* other);
     virtual void Stay(Entity* other);
     virtual void OnPress(Entity* activator);
+    virtual void TakeDamage(float damage, Entity* attacker);
     virtual void OnSave();
 
     virtual bool IsPlayer() const 
