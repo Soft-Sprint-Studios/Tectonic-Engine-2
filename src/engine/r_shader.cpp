@@ -132,7 +132,7 @@ bool R_Shader::LoadCompute(const std::string& path)
 GLuint R_Shader::CompileShader(GLenum type, const std::string& source, const std::string& path)
 {
     GLuint shader = glCreateShader(type);
-    const char* version = "#version 460 core\n";
+    const char* version = "#version 450 core\n";
     const char* lineReset = "#line 1\n";
     const char* src = source.c_str();
 
