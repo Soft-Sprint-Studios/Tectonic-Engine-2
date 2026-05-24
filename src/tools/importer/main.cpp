@@ -562,6 +562,16 @@ int main(int argc, char** argv)
         return 1;
     }
 
+    std::filesystem::path importRoot =
+        std::filesystem::current_path() / "import_work";
+
+    if (std::filesystem::exists(importRoot))
+    {
+        std::filesystem::remove_all(importRoot);
+    }
+
+    std::filesystem::create_directories(importRoot);
+
     std::vector<std::string> processQueue = CollectFiles(inputPath, mode);
 
     if (processQueue.empty())
