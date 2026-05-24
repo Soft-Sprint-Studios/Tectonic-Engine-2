@@ -3,7 +3,6 @@ in centroid vec2 LmCoord1;
 in centroid vec2 LmCoord2;
 in centroid vec2 LmCoord3;
 in centroid vec2 LmCoord4;
-in centroid vec2 LmCoord5;
 in centroid vec4 Color;
 in vec3 FragPos;
 in centroid mat3 TBN;
@@ -423,7 +422,7 @@ void main()
         if (u_isModel)
             sunMask = Color.a;
         else
-            sunMask = u_useBump ? texture(u_lightmap, LmCoord5).r : texture(u_lightmap, LmCoord1).a;
+            sunMask = texture(u_lightmap, LmCoord1).a;
 
         float sunShadow = CalculateSunShadow(FragPos, N, sunL);
 

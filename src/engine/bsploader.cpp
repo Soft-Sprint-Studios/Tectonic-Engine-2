@@ -94,8 +94,8 @@ namespace BSP
         // Must store this data for overlays
         struct FaceLightmapInfo
         {
-            int axs[5] = { 0 };
-            int ays[5] = { 0 };
+            int axs[4] = { 0 };
+            int ays[4] = { 0 };
             int lH = 0;
             bool hasLM = false;
             int numMaps = 1;
@@ -161,13 +161,13 @@ namespace BSP
                 if (prop.lmData.empty())
                     continue;
 
-                auto pack = [&](const uint8_t* data, int idx) 
+                auto pack = [&](const uint8_t* data, int idx)
                     {
-                    int ax, ay;
-                    PackLightmap(data, prop.lmWidth, prop.lmHeight, ax, ay, true, false, prop.lmFormat);
-                    float tw = (float)m_map.lightmapAtlasWidth;
-                    float th = (float)m_map.lightmapAtlasHeight;
-                    prop.lmUVTransform[idx] = glm::vec4((float)ax / tw, (float)ay / th, (float)prop.lmWidth / tw, (float)prop.lmHeight / th);
+                        int ax, ay;
+                        PackLightmap(data, prop.lmWidth, prop.lmHeight, ax, ay, true, nullptr, prop.lmFormat);
+                        float tw = (float)m_map.lightmapAtlasWidth;
+                        float th = (float)m_map.lightmapAtlasHeight;
+                        prop.lmUVTransform[idx] = glm::vec4((float)ax / tw, (float)ay / th, (float)prop.lmWidth / tw, (float)prop.lmHeight / th);
                     };
 
                 pack(prop.lmData.data(), 0);
@@ -669,10 +669,6 @@ namespace BSP
                                 verts[v].lm_uv2 = glm::vec2((lmInfo.axs[0] + lu + 0.5f) / m_map.lightmapAtlasWidth, (lmInfo.ays[0] + lv + 0.5f) / m_map.lightmapAtlasHeight);
                                 verts[v].lm_uv3 = glm::vec2((lmInfo.axs[1] + lu + 0.5f) / m_map.lightmapAtlasWidth, (lmInfo.ays[1] + lv + 0.5f) / m_map.lightmapAtlasHeight);
                                 verts[v].lm_uv4 = glm::vec2((lmInfo.axs[2] + lu + 0.5f) / m_map.lightmapAtlasWidth, (lmInfo.ays[2] + lv + 0.5f) / m_map.lightmapAtlasHeight);
-                                if (m_header->version >= 21)
-                                {
-                                    verts[v].lm_uv5 = glm::vec2((lmInfo.axs[4] + lu + 0.5f) / m_map.lightmapAtlasWidth, (lmInfo.ays[4] + lv + 0.5f) / m_map.lightmapAtlasHeight);
-                                }
                             }
                         }
                     }
@@ -726,12 +722,15 @@ namespace BSP
 
             bool hasLM = (face.lightofs >= 0 && (face.lightofs + (lw * lh * 4 * totalMaps)) <= m_lightingLength);
 
-            int axs[5] = { 0 }, ays[5] = { 0 };
+            int axs[4] = { 0 }, ays[4] = { 0 };
             if (hasLM && render)
             {
-                for (int m = 0; m < totalMaps; m++)
+                for (int m = 0; m < numMaps; m++)
                 {
-                    PackLightmap(d_lighting + face.lightofs + (m * lw * lh * 4), lw, lh, axs[m], ays[m], false, (m == 4));
+                    int flatIdx = (numMaps == 4) ? 3 : 0;
+                    const uint8_t* alphaData = (hasAlphaStream && m == flatIdx) ? (d_lighting + face.lightofs + (4 * lw * lh * 4)) : nullptr;
+
+                    PackLightmap(d_lighting + face.lightofs + (m * lw * lh * 4), lw, lh, axs[m], ays[m], false, alphaData);
                 }
             }
 
@@ -746,7 +745,7 @@ namespace BSP
             lmInfo.numMaps = numMaps;
             lmInfo.lH = face.lightmapTextureSizeInLuxels[1];
             lmInfo.isDisplacement = (face.dispinfo != -1);
-            for (int m = 0; m < 5; ++m)
+            for (int m = 0; m < numMaps; ++m)
             {
                 lmInfo.axs[m] = axs[m];
                 lmInfo.ays[m] = ays[m];
@@ -754,7 +753,7 @@ namespace BSP
             m_faceLightmaps[faceIdx] = lmInfo;
         }
 
-        void PackLightmap(const uint8_t* data, int w, int h, int& outX, int& outY, bool isModel = false, bool isRawAlpha = false, int format = 0)
+        void PackLightmap(const uint8_t* data, int w, int h, int& outX, int& outY, bool isModel = false, const uint8_t* alphaData = nullptr, int format = 0)
         {
             if (m_atlasX + w > m_map.lightmapAtlasWidth)
             {
@@ -791,14 +790,6 @@ namespace BSP
                         m_map.lightmapAtlas[dest + 2] = src[pixelIdx + 2] / 255.0f;
                         m_map.lightmapAtlas[dest + 3] = 1.0f;
                     }
-                    else if (isRawAlpha)
-                    {
-                        int pixelIdx = (y * w + x) * 4;
-                        m_map.lightmapAtlas[dest + 0] = src[pixelIdx + 0] / 255.0f;
-                        m_map.lightmapAtlas[dest + 1] = src[pixelIdx + 1] / 255.0f;
-                        m_map.lightmapAtlas[dest + 2] = src[pixelIdx + 2] / 255.0f;
-                        m_map.lightmapAtlas[dest + 3] = src[pixelIdx + 3] / 255.0f;
-                    }
                     else
                     {
                         int pixelIdx = (y * w + x) * 4;
@@ -807,7 +798,7 @@ namespace BSP
                         m_map.lightmapAtlas[dest + 0] = (c->r / 255.0f) * power;
                         m_map.lightmapAtlas[dest + 1] = (c->g / 255.0f) * power;
                         m_map.lightmapAtlas[dest + 2] = (c->b / 255.0f) * power;
-                        m_map.lightmapAtlas[dest + 3] = 1.0f;
+                        m_map.lightmapAtlas[dest + 3] = alphaData ? (alphaData[pixelIdx] / 255.0f) : 1.0f;
                     }
                 }
             }
@@ -868,10 +859,6 @@ namespace BSP
                         v.lm_uv2 = glm::vec2((axs[0] + lu + 0.5f) / m_map.lightmapAtlasWidth, (ays[0] + lv + 0.5f) / m_map.lightmapAtlasHeight);
                         v.lm_uv3 = glm::vec2((axs[1] + lu + 0.5f) / m_map.lightmapAtlasWidth, (ays[1] + lv + 0.5f) / m_map.lightmapAtlasHeight);
                         v.lm_uv4 = glm::vec2((axs[2] + lu + 0.5f) / m_map.lightmapAtlasWidth, (ays[2] + lv + 0.5f) / m_map.lightmapAtlasHeight);
-                        if (m_header->version >= 21)
-                        {
-                            v.lm_uv5 = glm::vec2((axs[4] + lu + 0.5f) / m_map.lightmapAtlasWidth, (ays[4] + lv + 0.5f) / m_map.lightmapAtlasHeight);
-                        }
                     }
                 }
 
@@ -995,10 +982,6 @@ namespace BSP
                             vert.lm_uv2 = glm::vec2((axs[0] + lu + 0.5f) / m_map.lightmapAtlasWidth, (ays[0] + lv + 0.5f) / m_map.lightmapAtlasHeight);
                             vert.lm_uv3 = glm::vec2((axs[1] + lu + 0.5f) / m_map.lightmapAtlasWidth, (ays[1] + lv + 0.5f) / m_map.lightmapAtlasHeight);
                             vert.lm_uv4 = glm::vec2((axs[2] + lu + 0.5f) / m_map.lightmapAtlasWidth, (ays[2] + lv + 0.5f) / m_map.lightmapAtlasHeight);
-                            if (m_header->version >= 21)
-                            {
-                                vert.lm_uv5 = glm::vec2((axs[4] + lu + 0.5f) / m_map.lightmapAtlasWidth, (ays[4] + lv + 0.5f) / m_map.lightmapAtlasHeight);
-                            }
                         }
                     }
                     float alpha = (255.0f - dv.alpha) / 255.0f;

@@ -73,8 +73,6 @@ bool R_BSP::Init(const BSP::MapData& map)
     glVertexAttribPointer(8, 3, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, tangent));
     glEnableVertexAttribArray(9);
     glVertexAttribPointer(9, 3, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, bitangent));
-    glEnableVertexAttribArray(10);
-    glVertexAttribPointer(10, 2, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, lm_uv5));
 
     if (!map.lightmapAtlas.empty())
     {
@@ -147,8 +145,6 @@ bool R_BSP::Init(const BSP::MapData& map)
         glVertexAttribPointer(8, 3, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, tangent));
         glEnableVertexAttribArray(9);
         glVertexAttribPointer(9, 3, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, bitangent));
-        glEnableVertexAttribArray(10);
-        glVertexAttribPointer(10, 2, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, lm_uv5));
 
         for (auto& dc : ent.drawCalls)
         {
