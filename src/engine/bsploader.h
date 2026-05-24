@@ -185,9 +185,7 @@ namespace BSP
         glm::vec4 tangent;
         uint32_t uv;
         glm::vec2 lm_uv;
-        glm::vec2 lm_uv2;
-        glm::vec2 lm_uv3;
-        glm::vec2 lm_uv4;
+        glm::vec2 lm_size;
         float alpha;
     };
 

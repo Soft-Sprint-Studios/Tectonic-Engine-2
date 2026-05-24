@@ -55,6 +55,7 @@ namespace BSP
             ProcessGameLumps();
             ProcessPakFile();
             SetupLightmapAtlas();
+            ProcessModelLightmaps();
             GenerateGeometry();
 
             m_map.loaded = true;
@@ -94,8 +95,9 @@ namespace BSP
         // Must store this data for overlays
         struct FaceLightmapInfo
         {
-            int axs[4] = { 0 };
-            int ays[4] = { 0 };
+            int ax = 0;
+            int ay = 0;
+            int lW = 0;
             int lH = 0;
             bool hasLM = false;
             int numMaps = 1;
@@ -154,28 +156,32 @@ namespace BSP
             m_map.lightmapAtlasWidth = 4096;
             m_map.lightmapAtlasHeight = 4096;
             m_map.lightmapAtlas.assign(m_map.lightmapAtlasWidth * m_map.lightmapAtlasHeight * 4, 1.0f);
+        }
 
-            // Setup model lightmap
+        // Setup model lightmap
+        void ProcessModelLightmaps()
+        {
             for (auto& prop : m_map.staticProps)
             {
                 if (prop.lmData.empty())
                     continue;
 
-                auto pack = [&](const uint8_t* data, int idx)
-                    {
-                        int ax, ay;
-                        PackLightmap(data, prop.lmWidth, prop.lmHeight, ax, ay, true, nullptr, prop.lmFormat);
-                        float tw = (float)m_map.lightmapAtlasWidth;
-                        float th = (float)m_map.lightmapAtlasHeight;
-                        prop.lmUVTransform[idx] = glm::vec4((float)ax / tw, (float)ay / th, (float)prop.lmWidth / tw, (float)prop.lmHeight / th);
-                    };
+                int ax, ay;
+                PackLightmap(nullptr, prop.lmWidth, prop.lmHeight, ax, ay, true, nullptr, prop.hasBumpedLighting, prop.lmFormat);
 
-                pack(prop.lmData.data(), 0);
+                WriteToAtlas(prop.lmData.data(), prop.lmWidth, prop.lmHeight, ax, ay, nullptr, true, prop.lmFormat);
+
                 if (prop.hasBumpedLighting)
                 {
-                    for (int i = 0; i < 3; i++) 
-                        pack(prop.lmDirData[i].data(), i + 1);
+                    WriteToAtlas(prop.lmDirData[0].data(), prop.lmWidth, prop.lmHeight, ax + prop.lmWidth, ay, nullptr, true, prop.lmFormat);
+                    WriteToAtlas(prop.lmDirData[1].data(), prop.lmWidth, prop.lmHeight, ax, ay + prop.lmHeight, nullptr, true, prop.lmFormat);
+                    WriteToAtlas(prop.lmDirData[2].data(), prop.lmWidth, prop.lmHeight, ax + prop.lmWidth, ay + prop.lmHeight, nullptr, true, prop.lmFormat);
                 }
+
+                float tw = (float)m_map.lightmapAtlasWidth;
+                float th = (float)m_map.lightmapAtlasHeight;
+
+                prop.lmUVTransform[0] = glm::vec4((float)ax / tw, (float)ay / th, (float)prop.lmWidth / tw, (float)prop.lmHeight / th);
             }
         }
 
@@ -662,16 +668,8 @@ namespace BSP
                             lu = glm::clamp(lu, 0.0f, (float)face.lightmapTextureSizeInLuxels[0]);
                             lv = glm::clamp(lv, 0.0f, (float)face.lightmapTextureSizeInLuxels[1]);
 
-                            int flatIdx = (lmInfo.numMaps == 4) ? 3 : 0;
-                            verts[v].lm_uv = glm::vec2((lmInfo.axs[flatIdx] + lu + 0.5f) / m_map.lightmapAtlasWidth, (lmInfo.ays[flatIdx] + lv + 0.5f) / m_map.lightmapAtlasHeight);
-
-                            // If we have bumped on the lightmap below
-                            if (lmInfo.numMaps == 4)
-                            {
-                                verts[v].lm_uv2 = glm::vec2((lmInfo.axs[0] + lu + 0.5f) / m_map.lightmapAtlasWidth, (lmInfo.ays[0] + lv + 0.5f) / m_map.lightmapAtlasHeight);
-                                verts[v].lm_uv3 = glm::vec2((lmInfo.axs[1] + lu + 0.5f) / m_map.lightmapAtlasWidth, (lmInfo.ays[1] + lv + 0.5f) / m_map.lightmapAtlasHeight);
-                                verts[v].lm_uv4 = glm::vec2((lmInfo.axs[2] + lu + 0.5f) / m_map.lightmapAtlasWidth, (lmInfo.ays[2] + lv + 0.5f) / m_map.lightmapAtlasHeight);
-                            }
+                            verts[v].lm_uv = glm::vec2((lmInfo.ax + lu + 0.5f) / m_map.lightmapAtlasWidth, (lmInfo.ay + lv + 0.5f) / m_map.lightmapAtlasHeight);
+                            verts[v].lm_size = glm::vec2((float)lmInfo.lW / m_map.lightmapAtlasWidth, (float)lmInfo.lH / m_map.lightmapAtlasHeight);
                         }
                     }
 
@@ -724,90 +722,107 @@ namespace BSP
 
             bool hasLM = (face.lightofs >= 0 && (face.lightofs + (lw * lh * 4 * totalMaps)) <= m_lightingLength);
 
-            int axs[4] = { 0 }, ays[4] = { 0 };
+            int ax = 0;
+            int ay = 0;
             if (hasLM && render)
             {
-                for (int m = 0; m < numMaps; m++)
-                {
-                    int flatIdx = (numMaps == 4) ? 3 : 0;
-                    const uint8_t* alphaData = (hasAlphaStream && m == flatIdx) ? (d_lighting + face.lightofs + (4 * lw * lh * 4)) : nullptr;
-
-                    PackLightmap(d_lighting + face.lightofs + (m * lw * lh * 4), lw, lh, axs[m], ays[m], false, alphaData);
-                }
+                const uint8_t* alpha = hasAlphaStream ? (d_lighting + face.lightofs + (4 * lw * lh * 4)) : nullptr;
+                PackLightmap(d_lighting + face.lightofs, lw, lh, ax, ay, false, alpha, isBumped);
             }
 
             if (face.dispinfo != -1)
-                LoadDisplacement(face, tex, td, axs, ays, hasLM, numMaps, render, outVerts, outCollision);
+                LoadDisplacement(face, tex, td, ax, ay, lw, lh, hasLM, numMaps, render, outVerts, outCollision);
             else
-                LoadBrush(face, tex, td, axs, ays, hasLM, numMaps, render, outVerts, outCollision);
+                LoadBrush(face, tex, td, ax, ay, lw, lh, hasLM, numMaps, render, outVerts, outCollision);
 
             // We must save for overlays to know where to get their lightmaps from
             FaceLightmapInfo lmInfo;
             lmInfo.hasLM = hasLM;
             lmInfo.numMaps = numMaps;
-            lmInfo.lH = face.lightmapTextureSizeInLuxels[1];
+            lmInfo.lW = lw;
+            lmInfo.lH = lh;
             lmInfo.isDisplacement = (face.dispinfo != -1);
-            for (int m = 0; m < numMaps; ++m)
-            {
-                lmInfo.axs[m] = axs[m];
-                lmInfo.ays[m] = ays[m];
-            }
+            lmInfo.ax = ax;
+            lmInfo.ay = ay;
             m_faceLightmaps[faceIdx] = lmInfo;
         }
 
-        void PackLightmap(const uint8_t* data, int w, int h, int& outX, int& outY, bool isModel = false, const uint8_t* alphaData = nullptr, int format = 0)
+        void WriteToAtlas(const uint8_t* src, int w, int h, int destX, int destY, const uint8_t* alphaSrc = nullptr, bool isModel = false, int format = 0)
         {
-            if (m_atlasX + w > m_map.lightmapAtlasWidth)
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++)
+                {
+                    int dest = ((destY + y) * m_map.lightmapAtlasWidth + (destX + x)) * 4;
+                    int pIdx = (y * w + x) * 4;
+
+                    if (isModel && format == 29)
+                    {
+                        const float* pf = (const float*)src + (y * w + x) * 4;
+                        m_map.lightmapAtlas[dest + 0] = pow(pf[0], 2.2f) * 2.0f;
+                        m_map.lightmapAtlas[dest + 1] = pow(pf[1], 2.2f) * 2.0f;
+                        m_map.lightmapAtlas[dest + 2] = pow(pf[2], 2.2f) * 2.0f;
+                        m_map.lightmapAtlas[dest + 3] = 1.0f;
+                    }
+                    else if (isModel)
+                    {
+                        int mIdx = (y * w + x) * 3;
+                        m_map.lightmapAtlas[dest + 0] = src[mIdx + 0] / 255.0f;
+                        m_map.lightmapAtlas[dest + 1] = src[mIdx + 1] / 255.0f;
+                        m_map.lightmapAtlas[dest + 2] = src[mIdx + 2] / 255.0f;
+                        m_map.lightmapAtlas[dest + 3] = 1.0f;
+                    }
+                    else
+                    {
+                        const Color* c = (const Color*)(src + pIdx);
+                        float p = std::pow(2.0f, c->exponent);
+                        m_map.lightmapAtlas[dest + 0] = (c->r / 255.0f) * p;
+                        m_map.lightmapAtlas[dest + 1] = (c->g / 255.0f) * p;
+                        m_map.lightmapAtlas[dest + 2] = (c->b / 255.0f) * p;
+                        m_map.lightmapAtlas[dest + 3] = alphaSrc ? (alphaSrc[pIdx] / 255.0f) : 1.0f;
+                    }
+                }
+            }
+        }
+
+        void PackLightmap(const uint8_t* data, int w, int h, int& outX, int& outY, bool isModel = false, const uint8_t* alphaData = nullptr, bool isBumped = false, int format = 0)
+        {
+            int pW = isBumped ? w * 2 : w;
+            int pH = isBumped ? h * 2 : h;
+
+            if (m_atlasX + pW > m_map.lightmapAtlasWidth)
             {
                 m_atlasX = 0;
                 m_atlasY += m_rowHeight;
                 m_rowHeight = 0;
             }
-            if (h > m_rowHeight)
-                m_rowHeight = h;
+
+            if (pH > m_rowHeight)
+            {
+                m_rowHeight = pH;
+            }
 
             outX = m_atlasX;
             outY = m_atlasY;
 
-            const uint8_t* src = data;
-            for (int y = 0; y < h; y++)
+            if (data)
             {
-                for (int x = 0; x < w; x++)
+                if (!isBumped)
                 {
-                    int dest = ((outY + y) * m_map.lightmapAtlasWidth + (outX + x)) * 4;
-
-                    if (isModel && format == 29)
-                    {
-                        const float* pixelIdx = (const float*)data + (y * w + x) * 4;
-                        m_map.lightmapAtlas[dest + 0] = pow(pixelIdx[0], 2.2f) * 2.0f;
-                        m_map.lightmapAtlas[dest + 1] = pow(pixelIdx[1], 2.2f) * 2.0f;
-                        m_map.lightmapAtlas[dest + 2] = pow(pixelIdx[2], 2.2f) * 2.0f;
-                        m_map.lightmapAtlas[dest + 3] = 1.0f;
-                    }
-                    else if (isModel)
-                    {
-                        int pixelIdx = (y * w + x) * 3;
-                        m_map.lightmapAtlas[dest + 0] = src[pixelIdx + 0] / 255.0f;
-                        m_map.lightmapAtlas[dest + 1] = src[pixelIdx + 1] / 255.0f;
-                        m_map.lightmapAtlas[dest + 2] = src[pixelIdx + 2] / 255.0f;
-                        m_map.lightmapAtlas[dest + 3] = 1.0f;
-                    }
-                    else
-                    {
-                        int pixelIdx = (y * w + x) * 4;
-                        const Color* c = (const Color*)(src + pixelIdx);
-                        float power = std::pow(2.0f, c->exponent);
-                        m_map.lightmapAtlas[dest + 0] = (c->r / 255.0f) * power;
-                        m_map.lightmapAtlas[dest + 1] = (c->g / 255.0f) * power;
-                        m_map.lightmapAtlas[dest + 2] = (c->b / 255.0f) * power;
-                        m_map.lightmapAtlas[dest + 3] = alphaData ? (alphaData[pixelIdx] / 255.0f) : 1.0f;
-                    }
+                    WriteToAtlas(data, w, h, outX, outY, alphaData, isModel, format);
+                }
+                else
+                {
+                    WriteToAtlas(data + (3 * w * h * 4), w, h, outX, outY, alphaData);
+                    WriteToAtlas(data + (0 * w * h * 4), w, h, outX + w, outY);
+                    WriteToAtlas(data + (1 * w * h * 4), w, h, outX, outY + h);
+                    WriteToAtlas(data + (2 * w * h * 4), w, h, outX + w, outY + h);
                 }
             }
-            m_atlasX += w;
+            m_atlasX += pW;
         }
 
-        void LoadBrush(const Face& face, const TexInfo& tex, const TexData& td, int* axs, int* ays, bool hasLM, int numMaps, bool render, std::vector<Vertex>& outVerts, CollisionData* outCollision)
+        void LoadBrush(const Face& face, const TexInfo& tex, const TexData& td, int ax, int ay, int lw, int lh, bool hasLM, int numMaps, bool render, std::vector<Vertex>& outVerts, CollisionData* outCollision)
         {
             std::vector<Vertex> verts;
             std::vector<uint32_t> indices;
@@ -855,15 +870,8 @@ namespace BSP
                     lu -= face.lightmapTextureMinsInLuxels[0];
                     lv -= face.lightmapTextureMinsInLuxels[1];
 
-                    int flatIdx = (numMaps == 4) ? 3 : 0;
-                    v.lm_uv = glm::vec2((axs[flatIdx] + lu + 0.5f) / m_map.lightmapAtlasWidth, (ays[flatIdx] + lv + 0.5f) / m_map.lightmapAtlasHeight);
-
-                    if (numMaps == 4)
-                    {
-                        v.lm_uv2 = glm::vec2((axs[0] + lu + 0.5f) / m_map.lightmapAtlasWidth, (ays[0] + lv + 0.5f) / m_map.lightmapAtlasHeight);
-                        v.lm_uv3 = glm::vec2((axs[1] + lu + 0.5f) / m_map.lightmapAtlasWidth, (ays[1] + lv + 0.5f) / m_map.lightmapAtlasHeight);
-                        v.lm_uv4 = glm::vec2((axs[2] + lu + 0.5f) / m_map.lightmapAtlasWidth, (ays[2] + lv + 0.5f) / m_map.lightmapAtlasHeight);
-                    }
+                    v.lm_uv = glm::vec2((ax + lu + 0.5f) / m_map.lightmapAtlasWidth, (ay + lv + 0.5f) / m_map.lightmapAtlasHeight);
+                    v.lm_size = glm::vec2((float)lw / m_map.lightmapAtlasWidth, (float)lh / m_map.lightmapAtlasHeight);
                 }
 
                 v.alpha = 0.0f;
@@ -903,7 +911,7 @@ namespace BSP
             }
         }
 
-        void LoadDisplacement(const Face& face, const TexInfo& tex, const TexData& td, int* axs, int* ays, bool hasLM, int numMaps, bool render, std::vector<Vertex>& outVerts, CollisionData* outCollision)
+        void LoadDisplacement(const Face& face, const TexInfo& tex, const TexData& td, int ax, int ay, int lw, int lh, bool hasLM, int numMaps, bool render, std::vector<Vertex>& outVerts, CollisionData* outCollision)
         {
             const DispInfo& di = d_dispinfos[face.dispinfo];
             int size = (1 << di.power) + 1;
@@ -980,15 +988,8 @@ namespace BSP
                         const Plane& plane = d_planes[face.planenum];
                         glm::vec3 n = plane.normal;
 
-                        int flatIdx = (numMaps == 4) ? 3 : 0;
-                        vert.lm_uv = glm::vec2((axs[flatIdx] + lu + 0.5f) / m_map.lightmapAtlasWidth, (ays[flatIdx] + lv + 0.5f) / m_map.lightmapAtlasHeight);
-
-                        if (numMaps == 4)
-                        {
-                            vert.lm_uv2 = glm::vec2((axs[0] + lu + 0.5f) / m_map.lightmapAtlasWidth, (ays[0] + lv + 0.5f) / m_map.lightmapAtlasHeight);
-                            vert.lm_uv3 = glm::vec2((axs[1] + lu + 0.5f) / m_map.lightmapAtlasWidth, (ays[1] + lv + 0.5f) / m_map.lightmapAtlasHeight);
-                            vert.lm_uv4 = glm::vec2((axs[2] + lu + 0.5f) / m_map.lightmapAtlasWidth, (ays[2] + lv + 0.5f) / m_map.lightmapAtlasHeight);
-                        }
+                        vert.lm_uv = glm::vec2((ax + lu + 0.5f) / m_map.lightmapAtlasWidth, (ay + lv + 0.5f) / m_map.lightmapAtlasHeight);
+                        vert.lm_size = glm::vec2((float)lw / m_map.lightmapAtlasWidth, (float)lh / m_map.lightmapAtlasHeight);
                     }
                     vert.alpha = (255.0f - dv.alpha) / 255.0f;
                 }

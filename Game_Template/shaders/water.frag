@@ -3,9 +3,7 @@ out vec4 FragColor;
 in centroid vec3 v_FragPos;
 in vec2 v_TexCoord;
 in vec2 v_LmCoord;
-in vec2 v_LmCoord2;
-in vec2 v_LmCoord3;
-in vec2 v_LmCoord4;
+in vec2 v_LmSize;
 in centroid mat3 v_TBN;
 
 uniform sampler2D u_reflectionTexture;
@@ -72,6 +70,10 @@ void main()
     vec3 V = normalize(u_viewPos - v_FragPos);
     vec3 diffuseLight = vec3(0.0);
     vec3 dominantL = N;
+	
+    vec2 v_LmCoord2 = v_LmCoord + vec2(v_LmSize.x, 0.0);
+    vec2 v_LmCoord3 = v_LmCoord + vec2(0.0, v_LmSize.y);
+    vec2 v_LmCoord4 = v_LmCoord + v_LmSize;
 
     if (u_useBump)
     {

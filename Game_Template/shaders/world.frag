@@ -1,8 +1,6 @@
 in centroid vec2 TexCoord;
-in centroid vec2 LmCoord1;
-in centroid vec2 LmCoord2;
-in centroid vec2 LmCoord3;
-in centroid vec2 LmCoord4;
+in centroid vec2 v_LmCoord;
+in centroid vec2 v_LmSize;
 in centroid float v_alpha;
 in vec3 FragPos;
 in centroid mat3 TBN;
@@ -298,6 +296,11 @@ void main()
 
     vec3 diffuseLight = vec3(0.0);
     vec3 specularLight = vec3(0.0);
+	
+    vec2 LmCoord1 = v_LmCoord;
+    vec2 LmCoord2 = v_LmCoord + vec2(v_LmSize.x, 0.0);
+    vec2 LmCoord3 = v_LmCoord + vec2(0.0, v_LmSize.y);
+    vec2 LmCoord4 = v_LmCoord + v_LmSize;
 
     // Baked Lighting Phase
     if (u_useBump)

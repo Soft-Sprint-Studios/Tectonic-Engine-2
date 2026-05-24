@@ -1,12 +1,10 @@
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec2 aTexCoord;
-layout (location = 2) in vec2 aLmCoord1;
-layout (location = 3) in vec2 aLmCoord2;
-layout (location = 4) in vec2 aLmCoord3;
-layout (location = 5) in vec2 aLmCoord4;
-layout (location = 6) in float aAlpha;
-layout (location = 7) in vec3 aNormal;
-layout (location = 8) in vec4 aTangent;
+layout (location = 2) in vec2 aLmCoord;
+layout (location = 3) in vec2 aLmSize;
+layout (location = 4) in float aAlpha;
+layout (location = 5) in vec3 aNormal;
+layout (location = 6) in vec4 aTangent;
 
 uniform mat4 u_model;
 uniform mat4 u_view;
@@ -26,10 +24,8 @@ layout(std430, binding = 7) readonly buffer InstanceLM
 };
 
 out centroid vec2 TexCoord;
-out centroid vec2 LmCoord1;
-out centroid vec2 LmCoord2;
-out centroid vec2 LmCoord3;
-out centroid vec2 LmCoord4;
+out centroid vec2 v_LmCoord;
+out centroid vec2 v_LmSize;
 out centroid float v_alpha;
 out vec3 FragPos;
 out centroid mat3 TBN;
@@ -48,18 +44,14 @@ void main()
     TBN = mat3(T, B, N);
     
     TexCoord = aTexCoord;
-    LmCoord1 = aLmCoord1;
-    LmCoord2 = aLmCoord2;
-    LmCoord3 = aLmCoord3;
-    LmCoord4 = aLmCoord4;
+    v_LmCoord = aLmCoord;
+    v_LmSize = aLmSize;
 
     if (u_isInstanced == 1) 
     {
         int transBase = gl_InstanceID * 4;
-        LmCoord1 = aTexCoord * lmTransforms[transBase + 0].zw + lmTransforms[transBase + 0].xy;
-        LmCoord2 = aTexCoord * lmTransforms[transBase + 1].zw + lmTransforms[transBase + 1].xy;
-        LmCoord3 = aTexCoord * lmTransforms[transBase + 2].zw + lmTransforms[transBase + 2].xy;
-        LmCoord4 = aTexCoord * lmTransforms[transBase + 3].zw + lmTransforms[transBase + 3].xy;
+        v_LmCoord = aTexCoord * lmTransforms[transBase + 0].zw + lmTransforms[transBase + 0].xy;
+        v_LmSize = lmTransforms[transBase + 0].zw;
     }
 
     v_alpha = aAlpha;

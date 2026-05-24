@@ -240,13 +240,13 @@ void R_Models::LoadModel(const std::string& path)
                 }
                 else if (attr.type == cgltf_attribute_type_normal)
                 {
-                    glEnableVertexAttribArray(7);
-                    glVertexAttribPointer(7, 3, GL_FLOAT, GL_FALSE, stride, 0);
+                    glEnableVertexAttribArray(5);
+                    glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, stride, 0);
                 }
                 else if (attr.type == cgltf_attribute_type_tangent)
                 {
-                    glEnableVertexAttribArray(8);
-                    glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, stride, 0);
+                    glEnableVertexAttribArray(6);
+                    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, stride, 0);
                 }
             }
 

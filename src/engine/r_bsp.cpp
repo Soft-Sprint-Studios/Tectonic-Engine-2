@@ -60,17 +60,13 @@ bool R_BSP::Init(const BSP::MapData& map)
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, lm_uv));
     glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, lm_uv2));
+    glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, lm_size));
     glEnableVertexAttribArray(4);
-    glVertexAttribPointer(4, 2, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, lm_uv3));
+    glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, alpha));
     glEnableVertexAttribArray(5);
-    glVertexAttribPointer(5, 2, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, lm_uv4));
+    glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, normal));
     glEnableVertexAttribArray(6);
-    glVertexAttribPointer(6, 1, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, alpha));
-    glEnableVertexAttribArray(7);
-    glVertexAttribPointer(7, 3, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, normal));
-    glEnableVertexAttribArray(8);
-    glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, tangent));
+    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, tangent));
 
     if (!map.lightmapAtlas.empty())
     {
@@ -130,17 +126,13 @@ bool R_BSP::Init(const BSP::MapData& map)
         glEnableVertexAttribArray(2);
         glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, lm_uv));
         glEnableVertexAttribArray(3);
-        glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, lm_uv2));
+        glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, lm_size));
         glEnableVertexAttribArray(4);
-        glVertexAttribPointer(4, 2, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, lm_uv3));
+        glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, alpha));
         glEnableVertexAttribArray(5);
-        glVertexAttribPointer(5, 2, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, lm_uv4));
+        glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, normal));
         glEnableVertexAttribArray(6);
-        glVertexAttribPointer(6, 1, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, alpha));
-        glEnableVertexAttribArray(7);
-        glVertexAttribPointer(7, 3, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, normal));
-        glEnableVertexAttribArray(8);
-        glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, tangent));
+        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, tangent));
 
         for (auto& dc : ent.drawCalls)
         {
