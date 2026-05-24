@@ -218,13 +218,6 @@ namespace Sound
         alSourcei(m_sourceID, AL_LOOPING, loop ? AL_TRUE : AL_FALSE);
     }
 
-    bool AudioSource::IsLooping() const
-    {
-        ALint looping;
-        alGetSourcei(m_sourceID, AL_LOOPING, &looping);
-        return (looping == AL_TRUE);
-    }
-
     bool AudioSource::IsPlaying() const
     {
         ALint state;

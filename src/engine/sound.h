@@ -54,7 +54,6 @@ namespace Sound
         void SetRadius(float referenceDist, float maxDist);
         
         void SetLooping(bool loop);
-        bool IsLooping() const;
         bool IsPlaying() const;
 
     private:
