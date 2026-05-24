@@ -55,6 +55,11 @@ public:
         return true;
     }
 
+    bool IsRenderable() const override
+    {
+        return true;
+    }
+
 private:
     float m_delay = 0.0f;
     float m_nextUseTime = 0.0f;
