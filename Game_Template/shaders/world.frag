@@ -11,11 +11,9 @@ in centroid mat3 TBN;
 uniform sampler2D u_diffuse;
 uniform sampler2D u_normal;
 uniform sampler2D u_lightmap;
-uniform sampler2D u_specular;
 uniform sampler2D u_heightMap;
 uniform sampler2D u_diffuse2;
 uniform sampler2D u_normal2;
-uniform sampler2D u_specular2;
 uniform sampler2D u_heightMap2;
 uniform samplerCube u_cubemap;
 uniform bool u_useCubemap;
@@ -276,9 +274,9 @@ void main()
         discard;
     }
 
-    vec3 spec1 = texture(u_specular, finalUV).rgb;
-    vec3 spec2 = texture(u_specular2, finalUV).rgb;
-    vec3 specMask = mix(spec1, spec2, blend);
+    float spec1 = u_useBump ? texture(u_normal, finalUV).a : 1.0;
+    float spec2 = u_useBump ? texture(u_normal2, finalUV).a : 1.0;
+    vec3 specMask = vec3(mix(spec1, spec2, blend));
 
     if (u_mat_specular == 0) 
         specMask = vec3(0.0);

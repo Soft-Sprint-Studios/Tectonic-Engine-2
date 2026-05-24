@@ -32,11 +32,9 @@
 
 std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_textures;
 std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_normals;
-std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_speculars;
 std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_heights;
 std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_textures2;
 std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_normals2;
-std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_speculars2;
 std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_heights2;
 std::unordered_map<std::string, float> Materials::m_heightScales;
 std::unordered_map<std::string, float> Materials::m_heightScales2;
@@ -130,19 +128,6 @@ void Materials::LoadDefinitions(const std::string& path)
                         m_normals[matName] = tex;
                     }
                 }
-                else if (token == "specular")
-                {
-                    ss >> token; 
-                    ss >> token;
-
-                    std::string fileName = "textures/" + token.substr(1, token.size() - 2);
-                    auto tex = Resources::LoadTexture(fileName, false);
-
-                    if (tex)
-                    {
-                        m_speculars[matName] = tex;
-                    }
-                }
                 else if (token == "height")
                 {
                     ss >> token;
@@ -177,18 +162,6 @@ void Materials::LoadDefinitions(const std::string& path)
                     if (tex) 
                     { 
                         m_normals2[matName] = tex; 
-                    }
-                }
-                else if (token == "specular2")
-                {
-                    ss >> token; 
-                    ss >> token;
-
-                    auto tex = Resources::LoadTexture("textures/" + token.substr(1, token.size() - 2), false);
-
-                    if (tex) 
-                    { 
-                        m_speculars2[matName] = tex; 
                     }
                 }
                 else if (token == "height2")
@@ -259,22 +232,6 @@ std::shared_ptr<R_Texture> Materials::GetNormalMap(const std::string& name)
     return m_flatNormal;
 }
 
-std::shared_ptr<R_Texture> Materials::GetSpecularMap(const std::string& name)
-{
-    auto it = m_speculars.find(name);
-    if (it != m_speculars.end())
-    {
-        return it->second;
-    }
-
-    if (!name.empty())
-    {
-        return m_white;
-    }
-
-    return m_white;
-}
-
 std::shared_ptr<R_Texture> Materials::GetHeightMap(const std::string& name)
 {
     auto it = m_heights.find(name);
@@ -291,12 +248,6 @@ std::shared_ptr<R_Texture> Materials::GetNormalMap2(const std::string& name)
 {
     auto it = m_normals2.find(name);
     return (it != m_normals2.end()) ? it->second : m_flatNormal;
-}
-
-std::shared_ptr<R_Texture> Materials::GetSpecularMap2(const std::string& name) 
-{
-    auto it = m_speculars2.find(name);
-    return (it != m_speculars2.end()) ? it->second : m_white;
 }
 
 std::shared_ptr<R_Texture> Materials::GetHeightMap2(const std::string& name)

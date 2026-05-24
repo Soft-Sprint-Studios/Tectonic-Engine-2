@@ -94,11 +94,9 @@ bool R_BSP::Init(const BSP::MapData& map)
         BSPDrawCall draw;
         draw.texture = Materials::GetTexture(dc.textureName);
         draw.normalMap = Materials::GetNormalMap(dc.textureName);
-        draw.specularMap = Materials::GetSpecularMap(dc.textureName);
         draw.heightMap = Materials::GetHeightMap(dc.textureName);
         draw.texture2 = Materials::GetTexture2(dc.textureName) ? Materials::GetTexture2(dc.textureName) : draw.texture;
         draw.normalMap2 = (Materials::GetTexture2(dc.textureName) && Materials::GetNormalMap2(dc.textureName)) ? Materials::GetNormalMap2(dc.textureName) : draw.normalMap;
-        draw.specularMap2 = (Materials::GetTexture2(dc.textureName) && Materials::GetSpecularMap2(dc.textureName)) ? Materials::GetSpecularMap2(dc.textureName) : draw.specularMap;
         draw.heightMap2 = Materials::GetHeightMap2(dc.textureName);
         draw.heightScale1 = Materials::GetHeightScale(dc.textureName);
         draw.heightScale2 = Materials::GetHeightScale2(dc.textureName);
@@ -157,11 +155,9 @@ bool R_BSP::Init(const BSP::MapData& map)
             BSPDrawCall draw;
             draw.texture = Materials::GetTexture(dc.textureName);
             draw.normalMap = Materials::GetNormalMap(dc.textureName);
-            draw.specularMap = Materials::GetSpecularMap(dc.textureName);
             draw.heightMap = Materials::GetHeightMap(dc.textureName);
             draw.texture2 = Materials::GetTexture2(dc.textureName) ? Materials::GetTexture2(dc.textureName) : draw.texture;
             draw.normalMap2 = (Materials::GetTexture2(dc.textureName) && Materials::GetNormalMap2(dc.textureName)) ? Materials::GetNormalMap2(dc.textureName) : draw.normalMap;
-            draw.specularMap2 = (Materials::GetTexture2(dc.textureName) && Materials::GetSpecularMap2(dc.textureName)) ? Materials::GetSpecularMap2(dc.textureName) : draw.specularMap;
             draw.heightMap2 = Materials::GetHeightMap2(dc.textureName);
             draw.heightScale1 = Materials::GetHeightScale(dc.textureName);
             draw.heightScale2 = Materials::GetHeightScale2(dc.textureName);
@@ -210,11 +206,9 @@ void R_BSP::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOnly)
             shader.SetInt("u_isModel", 0);
             (dc.texture ? dc.texture : Materials::GetTexture(""))->Bind(0);
             (dc.isBumped && dc.normalMap ? dc.normalMap : Materials::GetFlatNormal())->Bind(2);
-            (dc.isBumped && dc.specularMap ? dc.specularMap : Materials::GetWhiteTexture())->Bind(3);
             (dc.heightMap ? dc.heightMap : Materials::GetWhiteTexture())->Bind(17);
             (dc.texture2 ? dc.texture2 : Materials::GetTexture(""))->Bind(14);
             (dc.isBumped && dc.normalMap2 ? dc.normalMap2 : Materials::GetFlatNormal())->Bind(15);
-            (dc.isBumped && dc.specularMap2 ? dc.specularMap2 : Materials::GetWhiteTexture())->Bind(16);
             (dc.heightMap2 ? dc.heightMap2 : Materials::GetWhiteTexture())->Bind(18);
             shader.SetFloat("u_heightScale1", dc.heightScale1);
             shader.SetFloat("u_heightScale2", dc.heightScale2);
@@ -257,11 +251,9 @@ void R_BSP::DrawBModel(int index, const R_Shader& shader, const glm::mat4& trans
             shader.SetInt("u_useBump", dc.isBumped ? 1 : 0);
             (dc.texture ? dc.texture : Materials::GetTexture(""))->Bind(0);
             (dc.isBumped && dc.normalMap ? dc.normalMap : Materials::GetFlatNormal())->Bind(2);
-            (dc.isBumped && dc.specularMap ? dc.specularMap : Materials::GetWhiteTexture())->Bind(3);
             (dc.heightMap ? dc.heightMap : Materials::GetWhiteTexture())->Bind(17);
             (dc.texture2 ? dc.texture2 : Materials::GetTexture(""))->Bind(14);
             (dc.isBumped && dc.normalMap2 ? dc.normalMap2 : Materials::GetFlatNormal())->Bind(15);
-            (dc.isBumped && dc.specularMap2 ? dc.specularMap2 : Materials::GetWhiteTexture())->Bind(16);
             (dc.heightMap2 ? dc.heightMap2 : Materials::GetWhiteTexture())->Bind(18);
             shader.SetFloat("u_heightScale1", dc.heightScale1);
             shader.SetFloat("u_heightScale2", dc.heightScale2);

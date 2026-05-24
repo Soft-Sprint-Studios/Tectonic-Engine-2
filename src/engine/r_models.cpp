@@ -274,7 +274,6 @@ void R_Models::LoadModel(const std::string& path)
             std::transform(matName.begin(), matName.end(), matName.begin(), ::tolower);
             m.texture = Materials::GetTexture(matName);
             m.normalMap = Materials::GetNormalMap(matName);
-            m.specularMap = Materials::GetSpecularMap(matName);
             m.heightMap = Materials::GetHeightMap(matName);
             m.heightScale = Materials::GetHeightScale(matName);
 
@@ -358,7 +357,6 @@ void R_Models::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOn
 
                     (mesh.texture ? mesh.texture : Materials::GetTexture(""))->Bind(0);
                     (mesh.normalMap ? mesh.normalMap : Materials::GetFlatNormal())->Bind(2);
-                    (mesh.specularMap ? mesh.specularMap : Materials::GetWhiteTexture())->Bind(3);
                     (mesh.heightMap ? mesh.heightMap : Materials::GetWhiteTexture())->Bind(17);
 
                     glDrawElementsInstanced(GL_TRIANGLES, mesh.indexCount, mesh.indexType, 0, group.instanceCount);

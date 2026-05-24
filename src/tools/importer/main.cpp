@@ -52,7 +52,6 @@ namespace AssetTool
     {
         std::string diffuse;
         std::string normal;
-        std::string specular;
     };
 
     void ShowHelp()
@@ -247,7 +246,6 @@ namespace AssetTool
             outFile << "\n\"" << fullKey << "\"\n{\n";
             if (!paths.diffuse.empty()) outFile << "\tdiffuse = \"" << subFolder << "/" << paths.diffuse << "\"\n";
             if (!paths.normal.empty()) outFile << "\tnormal = \"" << subFolder << "/" << paths.normal << "\"\n";
-            if (!paths.specular.empty()) outFile << "\tspecular = \"" << subFolder << "/" << paths.specular << "\"\n";
             outFile << "}\n";
         }
     }
@@ -323,29 +321,26 @@ namespace AssetTool
             if (unsigned char* norm = LoadBufferImage(mat.normal_texture.texture, &w, &h))
             {
                 paths.normal = matName + "_normal.png";
+                int pbrW, pbrH;
+                if (unsigned char* pbr = LoadBufferImage(mat.pbr_metallic_roughness.metallic_roughness_texture.texture, &pbrW, &pbrH))
+                {
+                    if (pbrW == w && pbrH == h)
+                    {
+                        for (int j = 0; j < w * h * 4; j += 4)
+                        {
+                            norm[j + 3] = 255 - pbr[j + 1];
+                        }
+                    }
+                    stbi_image_free(pbr);
+                }
+                else
+                {
+                    for (int j = 0; j < w * h * 4; j += 4) 
+                        norm[j + 3] = 255;
+                }
                 stbi_write_png((workDir / paths.normal).string().c_str(), w, h, 4, norm, w * 4);
                 ConvertToVTF(matName + "_normal", norm, w, h, workDir, true);
                 stbi_image_free(norm);
-            }
-
-            if (unsigned char* pbr = LoadBufferImage(mat.pbr_metallic_roughness.metallic_roughness_texture.texture, &w, &h))
-            {
-                paths.specular = matName + "_specular.png";
-
-                for (int j = 0; j < w * h * 4; j += 4)
-                {
-                    unsigned char roughness = pbr[j + 1];
-                    unsigned char specValue = 255 - roughness;
-
-                    pbr[j] = specValue;
-                    pbr[j + 1] = specValue;
-                    pbr[j + 2] = specValue;
-                    pbr[j + 3] = 255;
-                }
-
-                std::string specPath = (workDir / paths.specular).string();
-                stbi_write_png(specPath.c_str(), w, h, 4, pbr, w * 4);
-                stbi_image_free(pbr);
             }
 
             std::string vmtPath = (workDir / (matName + ".vmt")).string();
@@ -422,29 +417,26 @@ namespace AssetTool
             if (unsigned char* norm = LoadBufferImage(mat.normal_texture.texture, &w, &h))
             {
                 paths.normal = matName + "_normal.png";
+                int pbrW, pbrH;
+                if (unsigned char* pbr = LoadBufferImage(mat.pbr_metallic_roughness.metallic_roughness_texture.texture, &pbrW, &pbrH))
+                {
+                    if (pbrW == w && pbrH == h)
+                    {
+                        for (int j = 0; j < w * h * 4; j += 4)
+                        {
+                            norm[j + 3] = 255 - pbr[j + 1];
+                        }
+                    }
+                    stbi_image_free(pbr);
+                }
+                else
+                {
+                    for (int j = 0; j < w * h * 4; j += 4)
+                        norm[j + 3] = 255;
+                }
                 stbi_write_png((workDir / paths.normal).string().c_str(), w, h, 4, norm, w * 4);
                 ConvertToVTF(matName + "_normal", norm, w, h, workDir, true);
                 stbi_image_free(norm);
-            }
-
-            if (unsigned char* pbr = LoadBufferImage(mat.pbr_metallic_roughness.metallic_roughness_texture.texture, &w, &h))
-            {
-                paths.specular = matName + "_specular.png";
-
-                for (int j = 0; j < w * h * 4; j += 4)
-                {
-                    unsigned char roughness = pbr[j + 1];
-                    unsigned char specValue = 255 - roughness;
-
-                    pbr[j] = specValue;
-                    pbr[j + 1] = specValue;
-                    pbr[j + 2] = specValue;
-                    pbr[j + 3] = 255;
-                }
-
-                std::string specPath = (workDir / paths.specular).string();
-                stbi_write_png(specPath.c_str(), w, h, 4, pbr, w * 4);
-                stbi_image_free(pbr);
             }
 
             std::string vmtPath = (workDir / (matName + ".vmt")).string();

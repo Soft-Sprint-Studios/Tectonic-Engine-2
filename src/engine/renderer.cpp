@@ -163,11 +163,9 @@ void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater
     m_worldShader.SetInt("u_diffuse", 0);
     m_worldShader.SetInt("u_lightmap", 1);
     m_worldShader.SetInt("u_normal", 2);
-    m_worldShader.SetInt("u_specular", 3);
     m_worldShader.SetInt("u_cubemap", 4);
     m_worldShader.SetInt("u_diffuse2", 14);
     m_worldShader.SetInt("u_normal2", 15);
-    m_worldShader.SetInt("u_specular2", 16);
     m_worldShader.SetInt("u_heightMap", 17);
     m_worldShader.SetInt("u_heightMap2", 18);
 
