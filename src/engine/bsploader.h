@@ -27,6 +27,7 @@
 #include <cstdint>
 #include <unordered_map>
 #include <glm/glm.hpp>
+#include <glm/gtc/packing.hpp>
 
 namespace BSP
 {
@@ -182,7 +183,7 @@ namespace BSP
         glm::vec3 position;
         glm::vec3 normal;
         glm::vec4 tangent;
-        glm::vec2 uv;
+        uint32_t uv;
         glm::vec2 lm_uv;
         glm::vec2 lm_uv2;
         glm::vec2 lm_uv3;

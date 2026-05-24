@@ -636,7 +636,7 @@ namespace BSP
                         float bias = (0.1f + (f * 0.01f)) * MAPSCALE;
                         verts[v].position = ToEngineSpace(pt) + pushDir * bias;
                         verts[v].normal = overlayNormal;
-                        verts[v].uv = uvs[v];
+                        verts[v].uv = glm::packHalf2x16(uvs[v]);
                         verts[v].alpha = 1.0f;
 
                         glm::vec3 tempT = glm::normalize(glm::vec3(faceTex.textureVecs[0][0], faceTex.textureVecs[0][1], faceTex.textureVecs[0][2]));
@@ -846,7 +846,7 @@ namespace BSP
                 // Albedo UVs
                 float u = glm::dot(pos, glm::vec3(tex.textureVecs[0][0], tex.textureVecs[0][1], tex.textureVecs[0][2])) + tex.textureVecs[0][3];
                 float v_uv = glm::dot(pos, glm::vec3(tex.textureVecs[1][0], tex.textureVecs[1][1], tex.textureVecs[1][2])) + tex.textureVecs[1][3];
-                v.uv = glm::vec2(u / td.width, v_uv / td.height);
+                v.uv = glm::packHalf2x16(glm::vec2(u / td.width, v_uv / td.height));
 
                 if (hasLM)
                 {
@@ -965,7 +965,7 @@ namespace BSP
                     // Albedo UVs
                     float tu = glm::dot(pos, glm::vec3(tex.textureVecs[0][0], tex.textureVecs[0][1], tex.textureVecs[0][2])) + tex.textureVecs[0][3];
                     float tv = glm::dot(pos, glm::vec3(tex.textureVecs[1][0], tex.textureVecs[1][1], tex.textureVecs[1][2])) + tex.textureVecs[1][3];
-                    vert.uv = glm::vec2(tu / (float)td.width, tv / (float)td.height);
+                    vert.uv = glm::packHalf2x16(glm::vec2(tu / (float)td.width, tv / (float)td.height));
 
                     if (hasLM)
                     {
