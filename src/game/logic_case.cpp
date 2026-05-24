@@ -57,7 +57,12 @@ public:
             bool matched = false;
             for (const auto& c : m_cases)
             {
-                if (Filesystem::StringEqual(c.value, param))
+                bool match = (c.value.length() == param.length()) && std::equal(c.value.begin(), c.value.end(), param.begin(), [](unsigned char c1, unsigned char c2)
+                    {
+                        return std::tolower(c1) == std::tolower(c2);
+                    });
+
+                if (match)
                 {
                     std::string outputName = "OnCase";
                     if (std::stoi(c.id) < 10)

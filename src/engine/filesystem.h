@@ -37,6 +37,4 @@ namespace Filesystem
     bool Exists(const std::string& relativePath);
     void CreateDirectory(const std::string& relativePath);
     std::vector<std::string> ListFiles(const std::string& relativePath, const std::string& extension);
-
-    bool StringEqual(const std::string& a, const std::string& b);
 }

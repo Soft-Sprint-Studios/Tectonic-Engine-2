@@ -172,7 +172,10 @@ void Entity::FireOutput(const std::string& outputName)
 {
     for (auto& [name, io] : m_outputs)
     {
-        bool match = Filesystem::StringEqual(name, outputName);
+        bool match = (name.length() == outputName.length()) && std::equal(name.begin(), name.end(), outputName.begin(), [](unsigned char c1, unsigned char c2)
+            {
+                return std::tolower(c1) == std::tolower(c2);
+            });
 
         if (match)
         {
