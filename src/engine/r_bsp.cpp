@@ -70,9 +70,7 @@ bool R_BSP::Init(const BSP::MapData& map)
     glEnableVertexAttribArray(7);
     glVertexAttribPointer(7, 3, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, normal));
     glEnableVertexAttribArray(8);
-    glVertexAttribPointer(8, 3, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, tangent));
-    glEnableVertexAttribArray(9);
-    glVertexAttribPointer(9, 3, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, bitangent));
+    glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, tangent));
 
     if (!map.lightmapAtlas.empty())
     {
@@ -142,9 +140,7 @@ bool R_BSP::Init(const BSP::MapData& map)
         glEnableVertexAttribArray(7);
         glVertexAttribPointer(7, 3, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, normal));
         glEnableVertexAttribArray(8);
-        glVertexAttribPointer(8, 3, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, tangent));
-        glEnableVertexAttribArray(9);
-        glVertexAttribPointer(9, 3, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, bitangent));
+        glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, tangent));
 
         for (auto& dc : ent.drawCalls)
         {

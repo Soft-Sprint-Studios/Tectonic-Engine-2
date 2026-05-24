@@ -6,8 +6,7 @@ layout (location = 4) in vec2 aLmCoord3;
 layout (location = 5) in vec2 aLmCoord4;
 layout (location = 6) in float aAlpha;
 layout (location = 7) in vec3 aNormal;
-layout (location = 8) in vec3 aTangent;
-layout (location = 9) in vec3 aBitangent;
+layout (location = 8) in vec4 aTangent;
 
 uniform mat4 u_model;
 uniform mat4 u_view;
@@ -41,10 +40,10 @@ void main()
 
     FragPos = vec3(modelMat * vec4(aPos, 1.0));
     mat3 normalMatrix = mat3(transpose(inverse(modelMat)));
-    vec3 T = normalize(normalMatrix * aTangent);
+    vec3 T = normalize(normalMatrix * aTangent.xyz);
     vec3 N = normalize(normalMatrix * aNormal);
-    vec3 B = normalize(normalMatrix * aBitangent);
     T = normalize(T - dot(T, N) * N);
+    vec3 B = cross(N, T) * aTangent.w;
     
     TBN = mat3(T, B, N);
     

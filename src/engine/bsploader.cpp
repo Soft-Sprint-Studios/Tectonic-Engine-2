@@ -639,10 +639,12 @@ namespace BSP
                         verts[v].uv = uvs[v];
                         verts[v].alpha = 1.0f;
 
-                        verts[v].tangent = glm::normalize(glm::vec3(faceTex.textureVecs[0][0], faceTex.textureVecs[0][1], faceTex.textureVecs[0][2]));
-                        verts[v].bitangent = glm::normalize(glm::vec3(faceTex.textureVecs[1][0], faceTex.textureVecs[1][1], faceTex.textureVecs[1][2]));
-                        verts[v].tangent = glm::vec3(verts[v].tangent.x, verts[v].tangent.z, -verts[v].tangent.y);
-                        verts[v].bitangent = glm::vec3(verts[v].bitangent.x, verts[v].bitangent.z, -verts[v].bitangent.y);
+                        glm::vec3 tempT = glm::normalize(glm::vec3(faceTex.textureVecs[0][0], faceTex.textureVecs[0][1], faceTex.textureVecs[0][2]));
+                        glm::vec3 tempB = glm::normalize(glm::vec3(faceTex.textureVecs[1][0], faceTex.textureVecs[1][1], faceTex.textureVecs[1][2]));
+                        tempT = glm::vec3(tempT.x, tempT.z, -tempT.y);
+                        tempB = glm::vec3(tempB.x, tempB.z, -tempB.y);
+                        float sign = glm::dot(glm::cross(verts[v].normal, tempT), tempB) < 0.0f ? -1.0f : 1.0f;
+                        verts[v].tangent = glm::vec4(tempT, sign);
 
                         if (lmInfo.hasLM)
                         {
@@ -836,8 +838,10 @@ namespace BSP
                 glm::vec3 s_axis = glm::vec3(tex.textureVecs[0][0], tex.textureVecs[0][1], tex.textureVecs[0][2]);
                 glm::vec3 t_axis = glm::vec3(tex.textureVecs[1][0], tex.textureVecs[1][1], tex.textureVecs[1][2]);
 
-                v.tangent = glm::normalize(glm::vec3(s_axis.x, s_axis.z, -s_axis.y));
-                v.bitangent = glm::normalize(glm::vec3(t_axis.x, t_axis.z, -t_axis.y));
+                glm::vec3 tempT = glm::normalize(glm::vec3(s_axis.x, s_axis.z, -s_axis.y));
+                glm::vec3 tempB = glm::normalize(glm::vec3(t_axis.x, t_axis.z, -t_axis.y));
+                float sign = glm::dot(glm::cross(v.normal, tempT), tempB) < 0.0f ? -1.0f : 1.0f;
+                v.tangent = glm::vec4(tempT, sign);
 
                 // Albedo UVs
                 float u = glm::dot(pos, glm::vec3(tex.textureVecs[0][0], tex.textureVecs[0][1], tex.textureVecs[0][2])) + tex.textureVecs[0][3];
@@ -953,8 +957,10 @@ namespace BSP
                     glm::vec3 s_axis = glm::vec3(tex.textureVecs[0][0], tex.textureVecs[0][1], tex.textureVecs[0][2]);
                     glm::vec3 t_axis = glm::vec3(tex.textureVecs[1][0], tex.textureVecs[1][1], tex.textureVecs[1][2]);
 
-                    vert.tangent = glm::normalize(glm::vec3(s_axis.x, s_axis.z, -s_axis.y));
-                    vert.bitangent = glm::normalize(glm::vec3(t_axis.x, t_axis.z, -t_axis.y));
+                    glm::vec3 tempT = glm::normalize(glm::vec3(s_axis.x, s_axis.z, -s_axis.y));
+                    glm::vec3 tempB = glm::normalize(glm::vec3(t_axis.x, t_axis.z, -t_axis.y));
+                    float sign = glm::dot(glm::cross(vert.normal, tempT), tempB) < 0.0f ? -1.0f : 1.0f;
+                    vert.tangent = glm::vec4(tempT, sign);
 
                     // Albedo UVs
                     float tu = glm::dot(pos, glm::vec3(tex.textureVecs[0][0], tex.textureVecs[0][1], tex.textureVecs[0][2])) + tex.textureVecs[0][3];

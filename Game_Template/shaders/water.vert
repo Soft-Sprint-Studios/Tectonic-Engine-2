@@ -5,8 +5,7 @@ layout (location = 3) in vec2 aLmCoord2;
 layout (location = 4) in vec2 aLmCoord3;
 layout (location = 5) in vec2 aLmCoord4;
 layout (location = 7) in vec3 aNormal;
-layout (location = 8) in vec3 aTangent;
-layout (location = 9) in vec3 aBitangent;
+layout (location = 8) in vec4 aTangent;
 
 uniform mat4 u_projection;
 uniform mat4 u_view;
@@ -32,8 +31,9 @@ void main()
     
     mat3 normalMatrix = mat3(transpose(inverse(u_model)));
     vec3 N = normalize(normalMatrix * aNormal);
-    vec3 T = normalize(normalMatrix * aTangent);
-    vec3 B = normalize(normalMatrix * aBitangent);
+    vec3 T = normalize(normalMatrix * aTangent.xyz);
+    T = normalize(T - dot(T, N) * N);
+    vec3 B = cross(N, T) * aTangent.w;
     v_TBN = mat3(T, B, N);
 
     gl_Position = u_projection * u_view * worldPos;

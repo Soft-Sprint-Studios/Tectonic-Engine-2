@@ -1,8 +1,7 @@
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec2 aTexCoord;
 layout (location = 7) in vec3 aNormal;
-layout (location = 8) in vec3 aTangent;
-layout (location = 9) in vec3 aBitangent;
+layout (location = 8) in vec4 aTangent;
 
 out vec2 TexCoord;
 out vec4 ScreenPos;
@@ -18,9 +17,10 @@ void main()
     TexCoord = aTexCoord;
     
     mat3 normalMatrix = mat3(transpose(inverse(u_model)));
-    vec3 T = normalize(normalMatrix * aTangent);
-    vec3 B = normalize(normalMatrix * aBitangent);
     vec3 N = normalize(normalMatrix * aNormal);
+    vec3 T = normalize(normalMatrix * aTangent.xyz);
+    T = normalize(T - dot(T, N) * N);
+    vec3 B = cross(N, T) * aTangent.w;
     TBN = mat3(T, B, N);
 
     ScreenPos = u_projection * u_view * worldPos;
