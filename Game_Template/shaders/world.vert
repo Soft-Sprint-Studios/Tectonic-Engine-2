@@ -4,7 +4,7 @@ layout (location = 2) in vec2 aLmCoord1;
 layout (location = 3) in vec2 aLmCoord2;
 layout (location = 4) in vec2 aLmCoord3;
 layout (location = 5) in vec2 aLmCoord4;
-layout (location = 6) in vec4 aColor;
+layout (location = 6) in float aAlpha;
 layout (location = 7) in vec3 aNormal;
 layout (location = 8) in vec3 aTangent;
 layout (location = 9) in vec3 aBitangent;
@@ -21,11 +21,6 @@ layout(std430, binding = 4) readonly buffer InstanceTransforms
     mat4 transforms[];
 };
 
-layout(std430, binding = 5) readonly buffer InstanceColors 
-{
-    vec4 vertColors[];
-};
-
 layout(std430, binding = 7) readonly buffer InstanceLM 
 {
     vec4 lmTransforms[];
@@ -36,7 +31,7 @@ out centroid vec2 LmCoord1;
 out centroid vec2 LmCoord2;
 out centroid vec2 LmCoord3;
 out centroid vec2 LmCoord4;
-out centroid vec4 Color;
+out centroid float v_alpha;
 out vec3 FragPos;
 out centroid mat3 TBN;
 
@@ -58,14 +53,9 @@ void main()
     LmCoord2 = aLmCoord2;
     LmCoord3 = aLmCoord3;
     LmCoord4 = aLmCoord4;
-    
-    vec4 c1 = aColor;
 
     if (u_isInstanced == 1) 
     {
-        int baseIdx = (gl_InstanceID * u_totalVertices + u_vertexOffset + gl_VertexID);
-        c1 = vertColors[baseIdx];
-        
         int transBase = gl_InstanceID * 4;
         LmCoord1 = aTexCoord * lmTransforms[transBase + 0].zw + lmTransforms[transBase + 0].xy;
         LmCoord2 = aTexCoord * lmTransforms[transBase + 1].zw + lmTransforms[transBase + 1].xy;
@@ -73,7 +63,7 @@ void main()
         LmCoord4 = aTexCoord * lmTransforms[transBase + 3].zw + lmTransforms[transBase + 3].xy;
     }
 
-    Color = c1;
+    v_alpha = aAlpha;
     
     gl_Position = u_projection * u_view * modelMat * vec4(aPos, 1.0);
 }

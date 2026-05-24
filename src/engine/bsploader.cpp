@@ -637,7 +637,7 @@ namespace BSP
                         verts[v].position = ToEngineSpace(pt) + pushDir * bias;
                         verts[v].normal = overlayNormal;
                         verts[v].uv = uvs[v];
-                        verts[v].color = glm::vec3(1.0f);
+                        verts[v].alpha = 1.0f;
 
                         verts[v].tangent = glm::normalize(glm::vec3(faceTex.textureVecs[0][0], faceTex.textureVecs[0][1], faceTex.textureVecs[0][2]));
                         verts[v].bitangent = glm::normalize(glm::vec3(faceTex.textureVecs[1][0], faceTex.textureVecs[1][1], faceTex.textureVecs[1][2]));
@@ -862,7 +862,7 @@ namespace BSP
                     }
                 }
 
-                v.color = glm::vec3(0.0f);
+                v.alpha = 0.0f;
                 verts.push_back(v);
             }
 
@@ -984,8 +984,7 @@ namespace BSP
                             vert.lm_uv4 = glm::vec2((axs[2] + lu + 0.5f) / m_map.lightmapAtlasWidth, (ays[2] + lv + 0.5f) / m_map.lightmapAtlasHeight);
                         }
                     }
-                    float alpha = (255.0f - dv.alpha) / 255.0f;
-                    vert.color = glm::vec3(alpha);
+                    vert.alpha = (255.0f - dv.alpha) / 255.0f;
                 }
             }
 

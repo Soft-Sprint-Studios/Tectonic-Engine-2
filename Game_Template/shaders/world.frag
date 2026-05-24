@@ -3,7 +3,7 @@ in centroid vec2 LmCoord1;
 in centroid vec2 LmCoord2;
 in centroid vec2 LmCoord3;
 in centroid vec2 LmCoord4;
-in centroid vec4 Color;
+in centroid float v_alpha;
 in vec3 FragPos;
 in centroid mat3 TBN;
 
@@ -245,7 +245,7 @@ vec2 ParallaxMapping(sampler2D heightMapSampler, vec2 texCoords, float hScale, v
 
 void main()
 {
-    float blend = u_isModel ? 0.0 : Color.r;
+    float blend = u_isModel ? 0.0 : v_alpha;
 
 	vec2 finalUV = TexCoord;
     if (u_mat_parallax == 1)
@@ -420,7 +420,7 @@ void main()
         
         float sunMask = 1.0;
         if (u_isModel)
-            sunMask = Color.a;
+            sunMask = 1.0;
         else
             sunMask = texture(u_lightmap, LmCoord1).a;
 

@@ -188,7 +188,7 @@ namespace BSP
         glm::vec2 lm_uv2;
         glm::vec2 lm_uv3;
         glm::vec2 lm_uv4;
-        glm::vec3 color;
+        float alpha;
     };
 
     struct DrawCall
