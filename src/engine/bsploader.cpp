@@ -155,7 +155,7 @@ namespace BSP
 
             m_map.lightmapAtlasWidth = 4096;
             m_map.lightmapAtlasHeight = 4096;
-            m_map.lightmapAtlas.assign(m_map.lightmapAtlasWidth * m_map.lightmapAtlasHeight * 4, 1.0f);
+            m_map.lightmapAtlas.assign(m_map.lightmapAtlasWidth * m_map.lightmapAtlasHeight * 4, 0.0f);
         }
 
         // Setup model lightmap
