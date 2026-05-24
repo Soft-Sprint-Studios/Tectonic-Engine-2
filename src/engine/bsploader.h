@@ -46,7 +46,6 @@ namespace BSP
         LUMP_PLANES = 1,
         LUMP_TEXDATA = 2,
         LUMP_VERTEXES = 3,
-        LUMP_VISIBILITY = 4,
         LUMP_TEXINFO = 6,
         LUMP_FACES = 7,
         LUMP_LIGHTING = 8,

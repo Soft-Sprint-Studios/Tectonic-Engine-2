@@ -36,7 +36,14 @@ public:
         m_pitch = GetFloat("pitch", 100.0f) / 100.0f;
         float radius = GetFloat("radius", 1250.0f) * BSP::MAPSCALE;
 
-        m_source.SetPosition(GetOrigin() * BSP::MAPSCALE);
+        bool playEverywhere = HasSpawnFlag(4);
+        m_source.SetSpatialized(!playEverywhere);
+
+        if (playEverywhere)
+            m_source.SetPosition({ 0, 0, 0 });
+        else
+            m_source.SetPosition(GetOrigin());
+
         m_source.SetVolume(m_volume);
         m_source.SetPitch(m_pitch);
         m_source.SetRadius(radius * 0.1f, radius);
@@ -65,32 +72,28 @@ public:
     void SetEnabled(bool state) override
     {
         Entity::SetEnabled(state);
-        if (!state)
-        {
-            m_source.Stop();
-        }
-        else if (m_isPlaying)
+        if (state)
         {
             m_source.Play(m_soundName, m_isLooping);
+        }
+        else
+        {
+            m_source.Stop();
         }
     }
 
     void AcceptInput(const std::string& inputName, const std::string& parameter) override
     {
-        if (inputName == "PlaySound")
+        Entity::AcceptInput(inputName, parameter);
+        if (inputName == "SetVolume")
         {
-            m_source.Play(m_soundName, m_isLooping);
+            m_volume = std::stof(parameter);
+            m_source.SetVolume(m_volume);
         }
-        else if (inputName == "StopSound")
+        else if (inputName == "SetPitch")
         {
-            m_source.Stop();
-        }
-        else if (inputName == "ToggleSound")
-        {
-            if (m_source.IsPlaying()) 
-                m_source.Stop();
-            else 
-                m_source.Play(m_soundName, m_isLooping);
+            m_pitch = std::stof(parameter);
+            m_source.SetPitch(m_pitch);
         }
         else if (inputName == "EnableLoop")
         {

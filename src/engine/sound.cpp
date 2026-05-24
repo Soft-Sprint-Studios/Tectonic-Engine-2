@@ -187,6 +187,11 @@ namespace Sound
         alSourceStop(m_sourceID);
     }
 
+    void AudioSource::SetSpatialized(bool spatial)
+    {
+        alSourcei(m_sourceID, AL_SOURCE_RELATIVE, spatial ? AL_FALSE : AL_TRUE);
+    }
+
     void AudioSource::SetVolume(float volume)
     {
         alSourcef(m_sourceID, AL_GAIN, volume);

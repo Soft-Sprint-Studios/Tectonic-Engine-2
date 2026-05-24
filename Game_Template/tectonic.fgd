@@ -242,21 +242,21 @@
 ]
 
 @PointClass base(Targetname) sphere(radius) iconsprite("editor/ambient_generic.vmt") = env_sound : 
-	"A positional 3D sound entity."
+	"A positional 3D sound or global ambient sound."
 [
-	message(string) : "Sound Name" : "" : "File path relative to sounds/ folder (e.g. ambient/wind.wav)"
-	health(float) : "Volume (0-10)" : "10" : "Volume from 0 to 10."
-	pitch(float) : "Pitch (0-100)" : "100" : "Pitch (default 100)."
-	radius(float) : "Radius" : "1250" : "The distance at which the sound becomes silent."
+	message(string) : "Sound Name" : "" : "File path relative to sounds/ folder (e.g. ambient/wind.mp3)"
+	health(float) : "Volume (0-10)" : "10" : "Volume scale. 10 is 100%."
+	pitch(float) : "Pitch (0-100)" : "100" : "Playback pitch. 100 is normal."
+	radius(float) : "Radius" : "1250" : "The distance at which the sound becomes silent (ignored if Play Everywhere is checked)."
 
 	spawnflags(flags) =
 	[
 		2 : "Looping" : 0
+		4 : "Play Everywhere (Ambient/Music)" : 0
 	]
 
-	input PlaySound(void) : "Starts the sound."
-	input StopSound(void) : "Stops the sound."
-	input ToggleSound(void) : "Toggles Play/Stop."
+	input SetVolume(float) : "Sets the volume (0.0 to 10.0)."
+	input SetPitch(float) : "Sets the pitch (0.1 to 2.0)."
 	input EnableLoop(void) : "Sets the sound to loop."
 	input DisableLoop(void) : "Sets the sound to play once."
 	input ToggleLoop(void) : "Toggles the looping state."

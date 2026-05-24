@@ -47,6 +47,7 @@ namespace Sound
         void Play(const std::string& path, bool loop = false);
         void Stop();
         
+        void SetSpatialized(bool spatial);
         void SetVolume(float volume);
         void SetPitch(float pitch);
         void SetPosition(const glm::vec3& pos);
