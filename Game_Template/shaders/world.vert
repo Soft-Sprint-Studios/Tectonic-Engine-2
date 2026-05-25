@@ -49,6 +49,7 @@ void main()
 
     if (u_isInstanced == 1) 
     {
+        TexCoord = vec2(aTexCoord.x, 1.0 - aTexCoord.y);
         int transBase = gl_InstanceID * 4;
         v_LmCoord = aTexCoord * lmTransforms[transBase + 0].zw + lmTransforms[transBase + 0].xy;
         v_LmSize = lmTransforms[transBase + 0].zw;

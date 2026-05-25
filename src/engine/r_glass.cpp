@@ -82,7 +82,7 @@ void R_Glass::Draw(const Camera& camera, R_BSP* bsp)
     {
         if (ent->GetClassName() == "func_glass" && ent->IsEnabled())
         {
-            std::string normName = ent->GetValue("normal", "water_normal.png");
+            std::string normName = ent->GetValue("normal", "water_normal.dds");
             auto normTex = Resources::LoadTexture("textures/" + normName, false);
             if (normTex)
             {

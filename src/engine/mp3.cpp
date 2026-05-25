@@ -21,34 +21,35 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#pragma once
-#include <glad/glad.h>
-#include <string>
+#include "mp3.h"
+#include "filesystem.h"
 
-class R_Texture
+#define MINIMP3_IMPLEMENTATION
+#include "minimp3_ex.h"
+
+namespace MP3
 {
-public:
-    R_Texture();
-    ~R_Texture();
-
-    bool Load(const std::string& path, bool srgb = true);
-    void Create(int width, int height, unsigned char* data, bool srgb = true);
-    void Bind(unsigned int unit = 0) const;
-    void Release();
-
-    int GetWidth() const
+    bool Load(const std::string& path, AudioData& outData)
     {
-        return m_width;
-    }
+        std::vector<uint8_t> fileData = Filesystem::ReadBinary(path);
+        if (fileData.empty()) 
+        {
+            return false;
+        }
 
-    int GetHeight() const
-    {
-        return m_height;
-    }
+        mp3dec_ex_t mp3d;
+        if (mp3dec_ex_open_buf(&mp3d, fileData.data(), fileData.size(), 0))
+        {
+            return false;
+        }
 
-private:
-    GLuint m_id;
-    int m_width;
-    int m_height;
-    int m_channels;
-};
+        outData.pcm.resize(mp3d.samples);
+        mp3dec_ex_read(&mp3d, outData.pcm.data(), mp3d.samples);
+        
+        outData.channels = mp3d.info.channels;
+        outData.sampleRate = mp3d.info.hz;
+
+        mp3dec_ex_close(&mp3d);
+        return true;
+    }
+}

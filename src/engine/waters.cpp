@@ -32,8 +32,8 @@ WaterDef Waters::m_fallback;
 
 void Waters::Init()
 {
-    m_fallback.normalMap = Resources::LoadTexture("textures/water_normal.png", false);
-    m_fallback.dudvMap = Resources::LoadTexture("textures/water_dudv.png", false);
+    m_fallback.normalMap = Resources::LoadTexture("textures/water_normal.dds", false);
+    m_fallback.dudvMap = Resources::LoadTexture("textures/water_dudv.dds", false);
     m_fallback.flowMap = nullptr;
     m_fallback.flowSpeed = 0.05f;
 }

@@ -5,8 +5,8 @@ sv_gravity -9.81
 cl_language none
 cl_crosshair 1
 discord_enabled 1
-s_volume 1.000000
-sv_cheats 1
+s_volume 1.0
+sv_cheats 0
 r_exposure_target 0.12
 discord_appid 1491042222966308987
 r_cubemap_resolution 512
@@ -31,7 +31,7 @@ r_shadows 1
 mat_specular 1
 r_csm 1
 r_csm_res 4096
-r_gamma 1.700000
+r_gamma 1.7
 mat_bumpmap 1
 r_water_downsample 2
 r_tonemap 1
@@ -47,7 +47,7 @@ r_ssao_power 2.0
 mat_parallax_refine 8
 r_volumetrics 1
 r_volumetrics_blur_passes 6
-cl_showfps 1
+cl_showfps 0
 r_multisample 1
 r_zprepass 1
 r_skybox 1
@@ -59,7 +59,7 @@ mat_parallax_min_steps 8
 sentry_dsn https://72d9d4bb2da65d9d3d590c08795704eb@o4505736231124992.ingest.us.sentry.io/4511183954116608
 r_fullscreen 1
 r_vsync 1
-cl_sensitivity 1.000000
+cl_sensitivity 1.0
 cl_walk_speed 3.64
 cl_crouch_speed 1.82
 cl_noclip_speed 4.0

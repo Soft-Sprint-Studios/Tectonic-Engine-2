@@ -22,33 +22,13 @@
  * SOFTWARE.
  */
 #pragma once
-#include <glad/glad.h>
 #include <string>
+#include <cstdint>
+#include <glad/glad.h>
 
-class R_Texture
+namespace DDS
 {
-public:
-    R_Texture();
-    ~R_Texture();
-
-    bool Load(const std::string& path, bool srgb = true);
-    void Create(int width, int height, unsigned char* data, bool srgb = true);
-    void Bind(unsigned int unit = 0) const;
-    void Release();
-
-    int GetWidth() const
-    {
-        return m_width;
-    }
-
-    int GetHeight() const
-    {
-        return m_height;
-    }
-
-private:
-    GLuint m_id;
-    int m_width;
-    int m_height;
-    int m_channels;
-};
+    bool Load2D(GLuint textureID, const std::string& path, bool srgb, int& outWidth, int& outHeight, int& outChannels);
+    bool LoadCubemapFace(GLenum target, const std::string& path, bool srgb);
+    bool WriteUncompressedRGB(const std::string& path, int width, int height, const uint8_t* rgbData);
+}

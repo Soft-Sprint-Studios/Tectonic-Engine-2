@@ -28,12 +28,11 @@
 #include "console.h"
 #include "physics.h"
 #include "cubemap.h"
+#include "gltf.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glad/glad.h>
 #include <algorithm>
-
-#define CGLTF_IMPLEMENTATION
-#include <cgltf.h>
+#include <filesystem>
 
 R_Models::R_Models()
 {
@@ -135,36 +134,12 @@ bool R_Models::Init(const BSP::MapData& mapData)
 
 void R_Models::LoadModel(const std::string& path)
 {
-    std::string targetPath = path;
-
-    if (!Filesystem::Exists(targetPath))
+    GLTF::ModelData modelData = GLTF::Load(path);
+    std::filesystem::path p(path);
+    std::string modelName = p.stem().string();
+    if (!modelData.valid)
     {
-        if (targetPath == "models/error.glb")
-        {
-            return;
-        }
-
-        Console::Warn("Model not found: " + targetPath);
-        targetPath = "models/error.glb";
-
-        if (m_propGroups.find(targetPath) != m_propGroups.end())
-        {
-            m_propGroups[path] = m_propGroups[targetPath];
-            m_propGroups[path].instanceCount = 0;
-            return;
-        }
-    }
-
-    cgltf_options options = {};
-    cgltf_data* data = nullptr;
-
-    std::string fullPath = Filesystem::GetFullPath(targetPath);
-    cgltf_result result = cgltf_parse_file(&options, fullPath.c_str(), &data);
-
-    if (result != cgltf_result_success)
-    {
-        Console::Error("Failed to parse GLB at: " + fullPath);
-        if (targetPath != "models/error.glb")
+        if (path != "models/error.glb")
         {
             LoadModel("models/error.glb");
             m_propGroups[path] = m_propGroups["models/error.glb"];
@@ -173,121 +148,89 @@ void R_Models::LoadModel(const std::string& path)
         return;
     }
 
-    result = cgltf_load_buffers(&options, data, fullPath.c_str());
-    if (result != cgltf_result_success)
-    {
-        Console::Error("Failed to load buffers for: " + fullPath);
-        cgltf_free(data);
-        return;
-    }
-
     PropGroup group;
     uint32_t currentVertexOffset = 0;
 
-    std::vector<glm::vec3> physicsPositions;
-    std::vector<uint32_t> physicsIndices;
+    group.localMins = modelData.localMins;
+    group.localMaxs = modelData.localMaxs;
 
-    for (cgltf_size i = 0; i < data->meshes_count; ++i)
+    for (const auto& prim : modelData.primitives)
     {
-        const cgltf_mesh& mesh = data->meshes[i];
+        ModelMesh m = {};
+        m.vertexOffset = currentVertexOffset;
+        m.vertexCount = (uint32_t)prim.positions.size();
 
-        for (cgltf_size j = 0; j < mesh.primitives_count; ++j)
+        glGenVertexArrays(1, &m.vao);
+        glBindVertexArray(m.vao);
+
+        if (!prim.positions.empty())
         {
-            const cgltf_primitive& prim = mesh.primitives[j];
-            ModelMesh m = {};
-            m.vertexOffset = currentVertexOffset;
-            uint32_t vertexCount = 0;
-
-            glGenVertexArrays(1, &m.vao);
-            glBindVertexArray(m.vao);
-
-            for (cgltf_size k = 0; k < prim.attributes_count; ++k)
-            {
-                const cgltf_attribute& attr = prim.attributes[k];
-                const cgltf_accessor* acc = attr.data;
-                const cgltf_buffer_view* view = acc->buffer_view;
-
-                uint8_t* bufferPtr = (uint8_t*)view->buffer->data + view->offset + acc->offset;
-
-                GLuint vbo;
-                glGenBuffers(1, &vbo);
-                glBindBuffer(GL_ARRAY_BUFFER, vbo);
-                glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)view->size, bufferPtr, GL_STATIC_DRAW);
-                m.vbos.push_back(vbo);
-
-                GLsizei stride = acc->stride ? (GLsizei)acc->stride : 0;
-
-                if (attr.type == cgltf_attribute_type_position)
-                {
-                    vertexCount = (uint32_t)acc->count;
-                    glEnableVertexAttribArray(0);
-                    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, 0);
-
-                    for (cgltf_size v = 0; v < acc->count; v++)
-                    {
-                        float p[3];
-                        cgltf_accessor_read_float(acc, v, p, 3);
-                        glm::vec3 pos(p[0], p[1], p[2]);
-                        group.localMins = glm::min(group.localMins, pos);
-                        group.localMaxs = glm::max(group.localMaxs, pos);
-                        physicsPositions.push_back(pos);
-                    }
-                }
-                else if (attr.type == cgltf_attribute_type_texcoord)
-                {
-                    glEnableVertexAttribArray(1);
-                    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride, 0);
-                }
-                else if (attr.type == cgltf_attribute_type_normal)
-                {
-                    glEnableVertexAttribArray(5);
-                    glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, stride, 0);
-                }
-                else if (attr.type == cgltf_attribute_type_tangent)
-                {
-                    glEnableVertexAttribArray(6);
-                    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, stride, 0);
-                }
-            }
-
-            if (prim.indices)
-            {
-                const cgltf_accessor* acc = prim.indices;
-                const cgltf_buffer_view* view = acc->buffer_view;
-                uint8_t* bufferPtr = (uint8_t*)view->buffer->data + view->offset + acc->offset;
-
-                glGenBuffers(1, &m.ebo);
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m.ebo);
-                glBufferData(GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptr)view->size, bufferPtr, GL_STATIC_DRAW);
-
-                m.indexCount = (uint32_t)acc->count;
-                m.indexType = (acc->component_type == cgltf_component_type_r_16u) ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
-
-                uint32_t baseIdx = (uint32_t)physicsPositions.size() - vertexCount;
-                for (cgltf_size idx = 0; idx < prim.indices->count; idx++)
-                {
-                    physicsIndices.push_back(baseIdx + (uint32_t)cgltf_accessor_read_index(prim.indices, idx));
-                }
-            }
-
-            std::string matName = (prim.material && prim.material->name) ? prim.material->name : "";
-            std::transform(matName.begin(), matName.end(), matName.begin(), ::tolower);
-            m.texture = Materials::GetTexture(matName);
-            m.normalMap = Materials::GetNormalMap(matName);
-            m.heightMap = Materials::GetHeightMap(matName);
-            m.heightScale = Materials::GetHeightScale(matName);
-
-            m.vertexCount = vertexCount;
-            currentVertexOffset += vertexCount;
-            group.meshes.push_back(m);
+            GLuint vbo;
+            glGenBuffers(1, &vbo);
+            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            glBufferData(GL_ARRAY_BUFFER, prim.positions.size() * sizeof(glm::vec3), prim.positions.data(), GL_STATIC_DRAW);
+            m.vbos.push_back(vbo);
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), 0);
         }
+
+        if (!prim.uvs.empty())
+        {
+            GLuint vbo;
+            glGenBuffers(1, &vbo);
+            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            glBufferData(GL_ARRAY_BUFFER, prim.uvs.size() * sizeof(glm::vec2), prim.uvs.data(), GL_STATIC_DRAW);
+            m.vbos.push_back(vbo);
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), 0);
+        }
+
+        if (!prim.normals.empty())
+        {
+            GLuint vbo;
+            glGenBuffers(1, &vbo);
+            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            glBufferData(GL_ARRAY_BUFFER, prim.normals.size() * sizeof(glm::vec3), prim.normals.data(), GL_STATIC_DRAW);
+            m.vbos.push_back(vbo);
+            glEnableVertexAttribArray(5);
+            glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), 0);
+        }
+
+        if (!prim.tangents.empty())
+        {
+            GLuint vbo;
+            glGenBuffers(1, &vbo);
+            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            glBufferData(GL_ARRAY_BUFFER, prim.tangents.size() * sizeof(glm::vec4), prim.tangents.data(), GL_STATIC_DRAW);
+            m.vbos.push_back(vbo);
+            glEnableVertexAttribArray(6);
+            glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4), 0);
+        }
+
+        if (!prim.indices.empty())
+        {
+            glGenBuffers(1, &m.ebo);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m.ebo);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, prim.indices.size() * sizeof(uint32_t), prim.indices.data(), GL_STATIC_DRAW);
+            m.indexCount = (uint32_t)prim.indices.size();
+            m.indexType = GL_UNSIGNED_INT;
+        }
+
+        std::string lookupName = modelName + "/" + prim.materialName;
+
+        m.texture = Materials::GetTexture(lookupName);
+        m.normalMap = Materials::GetNormalMap(lookupName);
+        m.heightMap = Materials::GetHeightMap(lookupName);
+        m.heightScale = Materials::GetHeightScale(lookupName);
+
+        currentVertexOffset += m.vertexCount;
+        group.meshes.push_back(m);
     }
 
     group.totalVertices = currentVertexOffset;
-    group.physicsShape = Physics::CreateStaticMeshShape(physicsPositions, physicsIndices);
+    group.physicsShape = Physics::CreateStaticMeshShape(modelData.physicsPositions, modelData.physicsIndices);
 
     m_propGroups[path] = group;
-    cgltf_free(data);
 }
 
 void R_Models::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOnly)

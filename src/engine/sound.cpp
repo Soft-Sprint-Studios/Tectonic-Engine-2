@@ -25,12 +25,10 @@
 #include "filesystem.h"
 #include "console.h"
 #include "cvar.h"
+#include "mp3.h"
 #include <vector>
 #include <algorithm>
 #include <cstring>
-
-#define MINIMP3_IMPLEMENTATION
-#include "minimp3_ex.h"
 
 CVar s_volume("s_volume", "1.0", "Master audio volume.", CVAR_SAVE);
 CVar s_mute("s_mute", "0", "Mute all audio output.", CVAR_SAVE);
@@ -44,38 +42,30 @@ namespace Sound
 
     static ALuint Internal_LoadMP3(const std::string& path)
     {
-        std::vector<uint8_t> fileData = Filesystem::ReadBinary(path);
-        if (fileData.empty()) 
+        MP3::AudioData data;
+        if (!MP3::Load(path, data))
+        {
             return 0;
+        }
 
-        mp3dec_ex_t mp3d;
-        if (mp3dec_ex_open_buf(&mp3d, fileData.data(), fileData.size(), 0))
-            return 0;
-
-        std::vector<short> pcm(mp3d.samples);
-        mp3dec_ex_read(&mp3d, pcm.data(), mp3d.samples);
-
-        ALenum format = (mp3d.info.channels == 2) ? AL_FORMAT_STEREO16 : AL_FORMAT_MONO16;
+        ALenum format = (data.channels == 2) ? AL_FORMAT_STEREO16 : AL_FORMAT_MONO16;
         ALuint bufferID;
         alGenBuffers(1, &bufferID);
 
         if (s_currentStyle != 0)
         {
             int processedCount = 0;
-            int16_t* processedData = Reverb::ProcessAsync((const int16_t*)pcm.data(), (int)pcm.size(), (int)mp3d.info.hz, s_currentStyle, processedCount);
+            int16_t* processedData = Reverb::ProcessAsync((const int16_t*)data.pcm.data(), (int)data.pcm.size(), data.sampleRate, s_currentStyle, processedCount);
 
             if (processedData)
             {
-                alBufferData(bufferID, format, processedData, processedCount * 2, mp3d.info.hz);
+                alBufferData(bufferID, format, processedData, processedCount * 2, data.sampleRate);
                 delete[] processedData;
-                mp3dec_ex_close(&mp3d);
                 return bufferID;
             }
         }
 
-        alBufferData(bufferID, format, pcm.data(), (ALsizei)(pcm.size() * 2), mp3d.info.hz);
-
-        mp3dec_ex_close(&mp3d);
+        alBufferData(bufferID, format, data.pcm.data(), (ALsizei)(data.pcm.size() * 2), data.sampleRate);
         return bufferID;
     }
 

@@ -22,33 +22,31 @@
  * SOFTWARE.
  */
 #pragma once
-#include <glad/glad.h>
 #include <string>
+#include <vector>
+#include <glm/glm.hpp>
 
-class R_Texture
+namespace GLTF
 {
-public:
-    R_Texture();
-    ~R_Texture();
-
-    bool Load(const std::string& path, bool srgb = true);
-    void Create(int width, int height, unsigned char* data, bool srgb = true);
-    void Bind(unsigned int unit = 0) const;
-    void Release();
-
-    int GetWidth() const
+    struct Primitive
     {
-        return m_width;
-    }
+        std::vector<glm::vec3> positions;
+        std::vector<glm::vec2> uvs;
+        std::vector<glm::vec3> normals;
+        std::vector<glm::vec4> tangents;
+        std::vector<uint32_t> indices;
+        std::string materialName;
+    };
 
-    int GetHeight() const
+    struct ModelData
     {
-        return m_height;
-    }
+        std::vector<Primitive> primitives;
+        std::vector<glm::vec3> physicsPositions;
+        std::vector<uint32_t> physicsIndices;
+        glm::vec3 localMins{ 1e10f };
+        glm::vec3 localMaxs{ -1e10f };
+        bool valid = false;
+    };
 
-private:
-    GLuint m_id;
-    int m_width;
-    int m_height;
-    int m_channels;
-};
+    ModelData Load(const std::string& path);
+}

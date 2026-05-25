@@ -379,7 +379,7 @@ namespace AssetTool
                 }
             }
 
-            UpdateGlobalMaterialDef(matName, paths, matName);
+            UpdateGlobalMaterialDef(matName, paths, modelName);
         }
 
         std::string cmd = "\"\"" + g_config.sdkBinPath + "/studiomdl.exe\" -game \"" + g_config.sdkGamePath + "\" \"" + qcPath + "\"\"";

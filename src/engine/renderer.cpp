@@ -30,7 +30,6 @@
 #include "cubemap.h"
 #include "fade.h"
 #include <glm/glm.hpp>
-#include <stb_image_write.h>
 #include <ctime>
 #include "concmd.h"
 #include <cstring>
@@ -490,22 +489,4 @@ void Renderer::Shutdown()
         m_uiRenderer->Shutdown();
         m_uiRenderer.reset();
     }
-}
-
-CON_COMMAND(screenshot, "Takes a PNG screenshot of the current view")
-{
-    int w, h;
-    SDL_GetWindowSize(SDL_GL_GetCurrentWindow(), &w, &h);
-    std::vector<unsigned char> pixels(w * h * 3);
-
-    glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
-
-    // Flip vertically
-    std::vector<unsigned char> flipped(w * h * 3);
-    for (int y = 0; y < h; y++)
-        std::memcpy(&flipped[y * w * 3], &pixels[(h - 1 - y) * w * 3], w * 3);
-
-    std::string name = "screenshot_" + std::to_string(std::time(nullptr)) + ".png";
-    stbi_write_png(name.c_str(), w, h, 3, flipped.data(), w * 3);
-    Console::Log("Screenshot saved as: " + name);
 }

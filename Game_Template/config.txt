@@ -1,3 +1,4 @@
 sdk_bin: "D:\Steam\steamapps\common\Source SDK Base 2013 Multiplayer\bin"
 sdk_game: "D:\Steam\steamapps\common\Source SDK Base 2013 Multiplayer\hl2"
 engine_path: "D:\VS2022PROJECTS\Tectonic-Engine-2\buildx64\RelWithDebInfo"
+nvcompress_path: "C:/Program Files/NVIDIA Corporation/NVIDIA Texture Tools/nvcompress.exe"

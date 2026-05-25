@@ -30,14 +30,11 @@
 #include "camera.h"
 #include "maps.h"
 #include "cvar.h"
+#include "dds.h"
 #include <vector>
-#include <stb_image.h>
 #include <glm/gtx/norm.hpp>
 #include <fstream>
 #include <sstream>
-
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include <stb_image_write.h>
 
 
 namespace Cubemap
@@ -126,19 +123,11 @@ namespace Cubemap
             glBindTexture(GL_TEXTURE_CUBE_MAP, probe.textureID);
 
             std::vector<std::string> faces = { "right", "left", "top", "bottom", "front", "back" };
-            stbi_set_flip_vertically_on_load(false);
 
             for (unsigned int i = 0; i < faces.size(); i++)
             {
-                std::string facePath = Filesystem::GetFullPath(basePath + "_" + faces[i] + ".png");
-                int width, height, nrChannels;
-                unsigned char* data = stbi_load(facePath.c_str(), &width, &height, &nrChannels, 0);
-                if (data)
-                {
-                    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_SRGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-                    stbi_image_free(data);
-                }
-                else
+                std::string facePath = basePath + "_" + faces[i] + ".dds";
+                if (!DDS::LoadCubemapFace(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, facePath, true))
                 {
                     Console::Error("Failed to load cubemap face: " + facePath);
                 }
@@ -258,13 +247,12 @@ namespace Cubemap
             std::string basePath = cubemapDir + "cubemap_" + std::to_string(i);
             std::vector<std::string> faceNames = { "right", "left", "top", "bottom", "front", "back" };
             glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTex);
-            stbi_flip_vertically_on_write(true);
 
             for (int j = 0; j < 6; ++j)
             {
                 glGetTexImage(GL_TEXTURE_CUBE_MAP_POSITIVE_X + j, 0, GL_RGB, GL_UNSIGNED_BYTE, buffer.data());
-                std::string path = Filesystem::GetFullPath(basePath + "_" + faceNames[j] + ".png");
-                stbi_write_png(path.c_str(), resolution, resolution, 3, buffer.data(), resolution * 3);
+                std::string path = Filesystem::GetFullPath(basePath + "_" + faceNames[j] + ".dds");
+                DDS::WriteUncompressedRGB(path, resolution, resolution, buffer.data());
             }
 
             std::ofstream metaFile(Filesystem::GetFullPath(basePath + ".txt"));

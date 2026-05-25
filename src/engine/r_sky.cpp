@@ -29,7 +29,7 @@
 #include "dynamic_sky.h"
 #include "filesystem.h"
 #include "console.h"
-#include <stb_image.h>
+#include "dds.h"
 #include <glm/gtc/type_ptr.hpp>
 
 CVar r_sky_steps_primary("r_sky_steps_primary", "8", "Primary raymarching steps for dynamic sky.", CVAR_SAVE);
@@ -83,23 +83,11 @@ void R_Sky::LoadCubemap(const std::string& skyName)
         "right", "left", "top", "bottom", "front", "back"
     };
 
-    stbi_set_flip_vertically_on_load(false);
-
     for (unsigned int i = 0; i < faces.size(); i++)
     {
-        std::string path = Filesystem::GetFullPath("textures/skybox/" + skyName + "_" + faces[i] + ".png");
+        std::string path = "textures/skybox/" + skyName + "_" + faces[i] + ".dds";
 
-        int width, height, nrChannels;
-        unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrChannels, 0);
-
-        if (data)
-        {
-            GLenum format = (nrChannels == 4) ? GL_RGBA : GL_RGB;
-            GLenum internalFormat = (nrChannels == 4) ? GL_SRGB8_ALPHA8 : GL_SRGB8;
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-            stbi_image_free(data);
-        }
-        else
+        if (!DDS::LoadCubemapFace(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, path, true))
         {
             Console::Warn("Skybox: face [" + faces[i] + "] missing - using fallback color.");
             uint8_t black[3] = { 0, 0, 0 };
