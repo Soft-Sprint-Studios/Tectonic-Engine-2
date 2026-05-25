@@ -46,6 +46,7 @@ namespace AssetTool
         std::string sdkBinPath;
         std::string sdkGamePath;
         std::string enginePath;
+        std::string nvcompressPath;
     } g_config;
 
     struct MaterialTexturePaths
@@ -80,6 +81,7 @@ namespace AssetTool
             outfile << "sdk_bin: \"C:/Steam/steamapps/common/Source SDK Base 2013/bin\"\n";
             outfile << "sdk_game: \"C:/Steam/steamapps/common/Source SDK Base 2013/hl2\"\n";
             outfile << "engine_path: \"D:/VS2022PROJECTS/Tectonic-Engine-2/buildx64/RelWithDebInfo\"\n";
+            outfile << "nvcompress_path: \"C:/Program Files/NVIDIA Corporation/NVIDIA Texture Tools/nvcompress.exe\"\n";
             return false;
         }
 
@@ -102,6 +104,10 @@ namespace AssetTool
                 if (line.find("engine_path") != std::string::npos)
                 {
                     g_config.enginePath = val;
+                }
+                if (line.find("nvcompress_path") != std::string::npos)
+                {
+                    g_config.nvcompressPath = val;
                 }
             }
         }
@@ -261,7 +267,7 @@ namespace AssetTool
 
         for (const auto& entry : std::filesystem::directory_iterator(workDir))
         {
-            if (entry.path().extension() == ".png")
+            if (entry.path().extension() == ".dds")
             {
                 std::string stem = entry.path().stem().string();
                 std::filesystem::path engineTexDir = std::filesystem::path(g_config.enginePath) / "textures" / subFolder;
@@ -312,15 +318,22 @@ namespace AssetTool
 
             if (unsigned char* diff = LoadBufferImage(mat.pbr_metallic_roughness.base_color_texture.texture, &w, &h))
             {
-                paths.diffuse = matName + "_diffuse.png";
-                stbi_write_png((workDir / paths.diffuse).string().c_str(), w, h, 4, diff, w * 4);
+                paths.diffuse = matName + "_diffuse.dds";
+                std::string tempPng = (workDir / (matName + "_diffuse.png")).string();
+                stbi_write_png(tempPng.c_str(), w, h, 4, diff, w * 4);
                 ConvertToVTF(matName + "_diffuse", diff, w, h, workDir, false);
                 stbi_image_free(diff);
+
+                std::string outDds = (workDir / paths.diffuse).string();
+                std::string cmd = "\"\"" + g_config.nvcompressPath + "\" -bc3 \"" + tempPng + "\" \"" + outDds + "\"\"";
+                system(cmd.c_str());
+                std::filesystem::remove(tempPng);
             }
 
             if (unsigned char* norm = LoadBufferImage(mat.normal_texture.texture, &w, &h))
             {
-                paths.normal = matName + "_normal.png";
+                paths.normal = matName + "_normal.dds";
+                std::string tempPng = (workDir / (matName + "_normal.png")).string();
                 int pbrW, pbrH;
                 if (unsigned char* pbr = LoadBufferImage(mat.pbr_metallic_roughness.metallic_roughness_texture.texture, &pbrW, &pbrH))
                 {
@@ -338,9 +351,14 @@ namespace AssetTool
                     for (int j = 0; j < w * h * 4; j += 4) 
                         norm[j + 3] = 255;
                 }
-                stbi_write_png((workDir / paths.normal).string().c_str(), w, h, 4, norm, w * 4);
+                stbi_write_png(tempPng.c_str(), w, h, 4, norm, w * 4);
                 ConvertToVTF(matName + "_normal", norm, w, h, workDir, true);
                 stbi_image_free(norm);
+
+                std::string outDds = (workDir / paths.normal).string();
+                std::string cmd = "\"\"" + g_config.nvcompressPath + "\" -bc3 \"" + tempPng + "\" \"" + outDds + "\"\"";
+                system(cmd.c_str());
+                std::filesystem::remove(tempPng);
             }
 
             std::string vmtPath = (workDir / (matName + ".vmt")).string();
@@ -408,15 +426,22 @@ namespace AssetTool
 
             if (unsigned char* diff = LoadBufferImage(mat.pbr_metallic_roughness.base_color_texture.texture, &w, &h))
             {
-                paths.diffuse = matName + "_diffuse.png";
-                stbi_write_png((workDir / paths.diffuse).string().c_str(), w, h, 4, diff, w * 4);
+                paths.diffuse = matName + "_diffuse.dds";
+                std::string tempPng = (workDir / (matName + "_diffuse.png")).string();
+                stbi_write_png(tempPng.c_str(), w, h, 4, diff, w * 4);
                 ConvertToVTF(matName + "_diffuse", diff, w, h, workDir, false);
                 stbi_image_free(diff);
+
+                std::string outDds = (workDir / paths.diffuse).string();
+                std::string cmd = "\"\"" + g_config.nvcompressPath + "\" -bc3 \"" + tempPng + "\" \"" + outDds + "\"\"";
+                system(cmd.c_str());
+                std::filesystem::remove(tempPng);
             }
 
             if (unsigned char* norm = LoadBufferImage(mat.normal_texture.texture, &w, &h))
             {
-                paths.normal = matName + "_normal.png";
+                paths.normal = matName + "_normal.dds";
+                std::string tempPng = (workDir / (matName + "_normal.png")).string();
                 int pbrW, pbrH;
                 if (unsigned char* pbr = LoadBufferImage(mat.pbr_metallic_roughness.metallic_roughness_texture.texture, &pbrW, &pbrH))
                 {
@@ -434,9 +459,14 @@ namespace AssetTool
                     for (int j = 0; j < w * h * 4; j += 4)
                         norm[j + 3] = 255;
                 }
-                stbi_write_png((workDir / paths.normal).string().c_str(), w, h, 4, norm, w * 4);
+                stbi_write_png(tempPng.c_str(), w, h, 4, norm, w * 4);
                 ConvertToVTF(matName + "_normal", norm, w, h, workDir, true);
                 stbi_image_free(norm);
+
+                std::string outDds = (workDir / paths.normal).string();
+                std::string cmd = "\"\"" + g_config.nvcompressPath + "\" -bc3 \"" + tempPng + "\" \"" + outDds + "\"\"";
+                system(cmd.c_str());
+                std::filesystem::remove(tempPng);
             }
 
             std::string vmtPath = (workDir / (matName + ".vmt")).string();
