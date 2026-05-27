@@ -81,7 +81,7 @@ namespace Sound
         s_context = alcCreateContext(s_device, nullptr);
         alcMakeContextCurrent(s_context);
 
-        alDistanceModel(AL_INVERSE_DISTANCE_CLAMPED);
+        alDistanceModel(AL_LINEAR_DISTANCE_CLAMPED);
     }
 
     void Update(const glm::vec3& listenerPos, const glm::vec3& listenerForward)
