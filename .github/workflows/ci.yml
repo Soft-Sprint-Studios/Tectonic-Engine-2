@@ -29,24 +29,6 @@ jobs:
           name: windows-x64-release
           path: build/Release
 
-  build-windows-x64-relwithdebinfo:
-    name: Build - Windows x64 (RelWithDebInfo)
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure CMake
-        run: cmake -S . -B build -G "Visual Studio 17 2022" -A x64
-
-      - name: Build with CMake
-        run: cmake --build build --config RelWithDebInfo
-
-      - name: Upload Windows x64 RelWithDebInfo artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-x64-relwithdebinfo
-          path: build/RelWithDebInfo
-
   build-windows-x86-release:
     name: Build - Windows x86 (Release)
     runs-on: windows-latest
@@ -64,24 +46,6 @@ jobs:
         with:
           name: windows-x86-release
           path: build/Release
-
-  build-windows-x86-relwithdebinfo:
-    name: Build - Windows x86 (RelWithDebInfo)
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure CMake
-        run: cmake -S . -B build -G "Visual Studio 17 2022" -A Win32
-
-      - name: Build with CMake
-        run: cmake --build build --config RelWithDebInfo
-
-      - name: Upload Windows x86 RelWithDebInfo artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-x86-relwithdebinfo
-          path: build/RelWithDebInfo
 
   build-linux-x64-release:
     name: Build - Linux x64 (Release)
@@ -116,41 +80,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: linux-x64-release
-          path: build
-
-  build-linux-x64-relwithdebinfo:
-    name: Build - Linux x64 (RelWithDebInfo)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            cmake \
-            libgl1-mesa-dev \
-            libx11-dev \
-            libxext-dev \
-            libxinerama-dev \
-            libxft-dev \
-            libxrender-dev \
-            libxfixes-dev \
-            libxcursor-dev \
-            libfontconfig1-dev \
-            libopenal-dev
-
-      - name: Configure CMake
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
-
-      - name: Build with CMake
-        run: cmake --build build --parallel $(nproc)
-
-      - name: Upload Linux x64 RelWithDebInfo artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-x64-relwithdebinfo
           path: build
 
   create-release:
