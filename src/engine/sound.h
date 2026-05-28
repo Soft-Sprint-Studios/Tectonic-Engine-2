@@ -27,7 +27,6 @@
 #include <glm/glm.hpp>
 #include <AL/al.h>
 #include <AL/alc.h>
-#include "sound_reverb.h"
 
 namespace Sound
 {

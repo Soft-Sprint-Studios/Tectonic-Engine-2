@@ -30,6 +30,11 @@
 #include <algorithm>
 #include <cstring>
 
+#define AL_ALEXT_PROTOTYPES
+#include <AL/alext.h>
+#include <AL/efx.h>
+#include <AL/efx-presets.h>
+
 CVar s_volume("s_volume", "1.0", "Master audio volume.", CVAR_SAVE);
 CVar s_mute("s_mute", "0", "Mute all audio output.", CVAR_SAVE);
 
@@ -39,6 +44,76 @@ namespace Sound
     static ALCcontext* s_context = nullptr;
     static std::unordered_map<std::string, ALuint> s_bufferCache;
     static int s_currentStyle = 0;
+
+    static ALuint s_efxAuxSlot = 0;
+    static ALuint s_efxEffect = 0;
+    static bool s_efxSupported = false;
+
+    static LPALGENEFFECTS alGenEffects = nullptr;
+    static LPALDELETEEFFECTS alDeleteEffects = nullptr;
+    static LPALEFFECTI alEffecti = nullptr;
+    static LPALEFFECTF alEffectf = nullptr;
+    static LPALEFFECTFV alEffectfv = nullptr;
+    static LPALGENAUXILIARYEFFECTSLOTS alGenAuxiliaryEffectSlots = nullptr;
+    static LPALDELETEAUXILIARYEFFECTSLOTS alDeleteAuxiliaryEffectSlots = nullptr;
+    static LPALAUXILIARYEFFECTSLOTI alAuxiliaryEffectSloti = nullptr;
+
+    static void LoadEFXFunctions()
+    {
+        alGenEffects = (LPALGENEFFECTS)alGetProcAddress("alGenEffects");
+        alDeleteEffects = (LPALDELETEEFFECTS)alGetProcAddress("alDeleteEffects");
+        alEffecti = (LPALEFFECTI)alGetProcAddress("alEffecti");
+        alEffectf = (LPALEFFECTF)alGetProcAddress("alEffectf");
+        alEffectfv = (LPALEFFECTFV)alGetProcAddress("alEffectfv");
+        alGenAuxiliaryEffectSlots = (LPALGENAUXILIARYEFFECTSLOTS)alGetProcAddress("alGenAuxiliaryEffectSlots");
+        alDeleteAuxiliaryEffectSlots = (LPALDELETEAUXILIARYEFFECTSLOTS)alGetProcAddress("alDeleteAuxiliaryEffectSlots");
+        alAuxiliaryEffectSloti = (LPALAUXILIARYEFFECTSLOTI)alGetProcAddress("alAuxiliaryEffectSloti");
+
+        if (alGenEffects && alDeleteEffects && alEffecti && alEffectf && alEffectfv &&
+            alGenAuxiliaryEffectSlots && alDeleteAuxiliaryEffectSlots && alAuxiliaryEffectSloti)
+        {
+            s_efxSupported = true;
+        }
+        else
+        {
+            s_efxSupported = false;
+        }
+    }
+
+    static void LoadReverbPreset(const EFXEAXREVERBPROPERTIES& p)
+    {
+        if (!s_efxSupported)
+        {
+            return;
+        }
+
+        alEffecti(s_efxEffect, AL_EFFECT_TYPE, AL_EFFECT_EAXREVERB);
+        alEffectf(s_efxEffect, AL_EAXREVERB_DENSITY, p.flDensity);
+        alEffectf(s_efxEffect, AL_EAXREVERB_DIFFUSION, p.flDiffusion);
+        alEffectf(s_efxEffect, AL_EAXREVERB_GAIN, p.flGain);
+        alEffectf(s_efxEffect, AL_EAXREVERB_GAINHF, p.flGainHF);
+        alEffectf(s_efxEffect, AL_EAXREVERB_GAINLF, p.flGainLF);
+        alEffectf(s_efxEffect, AL_EAXREVERB_DECAY_TIME, p.flDecayTime);
+        alEffectf(s_efxEffect, AL_EAXREVERB_DECAY_HFRATIO, p.flDecayHFRatio);
+        alEffectf(s_efxEffect, AL_EAXREVERB_DECAY_LFRATIO, p.flDecayLFRatio);
+        alEffectf(s_efxEffect, AL_EAXREVERB_REFLECTIONS_GAIN, p.flReflectionsGain);
+        alEffectf(s_efxEffect, AL_EAXREVERB_REFLECTIONS_DELAY, p.flReflectionsDelay);
+        alEffectfv(s_efxEffect, AL_EAXREVERB_REFLECTIONS_PAN, p.flReflectionsPan);
+        alEffectf(s_efxEffect, AL_EAXREVERB_LATE_REVERB_GAIN, p.flLateReverbGain);
+        alEffectf(s_efxEffect, AL_EAXREVERB_LATE_REVERB_DELAY, p.flLateReverbDelay);
+        alEffectfv(s_efxEffect, AL_EAXREVERB_LATE_REVERB_PAN, p.flLateReverbPan);
+        alEffectf(s_efxEffect, AL_EAXREVERB_ECHO_TIME, p.flEchoTime);
+        alEffectf(s_efxEffect, AL_EAXREVERB_ECHO_DEPTH, p.flEchoDepth);
+        alEffectf(s_efxEffect, AL_EAXREVERB_MODULATION_TIME, p.flModulationTime);
+        alEffectf(s_efxEffect, AL_EAXREVERB_MODULATION_DEPTH, p.flModulationDepth);
+        alEffectf(s_efxEffect, AL_EAXREVERB_AIR_ABSORPTION_GAINHF, p.flAirAbsorptionGainHF);
+        alEffectf(s_efxEffect, AL_EAXREVERB_HFREFERENCE, p.flHFReference);
+        alEffectf(s_efxEffect, AL_EAXREVERB_LFREFERENCE, p.flLFReference);
+        alEffectf(s_efxEffect, AL_EAXREVERB_ROOM_ROLLOFF_FACTOR, p.flRoomRolloffFactor);
+        alEffecti(s_efxEffect, AL_EAXREVERB_DECAY_HFLIMIT, p.iDecayHFLimit);
+
+        alAuxiliaryEffectSloti(s_efxAuxSlot, AL_EFFECTSLOT_EFFECT, s_efxEffect);
+    }
 
     static ALuint Internal_LoadMP3(const std::string& path)
     {
@@ -51,20 +126,6 @@ namespace Sound
         ALenum format = (data.channels == 2) ? AL_FORMAT_STEREO16 : AL_FORMAT_MONO16;
         ALuint bufferID;
         alGenBuffers(1, &bufferID);
-
-        if (s_currentStyle != 0)
-        {
-            int processedCount = 0;
-            int16_t* processedData = Reverb::ProcessAsync((const int16_t*)data.pcm.data(), (int)data.pcm.size(), data.sampleRate, s_currentStyle, processedCount);
-
-            if (processedData)
-            {
-                alBufferData(bufferID, format, processedData, processedCount * 2, data.sampleRate);
-                delete[] processedData;
-                return bufferID;
-            }
-        }
-
         alBufferData(bufferID, format, data.pcm.data(), (ALsizei)(data.pcm.size() * 2), data.sampleRate);
         return bufferID;
     }
@@ -82,6 +143,20 @@ namespace Sound
         alcMakeContextCurrent(s_context);
 
         alDistanceModel(AL_LINEAR_DISTANCE_CLAMPED);
+
+        if (alcIsExtensionPresent(s_device, "ALC_EXT_EFX"))
+        {
+            LoadEFXFunctions();
+
+            if (s_efxSupported)
+            {
+                alGenAuxiliaryEffectSlots(1, &s_efxAuxSlot);
+                alGenEffects(1, &s_efxEffect);
+
+                alEffecti(s_efxEffect, AL_EFFECT_TYPE, AL_EFFECT_NULL);
+                alAuxiliaryEffectSloti(s_efxAuxSlot, AL_EFFECTSLOT_EFFECT, s_efxEffect);
+            }
+        }
     }
 
     void Update(const glm::vec3& listenerPos, const glm::vec3& listenerForward)
@@ -98,17 +173,51 @@ namespace Sound
     void SetRoomStyle(int styleID)
     {
         s_currentStyle = styleID;
+        if (!s_efxSupported)
+        {
+            return;
+        }
+
+        if (styleID == 0)
+        {
+            alEffecti(s_efxEffect, AL_EFFECT_TYPE, AL_EFFECT_NULL);
+            alAuxiliaryEffectSloti(s_efxAuxSlot, AL_EFFECTSLOT_EFFECT, s_efxEffect);
+            return;
+        }
+
+        static const EFXEAXREVERBPROPERTIES presets[] =
+        {
+            EFX_REVERB_PRESET_GENERIC,              // 0: Normal (Dry)
+            EFX_REVERB_PRESET_GENERIC,              // 1: Generic
+            EFX_REVERB_PRESET_FACTORY_SMALLROOM,    // 2: Metal
+            EFX_REVERB_PRESET_CITY_SUBWAY,          // 3: Tunnel
+            EFX_REVERB_PRESET_STONEROOM,            // 4: Chamber
+            EFX_REVERB_PRESET_CAVE,                 // 5: Cave
+            EFX_REVERB_PRESET_ROOM,                 // 6: Small Room
+            EFX_REVERB_PRESET_AUDITORIUM,           // 7: Large Hall
+            EFX_REVERB_PRESET_SEWERPIPE,            // 8: Sewer
+            EFX_REVERB_PRESET_HANGAR,               // 9: Hangar
+            EFX_REVERB_PRESET_CASTLE_SMALLROOM      // 10: Basement
+        };
+
+        EFXEAXREVERBPROPERTIES props = EFX_REVERB_PRESET_GENERIC;
+
+        if (styleID >= 1 && styleID < (sizeof(presets) / sizeof(presets[0])))
+        {
+            props = presets[styleID];
+        }
+
+        LoadReverbPreset(props);
     }
 
     ALuint GetBuffer(const std::string& fileName)
     {
         // always in sounds folders
         std::string fullPath = "sounds/" + fileName;
-        std::string cacheKey = fullPath + "_" + std::to_string(s_currentStyle);
 
-        if (s_bufferCache.count(cacheKey))
+        if (s_bufferCache.count(fullPath))
         {
-            return s_bufferCache[cacheKey];
+            return s_bufferCache[fullPath];
         }
 
         ALuint buffer = 0;
@@ -120,7 +229,7 @@ namespace Sound
 
         if (buffer != 0)
         {
-            s_bufferCache[cacheKey] = buffer;
+            s_bufferCache[fullPath] = buffer;
         }
         else
         {
@@ -132,7 +241,19 @@ namespace Sound
 
     void Shutdown()
     {
-        for (auto const& [path, id] : s_bufferCache) 
+        if (s_efxSupported)
+        {
+            if (s_efxAuxSlot)
+            {
+                alDeleteAuxiliaryEffectSlots(1, &s_efxAuxSlot);
+            }
+            if (s_efxEffect)
+            {
+                alDeleteEffects(1, &s_efxEffect);
+            }
+        }
+
+        for (auto const& [path, id] : s_bufferCache)
         {
             alDeleteBuffers(1, &id);
         }
@@ -151,6 +272,11 @@ namespace Sound
         alSourcef(m_sourceID, AL_REFERENCE_DISTANCE, 1.0f);
         alSourcef(m_sourceID, AL_MAX_DISTANCE, 100.0f);
         alSourcef(m_sourceID, AL_ROLLOFF_FACTOR, 1.0f);
+
+        if (s_efxSupported)
+        {
+            alSource3i(m_sourceID, AL_AUXILIARY_SEND_FILTER, s_efxAuxSlot, 0, AL_FILTER_NULL);
+        }
     }
 
     AudioSource::~AudioSource()

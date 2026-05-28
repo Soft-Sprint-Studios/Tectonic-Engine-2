@@ -23,7 +23,6 @@
  */
 #include "entities.h"
 #include "sound.h"
-#include "sound_reverb.h"
 
 class TriggerDSP : public Entity
 {
