@@ -58,6 +58,13 @@ namespace Maps
         if (!s_renderer) 
             return;
 
+        std::string path = "maps/" + mapName + ".bsp";
+        if (!Filesystem::Exists(path))
+        {
+            Console::Error("Map not found: " + mapName);
+            return;
+        }
+
         s_currentMapName = mapName;
         Console::Log("Changing map to: " + mapName);
 
@@ -76,7 +83,6 @@ namespace Maps
         Nodegraph::Get()->Clear();
 
         Cubemap::LoadForMap(mapName);
-        std::string path = "maps/" + mapName + ".bsp";
         if (s_renderer->LoadMap(path))
         {
             Nodegraph::Get()->BuildLinks();
