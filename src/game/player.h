@@ -72,37 +72,35 @@ public:
 
     void OnSave() override;
 
-    std::shared_ptr<DynamicLight> m_flashlight;
-    bool m_flashlightOn = false;
+private:
+    Camera* m_camera = nullptr;
+    Input* m_input = nullptr;
+    btKinematicCharacterController* m_character = nullptr;
+    Entity* m_viewOverride = nullptr;
 
+    glm::vec3 m_pushVelocity{ 0.0f };
+    glm::vec3 m_smoothedFlashlightDir{ 0.0f };
+    float m_moveMultiplier = 1.0f;
+    float m_climbSpeed = 3.0f;
     float m_viewHeight = 1.5f;
+    float m_stepTimer = 0.0f;
+    bool m_noclip = false;
+    bool m_onLadder = false;
     bool m_isCrouching = false;
 
     float m_saveYaw = 0.0f;
     float m_savePitch = 0.0f;
-    float m_bobTimer = 0.0f;
-
+    float m_spawnYaw = 0.0f;
+    float m_spawnPitch = 0.0f;
     float m_currentFOV = 75.0f;
     float m_targetFOV = 75.0f;
     float m_fovSpeed = 0.0f;
 
     float m_health = 100.0f;
+    std::shared_ptr<DynamicLight> m_flashlight;
+    bool m_flashlightOn = false;
 
-private:
-    Camera* m_camera = nullptr;
-    Input* m_input = nullptr;
-    btKinematicCharacterController* m_character = nullptr;
-    bool m_noclip = false;
-    glm::vec3 m_smoothedFlashlightDir;
-    float m_stepTimer = 0.0f;
     Sound::AudioSource m_sndStep;
     Sound::AudioSource m_sndJump;
     Sound::AudioSource m_sndFlashlight;
-    float m_moveMultiplier = 1.0f;
-    glm::vec3 m_pushVelocity{ 0.0f };
-    bool m_onLadder = false;
-    float m_climbSpeed = 3.0f;
-    float m_spawnYaw = 0.0f;
-    float m_spawnPitch = 0.0f;
-    Entity* m_viewOverride = nullptr;
 };
