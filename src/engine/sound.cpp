@@ -26,6 +26,7 @@
 #include "console.h"
 #include "cvar.h"
 #include "mp3.h"
+#include "dsp.h"
 #include <vector>
 #include <algorithm>
 #include <cstring>
@@ -33,7 +34,6 @@
 #define AL_ALEXT_PROTOTYPES
 #include <AL/alext.h>
 #include <AL/efx.h>
-#include <AL/efx-presets.h>
 
 CVar s_volume("s_volume", "1.0", "Master audio volume.", CVAR_SAVE);
 CVar s_mute("s_mute", "0", "Mute all audio output.", CVAR_SAVE);
@@ -150,6 +150,7 @@ namespace Sound
 
             if (s_efxSupported)
             {
+                DSP::Init();
                 alGenAuxiliaryEffectSlots(1, &s_efxAuxSlot);
                 alGenEffects(1, &s_efxEffect);
 
@@ -185,29 +186,7 @@ namespace Sound
             return;
         }
 
-        static const EFXEAXREVERBPROPERTIES presets[] =
-        {
-            EFX_REVERB_PRESET_GENERIC,              // 0: Normal (Dry)
-            EFX_REVERB_PRESET_GENERIC,              // 1: Generic
-            EFX_REVERB_PRESET_FACTORY_SMALLROOM,    // 2: Metal
-            EFX_REVERB_PRESET_CITY_SUBWAY,          // 3: Tunnel
-            EFX_REVERB_PRESET_STONEROOM,            // 4: Chamber
-            EFX_REVERB_PRESET_CAVE,                 // 5: Cave
-            EFX_REVERB_PRESET_ROOM,                 // 6: Small Room
-            EFX_REVERB_PRESET_AUDITORIUM,           // 7: Large Hall
-            EFX_REVERB_PRESET_SEWERPIPE,            // 8: Sewer
-            EFX_REVERB_PRESET_HANGAR,               // 9: Hangar
-            EFX_REVERB_PRESET_CASTLE_SMALLROOM      // 10: Basement
-        };
-
-        EFXEAXREVERBPROPERTIES props = EFX_REVERB_PRESET_GENERIC;
-
-        if (styleID >= 1 && styleID < (sizeof(presets) / sizeof(presets[0])))
-        {
-            props = presets[styleID];
-        }
-
-        LoadReverbPreset(props);
+        LoadReverbPreset(DSP::GetPreset(styleID));
     }
 
     ALuint GetBuffer(const std::string& fileName)
