@@ -24,6 +24,7 @@ uniform mat4 u_view;
 
 uniform int u_mat_specular;
 uniform int u_mat_bumpmap;
+uniform int u_lightmap_bicubic;
 
 uniform int u_mat_parallax;
 uniform float u_heightScale1;
@@ -241,6 +242,81 @@ vec2 ParallaxMapping(sampler2D heightMapSampler, vec2 texCoords, float hScale, v
     return texCoordsEnd;
 }
 
+// Bicubic filtering functions adapted from Godot Engine
+float w0(float a) 
+{ 
+    return (1.0 / 6.0) * (a * (a * (-a + 3.0) - 3.0) + 1.0); 
+}
+
+float w1(float a) 
+{ 
+    return (1.0 / 6.0) * (a * a * (3.0 * a - 6.0) + 4.0); 
+}
+
+float w2(float a) 
+{ 
+    return (1.0 / 6.0) * (a * (a * (-3.0 * a + 3.0) + 3.0) + 1.0); 
+}
+
+float w3(float a) 
+{ 
+    return (1.0 / 6.0) * (a * a * a); 
+}
+
+float g0(float a) 
+{ 
+    return w0(a) + w1(a); 
+}
+
+float g1(float a) 
+{ 
+    return w2(a) + w3(a); 
+}
+
+float h0(float a) 
+{ 
+    return -1.0 + w1(a) / (w0(a) + w1(a)); 
+}
+
+float h1(float a) 
+{ 
+    return 1.0 + w3(a) / (w2(a) + w3(a)); 
+}
+
+vec4 textureBicubic(sampler2D tex, vec2 uv)
+{
+    vec2 texture_size = vec2(textureSize(tex, 0));
+    vec2 texel_size = 1.0 / texture_size;
+
+    uv = uv * texture_size + vec2(0.5);
+    vec2 iuv = floor(uv);
+    vec2 fuv = fract(uv);
+
+    float g0x = g0(fuv.x);
+    float g1x = g1(fuv.x);
+    float h0x = h0(fuv.x);
+    float h1x = h1(fuv.x);
+    float h0y = h0(fuv.y);
+    float h1y = h1(fuv.y);
+
+    vec2 p0 = (vec2(iuv.x + h0x, iuv.y + h0y) - vec2(0.5)) * texel_size;
+    vec2 p1 = (vec2(iuv.x + h1x, iuv.y + h0y) - vec2(0.5)) * texel_size;
+    vec2 p2 = (vec2(iuv.x + h0x, iuv.y + h1y) - vec2(0.5)) * texel_size;
+    vec2 p3 = (vec2(iuv.x + h1x, iuv.y + h1y) - vec2(0.5)) * texel_size;
+
+    return (g0(fuv.y) * (g0x * texture(tex, p0) + g1x * texture(tex, p1))) +
+           (g1(fuv.y) * (g0x * texture(tex, p2) + g1x * texture(tex, p3)));
+}
+
+vec4 GetLightmapData(vec2 uv) 
+{
+    if (u_lightmap_bicubic == 1) 
+    {
+        return textureBicubic(u_lightmap, uv);
+    }
+    return texture(u_lightmap, uv);
+}
+
 void main()
 {
     float blend = u_isModel ? 0.0 : v_alpha;
@@ -314,10 +390,10 @@ void main()
         w2 /= sumW;
         w3 /= sumW;
 
-        vec3 l1 = texture(u_lightmap, LmCoord2).rgb;
-        vec3 l2 = texture(u_lightmap, LmCoord3).rgb;
-        vec3 l3 = texture(u_lightmap, LmCoord4).rgb;
-        diffuseLight = l1 * w1 + l2 * w2 + l3 * w3;
+        vec4 l1 = GetLightmapData(LmCoord2);
+        vec4 l2 = GetLightmapData(LmCoord3);
+        vec4 l3 = GetLightmapData(LmCoord4);
+        diffuseLight = (l1.rgb * w1 + l2.rgb * w2 + l3.rgb * w3);
 
         vec3 L1 = normalize(TBN * basis0);
         vec3 L2 = normalize(TBN * basis1);
@@ -330,7 +406,7 @@ void main()
     }
     else
     {
-        diffuseLight = texture(u_lightmap, LmCoord1).rgb;
+        diffuseLight = GetLightmapData(LmCoord1).rgb;
     }
 
     // Environmental Lighting Phase
@@ -425,7 +501,7 @@ void main()
         if (u_isModel)
             sunMask = 1.0;
         else
-            sunMask = texture(u_lightmap, LmCoord1).a;
+            sunMask = GetLightmapData(v_LmCoord).a;
 
         float sunShadow = CalculateSunShadow(FragPos, N, sunL);
 

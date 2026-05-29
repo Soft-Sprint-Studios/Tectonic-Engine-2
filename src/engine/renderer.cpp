@@ -44,6 +44,7 @@ CVar r_water("r_water", "1", "Enable water rendering.", CVAR_SAVE);
 CVar r_sprites("r_sprites", "1", "Enable sprite rendering.", CVAR_SAVE);
 CVar r_wireframe("r_wireframe", "0", "Render the scene in wireframe mode.", CVAR_NONE);
 CVar r_zprepass("r_zprepass", "1", "Use a depth-only prepass to reduce overdraw.", CVAR_SAVE);
+CVar r_lightmap_bicubic("r_lightmap_bicubic", "1", "Enable bicubic lightmap filtering.", CVAR_SAVE);
 
 CVar mat_specular("mat_specular", "1", "Enable specular mapping on materials.", CVAR_SAVE);
 CVar mat_bumpmap("mat_bumpmap", "1", "Enable normal/bump mapping on materials.", CVAR_SAVE);
@@ -153,6 +154,7 @@ void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater
 
     m_worldShader.SetInt("u_mat_specular", mat_specular.GetInt());
     m_worldShader.SetInt("u_mat_bumpmap", mat_bumpmap.GetInt());
+    m_worldShader.SetInt("u_lightmap_bicubic", r_lightmap_bicubic.GetInt());
 
     m_worldShader.SetInt("u_mat_parallax", mat_parallax.GetInt());
     m_worldShader.SetFloat("u_pomMinSteps", mat_parallax_min_steps.GetFloat());

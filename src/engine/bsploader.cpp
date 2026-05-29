@@ -169,13 +169,17 @@ namespace BSP
                 int ax, ay;
                 PackLightmap(nullptr, prop.lmWidth, prop.lmHeight, ax, ay, true, nullptr, prop.hasBumpedLighting, prop.lmFormat);
 
-                WriteToAtlas(prop.lmData.data(), prop.lmWidth, prop.lmHeight, ax, ay, nullptr, true, prop.lmFormat);
-
-                if (prop.hasBumpedLighting)
+                const int padding = 4;
+                if (!prop.hasBumpedLighting)
                 {
-                    WriteToAtlas(prop.lmDirData[0].data(), prop.lmWidth, prop.lmHeight, ax + prop.lmWidth, ay, nullptr, true, prop.lmFormat);
-                    WriteToAtlas(prop.lmDirData[1].data(), prop.lmWidth, prop.lmHeight, ax, ay + prop.lmHeight, nullptr, true, prop.lmFormat);
-                    WriteToAtlas(prop.lmDirData[2].data(), prop.lmWidth, prop.lmHeight, ax + prop.lmWidth, ay + prop.lmHeight, nullptr, true, prop.lmFormat);
+                    WriteToAtlas(prop.lmData.data(), prop.lmWidth, prop.lmHeight, ax, ay, padding, padding, padding, padding, nullptr, true, prop.lmFormat);
+                }
+                else
+                {
+                    WriteToAtlas(prop.lmData.data(), prop.lmWidth, prop.lmHeight, ax, ay, padding, 0, padding, 0, nullptr, true, prop.lmFormat);
+                    WriteToAtlas(prop.lmDirData[0].data(), prop.lmWidth, prop.lmHeight, ax + prop.lmWidth, ay, 0, padding, padding, 0, nullptr, true, prop.lmFormat);
+                    WriteToAtlas(prop.lmDirData[1].data(), prop.lmWidth, prop.lmHeight, ax, ay + prop.lmHeight, padding, 0, 0, padding, nullptr, true, prop.lmFormat);
+                    WriteToAtlas(prop.lmDirData[2].data(), prop.lmWidth, prop.lmHeight, ax + prop.lmWidth, ay + prop.lmHeight, 0, padding, 0, padding, nullptr, true, prop.lmFormat);
                 }
 
                 float tw = (float)m_map.lightmapAtlasWidth;
@@ -747,18 +751,20 @@ namespace BSP
             m_faceLightmaps[faceIdx] = lmInfo;
         }
 
-        void WriteToAtlas(const uint8_t* src, int w, int h, int destX, int destY, const uint8_t* alphaSrc = nullptr, bool isModel = false, int format = 0)
+        void WriteToAtlas(const uint8_t* src, int w, int h, int destX, int destY, int pLeft, int pRight, int pTop, int pBottom, const uint8_t* alphaSrc = nullptr, bool isModel = false, int format = 0)
         {
-            for (int y = 0; y < h; y++)
+            for (int y = -pTop; y < h + pBottom; y++)
             {
-                for (int x = 0; x < w; x++)
+                for (int x = -pLeft; x < w + pRight; x++)
                 {
-                    int dest = ((destY + y) * m_map.lightmapAtlasWidth + (destX + x)) * 4;
-                    int pIdx = (y * w + x) * 4;
+                    int srcX = std::clamp(x, 0, w - 1);
+                    int srcY = std::clamp(y, 0, h - 1);
 
+                    int dest = ((destY + y) * m_map.lightmapAtlasWidth + (destX + x)) * 4;
+                    int pIdx = (srcY * w + srcX) * 4;
                     if (isModel && format == 29)
                     {
-                        const float* pf = (const float*)src + (y * w + x) * 4;
+                        const float* pf = (const float*)src + (srcY * w + srcX) * 4;
                         m_map.lightmapAtlas[dest + 0] = pow(pf[0], 2.2f) * 2.0f;
                         m_map.lightmapAtlas[dest + 1] = pow(pf[1], 2.2f) * 2.0f;
                         m_map.lightmapAtlas[dest + 2] = pow(pf[2], 2.2f) * 2.0f;
@@ -766,7 +772,7 @@ namespace BSP
                     }
                     else if (isModel)
                     {
-                        int mIdx = (y * w + x) * 3;
+                        int mIdx = (srcY * w + srcX) * 3;
                         m_map.lightmapAtlas[dest + 0] = src[mIdx + 0] / 255.0f;
                         m_map.lightmapAtlas[dest + 1] = src[mIdx + 1] / 255.0f;
                         m_map.lightmapAtlas[dest + 2] = src[mIdx + 2] / 255.0f;
@@ -787,39 +793,43 @@ namespace BSP
 
         void PackLightmap(const uint8_t* data, int w, int h, int& outX, int& outY, bool isModel = false, const uint8_t* alphaData = nullptr, bool isBumped = false, int format = 0)
         {
+            const int padding = 4;
             int pW = isBumped ? w * 2 : w;
             int pH = isBumped ? h * 2 : h;
 
-            if (m_atlasX + pW > m_map.lightmapAtlasWidth)
+            int totalW = pW + (padding * 2);
+            int totalH = pH + (padding * 2);
+
+            if (m_atlasX + totalW > m_map.lightmapAtlasWidth)
             {
                 m_atlasX = 0;
                 m_atlasY += m_rowHeight;
                 m_rowHeight = 0;
             }
 
-            if (pH > m_rowHeight)
+            if (totalH > m_rowHeight)
             {
-                m_rowHeight = pH;
+                m_rowHeight = totalH;
             }
 
-            outX = m_atlasX;
-            outY = m_atlasY;
+            outX = m_atlasX + padding;
+            outY = m_atlasY + padding;
 
             if (data)
             {
                 if (!isBumped)
                 {
-                    WriteToAtlas(data, w, h, outX, outY, alphaData, isModel, format);
+                    WriteToAtlas(data, w, h, outX, outY, padding, padding, padding, padding, alphaData, isModel, format);
                 }
                 else
                 {
-                    WriteToAtlas(data + (3 * w * h * 4), w, h, outX, outY, alphaData);
-                    WriteToAtlas(data + (0 * w * h * 4), w, h, outX + w, outY);
-                    WriteToAtlas(data + (1 * w * h * 4), w, h, outX, outY + h);
-                    WriteToAtlas(data + (2 * w * h * 4), w, h, outX + w, outY + h);
+                    WriteToAtlas(data + (3 * w * h * 4), w, h, outX, outY, padding, 0, padding, 0, alphaData);
+                    WriteToAtlas(data + (0 * w * h * 4), w, h, outX + w, outY, 0, padding, padding, 0);
+                    WriteToAtlas(data + (1 * w * h * 4), w, h, outX, outY + h, padding, 0, 0, padding);
+                    WriteToAtlas(data + (2 * w * h * 4), w, h, outX + w, outY + h, 0, padding, 0, padding);
                 }
             }
-            m_atlasX += pW;
+            m_atlasX += totalW;
         }
 
         void LoadBrush(const Face& face, const TexInfo& tex, const TexData& td, int ax, int ay, int lw, int lh, bool hasLM, int numMaps, bool render, std::vector<Vertex>& outVerts, CollisionData* outCollision)
