@@ -33,21 +33,6 @@ uniform float u_pomMinSteps;
 uniform float u_pomMaxSteps;
 uniform int u_pomRefineSteps;
 
-uniform int u_numPointLights;
-uniform PointLight u_pointLights[4];
-uniform samplerCube u_pointShadowMaps[4];
-
-uniform int u_numSpotLights;
-uniform SpotLight u_spotLights[4];
-uniform sampler2D u_spotShadowMaps[4];
-
-uniform int u_csmEnabled;
-uniform sampler2DArray u_csmArray;
-uniform mat4 u_csmMatrices[4];
-uniform float u_csmSplits[5];
-uniform vec3 u_sunColor;
-uniform vec3 u_sunDir;
-
 out vec4 FragColor;
 
 const vec3 basis0 = vec3(0.81649658, 0.0, 0.57735027);

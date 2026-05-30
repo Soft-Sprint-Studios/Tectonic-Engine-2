@@ -20,6 +20,23 @@ struct SpotLight
     int volumetricSteps;
 };
 
+uniform int u_numPointLights;
+uniform PointLight u_pointLights[4];
+uniform samplerCube u_pointShadowMaps[4];
+
+uniform int u_numSpotLights;
+uniform SpotLight u_spotLights[4];
+uniform sampler2D u_spotShadowMaps[4];
+
+uniform int u_csmEnabled;
+uniform sampler2DArray u_csmArray;
+uniform mat4 u_csmMatrices[4];
+uniform float u_csmSplits[5];
+uniform vec3 u_sunColor;
+uniform vec3 u_sunDir;
+uniform float u_sunVolIntensity;
+uniform int u_sunVolSteps;
+
 const float EVSM_EXP = 10.0;
 
 float linstep(float min, float max, float v)
