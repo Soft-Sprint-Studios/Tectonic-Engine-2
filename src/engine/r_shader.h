@@ -58,6 +58,7 @@ private:
     std::string m_vertPath, m_fragPath, m_geomPath;
     std::string m_computePath;
     GLuint CompileShader(GLenum type, const std::string& source, const std::string& path);
+    std::string PreprocessShader(const std::string& path, int depth = 0);
 
     bool Reload();
 };

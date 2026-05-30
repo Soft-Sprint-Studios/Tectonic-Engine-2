@@ -1,3 +1,5 @@
+#include "lightmap.glsl"
+#include "lights.glsl"
 in centroid vec2 TexCoord;
 in centroid vec2 v_LmCoord;
 in centroid vec2 v_LmSize;
@@ -18,13 +20,11 @@ uniform vec3 u_cubemapOrigin;
 uniform vec3 u_cubemapMins;
 uniform vec3 u_cubemapMaxs;
 uniform bool u_useBump;
-uniform bool u_isModel;
 uniform vec3 u_viewPos;
 uniform mat4 u_view;
 
 uniform int u_mat_specular;
 uniform int u_mat_bumpmap;
-uniform int u_lightmap_bicubic;
 
 uniform int u_mat_parallax;
 uniform float u_heightScale1;
@@ -32,30 +32,6 @@ uniform float u_heightScale2;
 uniform float u_pomMinSteps;
 uniform float u_pomMaxSteps;
 uniform int u_pomRefineSteps;
-
-// Dynamic point lights
-struct PointLight 
-{
-    vec3 pos; 
-    vec3 color; 
-    float radius;
-    float volumetricIntensity;
-    int volumetricSteps;
-};
-
-// Dynamic spot lights
-struct SpotLight 
-{
-    vec3 pos; 
-    vec3 dir; 
-    vec3 color; 
-    float radius;
-    float innerAngle; 
-    float outerAngle; 
-    mat4 lightSpaceMatrix;
-    float volumetricIntensity;
-    int volumetricSteps;
-};
 
 uniform int u_numPointLights;
 uniform PointLight u_pointLights[4];
@@ -94,104 +70,6 @@ vec3 ParallaxCorrect(vec3 R, vec3 fragPos, vec3 boxMin, vec3 boxMax, vec3 probeP
     float intersection_t = t_far;
     vec3 intersectPos = fragPos + R * intersection_t;
     return normalize(intersectPos - probePos);
-}
-
-const float EVSM_EXP = 10.0;
-
-float linstep(float min, float max, float v)
-{
-    return clamp((v - min) / (max - min), 0.0, 1.0);
-}
-
-float ChebyshevUpperBound(vec2 moments, float warpedDepth)
-{
-    if (warpedDepth <= moments.x) 
-        return 1.0;
-
-    float variance = moments.y - (moments.x * moments.x);
-    variance = max(variance, 0.00001);
-
-    float d = warpedDepth - moments.x;
-    float pMax = variance / (variance + d * d);
-
-    return linstep(0.2, 1.0, pMax); 
-}
-
-float SpotShadowCalc(vec3 fragPosWorld, vec3 lightPos, float radius, mat4 lightSpaceMatrix, sampler2D shadowMap)
-{
-    vec4 fragPosLightSpace = lightSpaceMatrix * vec4(fragPosWorld, 1.0);
-    vec3 projCoords = (fragPosLightSpace.xyz / fragPosLightSpace.w) * 0.5 + 0.5;
-    
-    if (projCoords.z > 1.0) 
-        return 0.0;
-
-    float linearDepth = (distance(fragPosWorld, lightPos) / radius) - 0.001;
-    float warpedDepth = exp(EVSM_EXP * linearDepth);
-    
-    vec2 moments = texture(shadowMap, projCoords.xy).rg;
-    
-    return 1.0 - ChebyshevUpperBound(moments, warpedDepth);
-}
-
-float PointShadowCalc(vec3 fragPos, vec3 lightPos, float far_plane, samplerCube shadowMap)
-{
-    vec3 fragToLight = fragPos - lightPos;
-    float depth = (length(fragToLight) / far_plane) - 0.001;
-    
-    vec2 moments = texture(shadowMap, fragToLight).rg;
-    float warpedDepth = exp(EVSM_EXP * depth);
-
-    return 1.0 - ChebyshevUpperBound(moments, warpedDepth);
-}
-
-float CalculateSunShadow(vec3 fragPosWorld, vec3 N, vec3 L)
-{
-    float depth = abs((u_view * vec4(fragPosWorld, 1.0)).z);
-    int layer = -1;
-
-    for (int i = 0; i < 4; i++)
-    {
-        if (depth < u_csmSplits[i + 1])
-        {
-            layer = i;
-            break;
-        }
-    }
-
-    if (layer == -1)
-    {
-        return 0.0;
-    }
-
-    float offsetScale = 0.05 * (1.0 - dot(N, L));
-    vec3 offsetPos = fragPosWorld + N * offsetScale;
-    vec4 fragPosLightSpace = u_csmMatrices[layer] * vec4(offsetPos, 1.0);
-    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-    projCoords = projCoords * 0.5 + 0.5;
-
-    if (projCoords.z > 1.0)
-    {
-        return 0.0;
-    }
-
-    float shadow = 0.0;
-
-    vec2 texelSize = 1.0 / vec2(textureSize(u_csmArray, 0));
-
-    for (int x = -1; x <= 1; ++x)
-    {
-        for (int y = -1; y <= 1; ++y)
-        {
-            float pcfDepth = texture(u_csmArray, vec3(projCoords.xy + vec2(x, y) * texelSize, layer)).r;
-
-            if (projCoords.z > pcfDepth)
-            {
-                shadow += 1.0;
-            }
-        }
-    }
-
-    return shadow / 9.0;
 }
 
 vec2 ParallaxMapping(sampler2D heightMapSampler, vec2 texCoords, float hScale, vec3 viewDir) 
@@ -242,84 +120,9 @@ vec2 ParallaxMapping(sampler2D heightMapSampler, vec2 texCoords, float hScale, v
     return texCoordsEnd;
 }
 
-// Bicubic filtering functions adapted from Godot Engine
-float w0(float a) 
-{ 
-    return (1.0 / 6.0) * (a * (a * (-a + 3.0) - 3.0) + 1.0); 
-}
-
-float w1(float a) 
-{ 
-    return (1.0 / 6.0) * (a * a * (3.0 * a - 6.0) + 4.0); 
-}
-
-float w2(float a) 
-{ 
-    return (1.0 / 6.0) * (a * (a * (-3.0 * a + 3.0) + 3.0) + 1.0); 
-}
-
-float w3(float a) 
-{ 
-    return (1.0 / 6.0) * (a * a * a); 
-}
-
-float g0(float a) 
-{ 
-    return w0(a) + w1(a); 
-}
-
-float g1(float a) 
-{ 
-    return w2(a) + w3(a); 
-}
-
-float h0(float a) 
-{ 
-    return -1.0 + w1(a) / (w0(a) + w1(a)); 
-}
-
-float h1(float a) 
-{ 
-    return 1.0 + w3(a) / (w2(a) + w3(a)); 
-}
-
-vec4 textureBicubic(sampler2D tex, vec2 uv)
-{
-    vec2 texture_size = vec2(textureSize(tex, 0));
-    vec2 texel_size = 1.0 / texture_size;
-
-    uv = uv * texture_size + vec2(0.5);
-    vec2 iuv = floor(uv);
-    vec2 fuv = fract(uv);
-
-    float g0x = g0(fuv.x);
-    float g1x = g1(fuv.x);
-    float h0x = h0(fuv.x);
-    float h1x = h1(fuv.x);
-    float h0y = h0(fuv.y);
-    float h1y = h1(fuv.y);
-
-    vec2 p0 = (vec2(iuv.x + h0x, iuv.y + h0y) - vec2(0.5)) * texel_size;
-    vec2 p1 = (vec2(iuv.x + h1x, iuv.y + h0y) - vec2(0.5)) * texel_size;
-    vec2 p2 = (vec2(iuv.x + h0x, iuv.y + h1y) - vec2(0.5)) * texel_size;
-    vec2 p3 = (vec2(iuv.x + h1x, iuv.y + h1y) - vec2(0.5)) * texel_size;
-
-    return (g0(fuv.y) * (g0x * texture(tex, p0) + g1x * texture(tex, p1))) +
-           (g1(fuv.y) * (g0x * texture(tex, p2) + g1x * texture(tex, p3)));
-}
-
-vec4 GetLightmapData(vec2 uv) 
-{
-    if (u_lightmap_bicubic == 1) 
-    {
-        return textureBicubic(u_lightmap, uv);
-    }
-    return texture(u_lightmap, uv);
-}
-
 void main()
 {
-    float blend = u_isModel ? 0.0 : v_alpha;
+    float blend = v_alpha;
 
 	vec2 finalUV = TexCoord;
     if (u_mat_parallax == 1)
@@ -390,9 +193,9 @@ void main()
         w2 /= sumW;
         w3 /= sumW;
 
-        vec4 l1 = GetLightmapData(LmCoord2);
-        vec4 l2 = GetLightmapData(LmCoord3);
-        vec4 l3 = GetLightmapData(LmCoord4);
+        vec4 l1 = GetLightmapData(u_lightmap, LmCoord2);
+        vec4 l2 = GetLightmapData(u_lightmap, LmCoord3);
+        vec4 l3 = GetLightmapData(u_lightmap, LmCoord4);
         diffuseLight = (l1.rgb * w1 + l2.rgb * w2 + l3.rgb * w3);
 
         vec3 L1 = normalize(TBN * basis0);
@@ -406,7 +209,7 @@ void main()
     }
     else
     {
-        diffuseLight = GetLightmapData(LmCoord1).rgb;
+        diffuseLight = GetLightmapData(u_lightmap, LmCoord1).rgb;
     }
 
     // Environmental Lighting Phase
@@ -498,12 +301,9 @@ void main()
         vec3 sunL = normalize(u_sunDir);
         
         float sunMask = 1.0;
-        if (u_isModel)
-            sunMask = 1.0;
-        else
-            sunMask = GetLightmapData(v_LmCoord).a;
+        sunMask = GetLightmapData(u_lightmap, v_LmCoord).a;
 
-        float sunShadow = CalculateSunShadow(FragPos, N, sunL);
+        float sunShadow = CalculateSunShadow(FragPos, u_view, u_csmSplits, u_csmMatrices, u_csmArray);
 
         vec3 sunEnergy = u_sunColor * (1.0 - sunShadow) * sunMask;
 

@@ -187,7 +187,6 @@ void R_BSP::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOnly)
         if (!depthOnly)
         {
             shader.SetInt("u_useBump", dc.isBumped ? 1 : 0);
-            shader.SetInt("u_isModel", 0);
             (dc.texture ? dc.texture : Materials::GetTexture(""))->Bind(0);
             (dc.isBumped && dc.normalMap ? dc.normalMap : Materials::GetFlatNormal())->Bind(2);
             (dc.heightMap ? dc.heightMap : Materials::GetWhiteTexture())->Bind(17);
@@ -219,7 +218,6 @@ void R_BSP::DrawBModel(int index, const R_Shader& shader, const glm::mat4& trans
 
     if (!depthOnly)
     {
-        shader.SetInt("u_isModel", 0);
         if (m_lightmapTexture != 0)
         {
             glActiveTexture(GL_TEXTURE1);

@@ -237,11 +237,6 @@ void R_Models::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOn
 {
     shader.SetInt("u_isInstanced", 1);
 
-    if (!depthOnly)
-    {
-        shader.SetInt("u_isModel", 1);
-    }
-
     for (auto& [path, group] : m_propGroups)
     {
         if (group.instanceCount == 0)
@@ -309,11 +304,6 @@ void R_Models::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOn
     }
 
     shader.SetInt("u_isInstanced", 0);
-
-    if (!depthOnly)
-    {
-        shader.SetInt("u_isModel", 0);
-    }
 }
 
 void R_Models::Shutdown()

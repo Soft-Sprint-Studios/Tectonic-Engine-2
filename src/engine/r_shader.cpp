@@ -26,6 +26,7 @@
 #include "filesystem.h"
 #include "console.h"
 #include <glm/gtc/type_ptr.hpp>
+#include <sstream>
 
 R_Shader::R_Shader() : m_program(0)
 {
@@ -50,8 +51,8 @@ bool R_Shader::Load(const std::string& vertPath, const std::string& fragPath, co
     m_geomPath = geomPath;
     m_computePath = "";
 
-    std::string vCode = Filesystem::ReadText(vertPath);
-    std::string fCode = Filesystem::ReadText(fragPath);
+    std::string vCode = PreprocessShader(vertPath);
+    std::string fCode = PreprocessShader(fragPath);
     if (vCode.empty() || fCode.empty())
     {
         return false;
@@ -104,7 +105,7 @@ bool R_Shader::LoadCompute(const std::string& path)
     m_computePath = path;
     m_vertPath = m_fragPath = m_geomPath = "";
 
-    std::string code = Filesystem::ReadText(path);
+    std::string code = PreprocessShader(path);
     if (code.empty())
     {
         return false;
@@ -133,11 +134,10 @@ GLuint R_Shader::CompileShader(GLenum type, const std::string& source, const std
 {
     GLuint shader = glCreateShader(type);
     const char* version = "#version 450 core\n";
-    const char* lineReset = "#line 1\n";
     const char* src = source.c_str();
 
-    const char* sources[] = { version, lineReset, src };
-    glShaderSource(shader, 3, sources, NULL);
+    const char* sources[] = { version, src };
+    glShaderSource(shader, 2, sources, NULL);
     glCompileShader(shader);
 
     GLint success;
@@ -151,6 +151,56 @@ GLuint R_Shader::CompileShader(GLenum type, const std::string& source, const std
         return 0;
     }
     return shader;
+}
+
+std::string R_Shader::PreprocessShader(const std::string& path, int depth)
+{
+    if (depth > 10)
+    {
+        Console::Error("Shader include depth too deep in: " + path);
+        return "";
+    }
+
+    std::string source = Filesystem::ReadText(path);
+    if (source.empty())
+    {
+        return "";
+    }
+
+    std::stringstream input(source);
+    std::stringstream output;
+    std::string line;
+    int lineCount = 0;
+
+    while (std::getline(input, line))
+    {
+        lineCount++;
+        size_t includePos = line.find("#include");
+        size_t commentPos = line.find("//");
+
+        if (includePos != std::string::npos && (commentPos == std::string::npos || commentPos > includePos))
+        {
+            size_t firstQuote = line.find('\"', includePos);
+            size_t lastQuote = line.find('\"', firstQuote + 1);
+
+            if (firstQuote != std::string::npos && lastQuote != std::string::npos)
+            {
+                std::string includeFileName = line.substr(firstQuote + 1, lastQuote - firstQuote - 1);
+                std::string fullIncludePath = "shaders/" + includeFileName;
+
+                output << "#line 1\n";
+                output << PreprocessShader(fullIncludePath, depth + 1) << "\n";
+
+                output << "#line " << (lineCount + 1) << "\n";
+
+                continue;
+            }
+        }
+
+        output << line << "\n";
+    }
+
+    return output.str();
 }
 
 bool R_Shader::Reload()
