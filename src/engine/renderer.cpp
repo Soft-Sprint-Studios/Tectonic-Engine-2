@@ -93,6 +93,7 @@ bool Renderer::Init(Window& window)
     m_videoRenderer = std::make_unique<R_Video>();
     m_monitorRenderer = std::make_unique<R_Monitors>();
     m_overlayRenderer = std::make_unique<R_Overlay>();
+    m_interiorRenderer = std::make_unique<R_InteriorParallax>();
 
     m_glassRenderer = std::make_unique<R_Glass>();
     m_glassRenderer->Init(ww, wh);
@@ -127,6 +128,7 @@ bool Renderer::LoadMap(const std::string& path)
     m_videoRenderer->Init();
     m_monitorRenderer->Init();
     m_overlayRenderer->Init();
+    m_interiorRenderer->Init();
 
     m_waterRenderer->ClearSurfaces();
     for (const auto& s : map.waterSurfaces)
@@ -261,6 +263,12 @@ void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater
     if (m_monitorRenderer)
     {
         m_monitorRenderer->Draw(camera, m_bspRenderer.get());
+    }
+
+    // Draw interior parallax 
+    if (m_interiorRenderer)
+    {
+        m_interiorRenderer->Draw(camera, m_bspRenderer.get());
     }
 }
 
@@ -478,6 +486,12 @@ void Renderer::Shutdown()
     {
         m_glassRenderer->Shutdown();
         m_glassRenderer.reset();
+    }
+
+    if (m_interiorRenderer)
+    {
+        m_interiorRenderer->Shutdown();
+        m_interiorRenderer.reset();
     }
 
     if (m_waterRenderer)

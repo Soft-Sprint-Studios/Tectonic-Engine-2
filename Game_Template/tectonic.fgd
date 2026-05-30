@@ -914,3 +914,9 @@
 	"Navigation node for navmesh"
 [
 ]
+
+@SolidClass base(Targetname) = func_interior_parallax : "Creates a 3D interior illusion on a brush surface using a 6-face cubemap."
+[
+    cubemap(string) : "Interior Cubemap Base Name" : "" : "The base name of the cubemap in textures/interiors/ (e.g., 'office' looks for 'office_right.dds')."
+    room_size(vector) : "Room Size (W H D)" : "1.0 1.0 1.0" : "The 3D proportions of the virtual room. 1 1 1 is a perfect cube."
+]
