@@ -94,15 +94,22 @@ bool Renderer::Init(Window& window)
     m_monitorRenderer = std::make_unique<R_Monitors>();
     m_overlayRenderer = std::make_unique<R_Overlay>();
     m_interiorRenderer = std::make_unique<R_InteriorParallax>();
-
     m_glassRenderer = std::make_unique<R_Glass>();
-    m_glassRenderer->Init(ww, wh);
-
     m_waterRenderer = std::make_unique<R_Waters>();
-    m_waterRenderer->Init(ww, wh);
-
     m_uiRenderer = std::make_unique<R_UI>();
+
+    m_glassRenderer->Init(ww, wh);
+    m_waterRenderer->Init(ww, wh);
     m_uiRenderer->Init(m_windowRef);
+    m_particleRenderer->Init();
+    m_lightRenderer->Init();
+    m_spriteRenderer->Init();
+    m_beamRenderer->Init();
+    m_cableRenderer->Init();
+    m_videoRenderer->Init();
+    m_monitorRenderer->Init();
+    m_overlayRenderer->Init();
+    m_interiorRenderer->Init();
 
     return true;
 }
@@ -120,15 +127,6 @@ bool Renderer::LoadMap(const std::string& path)
     m_bspRenderer->Init(map);
     m_modelRenderer->Init(map);
     m_skyRenderer->Init(map.skyName);
-    m_particleRenderer->Init();
-    m_lightRenderer->Init();
-    m_spriteRenderer->Init();
-    m_beamRenderer->Init();
-    m_cableRenderer->Init();
-    m_videoRenderer->Init();
-    m_monitorRenderer->Init();
-    m_overlayRenderer->Init();
-    m_interiorRenderer->Init();
 
     m_waterRenderer->ClearSurfaces();
     for (const auto& s : map.waterSurfaces)
