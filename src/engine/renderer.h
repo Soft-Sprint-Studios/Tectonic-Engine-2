@@ -42,6 +42,7 @@
 #include "r_glass.h"
 #include "r_overlay.h"
 #include "r_interior_parallax.h"
+#include "r_decals.h"
 #include "cubemap.h"
 #include "video.h"
 #include <memory>
@@ -87,6 +88,7 @@ private:
     std::unique_ptr<R_Monitors> m_monitorRenderer;
     std::unique_ptr<R_Overlay> m_overlayRenderer;
     std::unique_ptr<R_Glass> m_glassRenderer;
+    std::unique_ptr<R_Decals> m_decalRenderer;
     std::unique_ptr<R_InteriorParallax> m_interiorRenderer;
     std::unique_ptr<R_Waters> m_waterRenderer;
     std::unique_ptr<R_UI> m_uiRenderer;

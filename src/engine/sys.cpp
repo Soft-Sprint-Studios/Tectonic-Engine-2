@@ -59,6 +59,7 @@
 #include "fade.h"
 #include "video.h"
 #include "screen_text.h"
+#include "decals.h"
 
 namespace Sys
 {
@@ -117,6 +118,7 @@ namespace Sys
         DynamicLights::Init();
         LightStyles::Init();
         Sprites::Init();
+        Decals::Init();
 
         Binds::Init();
         MainMenu::Init();
@@ -167,6 +169,7 @@ namespace Sys
             ScreenText::Update(dt);
             LightStyles::Update(Time::TotalTime());
             Sprites::Update();
+            Decals::Update(dt);
             Beams::Update();
             Cables::Update();
             Physics::Update(dt);
@@ -291,6 +294,7 @@ namespace Sys
         Sound::Shutdown();
         Cubemap::Shutdown();
         DynamicLights::Shutdown();
+        Decals::Shutdown();
         Resources::Clear();
         EntityManager::Shutdown();
         Physics::Shutdown();

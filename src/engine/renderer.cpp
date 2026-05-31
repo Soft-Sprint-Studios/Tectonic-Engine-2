@@ -97,6 +97,7 @@ bool Renderer::Init(Window& window)
     m_glassRenderer = std::make_unique<R_Glass>();
     m_waterRenderer = std::make_unique<R_Waters>();
     m_uiRenderer = std::make_unique<R_UI>();
+    m_decalRenderer = std::make_unique<R_Decals>();
 
     m_glassRenderer->Init(ww, wh);
     m_waterRenderer->Init(ww, wh);
@@ -110,6 +111,7 @@ bool Renderer::Init(Window& window)
     m_monitorRenderer->Init();
     m_overlayRenderer->Init();
     m_interiorRenderer->Init();
+    m_decalRenderer->Init();
 
     return true;
 }
@@ -249,6 +251,12 @@ void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater
     if (m_cableRenderer)
     {
         m_cableRenderer->Draw(camera, Cables::GetActiveCables());
+    }
+
+    // Draw decals
+    if (m_decalRenderer)
+    {
+        m_decalRenderer->Draw(camera, Decals::GetActiveDecals());
     }
 
     // Draw videos
@@ -502,5 +510,11 @@ void Renderer::Shutdown()
     {
         m_uiRenderer->Shutdown();
         m_uiRenderer.reset();
+    }
+
+    if (m_decalRenderer)
+    {
+        m_decalRenderer->Shutdown();
+        m_decalRenderer.reset();
     }
 }

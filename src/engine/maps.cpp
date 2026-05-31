@@ -38,6 +38,7 @@
 #include "screen_overlay.h"
 #include "main_menu.h"
 #include "nodegraph.h"
+#include "decals.h"
 
 namespace Maps
 {
@@ -73,6 +74,7 @@ namespace Maps
         DynamicLights::Clear();
         Particles::Shutdown();
         Sprites::Clear();
+        Decals::Clear();
         Beams::Clear();
         ScreenOverlay::Clear();
         DynamicSky::Reset();
@@ -114,6 +116,7 @@ namespace Maps
         DynamicLights::Clear();
         Particles::Shutdown();
         Sprites::Clear();
+        Decals::Clear();
         Beams::Clear();
         Cables::Clear();
         ScreenOverlay::Clear();
