@@ -148,11 +148,6 @@ void R_PostProcess::SetupBuffers()
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depthTexture, 0);
 
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-    {
-        Console::Error("PostProcess: Resolve Framebuffer is not complete!");
-    }
-
     // Setup multisample FBO
     if (useMSAA)
     {
@@ -168,11 +163,6 @@ void R_PostProcess::SetupBuffers()
         glBindRenderbuffer(GL_RENDERBUFFER, m_msRbo);
         glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH24_STENCIL8, m_width, m_height);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_msRbo);
-
-        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        {
-            Console::Error("PostProcess: Multisample Framebuffer is not complete!");
-        }
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
