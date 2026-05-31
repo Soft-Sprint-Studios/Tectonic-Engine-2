@@ -54,7 +54,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     auto Engine_Main = reinterpret_cast<EngineMainFunc>(GetProcAddress(engineLib, "Engine_Main"));
     if (!Engine_Main) 
     {
-        MessageBoxA(nullptr, "Failed to find Engine_Main in engine.dll", "Engine Error", MB_ICONERROR | MB_OK);
+        MessageBoxA(nullptr, "Failed to load engine.dll", "Engine Error", MB_ICONERROR | MB_OK);
         FreeLibrary(engineLib);
         return -1;
     }
@@ -79,7 +79,7 @@ int main(int argc, char* argv[])
     auto Engine_Main = reinterpret_cast<EngineMainFunc>(dlsym(engineLib, "Engine_Main"));
     if (const char* error = dlerror())
     {
-        std::cerr << "Failed to find Engine_Main: " << error << std::endl;
+        std::cerr << "Failed to load libengine.so: " << dlerror() << std::endl;
         dlclose(engineLib);
         return -1;
     }
