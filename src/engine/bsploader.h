@@ -60,7 +60,6 @@ namespace BSP
         LUMP_DISP_VERTS = 33,
         LUMP_GAMELUMP = 35,
         LUMP_PAKFILE = 40,
-        LUMP_OVERLAYS = 45,
         LUMP_LIGHTING_HDR = 53
     };
 
@@ -160,19 +159,6 @@ namespace BSP
         glm::vec3 origin;
         int32_t headnode;
         int32_t firstface, numfaces;
-    };
-
-    struct Overlay
-    {
-        int32_t id;
-        int16_t texinfo;
-        uint16_t faceCountAndRenderOrder;
-        int32_t ofaces[64];
-        float u[2];
-        float v[2];
-        glm::vec3 uvPoints[4];
-        glm::vec3 origin;
-        glm::vec3 basisNormal;
     };
 #pragma pack(pop)
 

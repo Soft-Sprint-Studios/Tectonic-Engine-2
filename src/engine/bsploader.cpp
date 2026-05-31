@@ -82,7 +82,6 @@ namespace BSP
         const DispInfo* d_dispinfos = nullptr;
         const DispVert* d_dispverts = nullptr;
         const uint8_t* d_lighting = nullptr;
-        const Overlay* d_overlays = nullptr;
         const glm::vec3* d_vertnormals = nullptr;
         const uint16_t* d_vertnormalindices = nullptr;
         int m_lightingLength = 0;
@@ -91,20 +90,6 @@ namespace BSP
         int m_atlasX = 1;
         int m_atlasY = 0;
         int m_rowHeight = 1;
-
-        // Must store this data for overlays
-        struct FaceLightmapInfo
-        {
-            int ax = 0;
-            int ay = 0;
-            int lW = 0;
-            int lH = 0;
-            bool hasLM = false;
-            int numMaps = 1;
-            bool isDisplacement = false;
-        };
-
-        std::unordered_map<int, FaceLightmapInfo> m_faceLightmaps;
 
         bool ValidateHeader()
         {
@@ -139,7 +124,6 @@ namespace BSP
             d_vertnormals = GetLump<glm::vec3>(LUMP_VERTNORMALS);
             d_vertnormalindices = GetLump<uint16_t>(LUMP_VERTNORMALINDICES);
             d_dispverts = GetLump<DispVert>(LUMP_DISP_VERTS);
-            d_overlays = GetLump<Overlay>(LUMP_OVERLAYS);
         }
 
         void SetupLightmapAtlas()
@@ -297,9 +281,6 @@ namespace BSP
                 if (dc.count > 0)
                     m_map.drawCalls.push_back(dc);
             }
-
-            // Process overlays
-            ParseOverlays();
 
             m_map.opaqueVertexCount = (uint32_t)m_map.renderVertices.size();
 
@@ -572,143 +553,6 @@ namespace BSP
             }
         }
 
-        void ParseOverlays()
-        {
-            if (m_header->lumps[LUMP_OVERLAYS].length <= 0)
-            {
-                return;
-            }
-
-            int numOverlays = m_header->lumps[LUMP_OVERLAYS].length / sizeof(Overlay);
-            std::unordered_map<std::string, OverlayBatch> overlayBatches;
-
-            for (int i = 0; i < numOverlays; i++)
-            {
-                const Overlay& ov = d_overlays[i];
-                const TexInfo& tex = d_texinfos[ov.texinfo];
-                const TexData& td = d_texdatas[tex.texdata];
-                std::string texName = d_stringdata + d_stringtable[td.nameStringTableID];
-                std::transform(texName.begin(), texName.end(), texName.begin(), ::tolower);
-
-                glm::vec3 basisU = glm::vec3(ov.uvPoints[0].z, ov.uvPoints[1].z, ov.uvPoints[2].z);
-                glm::vec3 basisNormal = ov.basisNormal;
-                glm::vec3 basisV = glm::normalize(glm::cross(basisNormal, basisU));
-
-                // Flip if Z is 1
-                if (ov.uvPoints[3].z == 1.0f)
-                {
-                    basisV = -basisV;
-                }
-
-                // We must do & to seperate face count and render order
-                int faceCount = ov.faceCountAndRenderOrder & 0x3FFF;
-                for (int f = 0; f < faceCount; f++)
-                {
-                    int faceIdx = ov.ofaces[f];
-
-                    // If we dont have lightmaps skip!
-                    if (m_faceLightmaps.find(faceIdx) == m_faceLightmaps.end())
-                    {
-                        continue;
-                    }
-
-                    const Face& face = d_faces[faceIdx];
-                    const Plane& plane = d_planes[face.planenum];
-                    const TexInfo& faceTex = d_texinfos[face.texinfo];
-                    const FaceLightmapInfo& lmInfo = m_faceLightmaps[faceIdx];
-
-                    glm::vec3 faceNormal = glm::vec3(plane.normal.x, plane.normal.z, -plane.normal.y);
-                    glm::vec3 overlayNormal = glm::vec3(basisNormal.x, basisNormal.z, -basisNormal.y);
-
-                    Vertex verts[4];
-
-                    // Set up our overlay uvs
-                    glm::vec2 uvs[4] = 
-                    {
-                        {ov.u[0], ov.v[0]},
-                        {ov.u[0], ov.v[1]},
-                        {ov.u[1], ov.v[1]},
-                        {ov.u[1], ov.v[0]}
-                    };
-
-                    for (int v = 0; v < 4; v++)
-                    {
-                        glm::vec3 uvPoint = glm::vec3(ov.uvPoints[v].x, ov.uvPoints[v].y, 0.0f);
-                        glm::vec3 planePoint = ov.origin + (uvPoint.x * basisU) + (uvPoint.y * basisV);
-
-                        float distToSurface = glm::dot(plane.normal, planePoint) - plane.dist;
-                        float denom = glm::dot(plane.normal, basisNormal);
-                        float distance = (denom != 0.0f) ? (distToSurface / denom) : distToSurface;
-                        glm::vec3 pt = planePoint - (basisNormal * distance);
-
-                        // Apply an offset to avoid z-fight
-                        glm::vec3 pushDir = glm::vec3(plane.normal.x, plane.normal.z, -plane.normal.y);
-                        float bias = (0.1f + (f * 0.01f)) * MAPSCALE;
-                        verts[v].position = ToEngineSpace(pt) + pushDir * bias;
-                        verts[v].normal = overlayNormal;
-                        verts[v].uv = glm::packHalf2x16(uvs[v]);
-                        verts[v].alpha = 1.0f;
-
-                        glm::vec3 tempT = glm::normalize(glm::vec3(faceTex.textureVecs[0][0], faceTex.textureVecs[0][1], faceTex.textureVecs[0][2]));
-                        glm::vec3 tempB = glm::normalize(glm::vec3(faceTex.textureVecs[1][0], faceTex.textureVecs[1][1], faceTex.textureVecs[1][2]));
-                        tempT = glm::vec3(tempT.x, tempT.z, -tempT.y);
-                        tempB = glm::vec3(tempB.x, tempB.z, -tempB.y);
-                        float sign = glm::dot(glm::cross(verts[v].normal, tempT), tempB) < 0.0f ? -1.0f : 1.0f;
-                        verts[v].tangent = glm::vec4(tempT, sign);
-
-                        if (lmInfo.hasLM)
-                        {
-                            // Calculate the uvs based on the lightmap below
-                            float lu = glm::dot(pt, glm::vec3(faceTex.lightmapVecs[0][0], faceTex.lightmapVecs[0][1], faceTex.lightmapVecs[0][2])) + faceTex.lightmapVecs[0][3];
-                            float lv = glm::dot(pt, glm::vec3(faceTex.lightmapVecs[1][0], faceTex.lightmapVecs[1][1], faceTex.lightmapVecs[1][2])) + faceTex.lightmapVecs[1][3];
-                            lu -= face.lightmapTextureMinsInLuxels[0];
-                            lv -= face.lightmapTextureMinsInLuxels[1];
-
-                            if (lmInfo.isDisplacement)
-                            {
-                                lv = (float)lmInfo.lH - lv;
-                            }
-
-                            lu = glm::clamp(lu, 0.0f, (float)face.lightmapTextureSizeInLuxels[0]);
-                            lv = glm::clamp(lv, 0.0f, (float)face.lightmapTextureSizeInLuxels[1]);
-
-                            verts[v].lm_uv = glm::vec2((lmInfo.ax + lu + 0.5f) / m_map.lightmapAtlasWidth, (lmInfo.ay + lv + 0.5f) / m_map.lightmapAtlasHeight);
-                            verts[v].lm_size = glm::vec2((float)lmInfo.lW / m_map.lightmapAtlasWidth, (float)lmInfo.lH / m_map.lightmapAtlasHeight);
-                        }
-                    }
-
-                    // If we have 4 lightmaps then we are bumped
-                    overlayBatches[texName].isBumped = (lmInfo.numMaps == 4);
-
-                    overlayBatches[texName].verts.push_back(verts[0]);
-                    overlayBatches[texName].verts.push_back(verts[2]);
-                    overlayBatches[texName].verts.push_back(verts[1]);
-                    overlayBatches[texName].verts.push_back(verts[0]);
-                    overlayBatches[texName].verts.push_back(verts[3]);
-                    overlayBatches[texName].verts.push_back(verts[2]);
-                }
-            }
-
-            for (auto const& [texName, batch] : overlayBatches)
-            {
-                DrawCall dc;
-                dc.textureName = texName;
-                dc.start = (uint32_t)m_map.renderVertices.size();
-                dc.count = (uint32_t)batch.verts.size();
-                dc.isBumped = batch.isBumped;
-                dc.mins = glm::vec3(1e10f);
-                dc.maxs = glm::vec3(-1e10f);
-
-                for (const auto& v : batch.verts)
-                {
-                    dc.mins = glm::min(dc.mins, v.position);
-                    dc.maxs = glm::max(dc.maxs, v.position);
-                    m_map.renderVertices.push_back(v);
-                }
-                m_map.drawCalls.push_back(dc);
-            }
-        }
-
         void ProcessFace(int faceIdx, std::vector<Vertex>& outVerts, CollisionData* outCollision = nullptr, bool render = true)
         {
             const Face& face = d_faces[faceIdx];
@@ -738,17 +582,6 @@ namespace BSP
                 LoadDisplacement(face, tex, td, ax, ay, lw, lh, hasLM, numMaps, render, outVerts, outCollision);
             else
                 LoadBrush(face, tex, td, ax, ay, lw, lh, hasLM, numMaps, render, outVerts, outCollision);
-
-            // We must save for overlays to know where to get their lightmaps from
-            FaceLightmapInfo lmInfo;
-            lmInfo.hasLM = hasLM;
-            lmInfo.numMaps = numMaps;
-            lmInfo.lW = lw;
-            lmInfo.lH = lh;
-            lmInfo.isDisplacement = (face.dispinfo != -1);
-            lmInfo.ax = ax;
-            lmInfo.ay = ay;
-            m_faceLightmaps[faceIdx] = lmInfo;
         }
 
         void WriteToAtlas(const uint8_t* src, int w, int h, int destX, int destY, int pLeft, int pRight, int pTop, int pBottom, const uint8_t* alphaSrc = nullptr, bool isModel = false, int format = 0)
