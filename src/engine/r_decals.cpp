@@ -66,6 +66,7 @@ void R_Decals::Draw(const Camera& camera, const std::vector<std::shared_ptr<Deca
         return;
     }
 
+    glDisable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     glDepthMask(GL_FALSE);
 
@@ -97,6 +98,7 @@ void R_Decals::Draw(const Camera& camera, const std::vector<std::shared_ptr<Deca
 
     glDisable(GL_POLYGON_OFFSET_FILL);
     glDepthMask(GL_TRUE);
+    glEnable(GL_CULL_FACE);
 }
 
 void R_Decals::Shutdown()
