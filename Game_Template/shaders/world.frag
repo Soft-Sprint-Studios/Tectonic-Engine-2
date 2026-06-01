@@ -1,5 +1,3 @@
-layout(location = 0) out vec4 FragColor;
-layout(location = 1) out vec3 FragLightmap;
 #include "lightmap.glsl"
 #include "lights.glsl"
 in centroid vec2 TexCoord;
@@ -34,6 +32,8 @@ uniform float u_heightScale2;
 uniform float u_pomMinSteps;
 uniform float u_pomMaxSteps;
 uniform int u_pomRefineSteps;
+
+out vec4 FragColor;
 
 const vec3 basis0 = vec3(0.81649658, 0.0, 0.57735027);
 const vec3 basis1 = vec3(-0.40824829, 0.70710678, 0.57735027);
@@ -302,10 +302,8 @@ void main()
     }
 
     // Final Composition
-    vec3 accumLight = diffuseLight * 2.0 + dynDiffuse + sunFinal;
-    vec3 finalDiffuse = albedo.rgb * accumLight;
+    vec3 finalDiffuse = albedo.rgb * (diffuseLight * 2.0 + dynDiffuse + sunFinal);
     vec3 finalSpecular = specularLight + dynSpecular;
 
     FragColor = vec4(finalDiffuse + finalSpecular, albedo.a);
-    FragLightmap = accumLight;
 }
