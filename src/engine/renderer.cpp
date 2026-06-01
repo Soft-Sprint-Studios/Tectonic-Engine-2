@@ -43,7 +43,6 @@ CVar r_particles("r_particles", "1", "Enable particle system rendering.", CVAR_S
 CVar r_water("r_water", "1", "Enable water rendering.", CVAR_SAVE);
 CVar r_sprites("r_sprites", "1", "Enable sprite rendering.", CVAR_SAVE);
 CVar r_wireframe("r_wireframe", "0", "Render the scene in wireframe mode.", CVAR_NONE);
-CVar r_zprepass("r_zprepass", "1", "Use a depth-only prepass to reduce overdraw.", CVAR_SAVE);
 CVar r_lightmap_bicubic("r_lightmap_bicubic", "1", "Enable bicubic lightmap filtering.", CVAR_SAVE);
 CVar r_debug_gbuffer("r_debug_gbuffer", "0", "Enable G-Buffer diagnostic overlay (0: Off, 1: On).", CVAR_SAVE);
 
