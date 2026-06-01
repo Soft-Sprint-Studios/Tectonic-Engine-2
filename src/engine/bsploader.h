@@ -134,9 +134,9 @@ namespace BSP
     {
         glm::vec3 startPosition;
         int32_t dispVertStart;
-        int32_t dispTriStart;
+        char pad0[4];
         int32_t power;
-        char pad0[152];
+        char pad1[152];
     };
 
     struct GameLump
