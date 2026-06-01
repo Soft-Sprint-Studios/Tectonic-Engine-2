@@ -44,10 +44,18 @@ public:
     void Rescale(int width, int height);
     void Shutdown();
 
-    GLuint GetDepthTexture() 
-    { 
+    GLuint GetDepthTexture()
+    {
         return m_depthTexture;
     }
+
+    GLuint GetLightmapTex() const
+    {
+        return m_lightmapTex;
+    }
+
+    void BeginDecalPass();
+    void EndDecalPass();
 
     GLuint GetActiveFBO();
 
@@ -55,9 +63,11 @@ private:
     GLuint m_fbo;
     GLuint m_texture;
     GLuint m_depthTexture;
+    GLuint m_lightmapTex;
 
     GLuint m_msFbo;
     GLuint m_msTexture;
+    GLuint m_msLightmapTex;
     GLuint m_msRbo;
 
     GLuint m_quadVAO;

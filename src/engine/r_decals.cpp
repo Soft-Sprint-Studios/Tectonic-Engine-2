@@ -59,7 +59,7 @@ void R_Decals::Init()
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(DecalVertex), (void*)offsetof(DecalVertex, uv));
 }
 
-void R_Decals::Draw(const Camera& camera, const std::vector<std::shared_ptr<Decal>>& decals)
+void R_Decals::Draw(const Camera& camera, const std::vector<std::shared_ptr<Decal>>& decals, GLuint lightmapTex, int screenW, int screenH)
 {
     if (decals.empty())
     {
@@ -68,8 +68,7 @@ void R_Decals::Draw(const Camera& camera, const std::vector<std::shared_ptr<Deca
 
     glEnable(GL_DEPTH_TEST);
     glDepthMask(GL_FALSE);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_DST_COLOR, GL_SRC_COLOR);
+    glDisable(GL_BLEND);
 
     glEnable(GL_POLYGON_OFFSET_FILL);
     glPolygonOffset(-1.0f, -1.0f);
@@ -78,6 +77,14 @@ void R_Decals::Draw(const Camera& camera, const std::vector<std::shared_ptr<Deca
     m_shader.SetMat4("u_view", camera.GetViewMatrix());
     m_shader.SetMat4("u_projection", camera.GetProjectionMatrix());
     m_shader.SetInt("u_texture", 0);
+    m_shader.SetInt("u_lightmap", 1);
+    m_shader.SetVec2("u_screenSize", glm::vec2((float)screenW, (float)screenH));
+
+    if (lightmapTex != 0)
+    {
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, lightmapTex);
+    }
 
     glBindVertexArray(m_vao);
     for (const auto& d : decals)
@@ -95,7 +102,6 @@ void R_Decals::Draw(const Camera& camera, const std::vector<std::shared_ptr<Deca
 
     glDisable(GL_POLYGON_OFFSET_FILL);
     glDepthMask(GL_TRUE);
-    glDisable(GL_BLEND);
 }
 
 void R_Decals::Shutdown()

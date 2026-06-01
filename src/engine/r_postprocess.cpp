@@ -37,8 +37,8 @@ CVar r_fxaa("r_fxaa", "0", "Enable Fast Approximate Anti-Aliasing (Can be used a
 CVar r_fxaa_strength("r_fxaa_strength", "1.0", "Strength of FXAA smoothing.", CVAR_SAVE);
 
 R_PostProcess::R_PostProcess()
-    : m_fbo(0), m_texture(0), m_depthTexture(0),
-    m_msFbo(0), m_msTexture(0), m_msRbo(0),
+    : m_fbo(0), m_texture(0), m_depthTexture(0), m_lightmapTex(0),
+    m_msFbo(0), m_msTexture(0), m_msLightmapTex(0), m_msRbo(0),
     m_quadVAO(0), m_quadVBO(0), m_width(0), m_height(0)
 {
 }
@@ -101,12 +101,14 @@ void R_PostProcess::SetupBuffers()
     {
         glDeleteFramebuffers(1, &m_fbo);
         glDeleteTextures(1, &m_texture);
+        glDeleteTextures(1, &m_lightmapTex);
         glDeleteTextures(1, &m_depthTexture);
     }
     if (m_msFbo != 0)
     {
         glDeleteFramebuffers(1, &m_msFbo);
         glDeleteTextures(1, &m_msTexture);
+        glDeleteTextures(1, &m_msLightmapTex);
         glDeleteRenderbuffers(1, &m_msRbo);
         m_msFbo = 0;
     }
@@ -136,6 +138,15 @@ void R_PostProcess::SetupBuffers()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_texture, 0);
 
+    glGenTextures(1, &m_lightmapTex);
+    glBindTexture(GL_TEXTURE_2D, m_lightmapTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, m_width, m_height, 0, GL_RGB, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, m_lightmapTex, 0);
+
     glGenTextures(1, &m_depthTexture);
     glBindTexture(GL_TEXTURE_2D, m_depthTexture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, m_width, m_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
@@ -146,6 +157,9 @@ void R_PostProcess::SetupBuffers()
     float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depthTexture, 0);
+
+    GLenum drawBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+    glDrawBuffers(2, drawBuffers);
 
     // Setup multisample FBO
     if (useMSAA)
@@ -158,10 +172,18 @@ void R_PostProcess::SetupBuffers()
         glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_RGB16F, m_width, m_height, GL_TRUE);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, m_msTexture, 0);
 
+        glGenTextures(1, &m_msLightmapTex);
+        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, m_msLightmapTex);
+        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_RGB16F, m_width, m_height, GL_TRUE);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D_MULTISAMPLE, m_msLightmapTex, 0);
+
         glGenRenderbuffers(1, &m_msRbo);
         glBindRenderbuffer(GL_RENDERBUFFER, m_msRbo);
         glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH24_STENCIL8, m_width, m_height);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_msRbo);
+
+        GLenum msDrawBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+        glDrawBuffers(2, msDrawBuffers);
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -185,6 +207,36 @@ void R_PostProcess::Begin()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
+void R_PostProcess::BeginDecalPass()
+{
+    bool useMSAA = false;
+    if (CVar* cvMSAA = CVar::Find("r_multisample"))
+    {
+        useMSAA = cvMSAA->GetInt() > 0;
+    }
+
+    if (useMSAA && m_msFbo != 0)
+    {
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, m_msFbo);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_fbo);
+
+        glReadBuffer(GL_COLOR_ATTACHMENT1);
+        glDrawBuffer(GL_COLOR_ATTACHMENT1);
+        glBlitFramebuffer(0, 0, m_width, m_height, 0, 0, m_width, m_height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, m_msFbo);
+    }
+
+    GLenum drawBuffers[] = { GL_COLOR_ATTACHMENT0 };
+    glDrawBuffers(1, drawBuffers);
+}
+
+void R_PostProcess::EndDecalPass()
+{
+    GLenum restoreBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+    glDrawBuffers(2, restoreBuffers);
+}
+
 void R_PostProcess::End()
 {
     bool useMSAA = false;
@@ -197,9 +249,21 @@ void R_PostProcess::End()
     {
         glBindFramebuffer(GL_READ_FRAMEBUFFER, m_msFbo);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_fbo);
+
+        glReadBuffer(GL_COLOR_ATTACHMENT0);
+        glDrawBuffer(GL_COLOR_ATTACHMENT0);
         glBlitFramebuffer(0, 0, m_width, m_height, 0, 0, m_width, m_height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+
+        glReadBuffer(GL_COLOR_ATTACHMENT1);
+        glDrawBuffer(GL_COLOR_ATTACHMENT1);
+        glBlitFramebuffer(0, 0, m_width, m_height, 0, 0, m_width, m_height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+
         glBlitFramebuffer(0, 0, m_width, m_height, 0, 0, m_width, m_height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
     }
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, m_fbo);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glBlitFramebuffer(0, 0, m_width, m_height, 0, 0, m_width, m_height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -304,23 +368,27 @@ void R_PostProcess::Shutdown()
         m_ssao.reset();
     }
 
-    if (m_fbo != 0) 
+    if (m_fbo != 0)
         glDeleteFramebuffers(1, &m_fbo);
-    if (m_texture != 0) 
+    if (m_texture != 0)
         glDeleteTextures(1, &m_texture);
+    if (m_lightmapTex != 0)
+        glDeleteTextures(1, &m_lightmapTex);
     if (m_depthTexture != 0)
         glDeleteTextures(1, &m_depthTexture);
 
-    if (m_msFbo != 0) 
+    if (m_msFbo != 0)
         glDeleteFramebuffers(1, &m_msFbo);
-    if (m_msTexture != 0) 
+    if (m_msTexture != 0)
         glDeleteTextures(1, &m_msTexture);
-    if (m_msRbo != 0) 
+    if (m_msLightmapTex != 0)
+        glDeleteTextures(1, &m_msLightmapTex);
+    if (m_msRbo != 0)
         glDeleteRenderbuffers(1, &m_msRbo);
 
-    if (m_quadVAO != 0) 
+    if (m_quadVAO != 0)
         glDeleteVertexArrays(1, &m_quadVAO);
-    if (m_quadVBO != 0) 
+    if (m_quadVBO != 0)
         glDeleteBuffers(1, &m_quadVBO);
 
     m_fbo = m_msFbo = 0;

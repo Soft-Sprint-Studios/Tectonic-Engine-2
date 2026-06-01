@@ -253,12 +253,6 @@ void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater
         m_cableRenderer->Draw(camera, Cables::GetActiveCables());
     }
 
-    // Draw decals
-    if (m_decalRenderer)
-    {
-        m_decalRenderer->Draw(camera, Decals::GetActiveDecals());
-    }
-
     // Draw videos
     if (m_videoRenderer)
     {
@@ -369,6 +363,19 @@ void Renderer::Render(Camera& camera)
     {
         m_glassRenderer->CaptureScreen(m_postProcess->GetActiveFBO(), w, h);
         m_glassRenderer->Draw(camera, m_bspRenderer.get());
+    }
+
+    m_postProcess->End();
+
+    // Render decals, this is kinda hacky due to using lightmap buffer
+    if (m_decalRenderer && m_postProcess)
+    {
+        int w, h;
+        SDL_GetWindowSize(m_windowRef->Get(), &w, &h);
+
+        m_postProcess->BeginDecalPass();
+        m_decalRenderer->Draw(camera, Decals::GetActiveDecals(), m_postProcess->GetLightmapTex(), w, h);
+        m_postProcess->EndDecalPass();
     }
 
     m_postProcess->End();
