@@ -197,12 +197,6 @@ namespace BSP
         int lmWidth = 0, lmHeight = 0, lmFormat = 0;
     };
 
-    struct OverlayBatch
-    {
-        std::vector<Vertex> verts;
-        bool isBumped = false;
-    };
-
     struct CollisionData
     {
         std::vector<glm::vec3> vertices;
