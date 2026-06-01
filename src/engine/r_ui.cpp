@@ -22,7 +22,6 @@
  * SOFTWARE.
  */
 #include "r_ui.h"
-#include "r_state.h"
 #include "materials.h"
 #include "filesystem.h"
 #include "console.h"
@@ -128,10 +127,10 @@ void R_UI::Render()
         return;
     }
 
-    R_State::SetCulling(false);
-    R_State::SetBlending(true);
-    R_State::SetBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    R_State::SetDepthTest(false);
+    glDisable(GL_CULL_FACE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_DEPTH_TEST);
 
     m_shader.Bind();
     m_shader.SetMat4("projection", m_projection);
@@ -221,9 +220,9 @@ void R_UI::Render()
     }
 
     glBindTexture(GL_TEXTURE_2D, 0);
-    R_State::SetDepthTest(true);
-    R_State::SetBlending(false);
-    R_State::SetCulling(true);
+    glEnable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
+    glEnable(GL_CULL_FACE);
     
     m_commands.clear();
 }

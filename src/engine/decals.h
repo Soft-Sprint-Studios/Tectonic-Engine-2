@@ -34,8 +34,6 @@ struct DecalDef
     float size = 0.2f;
     std::string textureName;
     float lifetime = -1.0f;
-    int blendMode = 0;
-    glm::vec4 color{ 1.0f, 1.0f, 1.0f, 1.0f };
 };
 
 class Decal

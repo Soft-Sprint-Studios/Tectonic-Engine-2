@@ -22,7 +22,6 @@
  * SOFTWARE.
  */
 #include "r_sprites.h"
-#include "r_state.h"
 #include "materials.h"
 
 void R_Sprites::Init()
@@ -55,8 +54,8 @@ void R_Sprites::Draw(const Camera& camera, const std::vector<std::shared_ptr<Spr
     if (sprites.empty()) 
         return;
 
-    R_State::SetBlending(true);
-    R_State::SetBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
     m_shader.Bind();
     m_shader.SetMat4("u_view", camera.GetViewMatrix());
@@ -84,7 +83,7 @@ void R_Sprites::Draw(const Camera& camera, const std::vector<std::shared_ptr<Spr
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
     }
-    R_State::SetBlending(false);
+    glDisable(GL_BLEND);
 }
 
 void R_Sprites::Shutdown()

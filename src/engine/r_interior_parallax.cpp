@@ -22,11 +22,10 @@
  * SOFTWARE.
  */
 #include "r_interior_parallax.h"
-#include "r_state.h"
 #include "r_bsp.h"
 #include "dds.h"
 #include "entities.h"
-#include "../game/func_interior_parallax.h"
+#include "func_interior_parallax.h"
 #include <glm/gtc/matrix_transform.hpp>
 
 void R_InteriorParallax::Init()
@@ -67,8 +66,8 @@ GLuint R_InteriorParallax::GetCubemap(const std::string& name)
 
 void R_InteriorParallax::Draw(const Camera& camera, R_BSP* bsp)
 {
-    R_State::SetDepthTest(true);
-    R_State::SetDepthMask(true);
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
 
     m_shader.Bind();
     m_shader.SetMat4("u_view", camera.GetViewMatrix());

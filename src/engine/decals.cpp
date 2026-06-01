@@ -39,34 +39,20 @@ const DecalDef& Decal::GetDef() const
 glm::mat4 Decal::GetModelMatrix() const
 {
     glm::vec3 N = glm::normalize(m_def.normal);
-    glm::vec3 T;
-    glm::vec3 B;
 
-    if (std::abs(N.y) > 0.95f)
-    {
-        T = glm::vec3(1.0f, 0.0f, 0.0f);
-        B = glm::normalize(glm::cross(N, T));
-        if (N.y < 0.0f)
-        {
-            T = -T;
-        }
-    }
-    else
-    {
-        B = glm::vec3(0.0f, 1.0f, 0.0f);
-        T = glm::normalize(glm::cross(B, N));
-    }
+    glm::vec3 up = (std::abs(N.y) < 0.95f) ? glm::vec3(0.0f, 1.0f, 0.0f) : glm::vec3(1.0f, 0.0f, 0.0f);
+
+    glm::vec3 T = glm::normalize(glm::cross(up, N));
+    glm::vec3 B = glm::cross(N, T);
 
     glm::mat4 rotation(1.0f);
     rotation[0] = glm::vec4(T, 0.0f);
     rotation[1] = glm::vec4(B, 0.0f);
     rotation[2] = glm::vec4(N, 0.0f);
 
-    glm::vec3 offsetPos = m_def.position + N * 0.002f;
-
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), offsetPos);
-    model = model * rotation;
-    model = glm::scale(model, glm::vec3(m_def.size, m_def.size, 1.0f));
+    glm::mat4 model = glm::translate(glm::mat4(1.0f), m_def.position);
+    model *= rotation;
+    model = glm::scale(model, glm::vec3(m_def.size));
 
     return model;
 }

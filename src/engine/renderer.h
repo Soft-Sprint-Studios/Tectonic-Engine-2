@@ -34,7 +34,6 @@
 #include "r_sprites.h"
 #include "r_waters.h"
 #include "r_ui.h"
-#include "r_state.h"
 #include "r_beams.h"
 #include "r_cables.h"
 #include "r_video.h"

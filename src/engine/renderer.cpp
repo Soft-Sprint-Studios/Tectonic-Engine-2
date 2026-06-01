@@ -70,11 +70,11 @@ bool Renderer::Init(Window& window)
     m_depthShader.Load("shaders/depth.vert", "shaders/depth.frag");
 
     // Global GL State
-    R_State::SetDepthTest(true);
-    R_State::SetCulling(true);
-    R_State::SetCullFace(GL_BACK);
-    R_State::SetSeamlessCubemaps(true);
-    R_State::SetClearColor(glm::vec4(0, 0, 0, 0));
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
     m_postProcess = std::make_unique<R_PostProcess>();
     int ww, wh;
@@ -300,9 +300,9 @@ void Renderer::DrawSceneDepth(R_Shader& shader, const Frustum& frustum, R_BSP* b
 
 void Renderer::DrawPrePass(Camera& camera)
 {
-    R_State::SetColorMask(false, false, false, false);
-    R_State::SetDepthFunc(GL_LESS);
-    R_State::SetDepthMask(true);
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    glDepthFunc(GL_LESS);
+    glDepthMask(GL_TRUE);
 
     m_depthShader.Bind();
     m_depthShader.SetMat4("u_projection", camera.GetProjectionMatrix());
@@ -311,14 +311,14 @@ void Renderer::DrawPrePass(Camera& camera)
 
     DrawSceneDepth(m_depthShader, camera.GetFrustum(), m_bspRenderer.get(), m_modelRenderer.get());
 
-    R_State::SetColorMask(true, true, true, true);
-    R_State::SetDepthFunc(GL_LEQUAL);
-    R_State::SetDepthMask(false);
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glDepthFunc(GL_LEQUAL);
+    glDepthMask(GL_FALSE);
 }
 
 void Renderer::RenderWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater)
 {
-    R_State::Clear(true, true, false);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     bool usePrepass = (r_zprepass.GetInt() > 0 && drawWater);
 
@@ -331,8 +331,8 @@ void Renderer::RenderWorld(Camera& camera, GLuint cubemapToExclude, bool drawWat
 
     if (usePrepass)
     {
-        R_State::SetDepthMask(true);
-        R_State::SetDepthFunc(GL_LESS);
+        glDepthMask(GL_TRUE);
+        glDepthFunc(GL_LESS);
     }
 }
 
@@ -353,7 +353,7 @@ void Renderer::Render(Camera& camera)
 
     camera.SetAspectRatio((float)w / (float)h);
 
-    R_State::SetWireframe(r_wireframe.GetInt() > 0);
+    glPolygonMode(GL_FRONT_AND_BACK, r_wireframe.GetInt() > 0 ? GL_LINE : GL_FILL);
 
     if (m_waterRenderer)
     {
@@ -373,13 +373,13 @@ void Renderer::Render(Camera& camera)
 
     m_postProcess->End();
 
-    R_State::SetWireframe(false);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     // Draw postprocessing
-    R_State::SetDepthTest(false);
+    glDisable(GL_DEPTH_TEST);
     m_postProcess->Draw(camera, m_lightRenderer.get());
     m_overlayRenderer->Draw();
-    R_State::SetDepthTest(true);
+    glEnable(GL_DEPTH_TEST);
 
     if (m_uiRenderer)
     {

@@ -22,7 +22,6 @@
  * SOFTWARE.
  */
 #include "r_particles.h"
-#include "r_state.h"
 #include "particles.h"
 #include "materials.h"
 #include "console.h"
@@ -63,8 +62,8 @@ void R_Particles::Draw(const Camera& camera, uint32_t depthTex)
     if (systems.empty()) 
         return;
 
-    R_State::SetBlending(true);
-    R_State::SetDepthMask(false);
+    glEnable(GL_BLEND);
+    glDepthMask(GL_FALSE);
     m_shader.Bind();
     m_shader.SetMat4("u_proj", camera.GetProjectionMatrix());
     m_shader.SetMat4("u_view", camera.GetViewMatrix());
@@ -90,11 +89,11 @@ void R_Particles::Draw(const Camera& camera, uint32_t depthTex)
 
         if (s->GetDef().additive)
         {
-            R_State::SetBlendFunc(GL_SRC_ALPHA, GL_ONE);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE);
         }
         else
         {
-            R_State::SetBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         }
 
         Materials::GetTexture(s->GetDef().textureName)->Bind(0);
@@ -107,8 +106,8 @@ void R_Particles::Draw(const Camera& camera, uint32_t depthTex)
         glBufferSubData(GL_ARRAY_BUFFER, 0, vts.size() * sizeof(PVertex), vts.data());
         glDrawArrays(GL_POINTS, 0, (GLsizei)vts.size());
     }
-    R_State::SetDepthMask(true);
-    R_State::SetBlending(false);
+    glDepthMask(GL_TRUE);
+    glDisable(GL_BLEND);
 }
 
 void R_Particles::Shutdown() 

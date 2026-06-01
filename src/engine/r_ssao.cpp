@@ -22,7 +22,6 @@
  * SOFTWARE.
  */
 #include "r_ssao.h"
-#include "r_state.h"
 #include "cvar.h"
 #include <random>
 #include <glm/gtc/type_ptr.hpp>
@@ -177,9 +176,9 @@ void R_SSAO::Render(GLuint depthTexture, const Camera& camera, GLuint quadVAO, i
 
     int vW = screenW / ds;
     int vH = screenH / ds;
-    R_State::SetViewport(0, 0, vW, vH);
+    glViewport(0, 0, vW, vH);
 
-    R_State::Clear(true, false, false);
+    glClear(GL_COLOR_BUFFER_BIT);
     m_ssaoShader.Bind();
     m_ssaoShader.SetMat4("u_projection", camera.GetProjectionMatrix());
     m_ssaoShader.SetMat4("u_invProjection", glm::inverse(camera.GetProjectionMatrix()));
@@ -206,7 +205,7 @@ void R_SSAO::Render(GLuint depthTexture, const Camera& camera, GLuint quadVAO, i
 
     // Blur pass
     glBindFramebuffer(GL_FRAMEBUFFER, m_blurFbo);
-    R_State::Clear(true, false, false);
+    glClear(GL_COLOR_BUFFER_BIT);
     m_blurShader.Bind();
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_texture);
@@ -215,7 +214,7 @@ void R_SSAO::Render(GLuint depthTexture, const Camera& camera, GLuint quadVAO, i
     glBindVertexArray(quadVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
-    R_State::SetViewport(0, 0, screenW, screenH);
+    glViewport(0, 0, screenW, screenH);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 

@@ -25,7 +25,6 @@
 #include "timing.h"
 #include "materials.h"
 #include "r_sky.h"
-#include "r_state.h"
 #include "dynamic_sky.h"
 #include "filesystem.h"
 #include "console.h"
@@ -106,8 +105,8 @@ void R_Sky::LoadCubemap(const std::string& skyName)
 
 void R_Sky::Draw(const Camera& camera)
 {
-    R_State::SetDepthFunc(GL_LEQUAL);
-    R_State::SetDepthMask(false);
+    glDepthFunc(GL_LEQUAL);
+    glDepthMask(GL_FALSE);
     m_shader.Bind();
     
     // Remove translation from view matrix so sky stays at infinity
@@ -129,8 +128,8 @@ void R_Sky::Draw(const Camera& camera)
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, m_cubemapTexture);
     glDrawArrays(GL_TRIANGLES, 0, 36);
-    R_State::SetDepthMask(true);
-    R_State::SetDepthFunc(GL_LESS);
+    glDepthMask(GL_TRUE);
+    glDepthFunc(GL_LESS);
 }
 
 void R_Sky::Shutdown()

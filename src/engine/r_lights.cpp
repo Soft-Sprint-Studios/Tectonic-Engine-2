@@ -22,7 +22,6 @@
  * SOFTWARE.
  */
 #include "r_lights.h"
-#include "r_state.h"
 #include "dynamic_light.h"
 #include "dynamic_sky.h"
 #include "r_bsp.h"
@@ -171,10 +170,10 @@ void R_Lights::RenderShadowMaps(Camera& camera, R_BSP* bsp, R_Models* models)
 
         SetupShadowMap(light);
 
-        R_State::SetViewport(0, 0, def.shadowRes, def.shadowRes);
+        glViewport(0, 0, def.shadowRes, def.shadowRes);
         glBindFramebuffer(GL_FRAMEBUFFER, def.shadowFBO);
-        R_State::SetClearColor({ 1e10f, 1e20f, 0.0f, 0.0f });
-        R_State::Clear(true, true, false);
+        glClearColor(1e10f, 1e20f, 0.0f, 0.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         if (def.type == LightType::Spot)
         {
@@ -255,7 +254,7 @@ void R_Lights::RenderShadowMaps(Camera& camera, R_BSP* bsp, R_Models* models)
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    R_State::SetClearColor({ 0.0f, 0.0f, 0.0f, 0.0f });
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 }
 
 void R_Lights::Bind(const R_Shader& shader)

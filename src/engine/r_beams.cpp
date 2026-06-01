@@ -22,7 +22,6 @@
  * SOFTWARE.
  */
 #include "r_beams.h"
-#include "r_state.h"
 #include "timing.h"
 
 void R_Beams::Init()
@@ -49,10 +48,10 @@ void R_Beams::Draw(const Camera& camera, const std::vector<std::shared_ptr<Beam>
     if (beams.empty()) 
         return;
 
-    R_State::SetBlending(true);
-    R_State::SetBlendFunc(GL_SRC_ALPHA, GL_ONE);
-    R_State::SetDepthMask(false);
-    R_State::SetCullFace(GL_FRONT);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+    glDepthMask(GL_FALSE);
+    glCullFace(GL_FRONT);
 
     m_shader.Bind();
     m_shader.SetMat4("u_view", camera.GetViewMatrix());
@@ -74,9 +73,9 @@ void R_Beams::Draw(const Camera& camera, const std::vector<std::shared_ptr<Beam>
         glDrawArrays(GL_TRIANGLES, 0, 6);
     }
 
-    R_State::SetCullFace(GL_BACK);
-    R_State::SetDepthMask(true);
-    R_State::SetBlending(false);
+    glCullFace(GL_BACK);
+    glDepthMask(GL_TRUE);
+    glDisable(GL_BLEND);
 }
 
 void R_Beams::Shutdown()

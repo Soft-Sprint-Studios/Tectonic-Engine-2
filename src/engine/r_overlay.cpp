@@ -22,7 +22,6 @@
  * SOFTWARE.
  */
 #include "r_overlay.h"
-#include "r_state.h"
 #include "materials.h"
 #include "screen_overlay.h"
 
@@ -65,30 +64,30 @@ void R_Overlay::Draw()
         return;
     }
 
-    R_State::SetDepthTest(false);
-    R_State::SetDepthMask(false);
-    R_State::SetBlending(true);
+    glDisable(GL_DEPTH_TEST);
+    glDepthMask(GL_FALSE);
+    glEnable(GL_BLEND);
 
     switch (s.renderMode)
     {
     case 0:
-        R_State::SetBlendFunc(GL_SRC_ALPHA, GL_ONE);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE);
         break;
 
     case 1:
-        R_State::SetBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         break;
 
     case 2:
-        R_State::SetBlendFunc(GL_DST_COLOR, GL_ZERO);
+        glBlendFunc(GL_DST_COLOR, GL_ZERO);
         break;
 
     case 3:
-        R_State::SetBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_COLOR);
+        glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_COLOR);
         break;
 
     default:
-        R_State::SetBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         break;
     }
 
@@ -100,9 +99,9 @@ void R_Overlay::Draw()
     glBindVertexArray(m_vao);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
-    R_State::SetDepthMask(true);
-    R_State::SetDepthTest(true);
-    R_State::SetBlending(false);
+    glDepthMask(GL_TRUE);
+    glEnable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
 }
 
 void R_Overlay::Shutdown()

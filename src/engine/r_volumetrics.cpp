@@ -22,7 +22,6 @@
  * SOFTWARE.
  */
 #include "r_volumetrics.h"
-#include "r_state.h"
 #include "cvar.h"
 #include <algorithm>
 
@@ -119,8 +118,8 @@ void R_Volumetrics::Render(GLuint depthTexture, const Camera& camera, R_Lights* 
     int vH = screenH / ds;
 
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-    R_State::SetViewport(0, 0, vW, vH);
-    R_State::Clear(true, false, false);
+    glViewport(0, 0, vW, vH);
+    glClear(GL_COLOR_BUFFER_BIT);
 
     m_volShader.Bind();
     m_volShader.SetMat4("u_invProjection", glm::inverse(camera.GetProjectionMatrix()));
@@ -157,7 +156,7 @@ void R_Volumetrics::Render(GLuint depthTexture, const Camera& camera, R_Lights* 
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    R_State::SetViewport(0, 0, screenW, screenH);
+    glViewport(0, 0, screenW, screenH);
 }
 
 void R_Volumetrics::Bind(const R_Shader& shader)

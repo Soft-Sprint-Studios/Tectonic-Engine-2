@@ -23,7 +23,6 @@
  */
 #include <resources.h>
 #include "r_glass.h"
-#include "r_state.h"
 #include "camera.h"
 #include "renderer.h"
 #include "entities.h"
@@ -65,9 +64,9 @@ void R_Glass::CaptureScreen(GLuint screenFBO, int width, int height)
 
 void R_Glass::Draw(const Camera& camera, R_BSP* bsp)
 {
-    R_State::SetBlending(true);
-    R_State::SetBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    R_State::SetDepthMask(false);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDepthMask(GL_FALSE);
 
     m_shader.Bind();
     m_shader.SetMat4("u_projection", camera.GetProjectionMatrix());
@@ -97,7 +96,7 @@ void R_Glass::Draw(const Camera& camera, R_BSP* bsp)
         }
     }
 
-    R_State::SetDepthMask(true);
+    glDepthMask(GL_TRUE);
 }
 
 void R_Glass::Shutdown()

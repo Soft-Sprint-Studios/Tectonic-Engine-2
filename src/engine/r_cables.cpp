@@ -22,7 +22,6 @@
  * SOFTWARE.
  */
 #include "r_cables.h"
-#include "r_state.h"
 
 void R_Cables::Init()
 {

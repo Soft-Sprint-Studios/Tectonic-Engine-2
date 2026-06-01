@@ -120,7 +120,6 @@ public:
             dDef.size = -1.0f;
             dDef.textureName = textureName;
             dDef.lifetime = -1.0f;
-            dDef.blendMode = 0;
             Decals::CreateDecal(dDef);
         }
     }

@@ -22,7 +22,6 @@
  * SOFTWARE.
  */
 #include "r_decals.h"
-#include "r_state.h"
 #include "materials.h"
 
 void R_Decals::Init()
@@ -67,9 +66,13 @@ void R_Decals::Draw(const Camera& camera, const std::vector<std::shared_ptr<Deca
         return;
     }
 
-    R_State::SetDepthTest(true);
-    R_State::SetDepthMask(false);
-    R_State::SetBlending(true);
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_FALSE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_DST_COLOR, GL_SRC_COLOR);
+
+    glEnable(GL_POLYGON_OFFSET_FILL);
+    glPolygonOffset(-1.0f, -1.0f);
 
     m_shader.Bind();
     m_shader.SetMat4("u_view", camera.GetViewMatrix());
@@ -84,25 +87,15 @@ void R_Decals::Draw(const Camera& camera, const std::vector<std::shared_ptr<Deca
         if (tex)
         {
             tex->Bind(0);
-            m_shader.SetVec4("u_color", def.color);
-            m_shader.SetInt("u_blendMode", def.blendMode);
-
-            if (def.blendMode == 0)
-            {
-                R_State::SetBlendFunc(GL_DST_COLOR, GL_ZERO);
-            }
-            else
-            {
-                R_State::SetBlendFunc(GL_SRC_ALPHA, GL_ONE);
-            }
 
             m_shader.SetMat4("u_model", d->GetModelMatrix());
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         }
     }
 
-    R_State::SetDepthMask(true);
-    R_State::SetBlending(false);
+    glDisable(GL_POLYGON_OFFSET_FILL);
+    glDepthMask(GL_TRUE);
+    glDisable(GL_BLEND);
 }
 
 void R_Decals::Shutdown()

@@ -24,7 +24,6 @@
 #include <cstdio>
 #include "pl_mpeg.h"
 #include "r_video.h"
-#include <r_state.h>
 #include "video.h"
 #include "filesystem.h"
 #include "console.h"
@@ -157,9 +156,9 @@ void R_Video::Init()
 
 void R_Video::Draw(const Camera& camera, R_BSP* bsp)
 {
-    R_State::SetDepthTest(true);
-    R_State::SetDepthMask(true);
-    R_State::SetBlending(false);
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+    glDisable(GL_BLEND);
 
     m_shader.Bind();
     m_shader.SetMat4("u_view", camera.GetViewMatrix());

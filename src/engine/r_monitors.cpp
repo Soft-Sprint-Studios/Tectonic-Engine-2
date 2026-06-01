@@ -24,7 +24,6 @@
 #include "r_monitors.h"
 #include "renderer.h"
 #include "entities.h"
-#include "r_state.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include "r_bsp.h"
 #include "func_monitor.h"
@@ -111,7 +110,7 @@ void R_Monitors::RenderTextures(Renderer* renderer)
         cam.pitch = glm::degrees(asin(forward.y));
         cam.yaw = glm::degrees(atan2(forward.z, forward.x));
 
-        R_State::SetViewport(0, 0, rt.res, rt.res);
+        glViewport(0, 0, rt.res, rt.res);
         glBindFramebuffer(GL_FRAMEBUFFER, rt.fbo);
 
         renderer->RenderWorld(cam, 0, true);
@@ -126,8 +125,8 @@ void R_Monitors::RenderTextures(Renderer* renderer)
 
 void R_Monitors::Draw(const Camera& camera, R_BSP* bsp)
 {
-    R_State::SetDepthTest(true);
-    R_State::SetDepthMask(true);
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
 
     m_shader.Bind();
     m_shader.SetMat4("u_view", camera.GetViewMatrix());
