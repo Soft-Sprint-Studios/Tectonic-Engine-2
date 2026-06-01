@@ -26,19 +26,17 @@
 #include "cvar.h"
 #include "postprocess.h"
 #include "timing.h"
-#include "r_bloom.h"
 #include "resources.h"
 #include "materials.h"
 
 CVar r_postprocess("r_postprocess", "1", "Enable entire post-processing stack.", CVAR_SAVE);
 CVar r_gamma("r_gamma", "1.7", "Display gamma correction value.", CVAR_SAVE);
 CVar r_tonemap("r_tonemap", "1", "Enable filmic ACES tonemapping.", CVAR_SAVE);
-CVar r_fxaa("r_fxaa", "0", "Enable Fast Approximate Anti-Aliasing (Can be used alongside MSAA at the same time).", CVAR_SAVE);
+CVar r_fxaa("r_fxaa", "1", "Enable Fast Approximate Anti-Aliasing.", CVAR_SAVE);
 CVar r_fxaa_strength("r_fxaa_strength", "1.0", "Strength of FXAA smoothing.", CVAR_SAVE);
 
 R_PostProcess::R_PostProcess()
     : m_fbo(0), m_texture(0), m_depthTexture(0),
-    m_msFbo(0), m_msTexture(0), m_msRbo(0),
     m_quadVAO(0), m_quadVBO(0), m_width(0), m_height(0)
 {
 }
@@ -66,6 +64,9 @@ bool R_PostProcess::Init(int width, int height)
 
     m_ssao = std::make_unique<R_SSAO>();
     m_ssao->Init(m_width, m_height);
+
+    m_ssr = std::make_unique<R_SSR>();
+    m_ssr->Init(m_width, m_height);
 
     SetupBuffers();
 
@@ -103,25 +104,6 @@ void R_PostProcess::SetupBuffers()
         glDeleteTextures(1, &m_texture);
         glDeleteTextures(1, &m_depthTexture);
     }
-    if (m_msFbo != 0)
-    {
-        glDeleteFramebuffers(1, &m_msFbo);
-        glDeleteTextures(1, &m_msTexture);
-        glDeleteRenderbuffers(1, &m_msRbo);
-        m_msFbo = 0;
-    }
-
-    int samples = 4;
-    bool useMSAA = false;
-
-    if (CVar* cvSamples = CVar::Find("r_multisample_samples"))
-    {
-        samples = cvSamples->GetInt();
-    }
-    if (CVar* cvMSAA = CVar::Find("r_multisample"))
-    {
-        useMSAA = cvMSAA->GetInt() > 0;
-    }
 
     // Setup resolve FBO
     glGenFramebuffers(1, &m_fbo);
@@ -147,70 +129,28 @@ void R_PostProcess::SetupBuffers()
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depthTexture, 0);
 
-    // Setup multisample FBO
-    if (useMSAA)
-    {
-        glGenFramebuffers(1, &m_msFbo);
-        glBindFramebuffer(GL_FRAMEBUFFER, m_msFbo);
-
-        glGenTextures(1, &m_msTexture);
-        glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, m_msTexture);
-        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_RGB16F, m_width, m_height, GL_TRUE);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, m_msTexture, 0);
-
-        glGenRenderbuffers(1, &m_msRbo);
-        glBindRenderbuffer(GL_RENDERBUFFER, m_msRbo);
-        glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH24_STENCIL8, m_width, m_height);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_msRbo);
-    }
-
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void R_PostProcess::Begin()
 {
-    bool useMSAA = false;
-    if (CVar* cvMSAA = CVar::Find("r_multisample"))
-    {
-        useMSAA = cvMSAA->GetInt() > 0;
-    }
-
-    glBindFramebuffer(GL_FRAMEBUFFER, (useMSAA && m_msFbo != 0) ? m_msFbo : m_fbo);
-
-    if (useMSAA)
-        glEnable(GL_MULTISAMPLE);
-    else
-        glDisable(GL_MULTISAMPLE);
-
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void R_PostProcess::End()
 {
-    bool useMSAA = false;
-    if (CVar* cvMSAA = CVar::Find("r_multisample"))
-    {
-        useMSAA = cvMSAA->GetInt() > 0;
-    }
-
-    if (useMSAA && m_msFbo != 0)
-    {
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, m_msFbo);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_fbo);
-        glBlitFramebuffer(0, 0, m_width, m_height, 0, 0, m_width, m_height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
-        glBlitFramebuffer(0, 0, m_width, m_height, 0, 0, m_width, m_height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-    }
-
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void R_PostProcess::Draw(const Camera& camera, R_Lights* lights)
+void R_PostProcess::Draw(const Camera& camera, R_Lights* lights, R_GBuffer* gbuffer)
 {
     // Run the subrenderers
     m_autoExposure->Update(m_texture, m_width, m_height);
     m_bloom->Render(m_texture, m_quadVAO, m_width, m_height);
     m_volumetrics->Render(m_depthTexture, camera, lights, m_quadVAO, m_width, m_height);
     m_ssao->Render(m_depthTexture, camera, m_quadVAO, m_width, m_height);
+    m_ssr->Render(gbuffer->GetDepthTex(), gbuffer->GetNormalTex(), gbuffer->GetAlbedoSpecTex(), m_texture, camera, m_quadVAO);
 
     m_shader.Bind();
     m_shader.SetInt("u_screenTexture", 0);
@@ -219,6 +159,7 @@ void R_PostProcess::Draw(const Camera& camera, R_Lights* lights)
     m_bloom->Bind(m_shader);
     m_volumetrics->Bind(m_shader);
     m_ssao->Bind(m_shader);
+    m_ssr->Bind(m_shader);
 
     m_shader.SetInt("u_postprocess_enabled", r_postprocess.GetInt());
 
@@ -275,6 +216,7 @@ void R_PostProcess::Rescale(int width, int height)
     m_bloom->Rescale(width, height);
     m_volumetrics->Rescale(width, height);
     m_ssao->Rescale(width, height);
+    m_ssr->Rescale(width, height);
     SetupBuffers();
 }
 
@@ -304,6 +246,12 @@ void R_PostProcess::Shutdown()
         m_ssao.reset();
     }
 
+    if (m_ssr)
+    {
+        m_ssr->Shutdown();
+        m_ssr.reset();
+    }
+
     if (m_fbo != 0) 
         glDeleteFramebuffers(1, &m_fbo);
     if (m_texture != 0) 
@@ -311,28 +259,16 @@ void R_PostProcess::Shutdown()
     if (m_depthTexture != 0)
         glDeleteTextures(1, &m_depthTexture);
 
-    if (m_msFbo != 0) 
-        glDeleteFramebuffers(1, &m_msFbo);
-    if (m_msTexture != 0) 
-        glDeleteTextures(1, &m_msTexture);
-    if (m_msRbo != 0) 
-        glDeleteRenderbuffers(1, &m_msRbo);
-
     if (m_quadVAO != 0) 
         glDeleteVertexArrays(1, &m_quadVAO);
     if (m_quadVBO != 0) 
         glDeleteBuffers(1, &m_quadVBO);
 
-    m_fbo = m_msFbo = 0;
+    m_fbo = 0;
 }
 
 // Used for r_glass
 GLuint R_PostProcess::GetActiveFBO()
 {
-    bool useMSAA = false;
-    if (CVar* cvMSAA = CVar::Find("r_multisample"))
-    {
-        useMSAA = cvMSAA->GetInt() > 0;
-    }
-    return (useMSAA && m_msFbo != 0) ? m_msFbo : m_fbo;
+    return m_fbo;
 }

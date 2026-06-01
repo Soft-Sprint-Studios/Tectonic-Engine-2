@@ -9,11 +9,11 @@ uniform mat4 u_projection;
 uniform mat4 u_view;
 uniform mat4 u_model;
 
-out centroid vec3 v_FragPos;
+out vec3 v_FragPos;
 out vec2 v_TexCoord;
 out vec2 v_LmCoord;
 out vec2 v_LmSize;
-out centroid mat3 v_TBN;
+out mat3 v_TBN;
 
 void main()
 {

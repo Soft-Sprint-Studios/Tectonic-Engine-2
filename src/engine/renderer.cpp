@@ -45,6 +45,7 @@ CVar r_sprites("r_sprites", "1", "Enable sprite rendering.", CVAR_SAVE);
 CVar r_wireframe("r_wireframe", "0", "Render the scene in wireframe mode.", CVAR_NONE);
 CVar r_zprepass("r_zprepass", "1", "Use a depth-only prepass to reduce overdraw.", CVAR_SAVE);
 CVar r_lightmap_bicubic("r_lightmap_bicubic", "1", "Enable bicubic lightmap filtering.", CVAR_SAVE);
+CVar r_debug_gbuffer("r_debug_gbuffer", "0", "Enable G-Buffer diagnostic overlay (0: Off, 1: On).", CVAR_SAVE);
 
 CVar mat_specular("mat_specular", "1", "Enable specular mapping on materials.", CVAR_SAVE);
 CVar mat_bumpmap("mat_bumpmap", "1", "Enable normal/bump mapping on materials.", CVAR_SAVE);
@@ -66,7 +67,8 @@ bool Renderer::Init(Window& window)
 {
     m_windowRef = &window;
 
-    m_worldShader.Load("shaders/world.vert", "shaders/world.frag");
+    m_gbufferShader.Load("shaders/gbuffer.vert", "shaders/gbuffer.frag");
+    m_resolveShader.Load("shaders/resolve.vert", "shaders/resolve.frag");
     m_depthShader.Load("shaders/depth.vert", "shaders/depth.frag");
 
     // Global GL State
@@ -79,6 +81,32 @@ bool Renderer::Init(Window& window)
     m_postProcess = std::make_unique<R_PostProcess>();
     int ww, wh;
     SDL_GetWindowSize(m_windowRef->Get(), &ww, &wh);
+
+    m_gbuffer = std::make_unique<R_GBuffer>();
+    m_gbuffer->Init(ww, wh);
+
+    float quadVertices[] =
+    {
+        -1.0f,  1.0f,  0.0f, 1.0f,
+        -1.0f, -1.0f,  0.0f, 0.0f,
+         1.0f, -1.0f,  1.0f, 0.0f,
+
+        -1.0f,  1.0f,  0.0f, 1.0f,
+         1.0f, -1.0f,  1.0f, 0.0f,
+         1.0f,  1.0f,  1.0f, 1.0f
+    };
+
+    glGenVertexArrays(1, &m_quadVAO);
+    glGenBuffers(1, &m_quadVBO);
+    glBindVertexArray(m_quadVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, m_quadVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+    glBindVertexArray(0);
 
     m_postProcess->Init(ww, wh);
 
@@ -146,138 +174,6 @@ bool Renderer::LoadMap(const std::string& path)
     return true;
 }
 
-void Renderer::DrawWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater)
-{
-    m_worldShader.Bind();
-    m_worldShader.SetMat4("u_projection", camera.GetProjectionMatrix());
-    m_worldShader.SetMat4("u_view", camera.GetViewMatrix());
-    m_worldShader.SetMat4("u_model", glm::mat4(1.0f));
-    m_worldShader.SetVec3("u_viewPos", camera.position);
-
-    m_worldShader.SetInt("u_mat_specular", mat_specular.GetInt());
-    m_worldShader.SetInt("u_mat_bumpmap", mat_bumpmap.GetInt());
-    m_worldShader.SetInt("u_lightmap_bicubic", r_lightmap_bicubic.GetInt());
-
-    m_worldShader.SetInt("u_mat_parallax", mat_parallax.GetInt());
-    m_worldShader.SetFloat("u_pomMinSteps", mat_parallax_min_steps.GetFloat());
-    m_worldShader.SetFloat("u_pomMaxSteps", mat_parallax_max_steps.GetFloat());
-    m_worldShader.SetInt("u_pomRefineSteps", mat_parallax_refine.GetInt());
-
-    m_worldShader.SetInt("u_diffuse", 0);
-    m_worldShader.SetInt("u_lightmap", 1);
-    m_worldShader.SetInt("u_normal", 2);
-    m_worldShader.SetInt("u_cubemap", 4);
-    m_worldShader.SetInt("u_diffuse2", 14);
-    m_worldShader.SetInt("u_normal2", 15);
-    m_worldShader.SetInt("u_heightMap", 17);
-    m_worldShader.SetInt("u_heightMap2", 18);
-
-    m_worldShader.SetInt("u_useCubemap", 0);
-    const Cubemap::CubemapProbe* probe = Cubemap::FindClosest(camera.position);
-    if (probe && probe->textureID != 0 && probe->textureID != cubemapToExclude)
-    {
-        m_worldShader.SetInt("u_useCubemap", 1);
-        m_worldShader.SetVec3("u_cubemapOrigin", probe->origin);
-        m_worldShader.SetVec3("u_cubemapMins", probe->mins);
-        m_worldShader.SetVec3("u_cubemapMaxs", probe->maxs);
-        glActiveTexture(GL_TEXTURE4);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, probe->textureID);
-    }
-
-    if (m_lightRenderer)
-    {
-        m_lightRenderer->Bind(m_worldShader);
-    }
-
-    Frustum frustum = camera.GetFrustum();
-
-    // Draw BSP
-    if (m_bspRenderer)
-    {
-        m_bspRenderer->Draw(m_worldShader, frustum);
-
-        // Also render all brush entities
-        for (auto& ent : EntityManager::GetEntities())
-        {
-            if (ent->IsRenderable() && ent->GetBModelIndex() > 0)
-            {
-                glm::mat4 model = glm::translate(glm::mat4(1.0f), ent->GetOrigin());
-                glm::vec3 ang = ent->GetAngles();
-                model = glm::rotate(model, glm::radians(ang.y), glm::vec3(0, 1, 0));
-                model = glm::rotate(model, glm::radians(ang.x), glm::vec3(1, 0, 0));
-                model = glm::rotate(model, glm::radians(ang.z), glm::vec3(0, 0, 1));
-                m_bspRenderer->DrawBModel(ent->GetBModelIndex(), m_worldShader, model);
-            }
-        }
-    }
-
-    // Draw models
-    if (m_modelRenderer)
-    {
-        m_modelRenderer->Draw(m_worldShader, frustum);
-    }
-
-    // Draw water
-    if (m_waterRenderer && drawWater && r_water.GetInt() > 0)
-    {
-        m_waterRenderer->Draw(camera, m_bspRenderer->GetVAO(), m_bspRenderer->GetLightmapTexture());
-    }
-
-    // Draw sky
-    if (m_skyRenderer && r_skybox.GetInt() > 0)
-    {
-        m_skyRenderer->Draw(camera);
-    }
-
-    // Draw particles
-    if (m_particleRenderer && r_particles.GetInt() > 0)
-    {
-        m_particleRenderer->Draw(camera, m_postProcess->GetDepthTexture());
-    }
-
-    // Draw sprites
-    if (m_spriteRenderer && r_sprites.GetInt() > 0)
-    {
-        m_spriteRenderer->Draw(camera, Sprites::GetActiveSprites());
-    }
-
-    // Draw beams
-    if (m_beamRenderer)
-    {
-        m_beamRenderer->Draw(camera, Beams::GetActiveBeams());
-    }
-
-    // Draw cables
-    if (m_cableRenderer)
-    {
-        m_cableRenderer->Draw(camera, Cables::GetActiveCables());
-    }
-
-    // Draw decals
-    if (m_decalRenderer)
-    {
-        m_decalRenderer->Draw(camera, Decals::GetActiveDecals());
-    }
-
-    // Draw videos
-    if (m_videoRenderer)
-    {
-        m_videoRenderer->Draw(camera, m_bspRenderer.get());
-    }
-
-    // Draw monitors
-    if (m_monitorRenderer)
-    {
-        m_monitorRenderer->Draw(camera, m_bspRenderer.get());
-    }
-
-    // Draw interior parallax 
-    if (m_interiorRenderer)
-    {
-        m_interiorRenderer->Draw(camera, m_bspRenderer.get());
-    }
-}
-
 void Renderer::DrawSceneDepth(R_Shader& shader, const Frustum& frustum, R_BSP* bsp, R_Models* models)
 {
     bsp->Draw(shader, frustum, true);
@@ -298,42 +194,207 @@ void Renderer::DrawSceneDepth(R_Shader& shader, const Frustum& frustum, R_BSP* b
     }
 }
 
-void Renderer::DrawPrePass(Camera& camera)
-{
-    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-    glDepthFunc(GL_LESS);
-    glDepthMask(GL_TRUE);
-
-    m_depthShader.Bind();
-    m_depthShader.SetMat4("u_projection", camera.GetProjectionMatrix());
-    m_depthShader.SetMat4("u_view", camera.GetViewMatrix());
-    m_depthShader.SetMat4("u_model", glm::mat4(1.0f));
-
-    DrawSceneDepth(m_depthShader, camera.GetFrustum(), m_bspRenderer.get(), m_modelRenderer.get());
-
-    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-    glDepthFunc(GL_LEQUAL);
-    glDepthMask(GL_FALSE);
-}
-
 void Renderer::RenderWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater)
 {
+    GLint targetFBO = 0;
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &targetFBO);
+
+    GLint viewport[4];
+    glGetIntegerv(GL_VIEWPORT, viewport);
+    int renderW = viewport[2];
+    int renderH = viewport[3];
+
+    int w, h;
+    SDL_GetWindowSize(m_windowRef->Get(), &w, &h);
+
+    GeometryPass(camera, renderW, renderH);
+    LightingPass(camera, cubemapToExclude, targetFBO, renderW, renderH, w, h);
+    DepthBlit(targetFBO, renderW, renderH);
+    ForwardPass(camera, targetFBO, renderW, renderH, drawWater);
+}
+
+void Renderer::GeometryPass(Camera& camera, int renderW, int renderH)
+{
+    m_gbuffer->Bind();
+    glViewport(0, 0, renderW, renderH);
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+    glDepthFunc(GL_LESS);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    bool usePrepass = (r_zprepass.GetInt() > 0 && drawWater);
+    m_gbufferShader.Bind();
+    m_gbufferShader.SetMat4("u_projection", camera.GetProjectionMatrix());
+    m_gbufferShader.SetMat4("u_view", camera.GetViewMatrix());
+    m_gbufferShader.SetMat4("u_model", glm::mat4(1.0f));
+    m_gbufferShader.SetVec3("u_viewPos", camera.position);
+    m_gbufferShader.SetInt("u_mat_specular", mat_specular.GetInt());
+    m_gbufferShader.SetInt("u_mat_bumpmap", mat_bumpmap.GetInt());
+    m_gbufferShader.SetInt("u_mat_parallax", mat_parallax.GetInt());
+    m_gbufferShader.SetInt("u_lightmap_bicubic", r_lightmap_bicubic.GetInt());
+    m_gbufferShader.SetFloat("u_pomMinSteps", mat_parallax_min_steps.GetFloat());
+    m_gbufferShader.SetFloat("u_pomMaxSteps", mat_parallax_max_steps.GetFloat());
+    m_gbufferShader.SetInt("u_pomRefineSteps", mat_parallax_refine.GetInt());
+    m_gbufferShader.SetInt("u_diffuse", 0);
+    m_gbufferShader.SetInt("u_lightmap", 1);
+    m_gbufferShader.SetInt("u_normal", 2);
+    m_gbufferShader.SetInt("u_heightMap", 17);
+    m_gbufferShader.SetInt("u_diffuse2", 14);
+    m_gbufferShader.SetInt("u_normal2", 15);
+    m_gbufferShader.SetInt("u_heightMap2", 18);
 
-    if (usePrepass)
+    Frustum frustum = camera.GetFrustum();
+
+    // Draw BSP
+    if (m_bspRenderer)
     {
-        DrawPrePass(camera);
+        m_bspRenderer->Draw(m_gbufferShader, frustum);
+
+        // Also render all brush entities
+        for (auto& ent : EntityManager::GetEntities())
+        {
+            if (ent->IsRenderable() && ent->GetBModelIndex() > 0)
+            {
+                glm::mat4 model = glm::translate(glm::mat4(1.0f), ent->GetOrigin());
+                glm::vec3 ang = ent->GetAngles();
+                model = glm::rotate(model, glm::radians(ang.y), glm::vec3(0, 1, 0));
+                model = glm::rotate(model, glm::radians(ang.x), glm::vec3(1, 0, 0));
+                model = glm::rotate(model, glm::radians(ang.z), glm::vec3(0, 0, 1));
+                m_bspRenderer->DrawBModel(ent->GetBModelIndex(), m_gbufferShader, model);
+            }
+        }
     }
 
-    DrawWorld(camera, cubemapToExclude, drawWater);
-
-    if (usePrepass)
+    if (m_modelRenderer)
     {
-        glDepthMask(GL_TRUE);
-        glDepthFunc(GL_LESS);
+        m_modelRenderer->Draw(m_gbufferShader, frustum);
     }
+
+    m_gbuffer->Unbind();
+}
+
+void Renderer::LightingPass(Camera& camera, GLuint cubemapToExclude, GLint targetFBO, int renderW, int renderH, int w, int h)
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, targetFBO);
+    glViewport(0, 0, renderW, renderH);
+
+    m_resolveShader.Bind();
+    m_resolveShader.SetMat4("u_view", camera.GetViewMatrix());
+    m_resolveShader.SetMat4("u_projection", camera.GetProjectionMatrix());
+    m_resolveShader.SetVec3("u_viewPos", camera.position);
+
+    glm::vec2 gBufferScale = glm::vec2((float)renderW / (float)w, (float)renderH / (float)h);
+    m_resolveShader.SetVec2("u_gBufferScale", gBufferScale);
+    m_resolveShader.SetMat4("u_invProjection", glm::inverse(camera.GetProjectionMatrix()));
+    m_resolveShader.SetMat4("u_invView", glm::inverse(camera.GetViewMatrix()));
+    m_resolveShader.SetInt("u_mat_specular", mat_specular.GetInt());
+
+    m_resolveShader.SetInt("u_gDepth", 0);
+    m_resolveShader.SetInt("u_gNormal", 1);
+    m_resolveShader.SetInt("u_gAlbedoSpec", 2);
+    m_resolveShader.SetInt("u_gLightmap", 3);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_gbuffer->GetDepthTex());
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, m_gbuffer->GetNormalTex());
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, m_gbuffer->GetAlbedoSpecTex());
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, m_gbuffer->GetLightmapTex());
+
+    m_resolveShader.SetInt("u_useCubemap", 0);
+    m_resolveShader.SetInt("u_cubemap", 4);
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
+    const Cubemap::CubemapProbe* probe = Cubemap::FindClosest(camera.position);
+    if (probe && probe->textureID != 0 && probe->textureID != cubemapToExclude)
+    {
+        m_resolveShader.SetInt("u_useCubemap", 1);
+        m_resolveShader.SetVec3("u_cubemapOrigin", probe->origin);
+        m_resolveShader.SetVec3("u_cubemapMins", probe->mins);
+        m_resolveShader.SetVec3("u_cubemapMaxs", probe->maxs);
+        glActiveTexture(GL_TEXTURE4);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, probe->textureID);
+    }
+
+    if (m_lightRenderer)
+    {
+        m_lightRenderer->Bind(m_resolveShader);
+    }
+
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDisable(GL_DEPTH_TEST);
+
+    glBindVertexArray(m_quadVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
+void Renderer::DepthBlit(GLint targetFBO, int renderW, int renderH)
+{
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, m_gbuffer->GetFBO());
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, targetFBO);
+    glBlitFramebuffer(0, 0, renderW, renderH, 0, 0, renderW, renderH, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+    glBindFramebuffer(GL_FRAMEBUFFER, targetFBO);
+}
+
+void Renderer::ForwardPass(Camera& camera, GLint targetFBO, int renderW, int renderH, bool drawWater)
+{
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_FALSE);
+
+    if (m_waterRenderer && drawWater && r_water.GetInt() > 0)
+    {
+        m_waterRenderer->Draw(camera, m_bspRenderer->GetVAO(), m_bspRenderer->GetLightmapTexture());
+    }
+
+    if (m_skyRenderer && r_skybox.GetInt() > 0)
+    {
+        m_skyRenderer->Draw(camera);
+    }
+
+    if (m_particleRenderer && r_particles.GetInt() > 0)
+    {
+        m_particleRenderer->Draw(camera, m_gbuffer->GetDepthTex());
+    }
+
+    if (m_spriteRenderer && r_sprites.GetInt() > 0)
+    {
+        m_spriteRenderer->Draw(camera, Sprites::GetActiveSprites());
+    }
+
+    if (m_beamRenderer)
+    {
+        m_beamRenderer->Draw(camera, Beams::GetActiveBeams());
+    }
+
+    if (m_cableRenderer)
+    {
+        m_cableRenderer->Draw(camera, Cables::GetActiveCables());
+    }
+
+    if (m_decalRenderer)
+    {
+        m_decalRenderer->Draw(camera, Decals::GetActiveDecals(), m_gbuffer->GetLightmapTex());
+    }
+
+    if (m_videoRenderer)
+    {
+        m_videoRenderer->Draw(camera, m_bspRenderer.get());
+    }
+
+    if (m_monitorRenderer)
+    {
+        m_monitorRenderer->Draw(camera, m_bspRenderer.get());
+    }
+
+    if (m_interiorRenderer)
+    {
+        m_interiorRenderer->Draw(camera, m_bspRenderer.get());
+    }
+
+    glDepthMask(GL_TRUE);
 }
 
 void Renderer::Render(Camera& camera)
@@ -355,7 +416,7 @@ void Renderer::Render(Camera& camera)
 
     glPolygonMode(GL_FRONT_AND_BACK, r_wireframe.GetInt() > 0 ? GL_LINE : GL_FILL);
 
-    if (m_waterRenderer)
+    if (m_waterRenderer && r_water.GetInt() == 1)
     {
         m_waterRenderer->RenderReflection(this, camera);
     }
@@ -377,8 +438,25 @@ void Renderer::Render(Camera& camera)
 
     // Draw postprocessing
     glDisable(GL_DEPTH_TEST);
-    m_postProcess->Draw(camera, m_lightRenderer.get());
+    m_postProcess->Draw(camera, m_lightRenderer.get(), m_gbuffer.get());
     m_overlayRenderer->Draw();
+
+    if (r_debug_gbuffer.GetInt())
+    {
+        m_gbuffer->DrawDebug(w, h);
+
+        if (m_uiRenderer)
+        {
+            int dw = w / 5;
+            int dh = h / 5;
+            m_uiRenderer->DrawText("G-BUFFER: DEPTH", 10.0f, (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+            m_uiRenderer->DrawText("G-BUFFER: NORMAL", (float)(dw + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+            m_uiRenderer->DrawText("G-BUFFER: ALBEDO", (float)(dw * 2 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+            m_uiRenderer->DrawText("G-BUFFER: LIGHTMAP", (float)(dw * 3 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+            m_uiRenderer->DrawText("G-BUFFER: SPECULAR", (float)(dw * 4 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+        }
+    }
+
     glEnable(GL_DEPTH_TEST);
 
     if (m_uiRenderer)
@@ -400,6 +478,10 @@ void Renderer::Render(Camera& camera)
 
 void Renderer::OnWindowResize(int w, int h)
 {
+    if (m_gbuffer)
+    {
+        m_gbuffer->Rescale(w, h);
+    }
     if (m_uiRenderer)
     {
         m_uiRenderer->OnWindowResize(w, h);
@@ -416,6 +498,21 @@ void Renderer::OnWindowResize(int w, int h)
 
 void Renderer::Shutdown()
 {
+    if (m_gbuffer)
+    {
+        m_gbuffer->Shutdown();
+        m_gbuffer.reset();
+    }
+    if (m_quadVAO != 0)
+    {
+        glDeleteVertexArrays(1, &m_quadVAO);
+        m_quadVAO = 0;
+    }
+    if (m_quadVBO != 0)
+    {
+        glDeleteBuffers(1, &m_quadVBO);
+        m_quadVBO = 0;
+    }
     if (m_postProcess)
     {
         m_postProcess->Shutdown();

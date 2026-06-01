@@ -26,7 +26,7 @@
 #include <algorithm>
 
 CVar r_volumetrics("r_volumetrics", "1", "Enable volumetric lighting (God rays).", CVAR_SAVE);
-CVar r_volumetrics_res("r_volumetrics_res", "8", "Downscaling factor for volumetric buffer (higher = faster).", CVAR_SAVE);
+CVar r_volumetrics_downsample("r_volumetrics_downsample", "8", "Downscaling factor for volumetric buffer (higher = faster).", CVAR_SAVE);
 CVar r_volumetrics_blur_passes("r_volumetrics_blur_passes", "6", "Number of blur passes for volumetrics.", CVAR_SAVE);
 
 R_Volumetrics::R_Volumetrics() 
@@ -51,7 +51,7 @@ void R_Volumetrics::CreateBuffers(int width, int height)
     m_width = width;
     m_height = height;
 
-    int ds = std::max(1, r_volumetrics_res.GetInt());
+    int ds = std::max(1, r_volumetrics_downsample.GetInt());
     int vW = width / ds;
     int vH = height / ds;
 
@@ -113,7 +113,7 @@ void R_Volumetrics::Render(GLuint depthTexture, const Camera& camera, R_Lights* 
         return;
 
     // Volumetric pass
-    int ds = std::max(1, r_volumetrics_res.GetInt());
+    int ds = std::max(1, r_volumetrics_downsample.GetInt());
     int vW = screenW / ds;
     int vH = screenH / ds;
 

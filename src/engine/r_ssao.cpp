@@ -31,7 +31,7 @@ CVar r_ssao_radius("r_ssao_radius", "0.5", "Sampling radius for AO.", CVAR_SAVE)
 CVar r_ssao_bias("r_ssao_bias", "0.025", "Occlusion bias to prevent self-shadowing.", CVAR_SAVE);
 CVar r_ssao_samples("r_ssao_samples", "64", "Number of AO samples per pixel.", CVAR_SAVE);
 CVar r_ssao_power("r_ssao_power", "2.0", "Contrast strength of the AO effect.", CVAR_SAVE);
-CVar r_ssao_res("r_ssao_res", "2", "SSAO downscale factor (higher = faster).", CVAR_SAVE);
+CVar r_ssao_downsample("r_ssao_downsample", "2", "Downscaling factor for SSAO buffer (higher = faster).", CVAR_SAVE);
 
 R_SSAO::R_SSAO() 
 {
@@ -110,7 +110,7 @@ void R_SSAO::CreateBuffers(int width, int height)
     m_width = width;
     m_height = height;
 
-    int ds = std::max(1, r_ssao_res.GetInt());
+    int ds = std::max(1, r_ssao_downsample.GetInt());
 
     int vW = width / ds;
     int vH = height / ds;
@@ -172,7 +172,7 @@ void R_SSAO::Render(GLuint depthTexture, const Camera& camera, GLuint quadVAO, i
     // SSAO pass
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 
-    int ds = std::max(1, r_ssao_res.GetInt());
+    int ds = std::max(1, r_ssao_downsample.GetInt());
 
     int vW = screenW / ds;
     int vH = screenH / ds;
@@ -190,7 +190,7 @@ void R_SSAO::Render(GLuint depthTexture, const Camera& camera, GLuint quadVAO, i
     m_ssaoShader.SetFloat("u_bias", r_ssao_bias.GetFloat());
     m_ssaoShader.SetFloat("u_power", r_ssao_power.GetFloat());
 
-    int res = std::max(1, r_ssao_res.GetInt());
+    int res = std::max(1, r_ssao_downsample.GetInt());
     m_ssaoShader.SetVec2("u_noiseScale", glm::vec2((float)(screenW / res) / 4.0f, (float)(screenH / res) / 4.0f));
     
     glActiveTexture(GL_TEXTURE0);

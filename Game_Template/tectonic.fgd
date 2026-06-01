@@ -308,7 +308,7 @@
 
 @PointClass base(Targetname) sprite() = env_sprite : "Sprite Entity"
 [
-    texture(string) : "Sprite Texture" : "" : "File path of the texture (e.g. textures/sprites/glow.png)."
+    texture(string) : "Sprite Texture" : "" : "File path of the texture (e.g. textures/sprites/glow.dds)."
     scale(float) : "Scale" : "1.0"
     rendercolor(color255) : "Color (R G B)" : "255 255 255"
     renderamt(integer) : "Alpha (0-255)" : 255
@@ -769,7 +769,7 @@
 @SolidClass base(Targetname) = func_glass : "A transparent, refractive glass brush."
 [
 	refractamount(float) : "Refraction Amount" : "0.05" : "Strength of the distortion caused by the normal map."
-	normal(string) : "Normal Map" : "water_normal.png" : "The PNG filename in the textures/ folder to use for refraction."
+	normal(string) : "Normal Map" : "water_normal.dds" : "The DDS filename in the textures/ folder to use for refraction."
 ]
 
 @SolidClass base(Targetname) = func_movelinear : "A brush that moves along a specified direction."
@@ -919,4 +919,9 @@
 [
     cubemap(string) : "Interior Cubemap Base Name" : "" : "The base name of the cubemap in textures/interiors/ (e.g., 'office' looks for 'office_right.dds')."
     room_size(vector) : "Room Size (W H D)" : "1.0 1.0 1.0" : "The 3D proportions of the virtual room. 1 1 1 is a perfect cube."
+]
+
+@PointClass base(Targetname) decal() studio("models/editor/axis_helper_thick.mdl") = infodecal : 
+	"An entity that places a decal on the world."
+[
 ]

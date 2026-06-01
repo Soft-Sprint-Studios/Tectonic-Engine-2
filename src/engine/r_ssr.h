@@ -22,53 +22,34 @@
  * SOFTWARE.
  */
 #pragma once
-#include "r_gbuffer.h"
-#include "r_bloom.h"
-#include "r_volumetrics.h"
-#include "r_autoexposure.h"
-#include "r_ssao.h"
-#include "r_ssr.h"
-#include "camera.h"
 #include "r_shader.h"
+#include "camera.h"
 #include <glad/glad.h>
-#include <memory>
 
-class R_PostProcess
+class R_SSR
 {
 public:
-    R_PostProcess();
-    ~R_PostProcess();
+    R_SSR();
+    ~R_SSR();
 
     bool Init(int width, int height);
-    void Begin();
-    void End();
-    void Draw(const Camera& camera, class R_Lights* lights, class R_GBuffer* gbuffer);
-    void Rescale(int width, int height);
     void Shutdown();
+    void Rescale(int width, int height);
 
-    GLuint GetDepthTexture() 
-    { 
-        return m_depthTexture;
-    }
-
-    GLuint GetActiveFBO();
+    void Render(GLuint depthTex, GLuint normalTex, GLuint albedoTex, GLuint sceneTex, const Camera& camera, GLuint quadVAO);
+    void Bind(const R_Shader& shader);
 
 private:
-    GLuint m_fbo;
-    GLuint m_texture;
-    GLuint m_depthTexture;
+    void CreateBuffers(int width, int height);
+    void DeleteBuffers();
 
-    GLuint m_quadVAO;
-    GLuint m_quadVBO;
-    R_Shader m_shader;
+    GLuint m_fbo = 0;
+    GLuint m_texture = 0;
+    GLuint m_blurFbo = 0;
+    GLuint m_blurTexture = 0;
+
+    R_Shader m_ssrShader;
+    R_Shader m_blurShader;
 
     int m_width, m_height;
-    void SetupBuffers();
-
-    // Postprocess subrenderers
-    std::unique_ptr<R_Bloom> m_bloom;
-    std::unique_ptr<R_Volumetrics> m_volumetrics;
-    std::unique_ptr<R_AutoExposure> m_autoExposure;
-    std::unique_ptr<R_SSAO> m_ssao;
-    std::unique_ptr<R_SSR> m_ssr;
 };

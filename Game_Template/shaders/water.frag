@@ -1,9 +1,9 @@
 #include "lightmap.glsl"
-in centroid vec3 v_FragPos;
+in vec3 v_FragPos;
 in vec2 v_TexCoord;
 in vec2 v_LmCoord;
 in vec2 v_LmSize;
-in centroid mat3 v_TBN;
+in mat3 v_TBN;
 
 uniform sampler2D u_reflectionTexture;
 uniform sampler2D u_lightmap;

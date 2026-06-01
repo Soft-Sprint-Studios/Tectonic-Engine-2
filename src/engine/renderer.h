@@ -42,6 +42,7 @@
 #include "r_overlay.h"
 #include "r_interior_parallax.h"
 #include "r_decals.h"
+#include "r_gbuffer.h"
 #include "cubemap.h"
 #include "video.h"
 #include <memory>
@@ -66,12 +67,19 @@ public:
     }
 
 private:
-    bool m_drawingWater = false;
-    void DrawWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater);
-    void DrawPrePass(Camera& camera);
+    void GeometryPass(Camera& camera, int renderW, int renderH);
+    void LightingPass(Camera& camera, GLuint cubemapToExclude, GLint targetFBO, int renderW, int renderH, int w, int h);
+    void DepthBlit(GLint targetFBO, int renderW, int renderH);
+    void ForwardPass(Camera& camera, GLint targetFBO, int renderW, int renderH, bool drawWater);
+
     Window* m_windowRef;
-    R_Shader m_worldShader;
+    R_Shader m_gbufferShader;
     R_Shader m_depthShader;
+    R_Shader m_resolveShader;
+
+    std::unique_ptr<R_GBuffer> m_gbuffer;
+    GLuint m_quadVAO = 0;
+    GLuint m_quadVBO = 0;
 
     // Sub-renderers
     std::unique_ptr<R_PostProcess> m_postProcess;

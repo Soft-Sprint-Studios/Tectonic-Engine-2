@@ -22,53 +22,43 @@
  * SOFTWARE.
  */
 #pragma once
-#include "r_gbuffer.h"
-#include "r_bloom.h"
-#include "r_volumetrics.h"
-#include "r_autoexposure.h"
-#include "r_ssao.h"
-#include "r_ssr.h"
-#include "camera.h"
 #include "r_shader.h"
+#include "r_ui.h"
 #include <glad/glad.h>
-#include <memory>
 
-class R_PostProcess
+class R_GBuffer
 {
 public:
-    R_PostProcess();
-    ~R_PostProcess();
+    R_GBuffer();
+    ~R_GBuffer();
 
     bool Init(int width, int height);
-    void Begin();
-    void End();
-    void Draw(const Camera& camera, class R_Lights* lights, class R_GBuffer* gbuffer);
-    void Rescale(int width, int height);
     void Shutdown();
+    void Rescale(int width, int height);
 
-    GLuint GetDepthTexture() 
-    { 
-        return m_depthTexture;
-    }
+    void Bind();
+    void Unbind();
 
-    GLuint GetActiveFBO();
+    void DrawDebug(int w, int h);
+
+    GLuint GetFBO() const;
+    GLuint GetNormalTex() const;
+    GLuint GetAlbedoSpecTex() const;
+    GLuint GetLightmapTex() const;
+    GLuint GetDepthTex() const;
 
 private:
-    GLuint m_fbo;
-    GLuint m_texture;
-    GLuint m_depthTexture;
+    GLuint m_fbo = 0;
+    GLuint m_normalTex = 0;
+    GLuint m_albedoSpecTex = 0;
+    GLuint m_lightmapTex = 0;
+    GLuint m_depthTex = 0;
 
-    GLuint m_quadVAO;
-    GLuint m_quadVBO;
-    R_Shader m_shader;
+    R_Shader m_debugShader;
+    GLuint m_quadVAO = 0;
+    GLuint m_quadVBO = 0;
+    void InitDebugQuad();
 
-    int m_width, m_height;
-    void SetupBuffers();
-
-    // Postprocess subrenderers
-    std::unique_ptr<R_Bloom> m_bloom;
-    std::unique_ptr<R_Volumetrics> m_volumetrics;
-    std::unique_ptr<R_AutoExposure> m_autoExposure;
-    std::unique_ptr<R_SSAO> m_ssao;
-    std::unique_ptr<R_SSR> m_ssr;
+    int m_width = 0;
+    int m_height = 0;
 };

@@ -23,12 +23,12 @@ layout(std430, binding = 7) readonly buffer InstanceLM
     vec4 lmTransforms[];
 };
 
-out centroid vec2 TexCoord;
-out centroid vec2 v_LmCoord;
-out centroid vec2 v_LmSize;
-out centroid float v_alpha;
+out vec2 TexCoord;
+out vec2 v_LmCoord;
+out vec2 v_LmSize;
+out float v_alpha;
 out vec3 FragPos;
-out centroid mat3 TBN;
+out mat3 TBN;
 
 void main()
 {
@@ -36,10 +36,25 @@ void main()
 
     FragPos = vec3(modelMat * vec4(aPos, 1.0));
     mat3 normalMatrix = mat3(transpose(inverse(modelMat)));
-    vec3 T = normalize(normalMatrix * aTangent.xyz);
     vec3 N = normalize(normalMatrix * aNormal);
-    T = normalize(T - dot(T, N) * N);
-    vec3 B = cross(N, T) * aTangent.w;
+    vec3 T = vec3(0.0);
+
+    if (length(aTangent.xyz) > 0.0001)
+    {
+        T = normalize(normalMatrix * aTangent.xyz);
+        T = normalize(T - dot(T, N) * N);
+    }
+    else
+    {
+        vec3 up = abs(N.y) < 0.999 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
+        T = normalize(cross(up, N));
+    }
+
+    vec3 B = cross(N, T);
+    if (length(aTangent.xyz) > 0.0001)
+    {
+        B *= aTangent.w;
+    }
     
     TBN = mat3(T, B, N);
     

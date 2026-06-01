@@ -28,8 +28,6 @@
 
 CVar r_fullscreen("r_fullscreen", "1", "Enable fullscreen mode.", CVAR_SAVE);
 CVar r_vsync("r_vsync", "1", "Enable vertical synchronization.", CVAR_SAVE);
-CVar r_multisample("r_multisample", "1", "Enable MSAA anti-aliasing.", CVAR_SAVE);
-CVar r_multisample_samples("r_multisample_samples", "4", "Number of MSAA samples.", CVAR_SAVE);
 
 bool Window::Init(const char* title, int width, int height)
 {
@@ -42,11 +40,6 @@ bool Window::Init(const char* title, int width, int height)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    if (r_multisample.GetInt() > 0)
-    {
-        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, r_multisample_samples.GetInt());
-    }
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 

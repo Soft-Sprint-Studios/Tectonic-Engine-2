@@ -6,6 +6,7 @@ uniform sampler2D u_depthTexture;
 uniform sampler2D u_bloomTexture;
 uniform sampler2D u_volumetricTexture;
 uniform sampler2D u_ssaoTexture;
+uniform sampler2D u_ssrTexture;
 uniform sampler2D u_lensDirtTexture;
 uniform float u_time;
 
@@ -29,6 +30,7 @@ uniform int u_bloom_enabled;
 uniform float u_bloom_intensity;
 uniform int u_volumetrics_enabled;
 uniform int u_ssao_enabled;
+uniform int u_ssr_enabled;
 uniform int u_tonemap_enabled;
 uniform int u_fxaa;
 uniform float u_fxaaStrength;
@@ -117,21 +119,13 @@ void main()
     }
 
     // Chromatic Aberration
-    vec2 redOffset = u_chromaStrength * (TexCoords - 0.5);
-    vec2 greenOffset = -u_chromaStrength * (TexCoords - 0.5) * 0.5;
-    float r = texture(u_screenTexture, TexCoords - redOffset).r;
-    float g = texture(u_screenTexture, TexCoords - greenOffset).g;
-    float b = texture(u_screenTexture, TexCoords).b;
-
-    vec3 original = vec3(r, g, b);
-    vec3 fxaaColor = original;
-
-    if (u_fxaa == 1)
-    {
-        fxaaColor = ApplyFXAA(u_screenTexture, TexCoords);
-    }
-
-    vec3 hdrColor = mix(original, fxaaColor, u_fxaaStrength);
+    vec2 caDir = (TexCoords - 0.5) * u_chromaStrength;
+    
+    float r = (u_fxaa == 1) ? ApplyFXAA(u_screenTexture, TexCoords - caDir).r : texture(u_screenTexture, TexCoords - caDir).r;
+    float g = (u_fxaa == 1) ? ApplyFXAA(u_screenTexture, TexCoords - caDir * 0.5).g : texture(u_screenTexture, TexCoords - caDir * 0.5).g;
+    float b = (u_fxaa == 1) ? ApplyFXAA(u_screenTexture, TexCoords).b : texture(u_screenTexture, TexCoords).b;
+    
+    vec3 hdrColor = vec3(r, g, b);
 
     hdrColor *= u_exposure;
 	
@@ -139,6 +133,13 @@ void main()
     if (u_ssao_enabled == 1)
     {
         hdrColor *= texture(u_ssaoTexture, TexCoords).r;
+    }
+	
+    // SSR
+    if (u_ssr_enabled == 1)
+    {
+        vec4 ssr = texture(u_ssrTexture, TexCoords);
+        hdrColor += ssr.rgb * ssr.a;
     }
 	
     // Bloom

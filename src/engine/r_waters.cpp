@@ -100,6 +100,7 @@ void R_Waters::RenderReflection(Renderer* renderer, const Camera& mainCam)
 
     renderer->RenderWorld(reflectCam, 0, false);
 
+    glViewport(0, 0, m_width, m_height);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
