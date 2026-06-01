@@ -39,7 +39,7 @@ class R_Decals
 {
 public:
     void Init();
-    void Draw(const Camera& camera, const std::vector<std::shared_ptr<Decal>>& decals, GLuint lightmapTex);
+    void Draw(const Camera& camera, const std::vector<std::shared_ptr<Decal>>& decals);
     void Shutdown();
 
 private:

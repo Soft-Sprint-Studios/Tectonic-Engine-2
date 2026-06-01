@@ -144,11 +144,7 @@ void main()
         vec3 w = max(vec3(0.0), vec3(dot(tangentNormal, basis0), dot(tangentNormal, basis1), dot(tangentNormal, basis2)));
         w /= (w.x + w.y + w.z); 
 
-        vec4 l1 = GetLightmapData(u_lightmap, LmCoord2);
-        vec4 l2 = GetLightmapData(u_lightmap, LmCoord3);
-        vec4 l3 = GetLightmapData(u_lightmap, LmCoord4);
-        
-        lmData = l1 * w.x + l2 * w.y + l3 * w.z;
+        lmData = GetLightmapData(u_lightmap, LmCoord2) * w.x +  GetLightmapData(u_lightmap, LmCoord3) * w.y + GetLightmapData(u_lightmap, LmCoord4) * w.z;
     }
     else
     {

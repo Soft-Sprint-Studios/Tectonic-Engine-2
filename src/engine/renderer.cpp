@@ -245,30 +245,24 @@ void Renderer::GeometryPass(Camera& camera, int renderW, int renderH)
 
     Frustum frustum = camera.GetFrustum();
 
-    // Draw BSP
-    if (m_bspRenderer)
-    {
-        m_bspRenderer->Draw(m_gbufferShader, frustum);
+    m_bspRenderer->Draw(m_gbufferShader, frustum);
 
-        // Also render all brush entities
-        for (auto& ent : EntityManager::GetEntities())
+    // Render all brush entities
+    for (auto& ent : EntityManager::GetEntities())
+    {
+        if (ent->IsRenderable() && ent->GetBModelIndex() > 0)
         {
-            if (ent->IsRenderable() && ent->GetBModelIndex() > 0)
-            {
-                glm::mat4 model = glm::translate(glm::mat4(1.0f), ent->GetOrigin());
-                glm::vec3 ang = ent->GetAngles();
-                model = glm::rotate(model, glm::radians(ang.y), glm::vec3(0, 1, 0));
-                model = glm::rotate(model, glm::radians(ang.x), glm::vec3(1, 0, 0));
-                model = glm::rotate(model, glm::radians(ang.z), glm::vec3(0, 0, 1));
-                m_bspRenderer->DrawBModel(ent->GetBModelIndex(), m_gbufferShader, model);
-            }
+            glm::mat4 model = glm::translate(glm::mat4(1.0f), ent->GetOrigin());
+            glm::vec3 ang = ent->GetAngles();
+            model = glm::rotate(model, glm::radians(ang.y), glm::vec3(0, 1, 0));
+            model = glm::rotate(model, glm::radians(ang.x), glm::vec3(1, 0, 0));
+            model = glm::rotate(model, glm::radians(ang.z), glm::vec3(0, 0, 1));
+            m_bspRenderer->DrawBModel(ent->GetBModelIndex(), m_gbufferShader, model);
         }
     }
 
-    if (m_modelRenderer)
-    {
-        m_modelRenderer->Draw(m_gbufferShader, frustum);
-    }
+    m_modelRenderer->Draw(m_gbufferShader, frustum);
+    m_decalRenderer->Draw(camera, Decals::GetActiveDecals());
 
     m_gbuffer->Unbind();
 }
@@ -319,10 +313,7 @@ void Renderer::LightingPass(Camera& camera, GLuint cubemapToExclude, GLint targe
         glBindTexture(GL_TEXTURE_CUBE_MAP, probe->textureID);
     }
 
-    if (m_lightRenderer)
-    {
-        m_lightRenderer->Bind(m_resolveShader);
-    }
+    m_lightRenderer->Bind(m_resolveShader);
 
     glClear(GL_COLOR_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
@@ -344,70 +335,31 @@ void Renderer::ForwardPass(Camera& camera, GLint targetFBO, int renderW, int ren
     glEnable(GL_DEPTH_TEST);
     glDepthMask(GL_FALSE);
 
-    if (m_waterRenderer && drawWater && r_water.GetInt() > 0)
-    {
+    if (drawWater && r_water.GetInt() > 0)
         m_waterRenderer->Draw(camera, m_bspRenderer->GetVAO(), m_bspRenderer->GetLightmapTexture());
-    }
 
-    if (m_skyRenderer && r_skybox.GetInt() > 0)
-    {
+    if (r_skybox.GetInt() > 0)
         m_skyRenderer->Draw(camera);
-    }
 
-    if (m_particleRenderer && r_particles.GetInt() > 0)
-    {
+    if (r_particles.GetInt() > 0)
         m_particleRenderer->Draw(camera, m_gbuffer->GetDepthTex());
-    }
 
-    if (m_spriteRenderer && r_sprites.GetInt() > 0)
-    {
+    if (r_sprites.GetInt() > 0)
         m_spriteRenderer->Draw(camera, Sprites::GetActiveSprites());
-    }
 
-    if (m_beamRenderer)
-    {
-        m_beamRenderer->Draw(camera, Beams::GetActiveBeams());
-    }
-
-    if (m_cableRenderer)
-    {
-        m_cableRenderer->Draw(camera, Cables::GetActiveCables());
-    }
-
-    if (m_decalRenderer)
-    {
-        m_decalRenderer->Draw(camera, Decals::GetActiveDecals(), m_gbuffer->GetLightmapTex());
-    }
-
-    if (m_videoRenderer)
-    {
-        m_videoRenderer->Draw(camera, m_bspRenderer.get());
-    }
-
-    if (m_monitorRenderer)
-    {
-        m_monitorRenderer->Draw(camera, m_bspRenderer.get());
-    }
-
-    if (m_interiorRenderer)
-    {
-        m_interiorRenderer->Draw(camera, m_bspRenderer.get());
-    }
+    m_beamRenderer->Draw(camera, Beams::GetActiveBeams());
+    m_cableRenderer->Draw(camera, Cables::GetActiveCables());
+    m_videoRenderer->Draw(camera, m_bspRenderer.get());
+    m_monitorRenderer->Draw(camera, m_bspRenderer.get());
+    m_interiorRenderer->Draw(camera, m_bspRenderer.get());
 
     glDepthMask(GL_TRUE);
 }
 
 void Renderer::Render(Camera& camera)
 {
-    if (m_lightRenderer)
-    {
-        m_lightRenderer->RenderShadowMaps(camera, m_bspRenderer.get(), m_modelRenderer.get());
-    }
-
-    if (m_monitorRenderer)
-    {
-        m_monitorRenderer->RenderTextures(this);
-    }
+    m_lightRenderer->RenderShadowMaps(camera, m_bspRenderer.get(), m_modelRenderer.get());
+    m_monitorRenderer->RenderTextures(this);
 
     int w, h;
     SDL_GetWindowSize(m_windowRef->Get(), &w, &h);
@@ -416,21 +368,16 @@ void Renderer::Render(Camera& camera)
 
     glPolygonMode(GL_FRONT_AND_BACK, r_wireframe.GetInt() > 0 ? GL_LINE : GL_FILL);
 
-    if (m_waterRenderer && r_water.GetInt() == 1)
-    {
+    if (r_water.GetInt() == 1)
         m_waterRenderer->RenderReflection(this, camera);
-    }
 
     m_postProcess->Begin();
     glViewport(0, 0, w, h);
 
     RenderWorld(camera, 0);
 
-    if (m_glassRenderer && m_postProcess)
-    {
-        m_glassRenderer->CaptureScreen(m_postProcess->GetActiveFBO(), w, h);
-        m_glassRenderer->Draw(camera, m_bspRenderer.get());
-    }
+    m_glassRenderer->CaptureScreen(m_postProcess->GetActiveFBO(), w, h);
+    m_glassRenderer->Draw(camera, m_bspRenderer.get());
 
     m_postProcess->End();
 
@@ -445,34 +392,27 @@ void Renderer::Render(Camera& camera)
     {
         m_gbuffer->DrawDebug(w, h);
 
-        if (m_uiRenderer)
-        {
-            int dw = w / 5;
-            int dh = h / 5;
-            m_uiRenderer->DrawText("G-BUFFER: DEPTH", 10.0f, (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
-            m_uiRenderer->DrawText("G-BUFFER: NORMAL", (float)(dw + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
-            m_uiRenderer->DrawText("G-BUFFER: ALBEDO", (float)(dw * 2 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
-            m_uiRenderer->DrawText("G-BUFFER: LIGHTMAP", (float)(dw * 3 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
-            m_uiRenderer->DrawText("G-BUFFER: SPECULAR", (float)(dw * 4 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
-        }
+        int dw = w / 5;
+        int dh = h / 5;
+        m_uiRenderer->DrawText("G-BUFFER: DEPTH", 10.0f, (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+        m_uiRenderer->DrawText("G-BUFFER: NORMAL", (float)(dw + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+        m_uiRenderer->DrawText("G-BUFFER: ALBEDO", (float)(dw * 2 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+        m_uiRenderer->DrawText("G-BUFFER: LIGHTMAP", (float)(dw * 3 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+        m_uiRenderer->DrawText("G-BUFFER: SPECULAR", (float)(dw * 4 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
     }
 
     glEnable(GL_DEPTH_TEST);
 
-    if (m_uiRenderer)
+    // Handle env_fade
+    glm::vec4 fade = Fade::GetCurrentFade();
+    if (fade.a > 0.001f)
     {
-        // Handle env_fade
-        glm::vec4 fade = Fade::GetCurrentFade();
-        if (fade.a > 0.001f)
-        {
-            int w, h;
-            SDL_GetWindowSize(m_windowRef->Get(), &w, &h);
-            m_uiRenderer->DrawRect(0, 0, (float)w, (float)h, fade);
-        }
-
-        m_uiRenderer->Render();
+        int w, h;
+        SDL_GetWindowSize(m_windowRef->Get(), &w, &h);
+        m_uiRenderer->DrawRect(0, 0, (float)w, (float)h, fade);
     }
 
+    m_uiRenderer->Render();
     m_windowRef->Swap();
 }
 

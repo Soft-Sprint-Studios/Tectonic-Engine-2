@@ -74,7 +74,7 @@ void Materials::CreateFallbackTexture()
     m_white = std::make_shared<R_Texture>();
     m_white->Create(1, 1, whiteData, true);
 
-    uint8_t normalData[] = { 128, 128, 255, 255 };
+    uint8_t normalData[] = { 128, 128, 255, 0 };
     m_flatNormal = std::make_shared<R_Texture>();
     m_flatNormal->Create(1, 1, normalData, false);
 }

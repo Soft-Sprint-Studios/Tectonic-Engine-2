@@ -59,7 +59,7 @@ void R_Decals::Init()
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(DecalVertex), (void*)offsetof(DecalVertex, uv));
 }
 
-void R_Decals::Draw(const Camera& camera, const std::vector<std::shared_ptr<Decal>>& decals, GLuint lightmapTex)
+void R_Decals::Draw(const Camera& camera, const std::vector<std::shared_ptr<Decal>>& decals)
 {
     if (decals.empty())
     {
@@ -75,20 +75,20 @@ void R_Decals::Draw(const Camera& camera, const std::vector<std::shared_ptr<Deca
     m_shader.Bind();
     m_shader.SetMat4("u_view", camera.GetViewMatrix());
     m_shader.SetMat4("u_projection", camera.GetProjectionMatrix());
-    m_shader.SetInt("u_texture", 0);
-    m_shader.SetInt("u_gLightmap", 1);
-
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, lightmapTex);
+    m_shader.SetInt("u_diffuse", 0);
+    m_shader.SetInt("u_normal", 2);
 
     glBindVertexArray(m_vao);
     for (const auto& d : decals)
     {
         const auto& def = d->GetDef();
-        auto tex = Materials::GetTexture(def.textureName);
-        if (tex)
+        auto diff = Materials::GetTexture(def.textureName);
+        auto norm = Materials::GetNormalMap(def.textureName);
+
+        if (diff)
         {
-            tex->Bind(0);
+            diff->Bind(0);
+            norm->Bind(2);
 
             m_shader.SetMat4("u_model", d->GetModelMatrix());
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
