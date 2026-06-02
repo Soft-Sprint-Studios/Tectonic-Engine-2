@@ -20,5 +20,9 @@ void main()
     gAlbedoSpec = vec4(col.rgb, nSample.a);
 
     vec3 tangentNormal = nSample.rgb * 2.0 - 1.0;
+	
+    if (!gl_FrontFacing)
+        tangentNormal = -tangentNormal;
+	
     gNormal = EncodeNormal(normalize(TBN * tangentNormal));
 }
