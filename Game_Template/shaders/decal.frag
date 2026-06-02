@@ -1,6 +1,6 @@
 #include "common.glsl"
 
-layout (location = 0) out vec2 gNormal;
+layout (location = 0) out vec4 gNormal;
 layout (location = 1) out vec4 gAlbedoSpec;
 
 in vec2 TexCoord;
@@ -17,12 +17,13 @@ void main()
         discard;
 
     vec4 nSample = texture(u_normal, TexCoord);
-    gAlbedoSpec = vec4(col.rgb, nSample.a);
-
     vec3 tangentNormal = nSample.rgb * 2.0 - 1.0;
 	
     if (!gl_FrontFacing)
         tangentNormal = -tangentNormal;
-	
-    gNormal = EncodeNormal(normalize(TBN * tangentNormal));
+
+    vec3 worldNormal = normalize(TBN * tangentNormal);
+
+    gNormal = vec4(EncodeNormal(worldNormal), tangentNormal.xy);
+    gAlbedoSpec = vec4(col.rgb, nSample.a);
 }

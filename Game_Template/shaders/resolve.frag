@@ -1,3 +1,4 @@
+#include "lightmap.glsl"
 #include "lights.glsl"
 #include "common.glsl"
 
@@ -7,7 +8,9 @@ in vec2 TexCoords;
 uniform sampler2D u_gDepth;
 uniform sampler2D u_gNormal;
 uniform sampler2D u_gAlbedoSpec;
-uniform sampler2D u_gLightmap;
+uniform sampler2D u_gLightmapUV;
+
+uniform sampler2D u_lightmap;
 
 uniform samplerCube u_cubemap;
 uniform bool u_useCubemap;
@@ -22,6 +25,10 @@ uniform mat4 u_invView;
 uniform vec2 u_gBufferScale;
 
 uniform int u_mat_specular;
+
+const vec3 basis0 = vec3(0.81649658, 0.0, 0.57735027);
+const vec3 basis1 = vec3(-0.40824829, 0.70710678, 0.57735027);
+const vec3 basis2 = vec3(-0.40824829, -0.70710678, 0.57735027);
 
 vec3 ParallaxCorrect(vec3 R, vec3 fragPos, vec3 boxMin, vec3 boxMax, vec3 probePos)
 {
@@ -53,23 +60,42 @@ void main()
         discard;
     }
 
-    vec2 normalData = texture(u_gNormal, gBufferUV).rg;
-    vec3 N = DecodeNormal(normalData);
-    vec4 albedoSpec = texture(u_gAlbedoSpec, gBufferUV);
-    vec4 lightmapData = texture(u_gLightmap, gBufferUV);
-
     vec4 clipSpacePos = vec4(gBufferUV * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
     vec4 viewSpacePos = u_invProjection * clipSpacePos;
     viewSpacePos /= viewSpacePos.w;
     vec3 fragPos = (u_invView * viewSpacePos).xyz;
 
+    vec4 normalData = texture(u_gNormal, gBufferUV);
+    vec3 N = DecodeNormal(normalData.rg);
+    vec4 albedoSpec = texture(u_gAlbedoSpec, gBufferUV);
+    vec4 lmUV = texture(u_gLightmapUV, gBufferUV);
+
+    vec4 lightmapData = vec4(0.0);
+
+    if (normalData.w > -1.0)
+    {
+        vec3 tsNormal = vec3(normalData.zw, sqrt(max(0.0, 1.0 - dot(normalData.zw, normalData.zw))));
+
+        vec2 LmCoord2 = lmUV.xy + vec2(lmUV.z, 0.0);
+        vec2 LmCoord3 = lmUV.xy + vec2(0.0, lmUV.w);
+        vec2 LmCoord4 = lmUV.xy + lmUV.zw;
+
+        vec3 w = max(vec3(0.0), vec3(dot(tsNormal, basis0), dot(tsNormal, basis1), dot(tsNormal, basis2)));
+
+        float sumW = w.x + w.y + w.z;
+        w /= max(sumW, 0.0001); 
+
+        lightmapData = GetLightmapData(u_lightmap, LmCoord2) * w.x + GetLightmapData(u_lightmap, LmCoord3) * w.y + GetLightmapData(u_lightmap, LmCoord4) * w.z;
+    }
+    else
+    {
+        lightmapData = GetLightmapData(u_lightmap, lmUV.xy);
+    }
+
     vec3 albedo = albedoSpec.rgb;
     vec3 specMask = vec3(albedoSpec.a);
-
-    if (u_mat_specular == 0)
-    {
+    if (u_mat_specular == 0) 
         specMask = vec3(0.0);
-    }
 
     vec3 viewDir = normalize(u_viewPos - fragPos);
     float shine = 32.0;
@@ -102,11 +128,8 @@ void main()
     {
         vec3 L = normalize(u_spotLights[i].pos - fragPos);
         float dist = length(u_spotLights[i].pos - fragPos);
-        
-        if (dist > u_spotLights[i].radius)
-        {
+        if (dist > u_spotLights[i].radius) 
             continue;
-        }
 
         float theta = dot(L, normalize(-u_spotLights[i].dir));
         float epsilon = u_spotLights[i].innerAngle - u_spotLights[i].outerAngle;
@@ -116,12 +139,9 @@ void main()
         float shadow = SpotShadowCalc(fragPos, u_spotLights[i].pos, u_spotLights[i].radius, u_spotLights[i].lightSpaceMatrix, u_spotShadowMaps[i]);
         vec3 lightEnergy = u_spotLights[i].color * intensity * attenuation * (1.0 - shadow);
 
-        float diff = max(dot(N, L), 0.0);
+        dynDiffuse += lightEnergy * max(dot(N, L), 0.0);
         vec3 H = normalize(L + viewDir);
-        float spec = pow(max(dot(N, H), 0.0), shine);
-
-        dynDiffuse += lightEnergy * diff;
-        dynSpecular += lightEnergy * spec * specMask * 0.5;
+        dynSpecular += lightEnergy * pow(max(dot(N, H), 0.0), shine) * specMask * 0.5;
     }
 
     // Dynamic Points
@@ -129,22 +149,16 @@ void main()
     {
         vec3 L = normalize(u_pointLights[i].pos - fragPos);
         float dist = length(u_pointLights[i].pos - fragPos);
-        
-        if (dist > u_pointLights[i].radius)
-        {
+        if (dist > u_pointLights[i].radius) 
             continue;
-        }
 
         float attenuation = 1.0 - (dist / u_pointLights[i].radius);
         float shadow = PointShadowCalc(fragPos, u_pointLights[i].pos, u_pointLights[i].radius, u_pointShadowMaps[i]);
         vec3 lightEnergy = u_pointLights[i].color * attenuation * (1.0 - shadow);
 
-        float diff = max(dot(N, L), 0.0);
+        dynDiffuse += lightEnergy * max(dot(N, L), 0.0);
         vec3 H = normalize(L + viewDir);
-        float spec = pow(max(dot(N, H), 0.0), shine);
-
-        dynDiffuse += lightEnergy * diff;
-        dynSpecular += lightEnergy * spec * specMask * 0.5;
+        dynSpecular += lightEnergy * pow(max(dot(N, H), 0.0), shine) * specMask * 0.5;
     }
     
     // CSM Cascaded Shadows
@@ -152,16 +166,13 @@ void main()
     if (u_csmEnabled == 1)
     {
         vec3 sunL = normalize(u_sunDir);
-        float sunMask = lightmapData.a;
-
+        float sunMask = lmUV.z > 0.0 ? lightmapData.a : 1.0;
         float sunShadow = CalculateSunShadow(fragPos, u_view, u_csmSplits, u_csmMatrices, u_csmArray);
         vec3 sunEnergy = u_sunColor * (1.0 - sunShadow) * sunMask;
 
         sunFinal = sunEnergy * max(dot(N, sunL), 0.0);
-
         vec3 H = normalize(sunL + viewDir);
-        float spec = pow(max(dot(N, H), 0.0), shine);
-        dynSpecular += sunEnergy * spec * specMask * 0.5;
+        dynSpecular += sunEnergy * pow(max(dot(N, H), 0.0), shine) * specMask * 0.5;
     }
 
     vec3 finalDiffuse = albedo * (diffuseLight * 2.0 + dynDiffuse + sunFinal);

@@ -1,9 +1,9 @@
 #include "lightmap.glsl"
 #include "common.glsl"
 
-layout (location = 0) out vec2 gNormal;
+layout (location = 0) out vec4 gNormal;
 layout (location = 1) out vec4 gAlbedoSpec;
-layout (location = 2) out vec4 gLightmap;
+layout (location = 2) out vec4 gLightmapUV;
 
 in vec2 TexCoord;
 in vec2 v_LmCoord;
@@ -14,7 +14,6 @@ in mat3 TBN;
 
 uniform sampler2D u_diffuse;
 uniform sampler2D u_normal;
-uniform sampler2D u_lightmap;
 uniform sampler2D u_heightMap;
 uniform sampler2D u_diffuse2;
 uniform sampler2D u_normal2;
@@ -115,7 +114,7 @@ void main()
         discard;
     }
 
-    vec3 N = normalize(TBN[2]);
+    vec3 worldNormal = normalize(TBN[2]);
     vec3 tangentNormal = vec3(0.0, 0.0, 1.0);
 
     if (u_useBump && u_mat_bumpmap == 1)
@@ -123,32 +122,14 @@ void main()
         vec3 n1 = texture(u_normal, finalUV).rgb * 2.0 - 1.0;
         vec3 n2 = texture(u_normal2, finalUV).rgb * 2.0 - 1.0;
         tangentNormal = normalize(mix(n1, n2, blend));
-        N = normalize(TBN * tangentNormal);
+        worldNormal = normalize(TBN * tangentNormal);
     }
-    gNormal = EncodeNormal(N);
 
     float spec1 = u_useBump ? texture(u_normal, finalUV).a : 0.0;
     float spec2 = u_useBump ? texture(u_normal2, finalUV).a : 0.0;
     float specMask = mix(spec1, spec2, blend);
 
+    gNormal = vec4(EncodeNormal(worldNormal), tangentNormal.x, u_useBump ? tangentNormal.y : -2.0);
     gAlbedoSpec = vec4(albedo.rgb, specMask);
-
-    vec4 lmData = vec4(0.0);
-    vec2 LmCoord1 = v_LmCoord;
-    vec2 LmCoord2 = v_LmCoord + vec2(v_LmSize.x, 0.0);
-    vec2 LmCoord3 = v_LmCoord + vec2(0.0, v_LmSize.y);
-    vec2 LmCoord4 = v_LmCoord + v_LmSize;
-
-    if (u_useBump)
-    {
-        vec3 w = max(vec3(0.0), vec3(dot(tangentNormal, basis0), dot(tangentNormal, basis1), dot(tangentNormal, basis2)));
-        w /= (w.x + w.y + w.z); 
-
-        lmData = GetLightmapData(u_lightmap, LmCoord2) * w.x +  GetLightmapData(u_lightmap, LmCoord3) * w.y + GetLightmapData(u_lightmap, LmCoord4) * w.z;
-    }
-    else
-    {
-        lmData = GetLightmapData(u_lightmap, LmCoord1);
-    }
-    gLightmap = lmData;
+    gLightmapUV = vec4(v_LmCoord, v_LmSize);
 }

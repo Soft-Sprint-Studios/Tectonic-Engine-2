@@ -44,14 +44,14 @@ public:
     GLuint GetFBO() const;
     GLuint GetNormalTex() const;
     GLuint GetAlbedoSpecTex() const;
-    GLuint GetLightmapTex() const;
+    GLuint GetLightmapUVTex() const;
     GLuint GetDepthTex() const;
 
 private:
     GLuint m_fbo = 0;
     GLuint m_normalTex = 0;
     GLuint m_albedoSpecTex = 0;
-    GLuint m_lightmapTex = 0;
+    GLuint m_lightmapUVTex = 0;
     GLuint m_depthTex = 0;
 
     R_Shader m_debugShader;

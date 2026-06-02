@@ -230,12 +230,10 @@ void Renderer::GeometryPass(Camera& camera, int renderW, int renderH)
     m_gbufferShader.SetInt("u_mat_specular", mat_specular.GetInt());
     m_gbufferShader.SetInt("u_mat_bumpmap", mat_bumpmap.GetInt());
     m_gbufferShader.SetInt("u_mat_parallax", mat_parallax.GetInt());
-    m_gbufferShader.SetInt("u_lightmap_bicubic", r_lightmap_bicubic.GetInt());
     m_gbufferShader.SetFloat("u_pomMinSteps", mat_parallax_min_steps.GetFloat());
     m_gbufferShader.SetFloat("u_pomMaxSteps", mat_parallax_max_steps.GetFloat());
     m_gbufferShader.SetInt("u_pomRefineSteps", mat_parallax_refine.GetInt());
     m_gbufferShader.SetInt("u_diffuse", 0);
-    m_gbufferShader.SetInt("u_lightmap", 1);
     m_gbufferShader.SetInt("u_normal", 2);
     m_gbufferShader.SetInt("u_heightMap", 17);
     m_gbufferShader.SetInt("u_diffuse2", 14);
@@ -281,11 +279,13 @@ void Renderer::LightingPass(Camera& camera, GLuint cubemapToExclude, GLint targe
     m_resolveShader.SetMat4("u_invProjection", glm::inverse(camera.GetProjectionMatrix()));
     m_resolveShader.SetMat4("u_invView", glm::inverse(camera.GetViewMatrix()));
     m_resolveShader.SetInt("u_mat_specular", mat_specular.GetInt());
+    m_resolveShader.SetInt("u_lightmap_bicubic", r_lightmap_bicubic.GetInt());
 
     m_resolveShader.SetInt("u_gDepth", 0);
     m_resolveShader.SetInt("u_gNormal", 1);
     m_resolveShader.SetInt("u_gAlbedoSpec", 2);
-    m_resolveShader.SetInt("u_gLightmap", 3);
+    m_resolveShader.SetInt("u_gLightmapUV", 3);
+    m_resolveShader.SetInt("u_lightmap", 14);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_gbuffer->GetDepthTex());
@@ -294,7 +294,9 @@ void Renderer::LightingPass(Camera& camera, GLuint cubemapToExclude, GLint targe
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, m_gbuffer->GetAlbedoSpecTex());
     glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D, m_gbuffer->GetLightmapTex());
+    glBindTexture(GL_TEXTURE_2D, m_gbuffer->GetLightmapUVTex());
+    glActiveTexture(GL_TEXTURE14);
+    glBindTexture(GL_TEXTURE_2D, m_bspRenderer->GetLightmapTexture());
 
     m_resolveShader.SetInt("u_useCubemap", 0);
     m_resolveShader.SetInt("u_cubemap", 4);
@@ -396,7 +398,7 @@ void Renderer::Render(Camera& camera)
         m_uiRenderer->DrawText("G-BUFFER: DEPTH", 10.0f, (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
         m_uiRenderer->DrawText("G-BUFFER: NORMAL", (float)(dw + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
         m_uiRenderer->DrawText("G-BUFFER: ALBEDO", (float)(dw * 2 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
-        m_uiRenderer->DrawText("G-BUFFER: LIGHTMAP", (float)(dw * 3 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+        m_uiRenderer->DrawText("G-BUFFER: LIGHTMAP UV", (float)(dw * 3 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
         m_uiRenderer->DrawText("G-BUFFER: SPECULAR", (float)(dw * 4 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
     }
 
