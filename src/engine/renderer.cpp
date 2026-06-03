@@ -43,7 +43,6 @@ CVar r_particles("r_particles", "1", "Enable particle system rendering.", CVAR_S
 CVar r_water("r_water", "1", "Enable water rendering.", CVAR_SAVE);
 CVar r_sprites("r_sprites", "1", "Enable sprite rendering.", CVAR_SAVE);
 CVar r_wireframe("r_wireframe", "0", "Render the scene in wireframe mode.", CVAR_NONE);
-CVar r_lightmap_bicubic("r_lightmap_bicubic", "1", "Enable bicubic lightmap filtering.", CVAR_SAVE);
 CVar r_debug_gbuffer("r_debug_gbuffer", "0", "Enable G-Buffer diagnostic overlay (0: Off, 1: On).", CVAR_SAVE);
 
 CVar mat_specular("mat_specular", "1", "Enable specular mapping on materials.", CVAR_SAVE);
@@ -279,7 +278,6 @@ void Renderer::LightingPass(Camera& camera, GLuint cubemapToExclude, GLint targe
     m_resolveShader.SetMat4("u_invProjection", glm::inverse(camera.GetProjectionMatrix()));
     m_resolveShader.SetMat4("u_invView", glm::inverse(camera.GetViewMatrix()));
     m_resolveShader.SetInt("u_mat_specular", mat_specular.GetInt());
-    m_resolveShader.SetInt("u_lightmap_bicubic", r_lightmap_bicubic.GetInt());
 
     m_resolveShader.SetInt("u_gDepth", 0);
     m_resolveShader.SetInt("u_gNormal", 1);

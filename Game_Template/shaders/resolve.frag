@@ -1,4 +1,3 @@
-#include "lightmap.glsl"
 #include "lights.glsl"
 #include "common.glsl"
 
@@ -88,11 +87,11 @@ void main()
         float sumW = w.x + w.y + w.z;
         w /= max(sumW, 0.0001); 
 
-        lightmapData = GetLightmapData(u_lightmap, LmCoord2) * w.x + GetLightmapData(u_lightmap, LmCoord3) * w.y + GetLightmapData(u_lightmap, LmCoord4) * w.z;
+        lightmapData = texture(u_lightmap, LmCoord2) * w.x + texture(u_lightmap, LmCoord3) * w.y + texture(u_lightmap, LmCoord4) * w.z;
     }
     else
     {
-        lightmapData = GetLightmapData(u_lightmap, lmCoord);
+        lightmapData = texture(u_lightmap, lmCoord);
     }
 
     vec3 albedo = albedoSpec.rgb;

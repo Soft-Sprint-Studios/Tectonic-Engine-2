@@ -125,7 +125,6 @@ void R_Waters::Draw(const Camera& camera, GLuint vao, GLuint lightmap)
     m_shader.SetFloat("u_time", (float)Time::TotalTime());
     m_shader.SetInt("u_mat_specular", CVar::GetInt("mat_specular"));
     m_shader.SetInt("u_mat_bumpmap", CVar::GetInt("mat_bumpmap"));
-    m_shader.SetInt("u_lightmap_bicubic", CVar::GetInt("r_lightmap_bicubic"));
     m_shader.SetInt("u_useBump", 1);
 
     glActiveTexture(GL_TEXTURE0);

@@ -86,9 +86,9 @@ void main()
         w2 /= sumW; 
         w3 /= sumW;
 
-        vec3 l1 = GetLightmapData(u_lightmap, v_LmCoord2).rgb;
-        vec3 l2 = GetLightmapData(u_lightmap, v_LmCoord3).rgb;
-        vec3 l3 = GetLightmapData(u_lightmap, v_LmCoord4).rgb;
+        vec3 l1 = texture(u_lightmap, v_LmCoord2).rgb;
+        vec3 l2 = texture(u_lightmap, v_LmCoord3).rgb;
+        vec3 l3 = texture(u_lightmap, v_LmCoord4).rgb;
         diffuseLight = (l1 * w1 + l2 * w2 + l3 * w3) * 2.0;
 
         vec3 L1 = normalize(v_TBN * basis0);
@@ -98,7 +98,7 @@ void main()
     }
     else
     {
-        diffuseLight = GetLightmapData(u_lightmap, v_LmCoord).rgb * 2.0;
+        diffuseLight = texture(u_lightmap, v_LmCoord).rgb * 2.0;
     }
 
     vec3 specularLight = vec3(0.0);
