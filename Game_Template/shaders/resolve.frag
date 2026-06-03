@@ -68,7 +68,10 @@ void main()
     vec4 normalData = texture(u_gNormal, gBufferUV);
     vec3 N = DecodeNormal(normalData.rg);
     vec4 albedoSpec = texture(u_gAlbedoSpec, gBufferUV);
-    vec4 lmUV = texture(u_gLightmapUV, gBufferUV);
+
+    vec3 lmDataSample = texture(u_gLightmapUV, gBufferUV).rgb;
+    vec2 lmCoord = lmDataSample.xy;
+    vec2 lmSize = unpackHalf2x16(floatBitsToUint(lmDataSample.z));
 
     vec4 lightmapData = vec4(0.0);
 
@@ -76,9 +79,9 @@ void main()
     {
         vec3 tsNormal = vec3(normalData.zw, sqrt(max(0.0, 1.0 - dot(normalData.zw, normalData.zw))));
 
-        vec2 LmCoord2 = lmUV.xy + vec2(lmUV.z, 0.0);
-        vec2 LmCoord3 = lmUV.xy + vec2(0.0, lmUV.w);
-        vec2 LmCoord4 = lmUV.xy + lmUV.zw;
+        vec2 LmCoord2 = lmCoord + vec2(lmSize.x, 0.0);
+        vec2 LmCoord3 = lmCoord + vec2(0.0, lmSize.y);
+        vec2 LmCoord4 = lmCoord + lmSize;
 
         vec3 w = max(vec3(0.0), vec3(dot(tsNormal, basis0), dot(tsNormal, basis1), dot(tsNormal, basis2)));
 
@@ -89,7 +92,7 @@ void main()
     }
     else
     {
-        lightmapData = GetLightmapData(u_lightmap, lmUV.xy);
+        lightmapData = GetLightmapData(u_lightmap, lmCoord);
     }
 
     vec3 albedo = albedoSpec.rgb;
@@ -166,7 +169,7 @@ void main()
     if (u_csmEnabled == 1)
     {
         vec3 sunL = normalize(u_sunDir);
-        float sunMask = lmUV.z > 0.0 ? lightmapData.a : 1.0;
+        float sunMask = lmSize.x > 0.0 ? lightmapData.a : 1.0;
         float sunShadow = CalculateSunShadow(fragPos, u_view, u_csmSplits, u_csmMatrices, u_csmArray);
         vec3 sunEnergy = u_sunColor * (1.0 - sunShadow) * sunMask;
 

@@ -3,7 +3,7 @@
 
 layout (location = 0) out vec4 gNormal;
 layout (location = 1) out vec4 gAlbedoSpec;
-layout (location = 2) out vec4 gLightmapUV;
+layout (location = 2) out vec3 gLightmapUV;
 
 in vec2 TexCoord;
 in vec2 v_LmCoord;
@@ -131,5 +131,6 @@ void main()
 
     gNormal = vec4(EncodeNormal(worldNormal), tangentNormal.x, u_useBump ? tangentNormal.y : -2.0);
     gAlbedoSpec = vec4(albedo.rgb, specMask);
-    gLightmapUV = vec4(v_LmCoord, v_LmSize);
+    gLightmapUV.xy = v_LmCoord;
+    gLightmapUV.z = uintBitsToFloat(packHalf2x16(v_LmSize)); 
 }
