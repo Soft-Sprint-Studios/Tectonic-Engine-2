@@ -57,6 +57,10 @@ void R_Decals::Init()
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(DecalVertex), (void*)0);
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(DecalVertex), (void*)offsetof(DecalVertex, uv));
+
+    glGenBuffers(1, &m_instanceSSBO);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_instanceSSBO);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, 1024 * sizeof(glm::mat4), NULL, GL_DYNAMIC_DRAW);
 }
 
 void R_Decals::Draw(const Camera& camera, const std::vector<std::shared_ptr<Decal>>& decals)
@@ -69,7 +73,6 @@ void R_Decals::Draw(const Camera& camera, const std::vector<std::shared_ptr<Deca
     glDisable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     glDepthMask(GL_FALSE);
-
     glEnable(GL_POLYGON_OFFSET_FILL);
     glPolygonOffset(-1.0f, -1.0f);
 
@@ -79,21 +82,26 @@ void R_Decals::Draw(const Camera& camera, const std::vector<std::shared_ptr<Deca
     m_shader.SetInt("u_diffuse", 0);
     m_shader.SetInt("u_normal", 2);
 
-    glBindVertexArray(m_vao);
+    std::unordered_map<std::string, std::vector<glm::mat4>> groups;
     for (const auto& d : decals)
     {
-        const auto& def = d->GetDef();
-        auto diff = Materials::GetTexture(def.textureName);
-        auto norm = Materials::GetNormalMap(def.textureName);
+        groups[d->GetDef().textureName].push_back(d->GetModelMatrix());
+    }
 
-        if (diff)
-        {
-            diff->Bind(0);
-            norm->Bind(2);
+    glBindVertexArray(m_vao);
+    for (auto& [texName, matrices] : groups)
+    {
+        auto diff = Materials::GetTexture(texName);
+        auto norm = Materials::GetNormalMap(texName);
 
-            m_shader.SetMat4("u_model", d->GetModelMatrix());
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-        }
+        diff->Bind(0);
+        norm->Bind(2);
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_instanceSSBO);
+        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, matrices.size() * sizeof(glm::mat4), matrices.data());
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, m_instanceSSBO);
+
+        glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, (GLsizei)matrices.size());
     }
 
     glDisable(GL_POLYGON_OFFSET_FILL);
@@ -114,6 +122,10 @@ void R_Decals::Shutdown()
     if (m_ebo)
     {
         glDeleteBuffers(1, &m_ebo);
+    }
+    if (m_instanceSSBO)
+    {
+        glDeleteBuffers(1, &m_instanceSSBO);
     }
     m_vao = m_vbo = m_ebo = 0;
 }
