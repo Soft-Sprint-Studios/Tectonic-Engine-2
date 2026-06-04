@@ -1,4 +1,3 @@
-#include "lightmap.glsl"
 in vec3 v_FragPos;
 in vec2 v_TexCoord;
 in vec2 v_LmCoord;

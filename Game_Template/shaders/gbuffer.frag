@@ -1,4 +1,4 @@
-#include "lightmap.glsl"
+#include "parallax.glsl"
 #include "common.glsl"
 
 layout (location = 0) out vec4 gNormal;
@@ -26,63 +26,10 @@ uniform int u_mat_bumpmap;
 uniform int u_mat_parallax;
 uniform float u_heightScale1;
 uniform float u_heightScale2;
-uniform float u_pomMinSteps;
-uniform float u_pomMaxSteps;
-uniform int u_pomRefineSteps;
 
 const vec3 basis0 = vec3(0.81649658, 0.0, 0.57735027);
 const vec3 basis1 = vec3(-0.40824829, 0.70710678, 0.57735027);
 const vec3 basis2 = vec3(-0.40824829, -0.70710678, 0.57735027);
-
-vec2 ParallaxMapping(sampler2D heightMapSampler, vec2 texCoords, float hScale, vec3 viewDir)
-{
-    float numLayers = mix(u_pomMaxSteps, u_pomMinSteps, abs(dot(vec3(0.0, 0.0, 1.0), viewDir)));
-    float layerDepth = 1.0 / numLayers;
-
-    vec2 p = viewDir.xy * hScale;
-    vec2 deltaTexCoords = p / numLayers;
-
-    vec2 currentTexCoords = texCoords;
-    float currentLayerDepth = 0.0;
-    float currentHeightMapValue = 1.0 - texture(heightMapSampler, currentTexCoords).r;
-
-    for (int i = 0; i < int(numLayers); i++)
-    {
-        if (currentLayerDepth >= currentHeightMapValue)
-        {
-            break;
-        }
-
-        currentTexCoords -= deltaTexCoords;
-        currentLayerDepth += layerDepth;
-        currentHeightMapValue = 1.0 - texture(heightMapSampler, currentTexCoords).r;
-    }
-
-    vec2 texCoordsStart = currentTexCoords + deltaTexCoords;
-    vec2 texCoordsEnd = currentTexCoords;
-    float depthStart = currentLayerDepth - layerDepth;
-    float depthEnd = currentLayerDepth;
-
-    for (int i = 0; i < u_pomRefineSteps; i++)
-    {
-        float midDepth = (depthStart + depthEnd) * 0.5;
-        vec2 midTexCoords = mix(texCoordsStart, texCoordsEnd, 0.5);
-        float midHeightMapValue = 1.0 - texture(heightMapSampler, midTexCoords).r;
-
-        if (midDepth > midHeightMapValue)
-        {
-            depthEnd = midDepth;
-            texCoordsEnd = midTexCoords;
-        }
-        else
-        {
-            depthStart = midDepth;
-            texCoordsStart = midTexCoords;
-        }
-    }
-
-    return texCoordsEnd;
-}
 
 void main()
 {

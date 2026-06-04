@@ -3,6 +3,7 @@ layout (location = 1) in vec2 aTexCoord;
 
 out vec2 TexCoord;
 out mat3 TBN;
+out vec3 v_FragPos;
 
 uniform mat4 u_view;
 uniform mat4 u_projection;
@@ -23,5 +24,7 @@ void main()
     vec3 B = cross(N, T);
     TBN = mat3(T, B, N);
 
-    gl_Position = u_projection * u_view * model * vec4(aPos, 1.0);
+    vec4 worldPos = model * vec4(aPos, 1.0);
+    v_FragPos = worldPos.xyz;
+    gl_Position = u_projection * u_view * worldPos;
 }

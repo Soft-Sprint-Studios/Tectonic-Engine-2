@@ -23,6 +23,7 @@
  */
 #include "r_decals.h"
 #include "materials.h"
+#include <cvar.h>
 
 void R_Decals::Init()
 {
@@ -82,6 +83,14 @@ void R_Decals::Draw(const Camera& camera, const std::vector<std::shared_ptr<Deca
     m_shader.SetInt("u_diffuse", 0);
     m_shader.SetInt("u_normal", 2);
 
+    m_shader.SetVec3("u_viewPos", camera.position);
+    m_shader.SetInt("u_mat_bumpmap", CVar::GetInt("mat_bumpmap"));
+    m_shader.SetInt("u_mat_parallax", CVar::GetInt("mat_parallax"));
+    m_shader.SetFloat("u_pomMinSteps", CVar::GetFloat("mat_parallax_min_steps"));
+    m_shader.SetFloat("u_pomMaxSteps", CVar::GetFloat("mat_parallax_max_steps"));
+    m_shader.SetInt("u_pomRefineSteps", CVar::GetInt("mat_parallax_refine"));
+    m_shader.SetInt("u_heightMap", 17);
+
     std::unordered_map<std::string, std::vector<glm::mat4>> groups;
     for (const auto& d : decals)
     {
@@ -93,9 +102,12 @@ void R_Decals::Draw(const Camera& camera, const std::vector<std::shared_ptr<Deca
     {
         auto diff = Materials::GetTexture(texName);
         auto norm = Materials::GetNormalMap(texName);
+        auto height = Materials::GetHeightMap(texName);
 
         diff->Bind(0);
         norm->Bind(2);
+        height->Bind(17);
+        m_shader.SetFloat("u_heightScale", Materials::GetHeightScale(texName));
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_instanceSSBO);
         glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, matrices.size() * sizeof(glm::mat4), matrices.data());
