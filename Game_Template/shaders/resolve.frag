@@ -21,7 +21,6 @@ uniform vec3 u_viewPos;
 uniform mat4 u_view;
 uniform mat4 u_invProjection;
 uniform mat4 u_invView;
-uniform vec2 u_gBufferScale;
 
 uniform int u_mat_specular;
 
@@ -51,7 +50,7 @@ vec3 ParallaxCorrect(vec3 R, vec3 fragPos, vec3 boxMin, vec3 boxMax, vec3 probeP
 
 void main()
 {
-    vec2 gBufferUV = TexCoords * u_gBufferScale;
+    vec2 gBufferUV = gl_FragCoord.xy / textureSize(u_gDepth, 0).xy;
     float depth = texture(u_gDepth, gBufferUV).r;
 
     if (depth >= 1.0)

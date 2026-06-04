@@ -272,8 +272,6 @@ void Renderer::LightingPass(Camera& camera, GLuint cubemapToExclude, GLint targe
     m_resolveShader.SetMat4("u_projection", camera.GetProjectionMatrix());
     m_resolveShader.SetVec3("u_viewPos", camera.position);
 
-    glm::vec2 gBufferScale = glm::vec2((float)renderW / (float)w, (float)renderH / (float)h);
-    m_resolveShader.SetVec2("u_gBufferScale", gBufferScale);
     m_resolveShader.SetMat4("u_invProjection", glm::inverse(camera.GetProjectionMatrix()));
     m_resolveShader.SetMat4("u_invView", glm::inverse(camera.GetViewMatrix()));
     m_resolveShader.SetInt("u_mat_specular", mat_specular.GetInt());
