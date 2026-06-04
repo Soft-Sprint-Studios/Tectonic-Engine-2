@@ -226,7 +226,6 @@ void Renderer::GeometryPass(Camera& camera, int renderW, int renderH)
     m_gbufferShader.SetMat4("u_view", camera.GetViewMatrix());
     m_gbufferShader.SetMat4("u_model", glm::mat4(1.0f));
     m_gbufferShader.SetVec3("u_viewPos", camera.position);
-    m_gbufferShader.SetInt("u_mat_specular", mat_specular.GetInt());
     m_gbufferShader.SetInt("u_mat_bumpmap", mat_bumpmap.GetInt());
     m_gbufferShader.SetInt("u_mat_parallax", mat_parallax.GetInt());
     m_gbufferShader.SetFloat("u_pomMinSteps", mat_parallax_min_steps.GetFloat());
