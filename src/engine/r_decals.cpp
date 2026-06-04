@@ -23,7 +23,7 @@
  */
 #include "r_decals.h"
 #include "materials.h"
-#include <cvar.h>
+#include "cvar.h"
 
 void R_Decals::Init()
 {
