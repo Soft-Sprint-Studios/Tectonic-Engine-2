@@ -247,20 +247,6 @@ void R_Lights::RenderShadowMaps(Camera& camera, R_BSP* bsp, R_Models* models)
             Renderer::DrawSceneDepth(m_shadowPointShader, pointFrustum, bsp, models);
         }
 
-        if (!(def.isStaticShadow && def.shadowRendered))
-        {
-            if (def.type == LightType::Spot)
-            {
-                glBindTexture(GL_TEXTURE_2D, def.shadowTex);
-                glGenerateMipmap(GL_TEXTURE_2D);
-            }
-            else
-            {
-                glBindTexture(GL_TEXTURE_CUBE_MAP, def.shadowTex);
-                glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-            }
-        }
-
         if (def.isStaticShadow)
         {
             def.shadowRendered = true;
