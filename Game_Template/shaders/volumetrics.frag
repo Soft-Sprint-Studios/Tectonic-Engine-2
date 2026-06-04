@@ -44,13 +44,16 @@ void main()
     // Evaluate point lights
     for (int i = 0; i < u_numPointLights; ++i) 
     {
-        if (u_pointLights[i].volumetricIntensity <= 0.0) 
+        float vIntensity = u_pointLights[i].colorVol.w;
+        if (vIntensity <= 0.0)
             continue;
 
-        vec3 L = u_pointLights[i].pos - startPosition;
+        vec3 lPos = u_pointLights[i].posRadius.xyz;
+        float lRad = u_pointLights[i].posRadius.w;
+        vec3 L = lPos - startPosition;
         float tca = dot(L, rayDirection);
         float d2 = dot(L, L) - tca * tca;
-        float radius2 = u_pointLights[i].radius * u_pointLights[i].radius;
+        float radius2 = lRad * lRad;
 
         if (d2 > radius2) 
             continue;
@@ -59,40 +62,42 @@ void main()
         float t0 = max(tca - thc, 0.0);
         float t1 = min(tca + thc, rayLength);
         float marchLen = t1 - t0;
-
         if (marchLen <= 0.0) 
             continue;
         
-        int steps = u_pointLights[i].volumetricSteps;
+        int steps = int(u_pointLights[i].shadowData.y);
         float stepSize = marchLen / float(steps);
         vec3 currentPos = startPosition + rayDirection * (t0 + stepSize * ditherVal);
         
         vec3 lightFog = vec3(0.0);
         for (int s = 0; s < steps; ++s) 
         {
-            float dist = length(u_pointLights[i].pos - currentPos);
-            float attenuation = 1.0 - (dist / u_pointLights[i].radius);
+            float dist = length(lPos - currentPos);
+            float attenuation = 1.0 - (dist / lRad);
 
             if (attenuation > 0.0) 
             {
-                float shadow = PointShadowCalc(currentPos, u_pointLights[i].pos, u_pointLights[i].radius, u_pointShadowMaps[i]);
-                lightFog += u_pointLights[i].color * attenuation * (1.0 - shadow) * stepSize;
+                float shadow = PointShadowCalc(currentPos, lPos, lRad, u_pointLights[i].shadowHandle);
+                lightFog += u_pointLights[i].colorVol.rgb * attenuation * (1.0 - shadow) * stepSize;
             }
             currentPos += rayDirection * stepSize;
         }
-        accumFog += lightFog * u_pointLights[i].volumetricIntensity;
+        accumFog += lightFog * vIntensity;
     }
 
     // Evaluate spot lights
     for (int i = 0; i < u_numSpotLights; ++i) 
     {
-        if (u_spotLights[i].volumetricIntensity <= 0.0) 
+        float vIntensity = u_spotLights[i].colorVol.w;
+        if (vIntensity <= 0.0) 
             continue;
 
-        vec3 L = u_spotLights[i].pos - startPosition;
+        vec3 lPos = u_spotLights[i].posRadius.xyz;
+        float lRad = u_spotLights[i].posRadius.w;
+        vec3 L = lPos - startPosition;
         float tca = dot(L, rayDirection);
         float d2 = dot(L, L) - tca * tca;
-        float radius2 = u_spotLights[i].radius * u_spotLights[i].radius;
+        float radius2 = lRad * lRad;
 
         if (d2 > radius2) 
             continue;
@@ -101,33 +106,31 @@ void main()
         float t0 = max(tca - thc, 0.0);
         float t1 = min(tca + thc, rayLength);
         float marchLen = t1 - t0;
-
         if (marchLen <= 0.0) 
             continue;
         
-        int steps = u_spotLights[i].volumetricSteps;
+        int steps = int(u_spotLights[i].shadowData.y);
         float stepSize = marchLen / float(steps);
         vec3 currentPos = startPosition + rayDirection * (t0 + stepSize * ditherVal);
         
         vec3 lightFog = vec3(0.0);
         for (int s = 0; s < steps; ++s) 
         {
-            float dist = length(u_spotLights[i].pos - currentPos);
-            vec3 dirToLight = normalize(u_spotLights[i].pos - currentPos);
-            float theta = dot(dirToLight, normalize(-u_spotLights[i].dir));
-            float epsilon = u_spotLights[i].innerAngle - u_spotLights[i].outerAngle;
-            float intensity = clamp((theta - u_spotLights[i].outerAngle) / epsilon, 0.0, 1.0);
-            
-            float attenuation = 1.0 - (dist / u_spotLights[i].radius);
+            float dist = length(lPos - currentPos);
+            vec3 dirToLight = normalize(lPos - currentPos);
+            float theta = dot(dirToLight, normalize(-u_spotLights[i].dirInner.xyz));
+            float epsilon = u_spotLights[i].dirInner.w - u_spotLights[i].shadowData.x;
+            float intensity = clamp((theta - u_spotLights[i].shadowData.x) / epsilon, 0.0, 1.0);
+            float attenuation = 1.0 - (dist / lRad);
 
             if (attenuation > 0.0 && intensity > 0.0) 
             {
-                float shadow = SpotShadowCalc(currentPos, u_spotLights[i].pos, u_spotLights[i].radius, u_spotLights[i].lightSpaceMatrix,  u_spotShadowMaps[i]);
-                lightFog += u_spotLights[i].color * intensity * attenuation * (1.0 - shadow) * stepSize;
+                float shadow = SpotShadowCalc(currentPos, lPos, lRad, u_spotLights[i].lightSpace, u_spotLights[i].shadowHandle);
+                lightFog += u_spotLights[i].colorVol.rgb * intensity * attenuation * (1.0 - shadow) * stepSize;
             }
             currentPos += rayDirection * stepSize;
         }
-        accumFog += lightFog * u_spotLights[i].volumetricIntensity;
+        accumFog += lightFog * vIntensity;
     }
 
     // Evaluate Sun Volumetrics

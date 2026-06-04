@@ -128,18 +128,21 @@ void main()
     // Dynamic Spots
     for (int i = 0; i < u_numSpotLights; ++i)
     {
-        vec3 L = normalize(u_spotLights[i].pos - fragPos);
-        float dist = length(u_spotLights[i].pos - fragPos);
-        if (dist > u_spotLights[i].radius) 
+        vec3 lPos = u_spotLights[i].posRadius.xyz;
+        float lRad = u_spotLights[i].posRadius.w;
+        vec3 L = normalize(lPos - fragPos);
+        float dist = length(lPos - fragPos);
+
+        if (dist > lRad) 
             continue;
 
-        float theta = dot(L, normalize(-u_spotLights[i].dir));
-        float epsilon = u_spotLights[i].innerAngle - u_spotLights[i].outerAngle;
-        float intensity = clamp((theta - u_spotLights[i].outerAngle) / epsilon, 0.0, 1.0);
-        float attenuation = 1.0 - (dist / u_spotLights[i].radius);
+        float theta = dot(L, normalize(-u_spotLights[i].dirInner.xyz));
+        float epsilon = u_spotLights[i].dirInner.w - u_spotLights[i].shadowData.x;
+        float intensity = clamp((theta - u_spotLights[i].shadowData.x) / epsilon, 0.0, 1.0);
+        float attenuation = 1.0 - (dist / lRad);
 
-        float shadow = SpotShadowCalc(fragPos, u_spotLights[i].pos, u_spotLights[i].radius, u_spotLights[i].lightSpaceMatrix, u_spotShadowMaps[i]);
-        vec3 lightEnergy = u_spotLights[i].color * intensity * attenuation * (1.0 - shadow);
+        float shadow = SpotShadowCalc(fragPos, lPos, lRad, u_spotLights[i].lightSpace, u_spotLights[i].shadowHandle);
+        vec3 lightEnergy = u_spotLights[i].colorVol.rgb * intensity * attenuation * (1.0 - shadow);
 
         dynDiffuse += lightEnergy * max(dot(N, L), 0.0);
         vec3 H = normalize(L + viewDir);
@@ -149,14 +152,17 @@ void main()
     // Dynamic Points
     for (int i = 0; i < u_numPointLights; ++i)
     {
-        vec3 L = normalize(u_pointLights[i].pos - fragPos);
-        float dist = length(u_pointLights[i].pos - fragPos);
-        if (dist > u_pointLights[i].radius) 
+        vec3 lPos = u_pointLights[i].posRadius.xyz;
+        float lRad = u_pointLights[i].posRadius.w;
+        vec3 L = normalize(lPos - fragPos);
+        float dist = length(lPos - fragPos);
+
+        if (dist > lRad) 
             continue;
 
-        float attenuation = 1.0 - (dist / u_pointLights[i].radius);
-        float shadow = PointShadowCalc(fragPos, u_pointLights[i].pos, u_pointLights[i].radius, u_pointShadowMaps[i]);
-        vec3 lightEnergy = u_pointLights[i].color * attenuation * (1.0 - shadow);
+        float attenuation = 1.0 - (dist / lRad);
+        float shadow = PointShadowCalc(fragPos, lPos, lRad, u_pointLights[i].shadowHandle);
+        vec3 lightEnergy = u_pointLights[i].colorVol.rgb * attenuation * (1.0 - shadow);
 
         dynDiffuse += lightEnergy * max(dot(N, L), 0.0);
         vec3 H = normalize(L + viewDir);

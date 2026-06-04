@@ -1,32 +1,24 @@
-struct PointLight 
+#extension GL_ARB_bindless_texture : require
+
+struct LightData 
 {
-    vec3 pos; 
-    vec3 color; 
-    float radius;
-    float volumetricIntensity;
-    int volumetricSteps;
+    vec4 posRadius;
+    vec4 colorVol;
+    vec4 dirInner;
+    vec4 shadowData;
+    mat4 lightSpace;
+    uvec2 shadowHandle; 
+    uvec2 padding;
 };
 
-struct SpotLight 
+layout(std430, binding = 10) readonly buffer LightBlock 
 {
-    vec3 pos; 
-    vec3 dir; 
-    vec3 color; 
-    float radius;
-    float innerAngle; 
-    float outerAngle; 
-    mat4 lightSpaceMatrix;
-    float volumetricIntensity;
-    int volumetricSteps;
+    LightData u_pointLights[32];
+    LightData u_spotLights[32];
 };
 
 uniform int u_numPointLights;
-uniform PointLight u_pointLights[4];
-uniform samplerCube u_pointShadowMaps[4];
-
 uniform int u_numSpotLights;
-uniform SpotLight u_spotLights[4];
-uniform sampler2D u_spotShadowMaps[4];
 
 uniform int u_csmEnabled;
 uniform sampler2DArray u_csmArray;
@@ -65,31 +57,34 @@ float ChebyshevUpperBound(vec2 moments, float warpedDepth)
     return linstep(0.2, 1.0, pMax); 
 }
 
-float SpotShadowCalc(vec3 worldPos, vec3 lightPos, float radius, mat4 lightSpaceMatrix, sampler2D shadowMap) 
+float SpotShadowCalc(vec3 worldPos, vec3 lightPos, float radius, mat4 lightSpaceMatrix, uvec2 handle) 
 {
+    if (handle == uvec2(0)) 
+        return 0.0;
+	
+    sampler2D shadowMap = sampler2D(handle);
     vec4 fragPosLightSpace = lightSpaceMatrix * vec4(worldPos, 1.0);
     vec3 projCoords = (fragPosLightSpace.xyz / fragPosLightSpace.w) * 0.5 + 0.5;
-
     if (projCoords.z > 1.0) 
-    {
         return 0.0;
-    }
 
     float linearDepth = (distance(worldPos, lightPos) / radius) - 0.001;
     float warpedDepth = exp(EVSM_EXP * linearDepth);
     vec2 moments = texture(shadowMap, projCoords.xy).rg;
-
     return 1.0 - ChebyshevUpperBound(moments, warpedDepth);
 }
 
-float PointShadowCalc(vec3 worldPos, vec3 lightPos, float far_plane, samplerCube shadowMap) 
+float PointShadowCalc(vec3 worldPos, vec3 lightPos, float far_plane, uvec2 handle) 
 {
+    if (handle == uvec2(0)) 
+        return 0.0;
+
+    samplerCube shadowMap = samplerCube(handle);
     vec3 fragToLight = worldPos - lightPos;
     float depth = (length(fragToLight) / far_plane) - 0.001;
     
     vec2 moments = texture(shadowMap, fragToLight).rg;
     float warpedDepth = exp(EVSM_EXP * depth);
-
     return 1.0 - ChebyshevUpperBound(moments, warpedDepth);
 }
 

@@ -66,6 +66,10 @@ bool R_Lights::Init()
     for (int i = 0; i < 6; ++i)
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RG32F, 1, 1, 0, GL_RG, GL_FLOAT, dummyData);
 
+    glGenBuffers(1, &m_lightSSBO);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_lightSSBO);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, 64 * sizeof(GPULight), NULL, GL_DYNAMIC_DRAW);
+
     return true;
 }
 
@@ -87,8 +91,7 @@ void R_Lights::SetupShadowMap(std::shared_ptr<DynamicLight> light)
     {
         glBindTexture(GL_TEXTURE_2D, def.shadowTex);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, def.shadowRes, def.shadowRes, 0, GL_RG, GL_FLOAT, NULL);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, CVar::GetFloat("r_textureAnisotropy", 16.0f));
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
@@ -104,6 +107,12 @@ void R_Lights::SetupShadowMap(std::shared_ptr<DynamicLight> light)
         glBindFramebuffer(GL_FRAMEBUFFER, def.shadowFBO);
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, def.shadowTex, 0);
         glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, def.shadowDepthTex, 0);
+
+        if (def.shadowHandle == 0)
+        {
+            def.shadowHandle = glGetTextureHandleARB(def.shadowTex);
+            glMakeTextureHandleResidentARB(def.shadowHandle);
+        }
     }
     else
     {
@@ -111,8 +120,7 @@ void R_Lights::SetupShadowMap(std::shared_ptr<DynamicLight> light)
         for (int i = 0; i < 6; ++i)
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RG32F, def.shadowRes, def.shadowRes, 0, GL_RG, GL_FLOAT, NULL);
 
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_ANISOTROPY_EXT, CVar::GetFloat("r_textureAnisotropy", 16.0f));
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -128,6 +136,12 @@ void R_Lights::SetupShadowMap(std::shared_ptr<DynamicLight> light)
         glBindFramebuffer(GL_FRAMEBUFFER, def.shadowFBO);
         glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, def.shadowTex, 0);
         glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, def.shadowDepthTex, 0);
+
+        if (def.shadowHandle == 0)
+        {
+            def.shadowHandle = glGetTextureHandleARB(def.shadowTex);
+            glMakeTextureHandleResidentARB(def.shadowHandle);
+        }
     }
 
     static const GLenum drawBuffers[] = { GL_COLOR_ATTACHMENT0 };
@@ -264,73 +278,45 @@ void R_Lights::Bind(const R_Shader& shader)
     bool csmEnabled = (r_shadows.GetInt() > 0 && r_csm.GetInt() > 0 && sky.hasCSM);
     m_cascade->Bind(const_cast<R_Shader&>(shader), sky.sunColor, sky.sunDir, csmEnabled, sky.sunVolIntensity, sky.sunVolSteps);
 
-    // Then the scene lights
-    for (int i = 0; i < 4; ++i)
+    // Then the scene dynamic lights
+    std::vector<GPULight> points, spots;
+    for (const auto& light : DynamicLights::GetActiveLights())
     {
-        glActiveTexture(GL_TEXTURE5 + i);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, m_PointShadow);
-        shader.SetInt("u_pointShadowMaps[" + std::to_string(i) + "]", 5 + i);
-
-        glActiveTexture(GL_TEXTURE9 + i);
-        glBindTexture(GL_TEXTURE_2D, m_SpotShadow);
-        shader.SetInt("u_spotShadowMaps[" + std::to_string(i) + "]", 9 + i);
-    }
-
-    const auto& lights = DynamicLights::GetActiveLights();
-    int pIdx = 0;
-    int sIdx = 0;
-
-    for (const auto& light : lights)
-    {
-        if (!light->IsActive())
-        {
+        if (!light->IsActive()) 
             continue;
-        }
 
-        const auto& def = light->GetDef();
+        auto& d = light->GetDef();
+        GPULight gpu = {};
+        gpu.posRadius = glm::vec4(light->GetPosition(), d.radius);
+        gpu.colorVol = glm::vec4(d.color, d.volumetricIntensity);
+        gpu.dirInner = glm::vec4(light->GetDirection(), glm::cos(glm::radians(d.innerAngle)));
+        gpu.shadowData = glm::vec4(glm::cos(glm::radians(d.outerAngle)), (float)d.volumetricSteps, 0, 0);
+        gpu.lightSpace = d.lightSpaceMatrix;
+        gpu.shadowHandle = d.shadowHandle;
 
-        if (def.type == LightType::Point && pIdx < 4)
-        {
-            std::string b = "u_pointLights[" + std::to_string(pIdx) + "].";
-            shader.SetVec3(b + "pos", light->GetPosition());
-            shader.SetVec3(b + "color", def.color);
-            shader.SetFloat(b + "radius", def.radius);
-            shader.SetFloat(b + "volumetricIntensity", def.volumetricIntensity);
-            shader.SetInt(b + "volumetricSteps", def.volumetricSteps);
-
-            if (def.castsShadows && def.shadowTex != 0)
-            {
-                glActiveTexture(GL_TEXTURE5 + pIdx);
-                glBindTexture(GL_TEXTURE_CUBE_MAP, def.shadowTex);
-            }
-
-            pIdx++;
-        }
-        else if (def.type == LightType::Spot && sIdx < 4)
-        {
-            std::string b = "u_spotLights[" + std::to_string(sIdx) + "].";
-            shader.SetVec3(b + "pos", light->GetPosition());
-            shader.SetVec3(b + "dir", light->GetDirection());
-            shader.SetVec3(b + "color", def.color);
-            shader.SetFloat(b + "radius", def.radius);
-            shader.SetFloat(b + "volumetricIntensity", def.volumetricIntensity);
-            shader.SetInt(b + "volumetricSteps", def.volumetricSteps);
-            shader.SetFloat(b + "innerAngle", glm::cos(glm::radians(def.innerAngle)));
-            shader.SetFloat(b + "outerAngle", glm::cos(glm::radians(def.outerAngle)));
-            shader.SetMat4(b + "lightSpaceMatrix", def.lightSpaceMatrix);
-
-            if (def.castsShadows && def.shadowTex != 0)
-            {
-                glActiveTexture(GL_TEXTURE9 + sIdx);
-                glBindTexture(GL_TEXTURE_2D, def.shadowTex);
-            }
-
-            sIdx++;
-        }
+        if (d.type == LightType::Point)
+            points.push_back(gpu);
+        else
+            spots.push_back(gpu);
     }
 
-    shader.SetInt("u_numPointLights", pIdx);
-    shader.SetInt("u_numSpotLights", sIdx);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_lightSSBO);
+
+    if (!points.empty())
+    {
+        size_t count = std::min(points.size(), (size_t)32);
+        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, count * sizeof(GPULight), points.data());
+    }
+    if (!spots.empty())
+    {
+        size_t count = std::min(spots.size(), (size_t)32);
+        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 32 * sizeof(GPULight), count * sizeof(GPULight), spots.data());
+    }
+
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 10, m_lightSSBO);
+
+    shader.SetInt("u_numPointLights", (int)points.size());
+    shader.SetInt("u_numSpotLights", (int)spots.size());
 }
 
 void R_Lights::Shutdown()
@@ -339,6 +325,11 @@ void R_Lights::Shutdown()
     for (auto& l : lights)
     {
         auto& d = const_cast<DynamicLightDef&>(l->GetDef());
+        if (d.shadowHandle != 0)
+        {
+            glMakeTextureHandleNonResidentARB(d.shadowHandle);
+            d.shadowHandle = 0;
+        }
         if (d.shadowFBO != 0)
         {
             glDeleteFramebuffers(1, &d.shadowFBO);

@@ -46,6 +46,19 @@ public:
 private:
     void SetupShadowMap(std::shared_ptr<DynamicLight> light);
 
+    struct GPULight
+    {
+        glm::vec4 posRadius;
+        glm::vec4 colorVol;
+        glm::vec4 dirInner;
+        glm::vec4 shadowData;
+        glm::mat4 lightSpace;
+        uint64_t  shadowHandle;
+        uint64_t  padding;
+    };
+
+    GLuint m_lightSSBO = 0;
+
     R_Shader m_shadowSpotShader;
     R_Shader m_shadowCascadeShader;
     R_Shader m_shadowPointShader;

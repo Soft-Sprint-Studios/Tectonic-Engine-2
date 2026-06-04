@@ -188,11 +188,11 @@ void R_BSP::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOnly)
         {
             shader.SetInt("u_useBump", dc.isBumped ? 1 : 0);
             (dc.texture ? dc.texture : Materials::GetTexture(""))->Bind(0);
-            (dc.isBumped && dc.normalMap ? dc.normalMap : Materials::GetFlatNormal())->Bind(2);
-            (dc.heightMap ? dc.heightMap : Materials::GetWhiteTexture())->Bind(17);
-            (dc.texture2 ? dc.texture2 : Materials::GetTexture(""))->Bind(14);
-            (dc.isBumped && dc.normalMap2 ? dc.normalMap2 : Materials::GetFlatNormal())->Bind(15);
-            (dc.heightMap2 ? dc.heightMap2 : Materials::GetWhiteTexture())->Bind(18);
+            (dc.normalMap ? dc.normalMap : Materials::GetFlatNormal())->Bind(1);
+            (dc.heightMap ? dc.heightMap : Materials::GetWhiteTexture())->Bind(2);
+            (dc.texture2 ? dc.texture2 : Materials::GetTexture(""))->Bind(3);
+            (dc.normalMap2 ? dc.normalMap2 : Materials::GetFlatNormal())->Bind(4);
+            (dc.heightMap2 ? dc.heightMap2 : Materials::GetWhiteTexture())->Bind(5);
             shader.SetFloat("u_heightScale1", dc.heightScale1);
             shader.SetFloat("u_heightScale2", dc.heightScale2);
         }
@@ -232,11 +232,11 @@ void R_BSP::DrawBModel(int index, const R_Shader& shader, const glm::mat4& trans
         {
             shader.SetInt("u_useBump", dc.isBumped ? 1 : 0);
             (dc.texture ? dc.texture : Materials::GetTexture(""))->Bind(0);
-            (dc.isBumped && dc.normalMap ? dc.normalMap : Materials::GetFlatNormal())->Bind(2);
-            (dc.heightMap ? dc.heightMap : Materials::GetWhiteTexture())->Bind(17);
-            (dc.texture2 ? dc.texture2 : Materials::GetTexture(""))->Bind(14);
-            (dc.isBumped && dc.normalMap2 ? dc.normalMap2 : Materials::GetFlatNormal())->Bind(15);
-            (dc.heightMap2 ? dc.heightMap2 : Materials::GetWhiteTexture())->Bind(18);
+            (dc.normalMap ? dc.normalMap : Materials::GetFlatNormal())->Bind(1);
+            (dc.heightMap ? dc.heightMap : Materials::GetWhiteTexture())->Bind(2);
+            (dc.texture2 ? dc.texture2 : Materials::GetTexture(""))->Bind(3);
+            (dc.normalMap2 ? dc.normalMap2 : Materials::GetFlatNormal())->Bind(4);
+            (dc.heightMap2 ? dc.heightMap2 : Materials::GetWhiteTexture())->Bind(5);
             shader.SetFloat("u_heightScale1", dc.heightScale1);
             shader.SetFloat("u_heightScale2", dc.heightScale2);
         }
