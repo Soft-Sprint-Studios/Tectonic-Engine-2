@@ -12,12 +12,12 @@ in float v_alpha;
 in vec3 FragPos;
 in mat3 TBN;
 
-uniform sampler2D u_diffuse;
-uniform sampler2D u_normal;
-uniform sampler2D u_heightMap;
-uniform sampler2D u_diffuse2;
-uniform sampler2D u_normal2;
-uniform sampler2D u_heightMap2;
+layout(binding = 0) uniform sampler2D u_diffuse;
+layout(binding = 1) uniform sampler2D u_normal;
+layout(binding = 2) uniform sampler2D u_heightMap;
+layout(binding = 3) uniform sampler2D u_diffuse2;
+layout(binding = 4) uniform sampler2D u_normal2;
+layout(binding = 5) uniform sampler2D u_heightMap2;
 
 uniform bool u_useBump;
 uniform vec3 u_viewPos;

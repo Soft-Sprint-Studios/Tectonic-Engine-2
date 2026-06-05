@@ -231,12 +231,6 @@ void Renderer::GeometryPass(Camera& camera, int renderW, int renderH)
     m_gbufferShader.SetFloat("u_pomMinSteps", mat_parallax_min_steps.GetFloat());
     m_gbufferShader.SetFloat("u_pomMaxSteps", mat_parallax_max_steps.GetFloat());
     m_gbufferShader.SetInt("u_pomRefineSteps", mat_parallax_refine.GetInt());
-    m_gbufferShader.SetInt("u_diffuse", 0);
-    m_gbufferShader.SetInt("u_normal", 1);
-    m_gbufferShader.SetInt("u_heightMap", 2);
-    m_gbufferShader.SetInt("u_diffuse2", 3);
-    m_gbufferShader.SetInt("u_normal2", 4);
-    m_gbufferShader.SetInt("u_heightMap2", 5);
 
     Frustum frustum = camera.GetFrustum();
 
@@ -275,13 +269,6 @@ void Renderer::LightingPass(Camera& camera, GLuint cubemapToExclude, GLint targe
     m_resolveShader.SetMat4("u_invProjection", glm::inverse(camera.GetProjectionMatrix()));
     m_resolveShader.SetMat4("u_invView", glm::inverse(camera.GetViewMatrix()));
     m_resolveShader.SetInt("u_mat_specular", mat_specular.GetInt());
-
-    m_resolveShader.SetInt("u_gDepth", 0);
-    m_resolveShader.SetInt("u_gNormal", 1);
-    m_resolveShader.SetInt("u_gAlbedoSpec", 2);
-    m_resolveShader.SetInt("u_gLightmapUV", 3);
-    m_resolveShader.SetInt("u_cubemap", 4);
-    m_resolveShader.SetInt("u_lightmap", 5);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_gbuffer->GetDepthTex());

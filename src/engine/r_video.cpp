@@ -164,10 +164,6 @@ void R_Video::Draw(const Camera& camera, R_BSP* bsp)
     m_shader.SetMat4("u_view", camera.GetViewMatrix());
     m_shader.SetMat4("u_projection", camera.GetProjectionMatrix());
 
-    m_shader.SetInt("texY", 10);
-    m_shader.SetInt("texCb", 11);
-    m_shader.SetInt("texCr", 12);
-
     for (const auto& ent : EntityManager::GetEntities())
     {
         if (ent->GetClassName() != "func_video" || !ent->IsEnabled())

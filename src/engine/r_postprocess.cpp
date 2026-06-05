@@ -153,8 +153,6 @@ void R_PostProcess::Draw(const Camera& camera, R_Lights* lights, R_GBuffer* gbuf
     m_ssr->Render(gbuffer->GetDepthTex(), gbuffer->GetNormalTex(), gbuffer->GetAlbedoSpecTex(), m_texture, camera, m_quadVAO);
 
     m_shader.Bind();
-    m_shader.SetInt("u_screenTexture", 0);
-    m_shader.SetInt("u_depthTexture", 1);
     m_autoExposure->Bind();
     m_bloom->Bind(m_shader);
     m_volumetrics->Bind(m_shader);

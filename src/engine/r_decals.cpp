@@ -80,8 +80,6 @@ void R_Decals::Draw(const Camera& camera, const std::vector<std::shared_ptr<Deca
     m_shader.Bind();
     m_shader.SetMat4("u_view", camera.GetViewMatrix());
     m_shader.SetMat4("u_projection", camera.GetProjectionMatrix());
-    m_shader.SetInt("u_diffuse", 0);
-    m_shader.SetInt("u_normal", 1);
 
     m_shader.SetVec3("u_viewPos", camera.position);
     m_shader.SetInt("u_mat_bumpmap", CVar::GetInt("mat_bumpmap"));
@@ -89,7 +87,6 @@ void R_Decals::Draw(const Camera& camera, const std::vector<std::shared_ptr<Deca
     m_shader.SetFloat("u_pomMinSteps", CVar::GetFloat("mat_parallax_min_steps"));
     m_shader.SetFloat("u_pomMaxSteps", CVar::GetFloat("mat_parallax_max_steps"));
     m_shader.SetInt("u_pomRefineSteps", CVar::GetInt("mat_parallax_refine"));
-    m_shader.SetInt("u_heightMap", 17);
 
     std::unordered_map<std::string, std::vector<glm::mat4>> groups;
     for (const auto& d : decals)

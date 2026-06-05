@@ -4,14 +4,14 @@
 out vec4 FragColor;
 in vec2 TexCoords;
 
-uniform sampler2D u_gDepth;
-uniform sampler2D u_gNormal;
-uniform sampler2D u_gAlbedoSpec;
-uniform sampler2D u_gLightmapUV;
+layout(binding = 0) uniform sampler2D u_gDepth;
+layout(binding = 1) uniform sampler2D u_gNormal;
+layout(binding = 2) uniform sampler2D u_gAlbedoSpec;
+layout(binding = 3) uniform sampler2D u_gLightmapUV;
 
-uniform sampler2D u_lightmap;
+layout(binding = 4) uniform samplerCube u_cubemap;
+layout(binding = 5) uniform sampler2D u_lightmap;
 
-uniform samplerCube u_cubemap;
 uniform bool u_useCubemap;
 uniform vec3 u_cubemapOrigin;
 uniform vec3 u_cubemapMins;

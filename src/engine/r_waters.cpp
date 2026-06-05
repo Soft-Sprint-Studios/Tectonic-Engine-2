@@ -129,11 +129,8 @@ void R_Waters::Draw(const Camera& camera, GLuint vao, GLuint lightmap)
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_reflectTex);
-    m_shader.SetInt("u_reflectionTexture", 0);
-
     glActiveTexture(GL_TEXTURE4);
     glBindTexture(GL_TEXTURE_2D, lightmap);
-    m_shader.SetInt("u_lightmap", 4);
 
     glBindVertexArray(vao);
     for (const auto& s : m_surfaces)

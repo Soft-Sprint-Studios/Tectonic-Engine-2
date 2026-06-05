@@ -4,11 +4,12 @@ in vec2 v_LmCoord;
 in vec2 v_LmSize;
 in mat3 v_TBN;
 
-uniform sampler2D u_reflectionTexture;
-uniform sampler2D u_lightmap;
-uniform sampler2D u_dudvMap;
-uniform sampler2D u_normalMap;
-uniform sampler2D u_flowMap;
+layout(binding = 0) uniform sampler2D u_reflectionTexture;
+layout(binding = 1) uniform sampler2D u_dudvMap;
+layout(binding = 2) uniform sampler2D u_normalMap;
+layout(binding = 3) uniform sampler2D u_flowMap;
+layout(binding = 4) uniform sampler2D u_lightmap;
+
 uniform float u_flowSpeed;
 uniform bool u_hasFlow;
 

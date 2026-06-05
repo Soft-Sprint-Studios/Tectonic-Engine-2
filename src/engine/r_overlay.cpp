@@ -93,7 +93,6 @@ void R_Overlay::Draw()
 
     m_shader.Bind();
     tex->Bind(0);
-    m_shader.SetInt("u_texture", 0);
     m_shader.SetFloat("u_alpha", s.alpha);
 
     glBindVertexArray(m_vao);

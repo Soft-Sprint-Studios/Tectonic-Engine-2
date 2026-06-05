@@ -1,9 +1,9 @@
 out vec4 FragColor;
 in vec2 TexCoord;
 
-uniform sampler2D texY;
-uniform sampler2D texCb;
-uniform sampler2D texCr;
+layout(binding = 10) uniform sampler2D texY;
+layout(binding = 11) uniform sampler2D texCb;
+layout(binding = 12) uniform sampler2D texCr;
 
 void main()
 {

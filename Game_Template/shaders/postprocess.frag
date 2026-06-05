@@ -1,13 +1,14 @@
 out vec4 FragColor;
 in vec2 TexCoords;
 
-uniform sampler2D u_screenTexture;
-uniform sampler2D u_depthTexture;
-uniform sampler2D u_bloomTexture;
-uniform sampler2D u_volumetricTexture;
-uniform sampler2D u_ssaoTexture;
-uniform sampler2D u_ssrTexture;
-uniform sampler2D u_lensDirtTexture;
+layout(binding = 0) uniform sampler2D u_screenTexture;
+layout(binding = 1) uniform sampler2D u_depthTexture;
+layout(binding = 2) uniform sampler2D u_bloomTexture;
+layout(binding = 3) uniform sampler2D u_volumetricTexture;
+layout(binding = 4) uniform sampler2D u_ssaoTexture;
+layout(binding = 5) uniform sampler2D u_ssrTexture;
+layout(binding = 6) uniform sampler2D u_lensDirtTexture;
+
 uniform float u_time;
 
 uniform float u_vignetteStrength;

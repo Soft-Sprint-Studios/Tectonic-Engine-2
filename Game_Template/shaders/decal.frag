@@ -8,9 +8,9 @@ in vec2 TexCoord;
 in vec3 v_FragPos;
 in mat3 TBN;
 
-uniform sampler2D u_diffuse;
-uniform sampler2D u_normal;
-uniform sampler2D u_heightMap;
+layout(binding = 0) uniform sampler2D u_diffuse;
+layout(binding = 1) uniform sampler2D u_normal;
+layout(binding = 2) uniform sampler2D u_heightMap;
 
 uniform vec3 u_viewPos;
 uniform int u_mat_bumpmap;
