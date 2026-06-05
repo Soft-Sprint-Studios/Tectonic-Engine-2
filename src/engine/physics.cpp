@@ -276,6 +276,29 @@ namespace Physics
         s_rigidBodies.push_back(std::move(body));
     }
 
+    btRigidBody* CreateRigidBody(float mass, const glm::mat4& transform, btCollisionShape* shape, void* userPtr, float scale)
+    {
+        if (shape) 
+            shape->setLocalScaling(btVector3(scale, scale, scale));
+
+        btTransform btTrans;
+        btTrans.setFromOpenGLMatrix(&transform[0][0]);
+        auto motionState = std::make_unique<btDefaultMotionState>(btTrans);
+
+        btVector3 localInertia(0, 0, 0);
+        if (mass > 0 && shape) 
+            shape->calculateLocalInertia(mass, localInertia);
+
+        auto body = std::make_unique<btRigidBody>(mass, motionState.get(), shape, localInertia);
+        body->setUserPointer(userPtr);
+        s_dynamicsWorld->addRigidBody(body.get(), COL_WORLD, COL_ALL);
+
+        btRigidBody* ptr = body.get();
+        s_motionStates.push_back(std::move(motionState));
+        s_rigidBodies.push_back(std::move(body));
+        return ptr;
+    }
+
     btCollisionObject* CreateGhostObject(const BSP::CollisionData& collisionData, const glm::vec3& origin)
     {
         if (collisionData.vertices.empty())

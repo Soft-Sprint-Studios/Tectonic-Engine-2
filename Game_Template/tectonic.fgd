@@ -162,7 +162,7 @@
 @PointClass base(Angles) color(255 255 0) studioprop() = prop_static :
 	"A model that doesn't move and has baked lighting."
 [
-	model(studio) : "World Model" : "" : "The GLB/Model file to use."
+	model(studio) : "World Model" : "" : "The Model file to use."
 	skin(integer) : "Skin" : 0 : "Skin index."
 	
 	solid(choices) : "Collisions" : 6 =
@@ -924,4 +924,16 @@
 @PointClass base(Targetname) decal() studio("models/editor/axis_helper_thick.mdl") = infodecal : 
 	"An entity that places a decal on the world."
 [
+]
+
+@PointClass base(Targetname, Angles) studio() = prop_animation : "An entity that displays an animated GLTF model."
+[
+    model(studio) : "World Model" : "" : "The Model file to use."
+    defaultanim(string) : "Default Animation" : "" : "The name of the animation to play by default."
+	uniformscale(float) : "Uniform Scale" : 1
+    
+    input PlayAnimation(string) : "Plays an animation once."
+    input PlayAnimationLoop(string) : "Plays an animation on a loop."
+    input StopAnimation(void) : "Stops the current animation."
+    output OnAnimationDone(void) : "Fired when a non-looping animation finishes."
 ]

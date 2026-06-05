@@ -58,7 +58,9 @@ public:
     void Shutdown();
     void Render(Camera& camera);
     void RenderWorld(Camera& camera, GLuint cubemapToExclude = 0, bool drawWater = true);
-    static void DrawSceneDepth(R_Shader& shader, const Frustum& frustum, R_BSP* bsp, R_Models* models);
+    void RenderBrushEntities(const R_Shader& shader, bool depthOnly);
+    void RenderAnimatedProps(const R_Shader& shader, bool updateAnimation);
+    void DrawSceneDepth(R_Shader& shader, const Frustum& frustum);
     void OnWindowResize(int w, int h);
 
     R_UI* GetUI() const 
@@ -74,7 +76,6 @@ private:
 
     Window* m_windowRef;
     R_Shader m_gbufferShader;
-    R_Shader m_depthShader;
     R_Shader m_resolveShader;
 
     std::unique_ptr<R_GBuffer> m_gbuffer;

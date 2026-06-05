@@ -51,6 +51,8 @@ namespace Physics
     btBvhTriangleMeshShape* CreateStaticMeshShape(const std::vector<glm::vec3>& vertices, const std::vector<uint32_t>& indices);
     void AddStaticBody(btCollisionShape* shape, const glm::mat4& transform, const glm::vec3& scale = glm::vec3(1.0f));
 
+    btRigidBody* CreateRigidBody(float mass, const glm::mat4& transform, btCollisionShape* shape, void* userPtr, float scale = 1.0f);
+
     btCollisionObject* CreateGhostObject(const BSP::CollisionData& collisionData, const glm::vec3& origin);
     void RegisterTouchingEntity(void* ent);
 

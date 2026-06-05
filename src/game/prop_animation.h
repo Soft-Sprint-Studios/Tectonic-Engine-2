@@ -22,51 +22,24 @@
  * SOFTWARE.
  */
 #pragma once
-#include "dynamic_light.h"
-#include "r_shader.h"
-#include "camera.h"
-#include "r_cascade.h"
-#include <glad/glad.h>
-#include <memory>
+#include "entities.h"
+#include "animation.h"
+#include <string>
 
-class R_BSP;
-class R_Models;
-
-class R_Lights
+class PropAnimation : public Entity
 {
 public:
-    R_Lights();
-    ~R_Lights();
+    void Spawn(const BSP::EntityData& entData) override;
+    void Think(float dt) override;
+    void AcceptInput(const std::string& input, const std::string& param) override;
+    bool IsRenderable() const override;
 
-    bool Init();
-    void RenderShadowMaps(Camera& camera, class Renderer* renderer);
-    void Bind(const R_Shader& shader);
-    void Shutdown();
+    std::string m_modelPath;
+    std::string m_animName;
+    std::vector<Animation::NodeState> m_nodeStates;
 
-private:
-    void SetupShadowMap(std::shared_ptr<DynamicLight> light);
-
-    struct GPULight
-    {
-        glm::vec4 posRadius;
-        glm::vec4 colorVol;
-        glm::vec4 dirInner;
-        glm::vec4 shadowData;
-        glm::mat4 lightSpace;
-        uint64_t  shadowHandle;
-        uint64_t  padding;
-    };
-
-    GLuint m_lightSSBO = 0;
-
-    R_Shader m_shadowSpotShader;
-    R_Shader m_shadowCascadeShader;
-    R_Shader m_shadowPointShader;
-
-    GLuint m_SpotShadow;
-    GLuint m_PointShadow;
-
-    std::unique_ptr<R_Cascade> m_cascade;
-    static glm::vec3 s_sunDir;
-    static glm::vec3 s_sunColor;
+    float m_animTime = 0.0f;
+    float m_scale = 1.0f;
+    bool m_playing = false;
+    bool m_looping = true;
 };

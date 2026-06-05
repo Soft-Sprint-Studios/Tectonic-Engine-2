@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 #pragma once
+#include "gltf.h"
 #include "bsploader.h"
 #include "r_shader.h"
 #include "r_texture.h"
@@ -54,10 +55,21 @@ public:
     ~R_Models();
 
     bool Init(const BSP::MapData& mapData);
+
+    void LoadModel(const std::string& path);
+
     void Draw(const R_Shader& shader, const Frustum& frustum, bool depthOnly = false);
+    void DrawSkinned(const R_Shader& shader, const std::string& modelPath, const glm::mat4& transform, const std::vector<glm::mat4>& boneMatrices);
+
+    // For animated models
+    GLTF::ModelData* GetModelData(const std::string& path);
+    btCollisionShape* GetPhysicsShape(const std::string& path);
+
     void Shutdown();
 
 private:
+    std::unordered_map<std::string, GLTF::ModelData> m_blueprints;
+
     struct PropGroup
     {
         std::vector<ModelMesh> meshes;
@@ -78,6 +90,4 @@ private:
     };
 
     std::unordered_map<std::string, PropGroup> m_propGroups;
-
-    void LoadModel(const std::string& path);
 };

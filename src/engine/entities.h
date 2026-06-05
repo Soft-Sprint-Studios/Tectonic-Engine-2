@@ -121,6 +121,11 @@ public:
         return m_physObject; 
     }
 
+    void SetPhysObject(btCollisionObject* obj)
+    {
+        m_physObject = obj;
+    }
+
 protected:
     bool m_enabled = true;
     glm::vec3 m_vecOrigin{ 0.0f, 0.0f, 0.0f };

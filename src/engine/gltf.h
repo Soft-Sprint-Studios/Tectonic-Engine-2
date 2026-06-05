@@ -25,15 +25,69 @@
 #include <string>
 #include <vector>
 #include <glm/glm.hpp>
+#include <glm/gtx/quaternion.hpp>
 
 namespace GLTF
 {
+    struct Node
+    {
+        std::string name;
+        int parent = -1;
+        std::vector<int> children;
+        glm::vec3 translation{ 0.0f };
+        glm::quat rotation{ 0.0f, 0.0f, 0.0f, 1.0f };
+        glm::vec3 scale{ 1.0f };
+        glm::mat4 globalMatrix{ 1.0f };
+
+        glm::mat4 GetLocalMatrix() const 
+        {
+            return glm::translate(glm::mat4(1.0f), translation) * glm::toMat4(rotation) * glm::scale(glm::mat4(1.0f), scale);
+        }
+    };
+
+    struct Skin
+    {
+        std::string name;
+        std::vector<int> joints;
+        std::vector<glm::mat4> inverseBindMatrices;
+    };
+
+    struct AnimationSampler
+    {
+        std::vector<float> timestamps;
+        std::vector<glm::vec4> keyframes;
+    };
+
+    struct AnimationChannel
+    {
+        enum class Path 
+        { 
+            Translation, 
+            Rotation, 
+            Scale 
+        };
+
+        Path path;
+        int nodeIndex;
+        int samplerIndex;
+    };
+
+    struct AnimationClip
+    {
+        std::string name;
+        std::vector<AnimationSampler> samplers;
+        std::vector<AnimationChannel> channels;
+        float duration = 0.0f;
+    };
+
     struct Primitive
     {
         std::vector<glm::vec3> positions;
         std::vector<glm::vec2> uvs;
         std::vector<glm::vec3> normals;
         std::vector<glm::vec4> tangents;
+        std::vector<glm::uvec4> joints;
+        std::vector<glm::vec4> weights;
         std::vector<uint32_t> indices;
         std::string materialName;
     };
@@ -41,6 +95,12 @@ namespace GLTF
     struct ModelData
     {
         std::vector<Primitive> primitives;
+
+        std::vector<Node> nodes;
+        std::vector<AnimationClip> animations;
+        Skin skin;
+        bool isAnimated = false;
+
         std::vector<glm::vec3> physicsPositions;
         std::vector<uint32_t> physicsIndices;
         glm::vec3 localMins{ 1e10f };

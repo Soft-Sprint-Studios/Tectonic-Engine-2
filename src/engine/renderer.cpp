@@ -29,6 +29,8 @@
 #include "entities.h"
 #include "cubemap.h"
 #include "fade.h"
+#include "animation.h"
+#include "prop_animation.h"
 #include <glm/glm.hpp>
 #include <ctime>
 #include "concmd.h"
@@ -67,7 +69,6 @@ bool Renderer::Init(Window& window)
 
     m_gbufferShader.Load("shaders/gbuffer.vert", "shaders/gbuffer.frag");
     m_resolveShader.Load("shaders/resolve.vert", "shaders/resolve.frag");
-    m_depthShader.Load("shaders/depth.vert", "shaders/depth.frag");
 
     // Global GL State
     glEnable(GL_DEPTH_TEST);
@@ -172,24 +173,13 @@ bool Renderer::LoadMap(const std::string& path)
     return true;
 }
 
-void Renderer::DrawSceneDepth(R_Shader& shader, const Frustum& frustum, R_BSP* bsp, R_Models* models)
+void Renderer::DrawSceneDepth(R_Shader& shader, const Frustum& frustum)
 {
-    bsp->Draw(shader, frustum, true);
-    models->Draw(shader, frustum, true);
+    m_bspRenderer->Draw(shader, frustum, true);
+    m_modelRenderer->Draw(shader, frustum, true);
 
-    // Also render all brush entities
-    for (auto& ent : EntityManager::GetEntities())
-    {
-        if (ent->IsRenderable() && ent->GetBModelIndex() >= 0)
-        {
-            glm::mat4 model = glm::translate(glm::mat4(1.0f), ent->GetOrigin());
-            glm::vec3 ang = ent->GetAngles();
-            model = glm::rotate(model, glm::radians(ang.y), glm::vec3(0, 1, 0));
-            model = glm::rotate(model, glm::radians(ang.x), glm::vec3(1, 0, 0));
-            model = glm::rotate(model, glm::radians(ang.z), glm::vec3(0, 0, 1));
-            bsp->DrawBModel(ent->GetBModelIndex(), shader, model, true);
-        }
-    }
+    RenderBrushEntities(shader, true);
+    RenderAnimatedProps(shader, false);
 }
 
 void Renderer::RenderWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater)
@@ -209,6 +199,113 @@ void Renderer::RenderWorld(Camera& camera, GLuint cubemapToExclude, bool drawWat
     LightingPass(camera, cubemapToExclude, targetFBO, renderW, renderH, w, h);
     DepthBlit(targetFBO, renderW, renderH);
     ForwardPass(camera, targetFBO, renderW, renderH, drawWater);
+}
+
+void Renderer::RenderBrushEntities(const R_Shader& shader, bool depthOnly)
+{
+    for (auto& ent : EntityManager::GetEntities())
+    {
+        if (ent->IsRenderable() && ent->GetBModelIndex() >= 0)
+        {
+            glm::mat4 model = glm::translate(glm::mat4(1.0f), ent->GetOrigin());
+            glm::vec3 ang = ent->GetAngles();
+            model = glm::rotate(model, glm::radians(ang.y), glm::vec3(0, 1, 0));
+            model = glm::rotate(model, glm::radians(ang.x), glm::vec3(1, 0, 0));
+            model = glm::rotate(model, glm::radians(ang.z), glm::vec3(0, 0, 1));
+            m_bspRenderer->DrawBModel(ent->GetBModelIndex(), shader, model, depthOnly);
+        }
+    }
+}
+
+void Renderer::RenderAnimatedProps(const R_Shader& shader, bool updateAnimation)
+{
+    for (auto& ent : EntityManager::GetEntities())
+    {
+        if (ent->GetClassName() != "prop_animation" || !ent->IsRenderable())
+        {
+            continue;
+        }
+
+        auto* p = static_cast<PropAnimation*>(ent.get());
+        m_modelRenderer->LoadModel(p->m_modelPath);
+
+        auto* data = m_modelRenderer->GetModelData(p->m_modelPath);
+        if (!data)
+        {
+            continue;
+        }
+
+        if (!ent->GetPhysObject())
+        {
+            btCollisionShape* shape = m_modelRenderer->GetPhysicsShape(p->m_modelPath);
+            if (shape)
+            {
+                glm::vec3 a = ent->GetAngles();
+                glm::mat4 mat = glm::translate(glm::mat4(1.0f), ent->GetOrigin());
+                mat = glm::rotate(mat, glm::radians(a.y), { 0, 1, 0 });
+                mat = glm::rotate(mat, glm::radians(a.x), { 1, 0, 0 });
+                mat = glm::rotate(mat, glm::radians(a.z), { 0, 0, 1 });
+                mat = glm::scale(mat, glm::vec3(p->m_scale));
+
+                btRigidBody* body = Physics::CreateRigidBody(0.0f, mat, shape, ent.get(), p->m_scale);
+                ent->SetPhysObject(body);
+            }
+        }
+
+        if (p->m_nodeStates.empty())
+        {
+            for (const auto& n : data->nodes)
+            {
+                p->m_nodeStates.push_back({ n.translation, n.rotation, n.scale });
+            }
+        }
+
+        int idx = -1;
+        if (!p->m_animName.empty())
+        {
+            for (int i = 0; i < (int)data->animations.size(); ++i)
+            {
+                if (data->animations[i].name == p->m_animName)
+                {
+                    idx = i;
+                }
+            }
+
+            if (idx != -1 && !data->animations.empty())
+            {
+                float duration = data->animations[idx].duration;
+                if (!p->m_looping && p->m_animTime > duration)
+                {
+                    p->m_animTime = duration;
+                    if (p->m_playing)
+                    {
+                        p->m_playing = false;
+                        p->FireOutput("OnAnimationDone");
+                    }
+                }
+            }
+        }
+
+        Animation::UpdateHierarchy(*data, p->m_nodeStates, idx, p->m_animTime);
+
+        glm::vec3 a = ent->GetAngles();
+        glm::mat4 mat = glm::translate(glm::mat4(1.0f), ent->GetOrigin());
+        mat = glm::rotate(mat, glm::radians(a.y), { 0, 1, 0 });
+        mat = glm::rotate(mat, glm::radians(a.x), { 1, 0, 0 });
+        mat = glm::rotate(mat, glm::radians(a.z), { 0, 0, 1 });
+        mat = glm::scale(mat, glm::vec3(p->m_scale));
+
+        if (!data->skin.joints.empty())
+        {
+            std::vector<glm::mat4> bones;
+            Animation::GetSkinMatrices(*data, p->m_nodeStates, bones);
+            m_modelRenderer->DrawSkinned(shader, p->m_modelPath, mat, bones);
+        }
+        else
+        {
+            m_modelRenderer->DrawSkinned(shader, p->m_modelPath, mat * p->m_nodeStates[0].globalMatrix, {});
+        }
+    }
 }
 
 void Renderer::GeometryPass(Camera& camera, int renderW, int renderH)
@@ -236,19 +333,8 @@ void Renderer::GeometryPass(Camera& camera, int renderW, int renderH)
 
     m_bspRenderer->Draw(m_gbufferShader, frustum);
 
-    // Render all brush entities
-    for (auto& ent : EntityManager::GetEntities())
-    {
-        if (ent->IsRenderable() && ent->GetBModelIndex() > 0)
-        {
-            glm::mat4 model = glm::translate(glm::mat4(1.0f), ent->GetOrigin());
-            glm::vec3 ang = ent->GetAngles();
-            model = glm::rotate(model, glm::radians(ang.y), glm::vec3(0, 1, 0));
-            model = glm::rotate(model, glm::radians(ang.x), glm::vec3(1, 0, 0));
-            model = glm::rotate(model, glm::radians(ang.z), glm::vec3(0, 0, 1));
-            m_bspRenderer->DrawBModel(ent->GetBModelIndex(), m_gbufferShader, model);
-        }
-    }
+    RenderBrushEntities(m_gbufferShader, false);
+    RenderAnimatedProps(m_gbufferShader, true);
 
     m_modelRenderer->Draw(m_gbufferShader, frustum);
     m_decalRenderer->Draw(camera, Decals::GetActiveDecals());
@@ -341,7 +427,7 @@ void Renderer::ForwardPass(Camera& camera, GLint targetFBO, int renderW, int ren
 
 void Renderer::Render(Camera& camera)
 {
-    m_lightRenderer->RenderShadowMaps(camera, m_bspRenderer.get(), m_modelRenderer.get());
+    m_lightRenderer->RenderShadowMaps(camera, this);
     m_monitorRenderer->RenderTextures(this);
 
     int w, h;

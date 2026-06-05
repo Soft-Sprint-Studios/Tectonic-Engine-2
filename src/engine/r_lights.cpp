@@ -150,13 +150,13 @@ void R_Lights::SetupShadowMap(std::shared_ptr<DynamicLight> light)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void R_Lights::RenderShadowMaps(Camera& camera, R_BSP* bsp, R_Models* models)
+void R_Lights::RenderShadowMaps(Camera& camera, Renderer* renderer)
 {
     // CSM
     const auto& sky = DynamicSky::GetSettings();
     if (r_shadows.GetInt() > 0 && r_csm.GetInt() > 0 && sky.hasCSM)
     {
-        m_cascade->Render(camera, m_shadowCascadeShader, bsp, models);
+        m_cascade->Render(camera, m_shadowCascadeShader, renderer);
     }
 
     const auto& lights = DynamicLights::GetActiveLights();
@@ -209,7 +209,7 @@ void R_Lights::RenderShadowMaps(Camera& camera, R_BSP* bsp, R_Models* models)
             m_shadowSpotShader.SetVec3("u_lightPos", light->GetPosition());
             m_shadowSpotShader.SetFloat("u_farPlane", def.radius);
 
-            Renderer::DrawSceneDepth(m_shadowSpotShader, lightFrustum, bsp, models);
+            renderer->DrawSceneDepth(m_shadowSpotShader, lightFrustum);
         }
         else
         {
@@ -244,7 +244,7 @@ void R_Lights::RenderShadowMaps(Camera& camera, R_BSP* bsp, R_Models* models)
 
             m_shadowPointShader.SetMat4("u_model", glm::mat4(1.0f));
 
-            Renderer::DrawSceneDepth(m_shadowPointShader, pointFrustum, bsp, models);
+            renderer->DrawSceneDepth(m_shadowPointShader, pointFrustum);
         }
 
         if (def.isStaticShadow)

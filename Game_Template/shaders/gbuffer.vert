@@ -5,6 +5,8 @@ layout (location = 3) in vec2 aLmSize;
 layout (location = 4) in float aAlpha;
 layout (location = 5) in vec3 aNormal;
 layout (location = 6) in vec4 aTangent;
+layout (location = 7) in uvec4 aJoints;
+layout (location = 8) in vec4 aWeights;
 
 uniform mat4 u_model;
 uniform mat4 u_view;
@@ -12,6 +14,9 @@ uniform mat4 u_projection;
 uniform int u_isInstanced;
 uniform int u_totalVertices;
 uniform int u_vertexOffset;
+
+uniform mat4 u_bones[128];
+uniform bool u_isAnimated;
 
 layout(std430, binding = 4) readonly buffer InstanceTransforms 
 {
@@ -33,6 +38,12 @@ out mat3 TBN;
 void main()
 {
     mat4 modelMat = u_isInstanced == 1 ? transforms[gl_InstanceID] : u_model;
+	
+    if (u_isAnimated)
+    {
+        mat4 skinMat = aWeights.x * u_bones[aJoints.x] + aWeights.y * u_bones[aJoints.y] + aWeights.z * u_bones[aJoints.z] +aWeights.w * u_bones[aJoints.w];
+        modelMat = modelMat * skinMat;
+    }
 
     FragPos = vec3(modelMat * vec4(aPos, 1.0));
     mat3 normalMatrix = mat3(transpose(inverse(modelMat)));

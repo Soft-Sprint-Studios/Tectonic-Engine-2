@@ -135,7 +135,7 @@ void R_Cascade::UpdateMatrices(const Camera& cam, const glm::vec3& sunDir)
     }
 }
 
-void R_Cascade::Render(const Camera& camera, R_Shader& shadowShader, R_BSP* bsp, R_Models* models)
+void R_Cascade::Render(const Camera& camera, R_Shader& shadowShader, Renderer* renderer)
 {
     UpdateMatrices(camera, DynamicSky::GetSettings().sunDir);
 
@@ -154,7 +154,7 @@ void R_Cascade::Render(const Camera& camera, R_Shader& shadowShader, R_BSP* bsp,
     Frustum sunFrustum;
     sunFrustum.valid = false;
 
-    Renderer::DrawSceneDepth(shadowShader, sunFrustum, bsp, models);
+    renderer->DrawSceneDepth(shadowShader, sunFrustum);
 
     glCullFace(GL_BACK);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

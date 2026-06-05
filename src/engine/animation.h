@@ -22,51 +22,21 @@
  * SOFTWARE.
  */
 #pragma once
-#include "dynamic_light.h"
-#include "r_shader.h"
-#include "camera.h"
-#include "r_cascade.h"
-#include <glad/glad.h>
-#include <memory>
+#include "gltf.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <vector>
 
-class R_BSP;
-class R_Models;
-
-class R_Lights
+namespace Animation
 {
-public:
-    R_Lights();
-    ~R_Lights();
-
-    bool Init();
-    void RenderShadowMaps(Camera& camera, class Renderer* renderer);
-    void Bind(const R_Shader& shader);
-    void Shutdown();
-
-private:
-    void SetupShadowMap(std::shared_ptr<DynamicLight> light);
-
-    struct GPULight
+    struct NodeState
     {
-        glm::vec4 posRadius;
-        glm::vec4 colorVol;
-        glm::vec4 dirInner;
-        glm::vec4 shadowData;
-        glm::mat4 lightSpace;
-        uint64_t  shadowHandle;
-        uint64_t  padding;
+        glm::vec3 translation;
+        glm::quat rotation;
+        glm::vec3 scale;
+        glm::mat4 globalMatrix;
     };
 
-    GLuint m_lightSSBO = 0;
-
-    R_Shader m_shadowSpotShader;
-    R_Shader m_shadowCascadeShader;
-    R_Shader m_shadowPointShader;
-
-    GLuint m_SpotShadow;
-    GLuint m_PointShadow;
-
-    std::unique_ptr<R_Cascade> m_cascade;
-    static glm::vec3 s_sunDir;
-    static glm::vec3 s_sunColor;
-};
+    void UpdateHierarchy(const GLTF::ModelData& model, std::vector<NodeState>& states, int clipIndex, float time);
+    void GetSkinMatrices(const GLTF::ModelData& model, const std::vector<NodeState>& states, std::vector<glm::mat4>& outMatrices);
+}

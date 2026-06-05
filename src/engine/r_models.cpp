@@ -36,6 +36,7 @@
 
 R_Models::R_Models()
 {
+    m_blueprints.clear();
 }
 
 R_Models::~R_Models()
@@ -134,7 +135,16 @@ bool R_Models::Init(const BSP::MapData& mapData)
 
 void R_Models::LoadModel(const std::string& path)
 {
-    GLTF::ModelData modelData = GLTF::Load(path);
+    if (m_propGroups.count(path) && m_propGroups[path].totalVertices > 0)
+        return;
+
+    if (m_blueprints.find(path) == m_blueprints.end())
+    {
+        m_blueprints[path] = GLTF::Load(path);
+    }
+
+    GLTF::ModelData& modelData = m_blueprints[path];
+
     std::filesystem::path p(path);
     std::string modelName = p.stem().string();
     if (!modelData.valid)
@@ -205,6 +215,28 @@ void R_Models::LoadModel(const std::string& path)
             m.vbos.push_back(vbo);
             glEnableVertexAttribArray(6);
             glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4), 0);
+        }
+
+        if (!prim.joints.empty())
+        {
+            GLuint vbo;
+            glGenBuffers(1, &vbo);
+            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            glBufferData(GL_ARRAY_BUFFER, prim.joints.size() * sizeof(glm::uvec4), prim.joints.data(), GL_STATIC_DRAW);
+            m.vbos.push_back(vbo);
+            glEnableVertexAttribArray(7);
+            glVertexAttribIPointer(7, 4, GL_UNSIGNED_INT, sizeof(glm::uvec4), 0);
+        }
+
+        if (!prim.weights.empty())
+        {
+            GLuint vbo;
+            glGenBuffers(1, &vbo);
+            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            glBufferData(GL_ARRAY_BUFFER, prim.weights.size() * sizeof(glm::vec4), prim.weights.data(), GL_STATIC_DRAW);
+            m.vbos.push_back(vbo);
+            glEnableVertexAttribArray(8);
+            glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4), 0);
         }
 
         if (!prim.indices.empty())
@@ -306,6 +338,53 @@ void R_Models::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOn
     shader.SetInt("u_isInstanced", 0);
 }
 
+void R_Models::DrawSkinned(const R_Shader& shader, const std::string& modelPath, const glm::mat4& transform, const std::vector<glm::mat4>& boneMatrices)
+{
+    if (m_propGroups.find(modelPath) == m_propGroups.end())
+    {
+        return;
+    }
+
+    auto& group = m_propGroups[modelPath];
+
+    shader.SetMat4("u_model", transform);
+    shader.SetInt("u_isInstanced", 0);
+    shader.SetInt("u_isAnimated", boneMatrices.empty() ? 0 : 1);
+
+    // For now animated models dont have baked lighting
+    shader.SetInt("u_hasLM", 0);
+
+    for (size_t i = 0; i < boneMatrices.size() && i < 128; ++i)
+    {
+        shader.SetMat4("u_bones[" + std::to_string(i) + "]", boneMatrices[i]);
+    }
+
+    for (auto& mesh : group.meshes)
+    {
+        glBindVertexArray(mesh.vao);
+        (mesh.texture ? mesh.texture : Materials::GetTexture(""))->Bind(0);
+        (mesh.normalMap ? mesh.normalMap : Materials::GetFlatNormal())->Bind(1);
+        (mesh.heightMap ? mesh.heightMap : Materials::GetWhiteTexture())->Bind(2);
+        glDrawElements(GL_TRIANGLES, mesh.indexCount, mesh.indexType, 0);
+    }
+
+    shader.SetInt("u_isAnimated", 0);
+}
+
+GLTF::ModelData* R_Models::GetModelData(const std::string& path)
+{
+    if (m_blueprints.find(path) != m_blueprints.end())
+    {
+        return &m_blueprints[path];
+    }
+    return nullptr;
+}
+
+btCollisionShape* R_Models::GetPhysicsShape(const std::string& path)
+{ 
+    return m_propGroups.count(path) ? m_propGroups[path].physicsShape : nullptr; 
+}
+
 void R_Models::Shutdown()
 {
     for (auto& [path, group] : m_propGroups)
@@ -322,8 +401,12 @@ void R_Models::Shutdown()
 
         if (group.transformSSBO != 0)
             glDeleteBuffers(1, &group.transformSSBO);
+        if (group.lmUVSSBO != 0)
+            glDeleteBuffers(1, &group.lmUVSSBO);
 
         group.physicsShape = nullptr;
     }
+
     m_propGroups.clear();
+    m_blueprints.clear();
 }
