@@ -30,6 +30,7 @@ void PropAnimation::Spawn(const BSP::EntityData& entData)
     m_modelPath = GetValue("model");
     m_animName = GetValue("defaultanim");
     m_scale = GetFloat("uniformscale", 1.0f);
+    m_vecAngles.y += 90.0f;
 
     m_playing = !m_animName.empty() && !HasSpawnFlag(1);
     m_looping = true;
