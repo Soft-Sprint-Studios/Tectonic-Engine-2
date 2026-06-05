@@ -27,10 +27,6 @@ uniform int u_mat_parallax;
 uniform float u_heightScale1;
 uniform float u_heightScale2;
 
-const vec3 basis0 = vec3(0.81649658, 0.0, 0.57735027);
-const vec3 basis1 = vec3(-0.40824829, 0.70710678, 0.57735027);
-const vec3 basis2 = vec3(-0.40824829, -0.70710678, 0.57735027);
-
 void main()
 {
     float blend = v_alpha;
