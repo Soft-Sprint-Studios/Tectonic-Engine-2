@@ -28,6 +28,9 @@
 #include "console.h"
 #include "physics.h"
 #include "cubemap.h"
+#include "entities.h"
+#include "prop_animation.h"
+#include "animation.h"
 #include "gltf.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glad/glad.h>
@@ -336,6 +339,85 @@ void R_Models::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOn
     }
 
     shader.SetInt("u_isInstanced", 0);
+
+    // Render Animated Props
+    for (auto& ent : EntityManager::GetEntities())
+    {
+        if (ent->GetClassName() != "prop_animation" || !ent->IsRenderable())
+            continue;
+
+        auto* p = static_cast<PropAnimation*>(ent.get());
+        LoadModel(p->m_modelPath);
+
+        auto* data = GetModelData(p->m_modelPath);
+        if (!data) 
+            continue;
+
+        if (!ent->GetPhysObject())
+        {
+            btCollisionShape* shape = GetPhysicsShape(p->m_modelPath);
+            if (shape)
+            {
+                glm::vec3 a = ent->GetAngles();
+                glm::mat4 mat = glm::translate(glm::mat4(1.0f), ent->GetOrigin());
+                mat = glm::rotate(mat, glm::radians(a.y), { 0, 1, 0 });
+                mat = glm::rotate(mat, glm::radians(a.x), { 1, 0, 0 });
+                mat = glm::rotate(mat, glm::radians(a.z), { 0, 0, 1 });
+                mat = glm::scale(mat, glm::vec3(p->m_scale));
+                btRigidBody* body = Physics::CreateRigidBody(0.0f, mat, shape, ent.get(), p->m_scale);
+                ent->SetPhysObject(body);
+            }
+        }
+
+        if (p->m_nodeStates.empty())
+        {
+            for (const auto& n : data->nodes)
+                p->m_nodeStates.push_back({ n.translation, n.rotation, n.scale });
+        }
+
+        int idx = -1;
+        if (!p->m_animName.empty())
+        {
+            for (int i = 0; i < (int)data->animations.size(); ++i)
+                if (data->animations[i].name == p->m_animName) 
+                    idx = i;
+
+            if (idx != -1 && !data->animations.empty())
+            {
+                float duration = data->animations[idx].duration;
+                if (!p->m_looping && p->m_animTime > duration)
+                {
+                    p->m_animTime = duration;
+                    if (p->m_playing) 
+                    { 
+                        p->m_playing = false; 
+                        p->FireOutput("OnAnimationDone"); 
+                    }
+                }
+            }
+        }
+
+        if (!depthOnly)
+            Animation::UpdateHierarchy(*data, p->m_nodeStates, idx, p->m_animTime);
+
+        glm::vec3 a = ent->GetAngles();
+        glm::mat4 mat = glm::translate(glm::mat4(1.0f), ent->GetOrigin());
+        mat = glm::rotate(mat, glm::radians(a.y), { 0, 1, 0 });
+        mat = glm::rotate(mat, glm::radians(a.x), { 1, 0, 0 });
+        mat = glm::rotate(mat, glm::radians(a.z), { 0, 0, 1 });
+        mat = glm::scale(mat, glm::vec3(p->m_scale));
+
+        if (!data->skin.joints.empty())
+        {
+            std::vector<glm::mat4> bones;
+            Animation::GetSkinMatrices(*data, p->m_nodeStates, bones);
+            DrawSkinned(shader, p->m_modelPath, mat, bones);
+        }
+        else
+        {
+            DrawSkinned(shader, p->m_modelPath, mat * p->m_nodeStates[0].globalMatrix, {});
+        }
+    }
 }
 
 void R_Models::DrawSkinned(const R_Shader& shader, const std::string& modelPath, const glm::mat4& transform, const std::vector<glm::mat4>& boneMatrices)

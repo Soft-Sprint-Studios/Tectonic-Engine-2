@@ -58,8 +58,6 @@ public:
     void Shutdown();
     void Render(Camera& camera);
     void RenderWorld(Camera& camera, GLuint cubemapToExclude = 0, bool drawWater = true);
-    void RenderBrushEntities(const R_Shader& shader, bool depthOnly);
-    void RenderAnimatedProps(const R_Shader& shader, bool updateAnimation);
     void DrawSceneDepth(R_Shader& shader, const Frustum& frustum);
     void OnWindowResize(int w, int h);
 
