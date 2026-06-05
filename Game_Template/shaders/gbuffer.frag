@@ -60,17 +60,21 @@ void main()
     vec3 worldNormal = normalize(TBN[2]);
     vec3 tangentNormal = vec3(0.0, 0.0, 1.0);
 
+    float specMask = 0.0;
+
     if (u_useBump && u_mat_bumpmap == 1)
     {
-        vec3 n1 = texture(u_normal, finalUV).rgb * 2.0 - 1.0;
-        vec3 n2 = texture(u_normal2, finalUV).rgb * 2.0 - 1.0;
+        vec4 norm1 = texture(u_normal, finalUV);
+        vec4 norm2 = texture(u_normal2, finalUV);
+
+        vec3 n1 = norm1.rgb * 2.0 - 1.0;
+        vec3 n2 = norm2.rgb * 2.0 - 1.0;
+
         tangentNormal = normalize(mix(n1, n2, blend));
         worldNormal = normalize(TBN * tangentNormal);
-    }
 
-    float spec1 = u_useBump ? texture(u_normal, finalUV).a : 0.0;
-    float spec2 = u_useBump ? texture(u_normal2, finalUV).a : 0.0;
-    float specMask = mix(spec1, spec2, blend);
+        specMask = mix(norm1.a, norm2.a, blend);
+    }
 
     gNormal = vec4(EncodeNormal(worldNormal), tangentNormal.x, u_useBump ? tangentNormal.y : -2.0);
     gAlbedoSpec = vec4(albedo.rgb, specMask);
