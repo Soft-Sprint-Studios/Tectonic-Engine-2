@@ -3,7 +3,7 @@
 
 layout (location = 0) out vec4 gNormal;
 layout (location = 1) out vec4 gAlbedoSpec;
-layout (location = 2) out vec3 gLightmapUV;
+layout (location = 2) out vec4 gLightmapUV;
 
 in vec2 TexCoord;
 in vec2 v_LmCoord;
