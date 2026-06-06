@@ -28,8 +28,7 @@
 enum CVarFlags
 {
     CVAR_NONE = 0,
-    CVAR_SAVE = (1 << 0),
-    CVAR_CHEAT = (1 << 1)
+    CVAR_SAVE = (1 << 0)
 };
 
 class CVar
@@ -75,11 +74,6 @@ public:
     std::string GetDescription() const
     {
         return m_description;
-    }
-
-    bool IsCheat() const
-    {
-        return (m_flags & CVAR_CHEAT) != 0;
     }
 
     static int GetInt(const std::string& name, int defaultVal = 0);

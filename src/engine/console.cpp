@@ -283,12 +283,6 @@ namespace Console
         {
             if (args.size() > 1)
             {
-                if (var->IsCheat() && sv_cheats.GetInt() == 0)
-                {
-                    Warn("CVar '" + name + "' is cheat protected (sv_cheats must be 1)");
-                    return;
-                }
-
                 CVar::Set(name, args[1]);
                 Log(name + " = " + args[1]);
                 CVar::Save();

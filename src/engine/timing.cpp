@@ -22,11 +22,14 @@
  * SOFTWARE.
  */
 #include "timing.h"
+#include "cvar.h"
 #include <SDL3/SDL.h>
 #include <algorithm>
 
 namespace Time
 {
+    CVar host_timescale("host_timescale", "1.0", "Can be used to manipulate the time scale.", CVAR_SAVE);
+
     static uint64_t s_startTicks = 0;
     static uint64_t s_lastTicks = 0;
     static float s_deltaTime = 0.0f;
@@ -50,12 +53,13 @@ namespace Time
 
         // Convert nanoseconds to float seconds
         float rawDelta = (float)((double)deltaNS / 1000000000.0);
-        s_deltaTime = std::clamp(rawDelta, 0.0001f, 0.066f);
-        s_totalTime = (float)((double)(currentTicks - s_startTicks) / 1000000000.0);
+        float unscaledDelta = std::clamp(rawDelta, 0.0001f, 0.066f);
+        s_deltaTime = std::clamp(rawDelta, 0.0001f, 0.066f) * host_timescale.GetFloat();
+        s_totalTime += s_deltaTime;
 
         // FPS Calculation
         s_frameCount++;
-        s_fpsTimer += s_deltaTime;
+        s_fpsTimer += unscaledDelta;
         if (s_fpsTimer >= 1.0f) 
         {
             s_fps = s_frameCount;
