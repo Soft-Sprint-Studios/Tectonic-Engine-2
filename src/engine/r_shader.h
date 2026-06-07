@@ -41,7 +41,6 @@ public:
     static std::set<R_Shader*>& GetRegistry();
 
     void Bind() const;
-    void Unbind() const;
 
     void SetMat4(const std::string& name, const glm::mat4& mat) const;
     void SetVec4(const std::string& name, const glm::vec4& vec) const;

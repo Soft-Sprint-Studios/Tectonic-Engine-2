@@ -237,11 +237,6 @@ void R_Shader::Bind() const
     glUseProgram(m_program);
 }
 
-void R_Shader::Unbind() const
-{
-    glUseProgram(0);
-}
-
 GLint R_Shader::GetUniformLocation(const std::string& name) const
 {
     if (m_uniformLocationCache.find(name) != m_uniformLocationCache.end())
