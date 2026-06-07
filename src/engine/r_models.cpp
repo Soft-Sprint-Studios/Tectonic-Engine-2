@@ -329,7 +329,7 @@ void R_Models::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOn
                     shader.SetInt("u_useBump", group.hasBumpedLighting ? 1 : 0);
 
                     (mesh.texture ? mesh.texture : Materials::GetTexture(""))->Bind(0);
-                    (mesh.normalMap ? mesh.normalMap : Materials::GetFlatNormal())->Bind(1);
+                    (mesh.normalMap ? mesh.normalMap : Materials::GetNormalMap(""))->Bind(1);
                     (mesh.mraohMap ? mesh.mraohMap : Materials::GetMRAOMap(""))->Bind(2);
 
                     glDrawElementsInstanced(GL_TRIANGLES, mesh.indexCount, mesh.indexType, 0, group.instanceCount);
@@ -445,7 +445,7 @@ void R_Models::DrawSkinned(const R_Shader& shader, const std::string& modelPath,
     {
         glBindVertexArray(mesh.vao);
         (mesh.texture ? mesh.texture : Materials::GetTexture(""))->Bind(0);
-        (mesh.normalMap ? mesh.normalMap : Materials::GetFlatNormal())->Bind(1);
+        (mesh.normalMap ? mesh.normalMap : Materials::GetNormalMap(""))->Bind(1);
         (mesh.mraohMap ? mesh.mraohMap : Materials::GetMRAOMap(""))->Bind(2);
         glDrawElements(GL_TRIANGLES, mesh.indexCount, mesh.indexType, 0);
     }

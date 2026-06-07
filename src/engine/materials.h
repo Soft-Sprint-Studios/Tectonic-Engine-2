@@ -40,8 +40,6 @@ public:
     static std::shared_ptr<R_Texture> GetMRAOMap2(const std::string& name);
     static float GetHeightScale(const std::string& name);
     static float GetHeightScale2(const std::string& name);
-    static std::shared_ptr<R_Texture> GetFlatNormal();
-    static std::shared_ptr<R_Texture> GetWhiteTexture();
 
 private:
     static void CreateFallbackTexture();
@@ -54,7 +52,6 @@ private:
     static std::unordered_map<std::string, float> m_heightScales;
     static std::unordered_map<std::string, float> m_heightScales2;
     static std::shared_ptr<R_Texture> m_fallback;
-    static std::shared_ptr<R_Texture> m_flatNormal;
-    static std::shared_ptr<R_Texture> m_white;
+    static std::shared_ptr<R_Texture> m_defaultNormal;
     static std::shared_ptr<R_Texture> m_defaultMraoh;
 };

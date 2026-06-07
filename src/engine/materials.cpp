@@ -39,8 +39,7 @@ std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_mraohs2
 std::unordered_map<std::string, float> Materials::m_heightScales;
 std::unordered_map<std::string, float> Materials::m_heightScales2;
 std::shared_ptr<R_Texture> Materials::m_fallback;
-std::shared_ptr<R_Texture> Materials::m_flatNormal;
-std::shared_ptr<R_Texture> Materials::m_white;
+std::shared_ptr<R_Texture> Materials::m_defaultNormal;
 std::shared_ptr<R_Texture> Materials::m_defaultMraoh;
 
 void Materials::Init()
@@ -71,13 +70,9 @@ void Materials::CreateFallbackTexture()
     m_fallback = std::make_shared<R_Texture>();
     m_fallback->Create(size, size, data.data(), true);
 
-    uint8_t whiteData[] = { 255, 255, 255, 255 };
-    m_white = std::make_shared<R_Texture>();
-    m_white->Create(1, 1, whiteData, true);
-
     uint8_t normalData[] = { 128, 128, 255, 0 };
-    m_flatNormal = std::make_shared<R_Texture>();
-    m_flatNormal->Create(1, 1, normalData, false);
+    m_defaultNormal = std::make_shared<R_Texture>();
+    m_defaultNormal->Create(1, 1, normalData, false);
 
     uint8_t mrahData[] = { 0, 128, 255, 255 };
     m_defaultMraoh = std::make_shared<R_Texture>();
@@ -231,10 +226,10 @@ std::shared_ptr<R_Texture> Materials::GetNormalMap(const std::string& name)
 
     if (!name.empty())
     {
-        return m_flatNormal;
+        return m_defaultNormal;
     }
 
-    return m_flatNormal;
+    return m_defaultNormal;
 }
 
 std::shared_ptr<R_Texture> Materials::GetMRAOMap(const std::string& name)
@@ -252,7 +247,7 @@ std::shared_ptr<R_Texture> Materials::GetTexture2(const std::string& name)
 std::shared_ptr<R_Texture> Materials::GetNormalMap2(const std::string& name) 
 {
     auto it = m_normals2.find(name);
-    return (it != m_normals2.end()) ? it->second : m_flatNormal;
+    return (it != m_normals2.end()) ? it->second : m_defaultNormal;
 }
 
 std::shared_ptr<R_Texture> Materials::GetMRAOMap2(const std::string& name)
@@ -271,14 +266,4 @@ float Materials::GetHeightScale2(const std::string& name)
 {
     auto it = m_heightScales2.find(name);
     return (it != m_heightScales2.end()) ? it->second : 0.00f;
-}
-
-std::shared_ptr<R_Texture> Materials::GetFlatNormal()
-{
-    return m_flatNormal; 
-}
-
-std::shared_ptr<R_Texture> Materials::GetWhiteTexture()
-{ 
-    return m_white; 
 }
