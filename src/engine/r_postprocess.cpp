@@ -172,7 +172,6 @@ void R_PostProcess::Draw(const Camera& camera, R_Lights* lights, R_GBuffer* gbuf
     m_shader.SetFloat("u_sharpenStrength", ppSettings.sharpenStrength);
 
     m_shader.SetFloat("u_lensDirtStrength", ppSettings.lensDirtStrength);
-    m_shader.SetInt("u_lensDirtTexture", 6);
 
     if (ppSettings.lensDirtStrength > 0.0f && !ppSettings.lensDirtTexture.empty())
     {
