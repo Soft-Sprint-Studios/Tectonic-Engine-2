@@ -169,23 +169,6 @@ void R_PostProcess::Draw(const Camera& camera, R_Lights* lights, R_GBuffer* gbuf
     m_shader.SetFloat("u_bwStrength", ppSettings.bwStrength);
     m_shader.SetFloat("u_negativeStrength", ppSettings.negativeStrength);
     m_shader.SetFloat("u_sepiaStrength", ppSettings.sepiaStrength);
-    m_shader.SetFloat("u_sharpenStrength", ppSettings.sharpenStrength);
-
-    m_shader.SetFloat("u_lensDirtStrength", ppSettings.lensDirtStrength);
-
-    if (ppSettings.lensDirtStrength > 0.0f && !ppSettings.lensDirtTexture.empty())
-    {
-        auto dirtTex = Resources::LoadTexture(ppSettings.lensDirtTexture, true);
-        if (dirtTex)
-            dirtTex->Bind(6);
-        else
-            Materials::GetWhiteTexture()->Bind(6);
-    }
-    else
-    {
-        Materials::GetWhiteTexture()->Bind(6);
-    }
-
     m_shader.SetInt("u_fogEnabled", ppSettings.fogEnabled);
     m_shader.SetVec3("u_fogColor", ppSettings.fogColor);
     m_shader.SetFloat("u_fogStart", ppSettings.fogStart);

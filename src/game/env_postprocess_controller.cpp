@@ -36,9 +36,6 @@ public:
         m_bw = GetFloat("bw", 0.0f);
         m_negative = GetFloat("negative", 0.0f);
         m_sepia = GetFloat("sepia", 0.0f);
-        m_sharpen = GetFloat("sharpen", 0.0f);
-        m_lensDirtStrength = GetFloat("lens_dirt_strength", 0.0f);
-        m_lensDirtTexture = GetValue("lens_dirt_texture", "");
         m_fogColor = GetVector("fog_color", glm::vec3(128.0f)) / 255.0f;
         m_fogStart = GetFloat("fog_start", 50.0f);
         m_fogEnd = GetFloat("fog_end", 200.0f);
@@ -63,8 +60,6 @@ public:
             PostProcess::SetChroma(0.0f);
             PostProcess::SetGrain(0.0f);
             PostProcess::SetBW(0.0f);
-            PostProcess::SetSharpen(0.0f);
-            PostProcess::SetLensDirt(0.0f, "");
             PostProcess::SetFog(false, { 0,0,0 }, 0, 0, false);
         }
     }
@@ -78,9 +73,6 @@ public:
         AddSaveField(DATA_FIELD(EnvPostProcessController, m_bw, FieldType::Float));
         AddSaveField(DATA_FIELD(EnvPostProcessController, m_negative, FieldType::Float));
         AddSaveField(DATA_FIELD(EnvPostProcessController, m_sepia, FieldType::Float));
-        AddSaveField(DATA_FIELD(EnvPostProcessController, m_sharpen, FieldType::Float));
-        AddSaveField(DATA_FIELD(EnvPostProcessController, m_lensDirtStrength, FieldType::Float));
-        AddSaveField(DATA_FIELD(EnvPostProcessController, m_lensDirtTexture, FieldType::String));
         AddSaveField(DATA_FIELD(EnvPostProcessController, m_fogColor, FieldType::Vec3));
         AddSaveField(DATA_FIELD(EnvPostProcessController, m_fogStart, FieldType::Float));
         AddSaveField(DATA_FIELD(EnvPostProcessController, m_fogEnd, FieldType::Float));
@@ -127,18 +119,6 @@ public:
             if (m_enabled) 
                 PostProcess::SetSepia(m_sepia);
         }
-        else if (inputName == "SetSharpen")
-        {
-            m_sharpen = std::stof(parameter);
-            if (m_enabled)
-                PostProcess::SetSharpen(m_sharpen);
-        }
-        else if (inputName == "SetLensDirt")
-        {
-            m_lensDirtStrength = std::stof(parameter);
-            if (m_enabled)
-                PostProcess::SetLensDirt(m_lensDirtStrength, m_lensDirtTexture);
-        }
         else if (inputName == "EnableFog")
         {
             if (m_enabled) 
@@ -160,8 +140,6 @@ private:
         PostProcess::SetBW(m_bw);
         PostProcess::SetNegative(m_negative);
         PostProcess::SetSepia(m_sepia);
-        PostProcess::SetSharpen(m_sharpen);
-        PostProcess::SetLensDirt(m_lensDirtStrength, m_lensDirtTexture);
         PostProcess::SetFog(true, m_fogColor, m_fogStart, m_fogEnd, m_fogAffectsSky);
     }
 
@@ -171,9 +149,6 @@ private:
     float m_bw = 0.0f;
     float m_negative = 0.0f;
     float m_sepia = 0.0f;
-    float m_sharpen = 0.0f;
-    float m_lensDirtStrength = 0.0f;
-    std::string m_lensDirtTexture;
     glm::vec3 m_fogColor;
     float m_fogStart, m_fogEnd;
     bool m_fogAffectsSky;

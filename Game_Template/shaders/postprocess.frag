@@ -7,7 +7,6 @@ layout(binding = 2) uniform sampler2D u_bloomTexture;
 layout(binding = 3) uniform sampler2D u_volumetricTexture;
 layout(binding = 4) uniform sampler2D u_ssaoTexture;
 layout(binding = 5) uniform sampler2D u_ssrTexture;
-layout(binding = 6) uniform sampler2D u_lensDirtTexture;
 
 uniform float u_time;
 
@@ -17,8 +16,6 @@ uniform float u_grainStrength;
 uniform float u_bwStrength;
 uniform float u_negativeStrength;
 uniform float u_sepiaStrength;
-uniform float u_sharpenStrength;
-uniform float u_lensDirtStrength;
 uniform float u_Gamma;
 uniform int u_postprocess_enabled;
 uniform mat4 u_invProjection;
@@ -147,8 +144,7 @@ void main()
     if (u_bloom_enabled == 1)
     {
         vec3 bloom = texture(u_bloomTexture, TexCoords).rgb * u_bloom_intensity;
-        vec3 dirt = texture(u_lensDirtTexture, TexCoords).rgb * u_lensDirtStrength;
-        hdrColor += bloom + (bloom * dirt);
+        hdrColor += bloom;
     }
 
     // Volumetrics
@@ -165,19 +161,6 @@ void main()
         float radialDist = length(viewPos);
         float fogFactor = smoothstep(u_fogStart, u_fogEnd, radialDist);
         hdrColor = mix(hdrColor, u_fogColor, fogFactor);
-    }
-	
-    // Sharpening
-    if (u_sharpenStrength > 0.0)
-    {
-        vec2 texel = 1.0 / textureSize(u_screenTexture, 0);
-        vec3 center = hdrColor;
-        vec3 left   = texture(u_screenTexture, TexCoords + vec2(-texel.x, 0.0)).rgb * u_exposure;
-        vec3 right  = texture(u_screenTexture, TexCoords + vec2(texel.x, 0.0)).rgb * u_exposure;
-        vec3 up     = texture(u_screenTexture, TexCoords + vec2(0.0, texel.y)).rgb * u_exposure;
-        vec3 down   = texture(u_screenTexture, TexCoords + vec2(0.0, -texel.y)).rgb * u_exposure;
-
-        hdrColor = center + (center - (left + right + up + down) * 0.25) * u_sharpenStrength;
     }
 
     // Black and White
