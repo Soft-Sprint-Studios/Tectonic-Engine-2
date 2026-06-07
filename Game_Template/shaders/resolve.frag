@@ -1,16 +1,17 @@
 #include "lights.glsl"
 #include "common.glsl"
+#include "pbr.glsl"
 
 out vec4 FragColor;
 in vec2 TexCoords;
 
 layout(binding = 0) uniform sampler2D u_gDepth;
 layout(binding = 1) uniform sampler2D u_gNormal;
-layout(binding = 2) uniform sampler2D u_gAlbedoSpec;
-layout(binding = 3) uniform sampler2D u_gLightmapUV;
-
+layout(binding = 2) uniform sampler2D u_gAlbedo;
+layout(binding = 3) uniform sampler2D u_gMRAO;
 layout(binding = 4) uniform samplerCube u_cubemap;
 layout(binding = 5) uniform sampler2D u_lightmap;
+layout(binding = 6) uniform sampler2D u_gLightmapUV;
 
 uniform bool u_useCubemap;
 uniform vec3 u_cubemapOrigin;
@@ -21,8 +22,6 @@ uniform vec3 u_viewPos;
 uniform mat4 u_view;
 uniform mat4 u_invProjection;
 uniform mat4 u_invView;
-
-uniform int u_mat_specular;
 
 const vec3 basis0 = vec3(0.81649658, 0.0, 0.57735027);
 const vec3 basis1 = vec3(-0.40824829, 0.70710678, 0.57735027);
@@ -48,6 +47,27 @@ vec3 ParallaxCorrect(vec3 R, vec3 fragPos, vec3 boxMin, vec3 boxMax, vec3 probeP
     return normalize(intersectPos - probePos);
 }
 
+vec3 CalculateDynamicLightPBR(vec3 L, vec3 V, vec3 N, vec3 F0, vec3 albedo, float metallic, float roughness, vec3 lightEnergy)
+{
+    vec3 H = normalize(L + V);
+    
+    float NDF = DistributionGGX(N, H, roughness);
+    float G   = GeometrySmith(N, V, L, roughness);
+    vec3 F    = FresnelSchlick(max(dot(H, V), 0.0), F0);
+
+    vec3 numerator    = NDF * G * F;
+    float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
+    vec3 specular     = numerator / denominator;
+
+    vec3 kS = F;
+    vec3 kD = vec3(1.0) - kS;
+    kD *= 1.0 - metallic;
+
+    float NdotL = max(dot(N, L), 0.0);
+    
+    return (kD * albedo / PI + specular) * lightEnergy * NdotL;
+}
+
 void main()
 {
     vec2 gBufferUV = gl_FragCoord.xy / textureSize(u_gDepth, 0).xy;
@@ -65,13 +85,20 @@ void main()
 
     vec4 normalData = texture(u_gNormal, gBufferUV);
     vec3 N = DecodeNormal(normalData.rg);
-    vec4 albedoSpec = texture(u_gAlbedoSpec, gBufferUV);
+    
+    vec3 albedo = texture(u_gAlbedo, gBufferUV).rgb;
+    vec3 mrao = texture(u_gMRAO, gBufferUV).rgb;
+    
+    float metallic = mrao.r;
+    float roughness = max(mrao.g, 0.05); 
+    float ao = mrao.b;
 
     vec3 lmDataSample = texture(u_gLightmapUV, gBufferUV).rgb;
     vec2 lmCoord = lmDataSample.xy;
     vec2 lmSize = unpackHalf2x16(floatBitsToUint(lmDataSample.z));
 
     vec4 lightmapData = vec4(0.0);
+    vec3 dominantL = N;
 
     if (normalData.w > -1.0)
     {
@@ -87,42 +114,49 @@ void main()
         w /= max(sumW, 0.0001); 
 
         lightmapData = texture(u_lightmap, LmCoord2) * w.x + texture(u_lightmap, LmCoord3) * w.y + texture(u_lightmap, LmCoord4) * w.z;
+        dominantL = N; 
     }
     else
     {
         lightmapData = texture(u_lightmap, lmCoord);
     }
 
-    vec3 albedo = albedoSpec.rgb;
-    vec3 specMask = vec3(albedoSpec.a);
-    if (u_mat_specular == 0) 
-        specMask = vec3(0.0);
-
     vec3 viewDir = normalize(u_viewPos - fragPos);
-    float shine = 32.0;
+    vec3 F0 = vec3(0.04); 
+    F0 = mix(F0, albedo, metallic);
 
-    vec3 diffuseLight = lightmapData.rgb;
-    vec3 specularLight = vec3(0.0);
+    vec3 irradiance = lightmapData.rgb * 2.0;
+    vec3 F_ambient = FresnelSchlickRoughness(max(dot(N, viewDir), 0.0), F0, roughness);
+    vec3 kS_ambient = F_ambient;
+    vec3 kD_ambient = 1.0 - kS_ambient;
+    kD_ambient *= 1.0 - metallic;	
+    
+    vec3 ambientDiffuse = irradiance * albedo * kD_ambient;
+    vec3 ambientSpecular = vec3(0.0);
 
-    // Baked Specular
-    vec3 dominantL = N;
     vec3 H_baked = normalize(dominantL + viewDir);
-    float spec_baked = pow(max(dot(N, H_baked), 0.0), shine);
-    specularLight = diffuseLight * spec_baked * specMask;
+    float NDF_baked = DistributionGGX(N, H_baked, roughness);
+    float G_baked   = GeometrySmith(N, viewDir, dominantL, roughness);
+    vec3 F_baked    = FresnelSchlick(max(dot(H_baked, viewDir), 0.0), F0);
+    
+    vec3 numerator_baked    = NDF_baked * G_baked * F_baked;
+    float denominator_baked = 4.0 * max(dot(N, viewDir), 0.0) * max(dot(N, dominantL), 0.0) + 0.0001;
+    vec3 specularBaked = (numerator_baked / denominator_baked) * irradiance;
 
-    // Environmental Reflection
-    if (u_useCubemap)
+    if (u_useCubemap) 
     {
-        vec3 reflectViewDir = reflect(-viewDir, N);
-        vec3 lookup = ParallaxCorrect(reflectViewDir, fragPos, u_cubemapMins, u_cubemapMaxs, u_cubemapOrigin);
-        vec3 envMap = texture(u_cubemap, lookup).rgb;
-        float brightness = dot(diffuseLight, vec3(0.2126, 0.7152, 0.0722));
-        specularLight += (envMap * specMask * brightness);
-    }
+        vec3 R = reflect(-viewDir, N);
+        vec3 lookup = ParallaxCorrect(R, fragPos, u_cubemapMins, u_cubemapMaxs, u_cubemapOrigin);
 
-    // Dynamic Lighting
+        vec3 prefilteredColor = textureLod(u_cubemap, lookup, roughness * 5.0).rgb; 
+        vec2 envBRDF = vec2(1.0 - roughness, roughness); 
+        
+        ambientSpecular = prefilteredColor * (F_ambient * envBRDF.x + envBRDF.y) * dot(irradiance, vec3(0.333));
+    }
+    
+    vec3 ambient = (ambientDiffuse + ambientSpecular + specularBaked) * ao;
+
     vec3 dynDiffuse = vec3(0.0);
-    vec3 dynSpecular = vec3(0.0);
 
     // Dynamic Spots
     for (int i = 0; i < u_numSpotLights; ++i)
@@ -133,7 +167,9 @@ void main()
         float dist = length(lPos - fragPos);
 
         if (dist > lRad) 
+        {
             continue;
+        }
 
         float theta = dot(L, normalize(-u_spotLights[i].dirInner.xyz));
         float epsilon = u_spotLights[i].dirInner.w - u_spotLights[i].shadowData.x;
@@ -143,9 +179,7 @@ void main()
         float shadow = SpotShadowCalc(fragPos, lPos, lRad, u_spotLights[i].lightSpace, u_spotLights[i].shadowHandle);
         vec3 lightEnergy = u_spotLights[i].colorVol.rgb * intensity * attenuation * (1.0 - shadow);
 
-        dynDiffuse += lightEnergy * max(dot(N, L), 0.0);
-        vec3 H = normalize(L + viewDir);
-        dynSpecular += lightEnergy * pow(max(dot(N, H), 0.0), shine) * specMask * 0.5;
+        dynDiffuse += CalculateDynamicLightPBR(L, viewDir, N, F0, albedo, metallic, roughness, lightEnergy);
     }
 
     // Dynamic Points
@@ -157,19 +191,18 @@ void main()
         float dist = length(lPos - fragPos);
 
         if (dist > lRad) 
+        {
             continue;
+        }
 
         float attenuation = 1.0 - (dist / lRad);
         float shadow = PointShadowCalc(fragPos, lPos, lRad, u_pointLights[i].shadowHandle);
         vec3 lightEnergy = u_pointLights[i].colorVol.rgb * attenuation * (1.0 - shadow);
 
-        dynDiffuse += lightEnergy * max(dot(N, L), 0.0);
-        vec3 H = normalize(L + viewDir);
-        dynSpecular += lightEnergy * pow(max(dot(N, H), 0.0), shine) * specMask * 0.5;
+        dynDiffuse += CalculateDynamicLightPBR(L, viewDir, N, F0, albedo, metallic, roughness, lightEnergy);
     }
     
     // CSM Cascaded Shadows
-    vec3 sunFinal = vec3(0.0);
     if (u_csmEnabled == 1)
     {
         vec3 sunL = normalize(u_sunDir);
@@ -177,13 +210,9 @@ void main()
         float sunShadow = CalculateSunShadow(fragPos, u_view, u_csmSplits, u_csmMatrices, u_csmArray);
         vec3 sunEnergy = u_sunColor * (1.0 - sunShadow) * sunMask;
 
-        sunFinal = sunEnergy * max(dot(N, sunL), 0.0);
-        vec3 H = normalize(sunL + viewDir);
-        dynSpecular += sunEnergy * pow(max(dot(N, H), 0.0), shine) * specMask * 0.5;
+        dynDiffuse += CalculateDynamicLightPBR(sunL, viewDir, N, F0, albedo, metallic, roughness, sunEnergy);
     }
 
-    vec3 finalDiffuse = albedo * (diffuseLight * 2.0 + dynDiffuse + sunFinal);
-    vec3 finalSpecular = specularLight + dynSpecular;
-
-    FragColor = vec4(finalDiffuse + finalSpecular, 1.0);
+    vec3 finalColor = ambient + dynDiffuse;
+    FragColor = vec4(finalColor, 1.0);
 }

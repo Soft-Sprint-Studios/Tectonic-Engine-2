@@ -12,7 +12,7 @@ vec2 ParallaxMapping(sampler2D heightMapSampler, vec2 texCoords, float hScale, v
 
     vec2 currentTexCoords = texCoords;
     float currentLayerDepth = 0.0;
-    float currentHeightMapValue = 1.0 - texture(heightMapSampler, currentTexCoords).r;
+    float currentHeightMapValue = 1.0 - texture(heightMapSampler, currentTexCoords).a;
 
     for (int i = 0; i < int(numLayers); i++)
     {
@@ -23,7 +23,7 @@ vec2 ParallaxMapping(sampler2D heightMapSampler, vec2 texCoords, float hScale, v
 
         currentTexCoords -= deltaTexCoords;
         currentLayerDepth += layerDepth;
-        currentHeightMapValue = 1.0 - texture(heightMapSampler, currentTexCoords).r;
+        currentHeightMapValue = 1.0 - texture(heightMapSampler, currentTexCoords).a;
     }
 
     vec2 texCoordsStart = currentTexCoords + deltaTexCoords;
@@ -35,7 +35,7 @@ vec2 ParallaxMapping(sampler2D heightMapSampler, vec2 texCoords, float hScale, v
     {
         float midDepth = (depthStart + depthEnd) * 0.5;
         vec2 midTexCoords = mix(texCoordsStart, texCoordsEnd, 0.5);
-        float midHeightMapValue = 1.0 - texture(heightMapSampler, midTexCoords).r;
+        float midHeightMapValue = 1.0 - texture(heightMapSampler, midTexCoords).a;
 
         if (midDepth > midHeightMapValue)
         {

@@ -42,7 +42,7 @@ struct ModelMesh
     uint32_t indexType;
     std::shared_ptr<R_Texture> texture;
     std::shared_ptr<R_Texture> normalMap;
-    std::shared_ptr<R_Texture> heightMap;
+    std::shared_ptr<R_Texture> mraohMap;
     float heightScale;
     uint32_t vertexOffset;
     uint32_t vertexCount;

@@ -255,7 +255,7 @@ void R_Models::LoadModel(const std::string& path)
 
         m.texture = Materials::GetTexture(lookupName);
         m.normalMap = Materials::GetNormalMap(lookupName);
-        m.heightMap = Materials::GetHeightMap(lookupName);
+        m.mraohMap = Materials::GetMRAOMap(lookupName);
         m.heightScale = Materials::GetHeightScale(lookupName);
 
         currentVertexOffset += m.vertexCount;
@@ -330,7 +330,7 @@ void R_Models::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOn
 
                     (mesh.texture ? mesh.texture : Materials::GetTexture(""))->Bind(0);
                     (mesh.normalMap ? mesh.normalMap : Materials::GetFlatNormal())->Bind(1);
-                    (mesh.heightMap ? mesh.heightMap : Materials::GetWhiteTexture())->Bind(2);
+                    (mesh.mraohMap ? mesh.mraohMap : Materials::GetMRAOMap(""))->Bind(2);
 
                     glDrawElementsInstanced(GL_TRIANGLES, mesh.indexCount, mesh.indexType, 0, group.instanceCount);
                 }
@@ -446,7 +446,7 @@ void R_Models::DrawSkinned(const R_Shader& shader, const std::string& modelPath,
         glBindVertexArray(mesh.vao);
         (mesh.texture ? mesh.texture : Materials::GetTexture(""))->Bind(0);
         (mesh.normalMap ? mesh.normalMap : Materials::GetFlatNormal())->Bind(1);
-        (mesh.heightMap ? mesh.heightMap : Materials::GetWhiteTexture())->Bind(2);
+        (mesh.mraohMap ? mesh.mraohMap : Materials::GetMRAOMap(""))->Bind(2);
         glDrawElements(GL_TRIANGLES, mesh.indexCount, mesh.indexType, 0);
     }
 

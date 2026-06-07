@@ -36,7 +36,7 @@ public:
     void Shutdown();
     void Rescale(int width, int height);
 
-    void Render(GLuint depthTex, GLuint normalTex, GLuint albedoTex, GLuint sceneTex, const Camera& camera, GLuint quadVAO);
+    void Render(GLuint depthTex, GLuint normalTex, GLuint mraoTex, GLuint sceneTex, const Camera& camera, GLuint quadVAO);
     void Bind(const R_Shader& shader);
 
 private:

@@ -32,15 +32,16 @@
 
 std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_textures;
 std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_normals;
-std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_heights;
+std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_mraohs;
 std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_textures2;
 std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_normals2;
-std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_heights2;
+std::unordered_map<std::string, std::shared_ptr<R_Texture>> Materials::m_mraohs2;
 std::unordered_map<std::string, float> Materials::m_heightScales;
 std::unordered_map<std::string, float> Materials::m_heightScales2;
 std::shared_ptr<R_Texture> Materials::m_fallback;
 std::shared_ptr<R_Texture> Materials::m_flatNormal;
 std::shared_ptr<R_Texture> Materials::m_white;
+std::shared_ptr<R_Texture> Materials::m_defaultMraoh;
 
 void Materials::Init()
 {
@@ -77,6 +78,10 @@ void Materials::CreateFallbackTexture()
     uint8_t normalData[] = { 128, 128, 255, 0 };
     m_flatNormal = std::make_shared<R_Texture>();
     m_flatNormal->Create(1, 1, normalData, false);
+
+    uint8_t mrahData[] = { 0, 128, 255, 255 };
+    m_defaultMraoh = std::make_shared<R_Texture>();
+    m_defaultMraoh->Create(1, 1, mrahData, false);
 }
 
 void Materials::LoadDefinitions(const std::string& path)
@@ -128,7 +133,7 @@ void Materials::LoadDefinitions(const std::string& path)
                         m_normals[matName] = tex;
                     }
                 }
-                else if (token == "height")
+                else if (token == "mraoh")
                 {
                     ss >> token;
                     ss >> token;
@@ -137,7 +142,7 @@ void Materials::LoadDefinitions(const std::string& path)
 
                     if (tex) 
                     { 
-                        m_heights[matName] = tex; 
+                        m_mraohs[matName] = tex;
                     }
                 }
                 else if (token == "diffuse2")
@@ -164,7 +169,7 @@ void Materials::LoadDefinitions(const std::string& path)
                         m_normals2[matName] = tex; 
                     }
                 }
-                else if (token == "height2")
+                else if (token == "mraoh2")
                 {
                     ss >> token;
                     ss >> token;
@@ -173,7 +178,7 @@ void Materials::LoadDefinitions(const std::string& path)
 
                     if (tex) 
                     { 
-                        m_heights2[matName] = tex; 
+                        m_mraohs2[matName] = tex;
                     }
                 }
                 else if (token == "heightscale")
@@ -232,10 +237,10 @@ std::shared_ptr<R_Texture> Materials::GetNormalMap(const std::string& name)
     return m_flatNormal;
 }
 
-std::shared_ptr<R_Texture> Materials::GetHeightMap(const std::string& name)
+std::shared_ptr<R_Texture> Materials::GetMRAOMap(const std::string& name)
 {
-    auto it = m_heights.find(name);
-    return (it != m_heights.end()) ? it->second : m_white;
+    auto it = m_mraohs.find(name);
+    return (it != m_mraohs.end()) ? it->second : m_defaultMraoh;
 }
 
 std::shared_ptr<R_Texture> Materials::GetTexture2(const std::string& name) 
@@ -250,10 +255,10 @@ std::shared_ptr<R_Texture> Materials::GetNormalMap2(const std::string& name)
     return (it != m_normals2.end()) ? it->second : m_flatNormal;
 }
 
-std::shared_ptr<R_Texture> Materials::GetHeightMap2(const std::string& name)
+std::shared_ptr<R_Texture> Materials::GetMRAOMap2(const std::string& name)
 {
-    auto it = m_heights2.find(name);
-    return (it != m_heights2.end()) ? it->second : m_white;
+    auto it = m_mraohs2.find(name);
+    return (it != m_mraohs2.end()) ? it->second : m_defaultMraoh;
 }
 
 float Materials::GetHeightScale(const std::string& name)

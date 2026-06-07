@@ -45,8 +45,6 @@ CVar r_sprites("r_sprites", "1", "Enable sprite rendering.", CVAR_SAVE);
 CVar r_wireframe("r_wireframe", "0", "Render the scene in wireframe mode.", CVAR_NONE);
 CVar r_debug_gbuffer("r_debug_gbuffer", "0", "Enable G-Buffer diagnostic overlay (0: Off, 1: On).", CVAR_SAVE);
 
-CVar mat_specular("mat_specular", "1", "Enable specular mapping on materials.", CVAR_SAVE);
-CVar mat_bumpmap("mat_bumpmap", "1", "Enable normal/bump mapping on materials.", CVAR_SAVE);
 CVar mat_parallax("mat_parallax", "1", "Enable Parallax Mapping.", CVAR_SAVE);
 CVar mat_parallax_min_steps("mat_parallax_min_steps", "8", "Minimum ray steps for Parallax Mapping.", CVAR_SAVE);
 CVar mat_parallax_max_steps("mat_parallax_max_steps", "32", "Maximum ray steps for Parallax Mapping.", CVAR_SAVE);
@@ -211,7 +209,6 @@ void Renderer::GeometryPass(Camera& camera, int renderW, int renderH)
     m_gbufferShader.SetMat4("u_view", camera.GetViewMatrix());
     m_gbufferShader.SetMat4("u_model", glm::mat4(1.0f));
     m_gbufferShader.SetVec3("u_viewPos", camera.position);
-    m_gbufferShader.SetInt("u_mat_bumpmap", mat_bumpmap.GetInt());
     m_gbufferShader.SetInt("u_mat_parallax", mat_parallax.GetInt());
     m_gbufferShader.SetFloat("u_pomMinSteps", mat_parallax_min_steps.GetFloat());
     m_gbufferShader.SetFloat("u_pomMaxSteps", mat_parallax_max_steps.GetFloat());
@@ -238,15 +235,16 @@ void Renderer::LightingPass(Camera& camera, GLuint cubemapToExclude, GLint targe
 
     m_resolveShader.SetMat4("u_invProjection", glm::inverse(camera.GetProjectionMatrix()));
     m_resolveShader.SetMat4("u_invView", glm::inverse(camera.GetViewMatrix()));
-    m_resolveShader.SetInt("u_mat_specular", mat_specular.GetInt());
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_gbuffer->GetDepthTex());
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, m_gbuffer->GetNormalTex());
     glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, m_gbuffer->GetAlbedoSpecTex());
+    glBindTexture(GL_TEXTURE_2D, m_gbuffer->GetAlbedoTex());
     glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, m_gbuffer->GetMRAOTex());
+    glActiveTexture(GL_TEXTURE6);
     glBindTexture(GL_TEXTURE_2D, m_gbuffer->GetLightmapUVTex());
     glActiveTexture(GL_TEXTURE5);
     glBindTexture(GL_TEXTURE_2D, m_bspRenderer->GetLightmapTexture());
@@ -345,13 +343,15 @@ void Renderer::Render(Camera& camera)
     {
         m_gbuffer->DrawDebug(w, h);
 
-        int dw = w / 5;
-        int dh = h / 5;
+        int dw = w / 7;
+        int dh = h / 7;
         m_uiRenderer->DrawText("G-BUFFER: DEPTH", 10.0f, (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
         m_uiRenderer->DrawText("G-BUFFER: NORMAL", (float)(dw + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
         m_uiRenderer->DrawText("G-BUFFER: ALBEDO", (float)(dw * 2 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
-        m_uiRenderer->DrawText("G-BUFFER: LIGHTMAP UV", (float)(dw * 3 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
-        m_uiRenderer->DrawText("G-BUFFER: SPECULAR", (float)(dw * 4 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+        m_uiRenderer->DrawText("G-BUFFER: METALLIC", (float)(dw * 3 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+        m_uiRenderer->DrawText("G-BUFFER: ROUGHNESS", (float)(dw * 4 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+        m_uiRenderer->DrawText("G-BUFFER: AO", (float)(dw * 5 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+        m_uiRenderer->DrawText("G-BUFFER: LM_UV", (float)(dw * 6 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
     }
 
     glEnable(GL_DEPTH_TEST);

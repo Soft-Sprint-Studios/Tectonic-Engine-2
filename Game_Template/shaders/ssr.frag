@@ -5,7 +5,7 @@ in vec2 TexCoords;
 
 uniform sampler2D u_gDepth;
 uniform sampler2D u_gNormal;
-uniform sampler2D u_gAlbedoSpec;
+uniform sampler2D u_gMRAO;
 uniform sampler2D u_sceneTex;
 
 uniform mat4 u_projection;
@@ -28,10 +28,11 @@ vec3 GetViewPos(vec2 uv)
 
 void main()
 {
-    vec4 albSpec = texture(u_gAlbedoSpec, TexCoords);
-    float specMask = albSpec.a;
+    vec3 mrao = texture(u_gMRAO, TexCoords).rgb;
+    float metallic = mrao.r;
+    float roughness = mrao.g;
     
-    if (specMask <= 0.01) 
+    if (roughness >= 0.8) 
     {
         discard;
     }
@@ -103,5 +104,5 @@ void main()
     float fresnel = pow(1.0 - max(dot(viewNormal, -normalize(viewPos)), 0.0), 3.0);
     
     vec3 color = texture(u_sceneTex, hitUV).rgb;
-    FragColor = vec4(color * specMask, visibility * fresnel);
+    FragColor = vec4(color, visibility * fresnel * (1.0 - roughness));
 }

@@ -32,10 +32,10 @@ struct BSPDrawCall
 {
     std::shared_ptr<R_Texture> texture;
     std::shared_ptr<R_Texture> normalMap;
-    std::shared_ptr<R_Texture> heightMap;
+    std::shared_ptr<R_Texture> mraohMap;
     std::shared_ptr<R_Texture> texture2;
     std::shared_ptr<R_Texture> normalMap2;
-    std::shared_ptr<R_Texture> heightMap2;
+    std::shared_ptr<R_Texture> mraohMap2;
     float heightScale1;
     float heightScale2;
     bool isBumped;

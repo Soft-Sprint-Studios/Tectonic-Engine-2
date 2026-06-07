@@ -87,7 +87,7 @@ void R_SSR::CreateBuffers(int width, int height)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void R_SSR::Render(GLuint depthTex, GLuint normalTex, GLuint albedoTex, GLuint sceneTex, const Camera& camera, GLuint quadVAO)
+void R_SSR::Render(GLuint depthTex, GLuint normalTex, GLuint mraoTex, GLuint sceneTex, const Camera& camera, GLuint quadVAO)
 {
     if (r_ssr.GetInt() == 0) 
     {
@@ -117,14 +117,14 @@ void R_SSR::Render(GLuint depthTex, GLuint normalTex, GLuint albedoTex, GLuint s
     glBindTexture(GL_TEXTURE_2D, depthTex);
     glActiveTexture(GL_TEXTURE1); 
     glBindTexture(GL_TEXTURE_2D, normalTex);
-    glActiveTexture(GL_TEXTURE2); 
-    glBindTexture(GL_TEXTURE_2D, albedoTex);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, mraoTex);
     glActiveTexture(GL_TEXTURE3); 
     glBindTexture(GL_TEXTURE_2D, sceneTex);
 
     m_ssrShader.SetInt("u_gDepth", 0);
     m_ssrShader.SetInt("u_gNormal", 1);
-    m_ssrShader.SetInt("u_gAlbedoSpec", 2);
+    m_ssrShader.SetInt("u_gMRAO", 2);
     m_ssrShader.SetInt("u_sceneTex", 3);
 
     glBindVertexArray(quadVAO);

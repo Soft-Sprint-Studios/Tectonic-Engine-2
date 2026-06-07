@@ -53,6 +53,7 @@ namespace AssetTool
     {
         std::string diffuse;
         std::string normal;
+        std::string mraoh;
     };
 
     void ShowHelp()
@@ -234,6 +235,7 @@ namespace AssetTool
         std::filesystem::path defPath = std::filesystem::path(g_config.enginePath) / "materials.def";
         std::string content;
         std::ifstream inFile(defPath);
+
         if (inFile.is_open())
         {
             content.assign((std::istreambuf_iterator<char>(inFile)), std::istreambuf_iterator<char>());
@@ -250,8 +252,18 @@ namespace AssetTool
         if (outFile.is_open())
         {
             outFile << "\n\"" << fullKey << "\"\n{\n";
-            if (!paths.diffuse.empty()) outFile << "\tdiffuse = \"" << subFolder << "/" << paths.diffuse << "\"\n";
-            if (!paths.normal.empty()) outFile << "\tnormal = \"" << subFolder << "/" << paths.normal << "\"\n";
+            if (!paths.diffuse.empty())
+            {
+                outFile << "\tdiffuse = \"" << subFolder << "/" << paths.diffuse << "\"\n";
+            }
+            if (!paths.normal.empty())
+            {
+                outFile << "\tnormal = \"" << subFolder << "/" << paths.normal << "\"\n";
+            }
+            if (!paths.mraoh.empty())
+            {
+                outFile << "\tmraoh = \"" << subFolder << "/" << paths.mraoh << "\"\n";
+            }
             outFile << "}\n";
         }
     }
@@ -292,6 +304,7 @@ namespace AssetTool
 
         cgltf_options options = {};
         cgltf_data* data = nullptr;
+
         if (cgltf_parse_file(&options, glbPath.c_str(), &data) != cgltf_result_success)
         {
             return;
@@ -313,49 +326,108 @@ namespace AssetTool
             std::string matName = (mat.name) ? mat.name : modelName;
             std::replace(matName.begin(), matName.end(), ' ', '_');
 
-            int w, h;
+            int w = 0, h = 0;
             MaterialTexturePaths paths;
 
-            if (unsigned char* diff = LoadBufferImage(mat.pbr_metallic_roughness.base_color_texture.texture, &w, &h))
+            if (mat.has_pbr_metallic_roughness && mat.pbr_metallic_roughness.base_color_texture.texture)
             {
-                paths.diffuse = matName + "_diffuse.dds";
-                std::string tempPng = (workDir / (matName + "_diffuse.png")).string();
-                stbi_write_png(tempPng.c_str(), w, h, 4, diff, w * 4);
-                ConvertToVTF(matName + "_diffuse", diff, w, h, workDir, false);
-                stbi_image_free(diff);
+                if (unsigned char* diff = LoadBufferImage(mat.pbr_metallic_roughness.base_color_texture.texture, &w, &h))
+                {
+                    paths.diffuse = matName + "_diffuse.dds";
+                    std::string tempPng = (workDir / (matName + "_diffuse.png")).string();
+                    stbi_write_png(tempPng.c_str(), w, h, 4, diff, w * 4);
+                    ConvertToVTF(matName + "_diffuse", diff, w, h, workDir, false);
+                    stbi_image_free(diff);
 
-                std::string outDds = (workDir / paths.diffuse).string();
-                std::string cmd = "\"\"" + g_config.nvcompressPath + "\" -bc3 \"" + tempPng + "\" \"" + outDds + "\"\"";
-                system(cmd.c_str());
-                std::filesystem::remove(tempPng);
+                    std::string outDds = (workDir / paths.diffuse).string();
+                    std::string cmd = "\"\"" + g_config.nvcompressPath + "\" -bc3 \"" + tempPng + "\" \"" + outDds + "\"\"";
+                    system(cmd.c_str());
+                    std::filesystem::remove(tempPng);
+                }
             }
 
-            if (unsigned char* norm = LoadBufferImage(mat.normal_texture.texture, &w, &h))
+            if (mat.normal_texture.texture)
             {
-                paths.normal = matName + "_normal.dds";
-                std::string tempPng = (workDir / (matName + "_normal.png")).string();
-                int pbrW, pbrH;
-                if (unsigned char* pbr = LoadBufferImage(mat.pbr_metallic_roughness.metallic_roughness_texture.texture, &pbrW, &pbrH))
+                int nW, nH;
+                if (unsigned char* norm = LoadBufferImage(mat.normal_texture.texture, &nW, &nH))
                 {
-                    if (pbrW == w && pbrH == h)
-                    {
-                        for (int j = 0; j < w * h * 4; j += 4)
-                        {
-                            norm[j + 3] = 255 - pbr[j + 1];
-                        }
-                    }
-                    stbi_image_free(pbr);
-                }
-                else
-                {
-                    for (int j = 0; j < w * h * 4; j += 4) 
-                        norm[j + 3] = 255;
-                }
-                stbi_write_png(tempPng.c_str(), w, h, 4, norm, w * 4);
-                ConvertToVTF(matName + "_normal", norm, w, h, workDir, true);
-                stbi_image_free(norm);
+                    paths.normal = matName + "_normal.dds";
+                    std::string tempPng = (workDir / (matName + "_normal.png")).string();
 
-                std::string outDds = (workDir / paths.normal).string();
+                    for (int j = 0; j < nW * nH * 4; j += 4)
+                    {
+                        norm[j + 3] = 255;
+                    }
+
+                    stbi_write_png(tempPng.c_str(), nW, nH, 4, norm, nW * 4);
+                    ConvertToVTF(matName + "_normal", norm, nW, nH, workDir, true);
+                    stbi_image_free(norm);
+
+                    std::string outDds = (workDir / paths.normal).string();
+                    std::string cmd = "\"\"" + g_config.nvcompressPath + "\" -bc3 \"" + tempPng + "\" \"" + outDds + "\"\"";
+                    system(cmd.c_str());
+                    std::filesystem::remove(tempPng);
+
+                    if (w == 0 || h == 0) { w = nW; h = nH; }
+                }
+            }
+
+            if (w > 0 && h > 0)
+            {
+                paths.mraoh = matName + "_mraoh.dds";
+                unsigned char* mraoh = (unsigned char*)malloc(w * h * 4);
+
+                float mFactor = mat.has_pbr_metallic_roughness ? mat.pbr_metallic_roughness.metallic_factor : 0.0f;
+                float rFactor = mat.has_pbr_metallic_roughness ? mat.pbr_metallic_roughness.roughness_factor : 0.5f;
+
+                for (int j = 0; j < w * h * 4; j += 4)
+                {
+                    mraoh[j] = (unsigned char)(mFactor * 255.0f);
+                    mraoh[j + 1] = (unsigned char)(rFactor * 255.0f);
+                    mraoh[j + 2] = 255;
+                    mraoh[j + 3] = 255;
+                }
+
+                if (mat.has_pbr_metallic_roughness && mat.pbr_metallic_roughness.metallic_roughness_texture.texture)
+                {
+                    int tW, tH;
+                    if (unsigned char* pbr = LoadBufferImage(mat.pbr_metallic_roughness.metallic_roughness_texture.texture, &tW, &tH))
+                    {
+                        if (tW == w && tH == h)
+                        {
+                            for (int j = 0; j < w * h * 4; j += 4)
+                            {
+                                float texM = pbr[j + 2] / 255.0f;
+                                float texR = pbr[j + 1] / 255.0f;
+                                mraoh[j] = (unsigned char)(texM * mFactor * 255.0f);
+                                mraoh[j + 1] = (unsigned char)(texR * rFactor * 255.0f);
+                            }
+                        }
+                        stbi_image_free(pbr);
+                    }
+                }
+
+                if (mat.occlusion_texture.texture)
+                {
+                    int tW, tH;
+                    if (unsigned char* occ = LoadBufferImage(mat.occlusion_texture.texture, &tW, &tH))
+                    {
+                        if (tW == w && tH == h)
+                        {
+                            for (int j = 0; j < w * h * 4; j += 4)
+                            {
+                                mraoh[j + 2] = occ[j];
+                            }
+                        }
+                        stbi_image_free(occ);
+                    }
+                }
+
+                std::string tempPng = (workDir / (matName + "_mraoh.png")).string();
+                stbi_write_png(tempPng.c_str(), w, h, 4, mraoh, w * 4);
+                free(mraoh);
+
+                std::string outDds = (workDir / paths.mraoh).string();
                 std::string cmd = "\"\"" + g_config.nvcompressPath + "\" -bc3 \"" + tempPng + "\" \"" + outDds + "\"\"";
                 system(cmd.c_str());
                 std::filesystem::remove(tempPng);
@@ -403,6 +475,7 @@ namespace AssetTool
 
         cgltf_options options = {};
         cgltf_data* data = nullptr;
+
         if (cgltf_parse_file(&options, glbPath.c_str(), &data) != cgltf_result_success)
         {
             return;
@@ -421,49 +494,112 @@ namespace AssetTool
             std::string matName = mat.name;
             std::replace(matName.begin(), matName.end(), ' ', '_');
 
-            int w, h;
+            int w = 0, h = 0;
             MaterialTexturePaths paths;
 
-            if (unsigned char* diff = LoadBufferImage(mat.pbr_metallic_roughness.base_color_texture.texture, &w, &h))
+            if (mat.has_pbr_metallic_roughness && mat.pbr_metallic_roughness.base_color_texture.texture)
             {
-                paths.diffuse = matName + "_diffuse.dds";
-                std::string tempPng = (workDir / (matName + "_diffuse.png")).string();
-                stbi_write_png(tempPng.c_str(), w, h, 4, diff, w * 4);
-                ConvertToVTF(matName + "_diffuse", diff, w, h, workDir, false);
-                stbi_image_free(diff);
+                if (unsigned char* diff = LoadBufferImage(mat.pbr_metallic_roughness.base_color_texture.texture, &w, &h))
+                {
+                    paths.diffuse = matName + "_diffuse.dds";
+                    std::string tempPng = (workDir / (matName + "_diffuse.png")).string();
+                    stbi_write_png(tempPng.c_str(), w, h, 4, diff, w * 4);
+                    ConvertToVTF(matName + "_diffuse", diff, w, h, workDir, false);
+                    stbi_image_free(diff);
 
-                std::string outDds = (workDir / paths.diffuse).string();
-                std::string cmd = "\"\"" + g_config.nvcompressPath + "\" -bc3 \"" + tempPng + "\" \"" + outDds + "\"\"";
-                system(cmd.c_str());
-                std::filesystem::remove(tempPng);
+                    std::string outDds = (workDir / paths.diffuse).string();
+                    std::string cmd = "\"\"" + g_config.nvcompressPath + "\" -bc3 \"" + tempPng + "\" \"" + outDds + "\"\"";
+                    system(cmd.c_str());
+                    std::filesystem::remove(tempPng);
+                }
             }
 
-            if (unsigned char* norm = LoadBufferImage(mat.normal_texture.texture, &w, &h))
+            if (mat.normal_texture.texture)
             {
-                paths.normal = matName + "_normal.dds";
-                std::string tempPng = (workDir / (matName + "_normal.png")).string();
-                int pbrW, pbrH;
-                if (unsigned char* pbr = LoadBufferImage(mat.pbr_metallic_roughness.metallic_roughness_texture.texture, &pbrW, &pbrH))
+                int nW, nH;
+                if (unsigned char* norm = LoadBufferImage(mat.normal_texture.texture, &nW, &nH))
                 {
-                    if (pbrW == w && pbrH == h)
-                    {
-                        for (int j = 0; j < w * h * 4; j += 4)
-                        {
-                            norm[j + 3] = 255 - pbr[j + 1];
-                        }
-                    }
-                    stbi_image_free(pbr);
-                }
-                else
-                {
-                    for (int j = 0; j < w * h * 4; j += 4)
-                        norm[j + 3] = 255;
-                }
-                stbi_write_png(tempPng.c_str(), w, h, 4, norm, w * 4);
-                ConvertToVTF(matName + "_normal", norm, w, h, workDir, true);
-                stbi_image_free(norm);
+                    paths.normal = matName + "_normal.dds";
+                    std::string tempPng = (workDir / (matName + "_normal.png")).string();
 
-                std::string outDds = (workDir / paths.normal).string();
+                    for (int j = 0; j < nW * nH * 4; j += 4)
+                    {
+                        norm[j + 3] = 255;
+                    }
+
+                    stbi_write_png(tempPng.c_str(), nW, nH, 4, norm, nW * 4);
+                    ConvertToVTF(matName + "_normal", norm, nW, nH, workDir, true);
+                    stbi_image_free(norm);
+
+                    std::string outDds = (workDir / paths.normal).string();
+                    std::string cmd = "\"\"" + g_config.nvcompressPath + "\" -bc3 \"" + tempPng + "\" \"" + outDds + "\"\"";
+                    system(cmd.c_str());
+                    std::filesystem::remove(tempPng);
+
+                    if (w == 0 || h == 0) 
+                    { 
+                        w = nW;
+                        h = nH; 
+                    }
+                }
+            }
+
+            if (w > 0 && h > 0)
+            {
+                paths.mraoh = matName + "_mraoh.dds";
+                unsigned char* mraoh = (unsigned char*)malloc(w * h * 4);
+
+                float mFactor = mat.has_pbr_metallic_roughness ? mat.pbr_metallic_roughness.metallic_factor : 0.0f;
+                float rFactor = mat.has_pbr_metallic_roughness ? mat.pbr_metallic_roughness.roughness_factor : 0.5f;
+
+                for (int j = 0; j < w * h * 4; j += 4)
+                {
+                    mraoh[j] = (unsigned char)(mFactor * 255.0f);
+                    mraoh[j + 1] = (unsigned char)(rFactor * 255.0f);
+                    mraoh[j + 2] = 255;
+                    mraoh[j + 3] = 255;
+                }
+
+                if (mat.has_pbr_metallic_roughness && mat.pbr_metallic_roughness.metallic_roughness_texture.texture)
+                {
+                    int tW, tH;
+                    if (unsigned char* pbr = LoadBufferImage(mat.pbr_metallic_roughness.metallic_roughness_texture.texture, &tW, &tH))
+                    {
+                        if (tW == w && tH == h)
+                        {
+                            for (int j = 0; j < w * h * 4; j += 4)
+                            {
+                                float texM = pbr[j + 2] / 255.0f;
+                                float texR = pbr[j + 1] / 255.0f;
+                                mraoh[j] = (unsigned char)(texM * mFactor * 255.0f);
+                                mraoh[j + 1] = (unsigned char)(texR * rFactor * 255.0f);
+                            }
+                        }
+                        stbi_image_free(pbr);
+                    }
+                }
+
+                if (mat.occlusion_texture.texture)
+                {
+                    int tW, tH;
+                    if (unsigned char* occ = LoadBufferImage(mat.occlusion_texture.texture, &tW, &tH))
+                    {
+                        if (tW == w && tH == h)
+                        {
+                            for (int j = 0; j < w * h * 4; j += 4)
+                            {
+                                mraoh[j + 2] = occ[j];
+                            }
+                        }
+                        stbi_image_free(occ);
+                    }
+                }
+
+                std::string tempPng = (workDir / (matName + "_mraoh.png")).string();
+                stbi_write_png(tempPng.c_str(), w, h, 4, mraoh, w * 4);
+                free(mraoh);
+
+                std::string outDds = (workDir / paths.mraoh).string();
                 std::string cmd = "\"\"" + g_config.nvcompressPath + "\" -bc3 \"" + tempPng + "\" \"" + outDds + "\"\"";
                 system(cmd.c_str());
                 std::filesystem::remove(tempPng);

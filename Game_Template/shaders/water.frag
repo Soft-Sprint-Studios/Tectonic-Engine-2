@@ -20,15 +20,12 @@ uniform vec3 u_viewPos;
 uniform float u_time;
 
 uniform bool u_useBump;
-uniform int u_mat_specular;
-uniform int u_mat_bumpmap;
 
 out vec4 FragColor;
 
 const float waveStrength = 0.02;
 const float normalTiling = 1.0;
 const float normalSpeed = 0.015;
-const float dudvMoveSpeed = 0.01;
 
 const vec3 basis0 = vec3(0.81649658, 0.0, 0.57735027);
 const vec3 basis1 = vec3(-0.40824829, 0.70710678, 0.57735027);
@@ -62,7 +59,8 @@ void main()
     vec3 normalSample = texture(u_normalMap, scroll + distortion).rgb * 2.0 - 1.0;
     vec3 N = normalize(v_TBN[2]);
     vec3 tsNormal = vec3(0.0, 0.0, 1.0);
-    if (u_useBump && u_mat_bumpmap == 1)
+    
+    if (u_useBump)
     {
         tsNormal = normalSample;
         N = normalize(v_TBN * tsNormal);
@@ -101,13 +99,9 @@ void main()
         diffuseLight = texture(u_lightmap, v_LmCoord).rgb * 2.0;
     }
 
-    vec3 specularLight = vec3(0.0);
-    if (u_mat_specular == 1)
-    {
-        vec3 H = normalize(dominantL + V);
-        float spec = pow(max(dot(N, H), 0.0), 2048.0);
-        specularLight = diffuseLight * spec;
-    }
+    vec3 H = normalize(dominantL + V);
+    float spec = pow(max(dot(N, H), 0.0), 2048.0);
+    vec3 specularLight = diffuseLight * spec;
 
     float fresnel = clamp(1.0 - dot(V, vec3(0.0, 1.0, 0.0)), 0.0, 1.0);
     fresnel = pow(fresnel, 3.0);

@@ -32,7 +32,17 @@ void main()
     }
     else if (u_mode == 4)
     {
-        float spec = texture(u_debugTex, TexCoords).a;
-        FragColor = vec4(vec3(spec), 1.0);
+        float metal = texture(u_debugTex, TexCoords).r;
+        FragColor = vec4(vec3(metal), 1.0);
+    }
+    else if (u_mode == 5)
+    {
+        float rough = texture(u_debugTex, TexCoords).g;
+        FragColor = vec4(vec3(rough), 1.0);
+    }
+    else if (u_mode == 6)
+    {
+        float ao = texture(u_debugTex, TexCoords).b;
+        FragColor = vec4(vec3(ao), 1.0);
     }
 }

@@ -82,7 +82,6 @@ void R_Decals::Draw(const Camera& camera, const std::vector<std::shared_ptr<Deca
     m_shader.SetMat4("u_projection", camera.GetProjectionMatrix());
 
     m_shader.SetVec3("u_viewPos", camera.position);
-    m_shader.SetInt("u_mat_bumpmap", CVar::GetInt("mat_bumpmap"));
     m_shader.SetInt("u_mat_parallax", CVar::GetInt("mat_parallax"));
     m_shader.SetFloat("u_pomMinSteps", CVar::GetFloat("mat_parallax_min_steps"));
     m_shader.SetFloat("u_pomMaxSteps", CVar::GetFloat("mat_parallax_max_steps"));
@@ -99,11 +98,11 @@ void R_Decals::Draw(const Camera& camera, const std::vector<std::shared_ptr<Deca
     {
         auto diff = Materials::GetTexture(texName);
         auto norm = Materials::GetNormalMap(texName);
-        auto height = Materials::GetHeightMap(texName);
+        auto mraoh = Materials::GetMRAOMap(texName);
 
         diff->Bind(0);
         norm->Bind(1);
-        height->Bind(2);
+        mraoh->Bind(2);
         m_shader.SetFloat("u_heightScale", Materials::GetHeightScale(texName));
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_instanceSSBO);

@@ -2,8 +2,9 @@
 #include "common.glsl"
 
 layout (location = 0) out vec4 gNormal;
-layout (location = 1) out vec4 gAlbedoSpec;
-layout (location = 2) out vec4 gLightmapUV;
+layout (location = 1) out vec4 gAlbedo;
+layout (location = 2) out vec3 gMRAO;
+layout (location = 3) out vec4 gLightmapUV;
 
 in vec2 TexCoord;
 in vec2 v_LmCoord;
@@ -14,15 +15,14 @@ in mat3 TBN;
 
 layout(binding = 0) uniform sampler2D u_diffuse;
 layout(binding = 1) uniform sampler2D u_normal;
-layout(binding = 2) uniform sampler2D u_heightMap;
+layout(binding = 2) uniform sampler2D u_mraohMap;
 layout(binding = 3) uniform sampler2D u_diffuse2;
 layout(binding = 4) uniform sampler2D u_normal2;
-layout(binding = 5) uniform sampler2D u_heightMap2;
+layout(binding = 5) uniform sampler2D u_mraohMap2;
 
 uniform bool u_useBump;
 uniform vec3 u_viewPos;
 
-uniform int u_mat_bumpmap;
 uniform int u_mat_parallax;
 uniform float u_heightScale1;
 uniform float u_heightScale2;
@@ -38,13 +38,13 @@ void main()
         
         if (blend > 0.01 && u_heightScale2 > 0.0)
         {
-            vec2 uv1 = ParallaxMapping(u_heightMap, TexCoord, u_heightScale1, tsViewDir);
-            vec2 uv2 = ParallaxMapping(u_heightMap2, TexCoord, u_heightScale2, tsViewDir);
+            vec2 uv1 = ParallaxMapping(u_mraohMap, TexCoord, u_heightScale1, tsViewDir);
+            vec2 uv2 = ParallaxMapping(u_mraohMap2, TexCoord, u_heightScale2, tsViewDir);
             finalUV = mix(uv1, uv2, blend);
         }
         else
         {
-            finalUV = ParallaxMapping(u_heightMap, TexCoord, u_heightScale1, tsViewDir);
+            finalUV = ParallaxMapping(u_mraohMap, TexCoord, u_heightScale1, tsViewDir);
         }
     }
 
@@ -60,9 +60,7 @@ void main()
     vec3 worldNormal = normalize(TBN[2]);
     vec3 tangentNormal = vec3(0.0, 0.0, 1.0);
 
-    float specMask = 0.0;
-
-    if (u_useBump && u_mat_bumpmap == 1)
+    if (u_useBump)
     {
         vec4 norm1 = texture(u_normal, finalUV);
         vec4 norm2 = texture(u_normal2, finalUV);
@@ -72,12 +70,16 @@ void main()
 
         tangentNormal = normalize(mix(n1, n2, blend));
         worldNormal = normalize(TBN * tangentNormal);
-
-        specMask = mix(norm1.a, norm2.a, blend);
     }
 
+    vec4 mraoh1 = texture(u_mraohMap, finalUV);
+    vec4 mraoh2 = texture(u_mraohMap2, finalUV);
+    vec4 mraoh = mix(mraoh1, mraoh2, blend);
+
     gNormal = vec4(EncodeNormal(worldNormal), tangentNormal.x, u_useBump ? tangentNormal.y : -2.0);
-    gAlbedoSpec = vec4(albedo.rgb, specMask);
+    gAlbedo = vec4(albedo.rgb, 1.0);
+    gMRAO = mraoh.rgb; 
+    
     gLightmapUV.xy = v_LmCoord;
     gLightmapUV.z = uintBitsToFloat(packHalf2x16(v_LmSize)); 
 }
