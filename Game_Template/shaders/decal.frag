@@ -3,7 +3,7 @@
 
 layout (location = 0) out vec4 gNormal;
 layout (location = 1) out vec4 gAlbedo;
-layout (location = 2) out vec3 gMRAO;
+layout (location = 2) out vec4 gMRAO;
 
 in vec2 TexCoord;
 in vec3 v_FragPos;
@@ -47,5 +47,5 @@ void main()
 
     gNormal = vec4(EncodeNormal(worldNormal), tangentNormal.x, tangentNormal.y);
     gAlbedo = vec4(albedo.rgb, 1.0);
-    gMRAO = mraoh.rgb;
+    gMRAO.rgb = mraoh.rgb;
 }

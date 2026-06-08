@@ -3,7 +3,7 @@
 
 layout (location = 0) out vec4 gNormal;
 layout (location = 1) out vec4 gAlbedo;
-layout (location = 2) out vec3 gMRAO;
+layout (location = 2) out vec4 gMRAO;
 layout (location = 3) out vec4 gLightmapUV;
 
 in vec2 TexCoord;
@@ -78,7 +78,7 @@ void main()
 
     gNormal = vec4(EncodeNormal(worldNormal), tangentNormal.x, u_useBump ? tangentNormal.y : -2.0);
     gAlbedo = vec4(albedo.rgb, 1.0);
-    gMRAO = mraoh.rgb; 
+    gMRAO.rgb = mraoh.rgb; 
     
     gLightmapUV.xy = v_LmCoord;
     gLightmapUV.z = uintBitsToFloat(packHalf2x16(v_LmSize)); 
