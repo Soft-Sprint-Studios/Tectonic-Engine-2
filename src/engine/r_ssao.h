@@ -48,8 +48,8 @@ private:
 
     GLuint m_fbo = 0;
     GLuint m_texture = 0;
-    GLuint m_blurFbo = 0;
-    GLuint m_blurTexture = 0;
+    GLuint m_blurFbo[2] = { 0, 0 };
+    GLuint m_blurTexture[2] = { 0, 0 };
     GLuint m_noiseTexture = 0;
 
     R_Shader m_ssaoShader;

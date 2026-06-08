@@ -29,8 +29,9 @@
 CVar r_ssao("r_ssao", "1", "Enable Screen Space Ambient Occlusion.", CVAR_SAVE);
 CVar r_ssao_radius("r_ssao_radius", "0.5", "Sampling radius for AO.", CVAR_SAVE);
 CVar r_ssao_bias("r_ssao_bias", "0.025", "Occlusion bias to prevent self-shadowing.", CVAR_SAVE);
-CVar r_ssao_samples("r_ssao_samples", "64", "Number of AO samples per pixel.", CVAR_SAVE);
+CVar r_ssao_samples("r_ssao_samples", "32", "Number of AO samples per pixel.", CVAR_SAVE);
 CVar r_ssao_power("r_ssao_power", "2.0", "Contrast strength of the AO effect.", CVAR_SAVE);
+CVar r_ssao_blur_passes("r_ssao_blur_passes", "4", "Number of blur passes for SSAO.", CVAR_SAVE);
 CVar r_ssao_downsample("r_ssao_downsample", "2", "Downscaling factor for SSAO buffer (higher = faster).", CVAR_SAVE);
 
 R_SSAO::R_SSAO() 
@@ -124,15 +125,18 @@ void R_SSAO::CreateBuffers(int width, int height)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_texture, 0);
 
-    glGenFramebuffers(1, &m_blurFbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, m_blurFbo);
-    glGenTextures(1, &m_blurTexture);
-    glBindTexture(GL_TEXTURE_2D, m_blurTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, vW, vH, 0, GL_RED, GL_FLOAT, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_blurTexture, 0);
-    
+    glGenFramebuffers(2, m_blurFbo);
+    glGenTextures(2, m_blurTexture);
+    for (int i = 0; i < 2; i++)
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, m_blurFbo[i]);
+        glBindTexture(GL_TEXTURE_2D, m_blurTexture[i]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, vW, vH, 0, GL_RED, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_blurTexture[i], 0);
+    }
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     GenerateNoiseTexture();
@@ -140,17 +144,17 @@ void R_SSAO::CreateBuffers(int width, int height)
 
 void R_SSAO::DeleteBuffers() 
 {
-    if (m_fbo) 
+    if (m_fbo)
         glDeleteFramebuffers(1, &m_fbo);
-    if (m_texture) 
+    if (m_texture)
         glDeleteTextures(1, &m_texture);
-    if (m_blurFbo) 
-        glDeleteFramebuffers(1, &m_blurFbo);
-    if (m_blurTexture) 
-        glDeleteTextures(1, &m_blurTexture);
-    if (m_noiseTexture) 
+    if (m_blurFbo[0])
+        glDeleteFramebuffers(2, m_blurFbo);
+    if (m_blurTexture[0])
+        glDeleteTextures(2, m_blurTexture);
+    if (m_noiseTexture)
         glDeleteTextures(1, &m_noiseTexture);
-    m_fbo = m_texture = m_blurFbo = m_blurTexture = m_noiseTexture = 0;
+    m_fbo = m_texture = m_blurFbo[0] = m_blurFbo[1] = m_blurTexture[0] = m_blurTexture[1] = m_noiseTexture = 0;
 }
 
 void R_SSAO::Rescale(int width, int height) 
@@ -202,14 +206,22 @@ void R_SSAO::Render(GLuint depthTexture, const Camera& camera, GLuint quadVAO, i
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     // Blur pass
-    glBindFramebuffer(GL_FRAMEBUFFER, m_blurFbo);
-    glClear(GL_COLOR_BUFFER_BIT);
     m_blurShader.Bind();
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, m_texture);
+    bool horizontal = true, first_iteration = true;
+    for (int i = 0; i < r_ssao_blur_passes.GetInt(); i++)
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, m_blurFbo[horizontal]);
+        m_blurShader.SetInt("horizontal", horizontal);
 
-    glBindVertexArray(quadVAO);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, first_iteration ? m_texture : m_blurTexture[!horizontal]);
+
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        horizontal = !horizontal;
+        if (first_iteration)
+            first_iteration = false;
+    }
 
     glViewport(0, 0, screenW, screenH);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -217,13 +229,13 @@ void R_SSAO::Render(GLuint depthTexture, const Camera& camera, GLuint quadVAO, i
 
 void R_SSAO::Bind(const R_Shader& shader)
 {
-    if (r_ssao.GetInt() > 0) 
+    if (r_ssao.GetInt() > 0)
     {
         shader.SetInt("u_ssao_enabled", 1);
         shader.SetInt("u_ssaoTexture", 4);
         glActiveTexture(GL_TEXTURE4);
-        glBindTexture(GL_TEXTURE_2D, m_blurTexture);
-    } 
+        glBindTexture(GL_TEXTURE_2D, m_blurTexture[0]);
+    }
     else 
     {
         shader.SetInt("u_ssao_enabled", 0);
