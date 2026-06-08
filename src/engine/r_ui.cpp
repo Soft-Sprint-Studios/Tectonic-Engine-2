@@ -139,6 +139,7 @@ void R_UI::Render()
     glBindVertexArray(m_vao);
 
     // Render Rectangles first
+    Materials::GetTexture("")->Bind(0);
     for (const auto& rect : m_rectCommands)
     {
         m_shader.SetVec4("textColor", rect.color);
