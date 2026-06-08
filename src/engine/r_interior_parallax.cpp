@@ -73,7 +73,6 @@ void R_InteriorParallax::Draw(const Camera& camera, R_BSP* bsp)
     m_shader.SetMat4("u_view", camera.GetViewMatrix());
     m_shader.SetMat4("u_projection", camera.GetProjectionMatrix());
     m_shader.SetVec3("u_viewPos", camera.position);
-    m_shader.SetInt("u_interiorCube", 0);
 
     for (const auto& ent : EntityManager::GetEntities())
     {

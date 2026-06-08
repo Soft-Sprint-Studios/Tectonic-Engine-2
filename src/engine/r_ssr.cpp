@@ -122,11 +122,6 @@ void R_SSR::Render(GLuint depthTex, GLuint normalTex, GLuint mraoTex, GLuint sce
     glActiveTexture(GL_TEXTURE3); 
     glBindTexture(GL_TEXTURE_2D, sceneTex);
 
-    m_ssrShader.SetInt("u_gDepth", 0);
-    m_ssrShader.SetInt("u_gNormal", 1);
-    m_ssrShader.SetInt("u_gMRAO", 2);
-    m_ssrShader.SetInt("u_sceneTex", 3);
-
     glBindVertexArray(quadVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 

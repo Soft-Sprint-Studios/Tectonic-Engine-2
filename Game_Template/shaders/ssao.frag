@@ -1,8 +1,8 @@
 out float FragColor;
 in vec2 TexCoords;
 
-uniform sampler2D u_depthTexture;
-uniform sampler2D u_noiseTexture;
+layout(binding = 0) uniform sampler2D u_depthTexture;
+layout(binding = 1) uniform sampler2D u_noiseTexture;
 
 uniform mat4 u_projection;
 uniform mat4 u_invProjection;

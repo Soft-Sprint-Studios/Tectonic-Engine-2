@@ -6,7 +6,7 @@ in vec3 TexCoords;
 in vec3 v_worldPos;
 
 uniform bool u_use_dynamic;
-uniform samplerCube skybox;
+layout(binding = 0) uniform samplerCube skybox;
 
 uniform vec3 u_sunDir;
 uniform vec3 u_sunColor;

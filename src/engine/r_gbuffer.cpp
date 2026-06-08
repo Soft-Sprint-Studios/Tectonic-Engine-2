@@ -40,7 +40,6 @@ bool R_GBuffer::Init(int width, int height)
 
     m_debugShader.Load("shaders/postprocess.vert", "shaders/gbuffer_debug.frag");
     m_debugShader.Bind();
-    m_debugShader.SetInt("u_debugTex", 0);
     InitDebugQuad();
 
     glGenFramebuffers(1, &m_fbo);

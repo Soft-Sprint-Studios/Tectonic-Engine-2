@@ -195,10 +195,8 @@ void R_SSAO::Render(GLuint depthTexture, const Camera& camera, GLuint quadVAO, i
     
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, depthTexture);
-    m_ssaoShader.SetInt("u_depthTexture", 0);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, m_noiseTexture);
-    m_ssaoShader.SetInt("u_noiseTexture", 1);
     
     glBindVertexArray(quadVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -209,7 +207,6 @@ void R_SSAO::Render(GLuint depthTexture, const Camera& camera, GLuint quadVAO, i
     m_blurShader.Bind();
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_texture);
-    m_blurShader.SetInt("u_ssaoTexture", 0);
 
     glBindVertexArray(quadVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);

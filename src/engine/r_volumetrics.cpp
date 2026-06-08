@@ -128,7 +128,6 @@ void R_Volumetrics::Render(GLuint depthTexture, const Camera& camera, R_Lights* 
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, depthTexture);
-    m_volShader.SetInt("u_depthTexture", 0);
 
     if (lights) 
         lights->Bind(m_volShader);
@@ -146,7 +145,6 @@ void R_Volumetrics::Render(GLuint depthTexture, const Camera& camera, R_Lights* 
         
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, first_iteration ? m_texture : m_blurTexture[!horizontal]);
-        m_blurShader.SetInt("image", 0);
         
         glDrawArrays(GL_TRIANGLES, 0, 6);
         

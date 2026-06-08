@@ -1,7 +1,7 @@
 out vec4 FragColor;
 in vec2 TexCoords;
 
-uniform sampler2D u_sourceTexture;
+layout(binding = 0) uniform sampler2D u_sourceTexture;
 uniform float u_scatter;
 
 void main()

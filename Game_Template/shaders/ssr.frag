@@ -3,10 +3,10 @@
 out vec4 FragColor;
 in vec2 TexCoords;
 
-uniform sampler2D u_gDepth;
-uniform sampler2D u_gNormal;
-uniform sampler2D u_gMRAO;
-uniform sampler2D u_sceneTex;
+layout(binding = 0) uniform sampler2D u_gDepth;
+layout(binding = 1) uniform sampler2D u_gNormal;
+layout(binding = 2) uniform sampler2D u_gMRAO;
+layout(binding = 3) uniform sampler2D u_sceneTex;
 
 uniform mat4 u_projection;
 uniform mat4 u_invProjection;

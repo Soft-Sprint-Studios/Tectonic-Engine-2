@@ -3,8 +3,8 @@ in float fDepth;
 in vec4 fCol;
 out vec4 Color;
 
-uniform sampler2D u_tex;
-uniform sampler2D u_depthTexture;
+layout(binding = 0) uniform sampler2D u_tex;
+layout(binding = 1) uniform sampler2D u_depthTexture;
 uniform mat4 u_invProj;
 uniform vec2 u_screenSize;
 

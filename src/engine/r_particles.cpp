@@ -68,7 +68,6 @@ void R_Particles::Draw(const Camera& camera, uint32_t depthTex)
     m_shader.SetMat4("u_proj", camera.GetProjectionMatrix());
     m_shader.SetMat4("u_view", camera.GetViewMatrix());
     m_shader.SetMat4("u_invProj", glm::inverse(camera.GetProjectionMatrix()));
-    m_shader.SetInt("u_depthTexture", 1);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, depthTex);
 

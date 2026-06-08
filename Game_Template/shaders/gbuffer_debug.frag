@@ -3,7 +3,7 @@
 out vec4 FragColor;
 in vec2 TexCoords;
 
-uniform sampler2D u_debugTex;
+layout(binding = 0) uniform sampler2D u_debugTex;
 uniform int u_mode;
 
 void main()

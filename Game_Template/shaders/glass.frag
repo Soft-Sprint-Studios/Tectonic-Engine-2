@@ -4,8 +4,8 @@ in vec2 TexCoord;
 in vec4 ScreenPos;
 in mat3 TBN;
 
-uniform sampler2D u_refractTex;
-uniform sampler2D u_normalMap;
+layout(binding = 10) uniform sampler2D u_refractTex;
+layout(binding = 0) uniform sampler2D u_normalMap;
 uniform float u_amount;
 
 void main()

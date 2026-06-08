@@ -5,7 +5,9 @@ in vec2 v_TexCoord;
 in mat3 v_TBN;
 
 uniform vec3 u_viewPos;
-uniform samplerCube u_interiorCube;
+
+layout(binding = 0) uniform samplerCube u_interiorCube;
+
 uniform vec3 u_roomSize;
 
 void main()

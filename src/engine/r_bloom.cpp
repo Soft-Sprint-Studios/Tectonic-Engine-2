@@ -150,7 +150,6 @@ void R_Bloom::Bind(const R_Shader& shader)
     {
         shader.SetInt("u_bloom_enabled", 1);
         shader.SetFloat("u_bloom_intensity", r_bloom_intensity.GetFloat());
-        shader.SetInt("u_bloomTexture", 2);
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, m_mipChain[0].texture);
     }

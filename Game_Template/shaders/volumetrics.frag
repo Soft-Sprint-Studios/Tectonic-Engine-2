@@ -1,7 +1,7 @@
 #include "lights.glsl"
 in vec2 TexCoords;
 
-uniform sampler2D u_depthTexture;
+layout(binding = 0) uniform sampler2D u_depthTexture;
 
 uniform mat4 u_invProjection;
 uniform mat4 u_invView;

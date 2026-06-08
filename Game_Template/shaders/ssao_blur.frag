@@ -1,7 +1,7 @@
 out vec4 FragColor;
 in vec2 TexCoords;
 
-uniform sampler2D u_ssaoTexture;
+layout(binding = 0) uniform sampler2D u_ssaoTexture;
 
 void main()
 {
