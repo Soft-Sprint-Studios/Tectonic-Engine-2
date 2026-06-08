@@ -68,7 +68,7 @@ bool R_Shader::Load(const std::string& vertPath, const std::string& fragPath, co
 
     if (!geomPath.empty())
     {
-        std::string gCode = Filesystem::ReadText(geomPath);
+        std::string gCode = PreprocessShader(geomPath);
         if (!gCode.empty())
         {
             gs = CompileShader(GL_GEOMETRY_SHADER, gCode, geomPath);
