@@ -86,7 +86,7 @@ bool R_Models::Init(const BSP::MapData& mapData)
         {
             glGenBuffers(1, &group.lmUVSSBO);
             glBindBuffer(GL_SHADER_STORAGE_BUFFER, group.lmUVSSBO);
-            glBufferData(GL_SHADER_STORAGE_BUFFER, allUVTransforms.size() * sizeof(glm::vec4), allUVTransforms.data(), GL_STATIC_DRAW);
+            glNamedBufferData(group.lmUVSSBO, allUVTransforms.size() * sizeof(glm::vec4), allUVTransforms.data(), GL_STATIC_DRAW);
         }
 
         glm::vec3 corners[8] =
@@ -130,7 +130,7 @@ bool R_Models::Init(const BSP::MapData& mapData)
 
         glGenBuffers(1, &group.transformSSBO);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, group.transformSSBO);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, transforms.size() * sizeof(glm::mat4), transforms.data(), GL_STATIC_DRAW);
+        glNamedBufferData(group.transformSSBO, transforms.size() * sizeof(glm::mat4), transforms.data(), GL_STATIC_DRAW);
     }
 
     return true;
@@ -181,7 +181,7 @@ void R_Models::LoadModel(const std::string& path)
             GLuint vbo;
             glGenBuffers(1, &vbo);
             glBindBuffer(GL_ARRAY_BUFFER, vbo);
-            glBufferData(GL_ARRAY_BUFFER, prim.positions.size() * sizeof(glm::vec3), prim.positions.data(), GL_STATIC_DRAW);
+            glNamedBufferData(vbo, prim.positions.size() * sizeof(glm::vec3), prim.positions.data(), GL_STATIC_DRAW);
             m.vbos.push_back(vbo);
             glEnableVertexAttribArray(0);
             glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), 0);
@@ -192,7 +192,7 @@ void R_Models::LoadModel(const std::string& path)
             GLuint vbo;
             glGenBuffers(1, &vbo);
             glBindBuffer(GL_ARRAY_BUFFER, vbo);
-            glBufferData(GL_ARRAY_BUFFER, prim.uvs.size() * sizeof(glm::vec2), prim.uvs.data(), GL_STATIC_DRAW);
+            glNamedBufferData(vbo, prim.uvs.size() * sizeof(glm::vec2), prim.uvs.data(), GL_STATIC_DRAW);
             m.vbos.push_back(vbo);
             glEnableVertexAttribArray(1);
             glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), 0);
@@ -203,7 +203,7 @@ void R_Models::LoadModel(const std::string& path)
             GLuint vbo;
             glGenBuffers(1, &vbo);
             glBindBuffer(GL_ARRAY_BUFFER, vbo);
-            glBufferData(GL_ARRAY_BUFFER, prim.normals.size() * sizeof(glm::vec3), prim.normals.data(), GL_STATIC_DRAW);
+            glNamedBufferData(vbo, prim.normals.size() * sizeof(glm::vec3), prim.normals.data(), GL_STATIC_DRAW);
             m.vbos.push_back(vbo);
             glEnableVertexAttribArray(5);
             glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), 0);
@@ -214,7 +214,7 @@ void R_Models::LoadModel(const std::string& path)
             GLuint vbo;
             glGenBuffers(1, &vbo);
             glBindBuffer(GL_ARRAY_BUFFER, vbo);
-            glBufferData(GL_ARRAY_BUFFER, prim.tangents.size() * sizeof(glm::vec4), prim.tangents.data(), GL_STATIC_DRAW);
+            glNamedBufferData(vbo, prim.tangents.size() * sizeof(glm::vec4), prim.tangents.data(), GL_STATIC_DRAW);
             m.vbos.push_back(vbo);
             glEnableVertexAttribArray(6);
             glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4), 0);
@@ -225,7 +225,7 @@ void R_Models::LoadModel(const std::string& path)
             GLuint vbo;
             glGenBuffers(1, &vbo);
             glBindBuffer(GL_ARRAY_BUFFER, vbo);
-            glBufferData(GL_ARRAY_BUFFER, prim.joints.size() * sizeof(glm::uvec4), prim.joints.data(), GL_STATIC_DRAW);
+            glNamedBufferData(vbo, prim.joints.size() * sizeof(glm::uvec4), prim.joints.data(), GL_STATIC_DRAW);
             m.vbos.push_back(vbo);
             glEnableVertexAttribArray(7);
             glVertexAttribIPointer(7, 4, GL_UNSIGNED_INT, sizeof(glm::uvec4), 0);
@@ -236,7 +236,7 @@ void R_Models::LoadModel(const std::string& path)
             GLuint vbo;
             glGenBuffers(1, &vbo);
             glBindBuffer(GL_ARRAY_BUFFER, vbo);
-            glBufferData(GL_ARRAY_BUFFER, prim.weights.size() * sizeof(glm::vec4), prim.weights.data(), GL_STATIC_DRAW);
+            glNamedBufferData(vbo, prim.weights.size() * sizeof(glm::vec4), prim.weights.data(), GL_STATIC_DRAW);
             m.vbos.push_back(vbo);
             glEnableVertexAttribArray(8);
             glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4), 0);
@@ -246,7 +246,7 @@ void R_Models::LoadModel(const std::string& path)
         {
             glGenBuffers(1, &m.ebo);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m.ebo);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, prim.indices.size() * sizeof(uint32_t), prim.indices.data(), GL_STATIC_DRAW);
+            glNamedBufferData(m.ebo, prim.indices.size() * sizeof(uint32_t), prim.indices.data(), GL_STATIC_DRAW);
             m.indexCount = (uint32_t)prim.indices.size();
             m.indexType = GL_UNSIGNED_INT;
         }

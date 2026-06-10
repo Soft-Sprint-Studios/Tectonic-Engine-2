@@ -48,12 +48,12 @@ void R_AutoExposure::Init()
 
     glGenBuffers(1, &m_histogramBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_histogramBuffer);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, 256 * sizeof(uint32_t), NULL, GL_DYNAMIC_COPY);
+    glNamedBufferData(m_histogramBuffer, 256 * sizeof(uint32_t), NULL, GL_DYNAMIC_COPY);
 
     glGenBuffers(1, &m_lumBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_lumBuffer);
     float initialExposure = 1.0f;
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(float), &initialExposure, GL_DYNAMIC_COPY);
+    glNamedBufferData(m_lumBuffer, sizeof(float), &initialExposure, GL_DYNAMIC_COPY);
 }
 
 void R_AutoExposure::Update(GLuint screenTexture, int width, int height)
@@ -62,8 +62,7 @@ void R_AutoExposure::Update(GLuint screenTexture, int width, int height)
     if (r_autoexposure.GetInt() > 0)
     {
         uint32_t zeros[256] = { 0 };
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_histogramBuffer);
-        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(zeros), zeros);
+        glNamedBufferSubData(m_histogramBuffer, 0, sizeof(zeros), zeros);
 
         m_histogramShader.Bind();
         glBindImageTexture(0, screenTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F);
@@ -94,8 +93,7 @@ void R_AutoExposure::Update(GLuint screenTexture, int width, int height)
     else
     {
         float defaultExp = 1.0f;
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_lumBuffer);
-        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(float), &defaultExp);
+        glNamedBufferSubData(m_lumBuffer, 0, sizeof(float), &defaultExp);
     }
 }
 

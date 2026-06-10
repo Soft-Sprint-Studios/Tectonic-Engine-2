@@ -66,7 +66,7 @@ void R_Cascade::Init(int res)
 
     glGenBuffers(1, &m_matrixSSBO);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_matrixSSBO);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::mat4) * 4, nullptr, GL_DYNAMIC_DRAW);
+    glNamedBufferData(m_matrixSSBO, sizeof(glm::mat4) * 4, nullptr, GL_DYNAMIC_DRAW);
 
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
@@ -139,8 +139,7 @@ void R_Cascade::Render(const Camera& camera, R_Shader& shadowShader, Renderer* r
 {
     UpdateMatrices(camera, DynamicSky::GetSettings().sunDir);
 
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_matrixSSBO);
-    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(glm::mat4) * 4, m_matrices.data());
+    glNamedBufferSubData(m_matrixSSBO, 0, sizeof(glm::mat4) * 4, m_matrices.data());
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, m_matrixSSBO);
     
     glViewport(0, 0, m_resolution, m_resolution);

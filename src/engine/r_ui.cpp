@@ -61,7 +61,7 @@ void R_UI::Init(Window* window)
     glGenBuffers(1, &m_vbo);
     glBindVertexArray(m_vao);
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+    glNamedBufferData(m_vbo, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -153,8 +153,7 @@ void R_UI::Render()
             { rect.x + rect.w, rect.y,          1.0f, 0.0f },
             { rect.x + rect.w, rect.y + rect.h, 1.0f, 1.0f }
         };
-        glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+        glNamedBufferSubData(m_vbo, 0, sizeof(vertices), vertices);
         glDrawArrays(GL_TRIANGLES, 0, 6);
     }
     m_rectCommands.clear();
@@ -214,8 +213,7 @@ void R_UI::Render()
             { xpos + w, ypos + h,   1.0f, 1.0f }
         };
 
-        glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices); 
+        glNamedBufferSubData(m_vbo, 0, sizeof(vertices), vertices);
         glDrawArrays(GL_TRIANGLES, 0, 6);
     }
 

@@ -83,7 +83,7 @@ void R_Cables::Draw(const Camera& camera, const std::vector<std::shared_ptr<Cabl
             vertices.push_back(p + side);
         }
 
-        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), vertices.data(), GL_STREAM_DRAW);
+        glNamedBufferData(m_vbo, vertices.size() * sizeof(glm::vec3), vertices.data(), GL_STREAM_DRAW);
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), 0);
         

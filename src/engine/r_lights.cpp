@@ -68,7 +68,7 @@ bool R_Lights::Init()
 
     glGenBuffers(1, &m_lightSSBO);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_lightSSBO);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, 64 * sizeof(GPULight), NULL, GL_DYNAMIC_DRAW);
+    glNamedBufferData(m_lightSSBO, 64 * sizeof(GPULight), NULL, GL_DYNAMIC_DRAW);
 
     return true;
 }
@@ -286,17 +286,15 @@ void R_Lights::Bind(const R_Shader& shader)
             spots.push_back(gpu);
     }
 
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_lightSSBO);
-
     if (!points.empty())
     {
         size_t count = std::min(points.size(), (size_t)32);
-        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, count * sizeof(GPULight), points.data());
+        glNamedBufferSubData(m_lightSSBO, 0, count * sizeof(GPULight), points.data());
     }
     if (!spots.empty())
     {
         size_t count = std::min(spots.size(), (size_t)32);
-        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 32 * sizeof(GPULight), count * sizeof(GPULight), spots.data());
+        glNamedBufferSubData(m_lightSSBO, 32 * sizeof(GPULight), count * sizeof(GPULight), spots.data());
     }
 
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 10, m_lightSSBO);

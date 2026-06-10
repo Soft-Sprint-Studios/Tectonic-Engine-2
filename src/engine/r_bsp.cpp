@@ -52,7 +52,7 @@ bool R_BSP::Init(const BSP::MapData& map)
 
     glBindVertexArray(m_vao);
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-    glBufferData(GL_ARRAY_BUFFER, map.renderVertices.size() * sizeof(BSP::Vertex), map.renderVertices.data(), GL_STATIC_DRAW);
+    glNamedBufferData(m_vbo, map.renderVertices.size() * sizeof(BSP::Vertex), map.renderVertices.data(), GL_STATIC_DRAW);
 
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)0);
@@ -118,7 +118,7 @@ bool R_BSP::Init(const BSP::MapData& map)
         glGenBuffers(1, &bm.vbo);
         glBindVertexArray(bm.vao);
         glBindBuffer(GL_ARRAY_BUFFER, bm.vbo);
-        glBufferData(GL_ARRAY_BUFFER, ent.renderVertices.size() * sizeof(BSP::Vertex), ent.renderVertices.data(), GL_STATIC_DRAW);
+        glNamedBufferData(bm.vbo, ent.renderVertices.size() * sizeof(BSP::Vertex), ent.renderVertices.data(), GL_STATIC_DRAW);
 
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)0);

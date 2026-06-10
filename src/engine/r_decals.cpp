@@ -49,10 +49,10 @@ void R_Decals::Init()
 
     glBindVertexArray(m_vao);
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glNamedBufferData(m_vbo, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    glNamedBufferData(m_ebo, sizeof(indices), indices, GL_STATIC_DRAW);
 
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(DecalVertex), (void*)0);
@@ -61,7 +61,7 @@ void R_Decals::Init()
 
     glGenBuffers(1, &m_instanceSSBO);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_instanceSSBO);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, 1024 * sizeof(glm::mat4), NULL, GL_DYNAMIC_DRAW);
+    glNamedBufferData(m_instanceSSBO, 1024 * sizeof(glm::mat4), NULL, GL_DYNAMIC_DRAW);
 }
 
 void R_Decals::Draw(const Camera& camera, const std::vector<std::shared_ptr<Decal>>& decals)
@@ -106,8 +106,7 @@ void R_Decals::Draw(const Camera& camera, const std::vector<std::shared_ptr<Deca
         m_shader.SetFloat("u_heightScale", Materials::GetHeightScale(texName));
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_instanceSSBO);
-        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, matrices.size() * sizeof(glm::mat4), matrices.data());
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, m_instanceSSBO);
+        glNamedBufferSubData(m_instanceSSBO, 0, matrices.size() * sizeof(glm::mat4), matrices.data());
 
         glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, (GLsizei)matrices.size());
     }
