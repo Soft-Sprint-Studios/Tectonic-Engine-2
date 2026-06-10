@@ -236,22 +236,15 @@ void Renderer::LightingPass(Camera& camera, GLuint cubemapToExclude, GLint targe
     m_resolveShader.SetMat4("u_invProjection", glm::inverse(camera.GetProjectionMatrix()));
     m_resolveShader.SetMat4("u_invView", glm::inverse(camera.GetViewMatrix()));
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, m_gbuffer->GetDepthTex());
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, m_gbuffer->GetNormalTex());
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, m_gbuffer->GetAlbedoTex());
-    glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D, m_gbuffer->GetMRAOTex());
-    glActiveTexture(GL_TEXTURE6);
-    glBindTexture(GL_TEXTURE_2D, m_gbuffer->GetLightmapUVTex());
-    glActiveTexture(GL_TEXTURE5);
-    glBindTexture(GL_TEXTURE_2D, m_bspRenderer->GetLightmapTexture());
+    glBindTextureUnit(0, m_gbuffer->GetDepthTex());
+    glBindTextureUnit(1, m_gbuffer->GetNormalTex());
+    glBindTextureUnit(2, m_gbuffer->GetAlbedoTex());
+    glBindTextureUnit(3, m_gbuffer->GetMRAOTex());
+    glBindTextureUnit(6, m_gbuffer->GetLightmapUVTex());
+    glBindTextureUnit(5, m_bspRenderer->GetLightmapTexture());
 
     m_resolveShader.SetInt("u_useCubemap", 0);
-    glActiveTexture(GL_TEXTURE4);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+    glBindTextureUnit(4, 0);
 
     const Cubemap::CubemapProbe* probe = Cubemap::FindClosest(camera.position);
     if (probe && probe->textureID != 0 && probe->textureID != cubemapToExclude)
@@ -260,8 +253,7 @@ void Renderer::LightingPass(Camera& camera, GLuint cubemapToExclude, GLint targe
         m_resolveShader.SetVec3("u_cubemapOrigin", probe->origin);
         m_resolveShader.SetVec3("u_cubemapMins", probe->mins);
         m_resolveShader.SetVec3("u_cubemapMaxs", probe->maxs);
-        glActiveTexture(GL_TEXTURE4);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, probe->textureID);
+        glBindTextureUnit(4, probe->textureID);
     }
 
     m_lightRenderer->Bind(m_resolveShader);

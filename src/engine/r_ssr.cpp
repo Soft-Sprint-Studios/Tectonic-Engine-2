@@ -113,22 +113,17 @@ void R_SSR::Render(GLuint depthTex, GLuint normalTex, GLuint mraoTex, GLuint sce
     m_ssrShader.SetInt("u_maxSteps", r_ssr_steps.GetInt());
     m_ssrShader.SetInt("u_binarySteps", r_ssr_binary_steps.GetInt());
 
-    glActiveTexture(GL_TEXTURE0); 
-    glBindTexture(GL_TEXTURE_2D, depthTex);
-    glActiveTexture(GL_TEXTURE1); 
-    glBindTexture(GL_TEXTURE_2D, normalTex);
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, mraoTex);
-    glActiveTexture(GL_TEXTURE3); 
-    glBindTexture(GL_TEXTURE_2D, sceneTex);
+    glBindTextureUnit(0, depthTex);
+    glBindTextureUnit(1, normalTex);
+    glBindTextureUnit(2, mraoTex);
+    glBindTextureUnit(3, sceneTex);
 
     glBindVertexArray(quadVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glBindFramebuffer(GL_FRAMEBUFFER, m_blurFbo);
     m_blurShader.Bind();
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, m_texture);
+    glBindTextureUnit(0, m_texture);
     m_blurShader.SetInt("u_ssrTex", 0);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -141,9 +136,7 @@ void R_SSR::Bind(const R_Shader& shader)
     if (r_ssr.GetInt() > 0)
     {
         shader.SetInt("u_ssr_enabled", 1);
-        shader.SetInt("u_ssrTexture", 5);
-        glActiveTexture(GL_TEXTURE5);
-        glBindTexture(GL_TEXTURE_2D, m_blurTexture);
+        glBindTextureUnit(5, m_blurTexture);
     }
     else
     {

@@ -196,7 +196,7 @@ void R_UI::Render()
 
         CachedText& cached = m_textCache[cmd.text];
         m_shader.SetVec4("textColor", cmd.color);
-        glBindTexture(GL_TEXTURE_2D, cached.textureID);
+        glBindTextureUnit(0, cached.textureID);
 
         float xpos = cmd.x;
         float ypos = cmd.y;
@@ -219,7 +219,6 @@ void R_UI::Render()
         glDrawArrays(GL_TRIANGLES, 0, 6);
     }
 
-    glBindTexture(GL_TEXTURE_2D, 0);
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
     glEnable(GL_CULL_FACE);

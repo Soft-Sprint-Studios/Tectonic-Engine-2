@@ -154,8 +154,7 @@ void R_Monitors::Draw(const Camera& camera, R_BSP* bsp)
         auto& def = monitor_handle->GetDef();
         m_shader.SetInt("u_grayscale", def.grayscale ? 1 : 0);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, it->second.texture);
+        glBindTextureUnit(0, it->second.texture);
 
         glm::mat4 model = glm::translate(glm::mat4(1.0f), ent->GetOrigin());
         glm::vec3 ang = ent->GetAngles();

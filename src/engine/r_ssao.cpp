@@ -197,10 +197,8 @@ void R_SSAO::Render(GLuint depthTexture, const Camera& camera, GLuint quadVAO, i
     int res = std::max(1, r_ssao_downsample.GetInt());
     m_ssaoShader.SetVec2("u_noiseScale", glm::vec2((float)(screenW / res) / 4.0f, (float)(screenH / res) / 4.0f));
     
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, depthTexture);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, m_noiseTexture);
+    glBindTextureUnit(0, depthTexture);
+    glBindTextureUnit(1, m_noiseTexture);
     
     glBindVertexArray(quadVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -213,8 +211,7 @@ void R_SSAO::Render(GLuint depthTexture, const Camera& camera, GLuint quadVAO, i
         glBindFramebuffer(GL_FRAMEBUFFER, m_blurFbo[horizontal]);
         m_blurShader.SetInt("horizontal", horizontal);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, first_iteration ? m_texture : m_blurTexture[!horizontal]);
+        glBindTextureUnit(0, first_iteration ? m_texture : m_blurTexture[!horizontal]);
 
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -232,9 +229,7 @@ void R_SSAO::Bind(const R_Shader& shader)
     if (r_ssao.GetInt() > 0)
     {
         shader.SetInt("u_ssao_enabled", 1);
-        shader.SetInt("u_ssaoTexture", 4);
-        glActiveTexture(GL_TEXTURE4);
-        glBindTexture(GL_TEXTURE_2D, m_blurTexture[0]);
+        glBindTextureUnit(4, m_blurTexture[0]);
     }
     else 
     {

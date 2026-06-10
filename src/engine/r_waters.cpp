@@ -125,10 +125,8 @@ void R_Waters::Draw(const Camera& camera, GLuint vao, GLuint lightmap)
     m_shader.SetFloat("u_time", (float)Time::TotalTime());
     m_shader.SetInt("u_useBump", 1);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, m_reflectTex);
-    glActiveTexture(GL_TEXTURE4);
-    glBindTexture(GL_TEXTURE_2D, lightmap);
+    glBindTextureUnit(0, m_reflectTex);
+    glBindTextureUnit(4, lightmap);
 
     glBindVertexArray(vao);
     for (const auto& s : m_surfaces)

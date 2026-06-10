@@ -89,8 +89,7 @@ void R_Texture::Create(int width, int height, unsigned char* data, bool srgb)
 
 void R_Texture::Bind(unsigned int unit) const
 {
-    glActiveTexture(GL_TEXTURE0 + unit);
-    glBindTexture(GL_TEXTURE_2D, m_id);
+    glBindTextureUnit(unit, m_id);
 }
 
 void R_Texture::Release()

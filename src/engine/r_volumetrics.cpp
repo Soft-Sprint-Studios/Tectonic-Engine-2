@@ -126,8 +126,7 @@ void R_Volumetrics::Render(GLuint depthTexture, const Camera& camera, R_Lights* 
     m_volShader.SetMat4("u_invView", glm::inverse(camera.GetViewMatrix()));
     m_volShader.SetVec3("u_viewPos", camera.position);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, depthTexture);
+    glBindTextureUnit(0, depthTexture);
 
     if (lights) 
         lights->Bind(m_volShader);
@@ -143,8 +142,7 @@ void R_Volumetrics::Render(GLuint depthTexture, const Camera& camera, R_Lights* 
         glBindFramebuffer(GL_FRAMEBUFFER, m_blurFbo[horizontal]);
         m_blurShader.SetInt("horizontal", horizontal);
         
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, first_iteration ? m_texture : m_blurTexture[!horizontal]);
+        glBindTextureUnit(0, first_iteration ? m_texture : m_blurTexture[!horizontal]);
         
         glDrawArrays(GL_TRIANGLES, 0, 6);
         
@@ -162,9 +160,7 @@ void R_Volumetrics::Bind(const R_Shader& shader)
     if (r_volumetrics.GetInt() > 0) 
     {
         shader.SetInt("u_volumetrics_enabled", 1);
-        shader.SetInt("u_volumetricTexture", 3);
-        glActiveTexture(GL_TEXTURE3);
-        glBindTexture(GL_TEXTURE_2D, m_blurTexture[0]);
+        glBindTextureUnit(3, m_blurTexture[0]);
     } 
     else 
     {

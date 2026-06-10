@@ -174,8 +174,7 @@ void R_BSP::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOnly)
 
     if (m_lightmapTexture != 0)
     {
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, m_lightmapTexture);
+        glBindTextureUnit(1, m_lightmapTexture);
     }
 
     for (auto& dc : m_drawCalls)
@@ -235,8 +234,7 @@ void R_BSP::DrawBModel(int index, const R_Shader& shader, const glm::mat4& trans
     {
         if (m_lightmapTexture != 0)
         {
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, m_lightmapTexture);
+            glBindTextureUnit(1, m_lightmapTexture);
         }
     }
 

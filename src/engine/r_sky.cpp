@@ -125,8 +125,7 @@ void R_Sky::Draw(const Camera& camera)
     m_shader.SetFloat("u_time", (float)Time::TotalTime());
 
     glBindVertexArray(m_vao);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, m_cubemapTexture);
+    glBindTextureUnit(0, m_cubemapTexture);
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glDepthMask(GL_TRUE);
     glDepthFunc(GL_LESS);

@@ -126,12 +126,9 @@ void R_VideoInstance::Update(float dt)
 
 void R_VideoInstance::BindTextures()
 {
-    glActiveTexture(GL_TEXTURE10);
-    glBindTexture(GL_TEXTURE_2D, m_texY);
-    glActiveTexture(GL_TEXTURE11);
-    glBindTexture(GL_TEXTURE_2D, m_texCb);
-    glActiveTexture(GL_TEXTURE12);
-    glBindTexture(GL_TEXTURE_2D, m_texCr);
+    glBindTextureUnit(10, m_texY);
+    glBindTextureUnit(11, m_texCb);
+    glBindTextureUnit(12, m_texCr);
 }
 
 void R_VideoInstance::Shutdown()

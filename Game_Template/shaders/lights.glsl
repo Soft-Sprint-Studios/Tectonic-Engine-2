@@ -21,7 +21,7 @@ uniform int u_numPointLights;
 uniform int u_numSpotLights;
 
 uniform int u_csmEnabled;
-uniform sampler2DArray u_csmArray;
+layout(binding = 13) uniform sampler2DArray u_csmArray;
 uniform mat4 u_csmMatrices[4];
 uniform float u_csmSplits[5];
 uniform vec3 u_sunColor;

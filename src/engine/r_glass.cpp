@@ -72,8 +72,7 @@ void R_Glass::Draw(const Camera& camera, R_BSP* bsp)
     m_shader.SetMat4("u_projection", camera.GetProjectionMatrix());
     m_shader.SetMat4("u_view", camera.GetViewMatrix());
 
-    glActiveTexture(GL_TEXTURE10);
-    glBindTexture(GL_TEXTURE_2D, m_refractTex);
+    glBindTextureUnit(10, m_refractTex);
 
     for (auto& ent : EntityManager::GetEntities())
     {

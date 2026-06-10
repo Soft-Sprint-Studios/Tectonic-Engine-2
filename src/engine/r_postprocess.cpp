@@ -181,10 +181,8 @@ void R_PostProcess::Draw(const Camera& camera, R_Lights* lights, R_GBuffer* gbuf
     m_shader.SetMat4("u_invProjection", glm::inverse(camera.GetProjectionMatrix()));
 
     glBindVertexArray(m_quadVAO);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, m_texture);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, m_depthTexture);
+    glBindTextureUnit(0, m_texture);
+    glBindTextureUnit(1, m_depthTexture);
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
 }

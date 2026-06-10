@@ -80,8 +80,7 @@ void R_InteriorParallax::Draw(const Camera& camera, R_BSP* bsp)
         {
             auto* p = static_cast<FuncInteriorParallax*>(ent.get());
             
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_CUBE_MAP, GetCubemap(p->GetCubemapName()));
+            glBindTextureUnit(0, GetCubemap(p->GetCubemapName()));
 
             m_shader.SetVec3("u_roomSize", p->GetRoomSize());
             

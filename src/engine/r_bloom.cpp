@@ -108,8 +108,7 @@ void R_Bloom::Render(GLuint sourceTexture, GLuint quadVAO, int screenW, int scre
     m_downsampleShader.Bind();
     m_downsampleShader.SetFloat("u_threshold", r_bloom_threshold.GetFloat());
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, sourceTexture);
+    glBindTextureUnit(0, sourceTexture);
 
     glBindVertexArray(quadVAO);
     for (size_t i = 0; i < m_mipChain.size(); ++i)
@@ -119,7 +118,7 @@ void R_Bloom::Render(GLuint sourceTexture, GLuint quadVAO, int screenW, int scre
         glBindFramebuffer(GL_FRAMEBUFFER, mip.fbo);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
-        glBindTexture(GL_TEXTURE_2D, mip.texture);
+        glBindTextureUnit(0, mip.texture);
         m_downsampleShader.SetFloat("u_threshold", 0.0f);
     }
 
@@ -133,7 +132,7 @@ void R_Bloom::Render(GLuint sourceTexture, GLuint quadVAO, int screenW, int scre
         const auto& mip = m_mipChain[i];
         const auto& nextMip = m_mipChain[i - 1];
 
-        glBindTexture(GL_TEXTURE_2D, mip.texture);
+        glBindTextureUnit(0, mip.texture);
         glViewport(0, 0, nextMip.size.x, nextMip.size.y);
         glBindFramebuffer(GL_FRAMEBUFFER, nextMip.fbo);
         glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -150,8 +149,7 @@ void R_Bloom::Bind(const R_Shader& shader)
     {
         shader.SetInt("u_bloom_enabled", 1);
         shader.SetFloat("u_bloom_intensity", r_bloom_intensity.GetFloat());
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, m_mipChain[0].texture);
+        glBindTextureUnit(2, m_mipChain[0].texture);
     }
     else
     {
