@@ -4,4 +4,4 @@ if not exist buildx64 (
 )
 
 cd buildx64
-cmake -G "Visual Studio 17 2022" ..
+cmake -G "Visual Studio 18 2026" ..
