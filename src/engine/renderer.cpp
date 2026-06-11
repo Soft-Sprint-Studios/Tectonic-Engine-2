@@ -190,7 +190,14 @@ void Renderer::RenderWorld(Camera& camera, GLuint cubemapToExclude, bool drawWat
 
     GeometryPass(camera, renderW, renderH);
     LightingPass(camera, cubemapToExclude, targetFBO, renderW, renderH, w, h);
-    DepthBlit(targetFBO, renderW, renderH);
+    if (targetFBO == m_postProcess->GetActiveFBO())
+    {
+        glNamedFramebufferTexture(targetFBO, GL_DEPTH_ATTACHMENT, m_gbuffer->GetDepthTex(), 0);
+    }
+    else
+    {
+        DepthBlit(targetFBO, renderW, renderH);
+    }
     ForwardPass(camera, targetFBO, renderW, renderH, drawWater);
 }
 

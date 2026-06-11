@@ -148,8 +148,8 @@ void R_PostProcess::Draw(const Camera& camera, R_Lights* lights, R_GBuffer* gbuf
     // Run the subrenderers
     m_autoExposure->Update(m_texture, m_width, m_height);
     m_bloom->Render(m_texture, m_quadVAO, m_width, m_height);
-    m_volumetrics->Render(m_depthTexture, camera, lights, m_quadVAO, m_width, m_height);
-    m_ssao->Render(m_depthTexture, camera, m_quadVAO, m_width, m_height);
+    m_volumetrics->Render(gbuffer->GetDepthTex(), camera, lights, m_quadVAO, m_width, m_height);
+    m_ssao->Render(gbuffer->GetDepthTex(), camera, m_quadVAO, m_width, m_height);
     m_ssr->Render(gbuffer->GetDepthTex(), gbuffer->GetNormalTex(), gbuffer->GetMRAOTex(), m_texture, camera, m_quadVAO);
 
     m_shader.Bind();
@@ -182,7 +182,7 @@ void R_PostProcess::Draw(const Camera& camera, R_Lights* lights, R_GBuffer* gbuf
 
     glBindVertexArray(m_quadVAO);
     glBindTextureUnit(0, m_texture);
-    glBindTextureUnit(1, m_depthTexture);
+    glBindTextureUnit(1, gbuffer->GetDepthTex());
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
 }

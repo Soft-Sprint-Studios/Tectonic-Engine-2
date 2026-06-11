@@ -4,7 +4,7 @@
 layout (location = 0) out vec4 gNormal;
 layout (location = 1) out vec4 gAlbedo;
 layout (location = 2) out vec4 gMRAO;
-layout (location = 3) out vec4 gLightmapUV;
+layout (location = 3) out vec2 gLightmapUV;
 
 in vec2 TexCoord;
 in vec2 v_LmCoord;
@@ -76,10 +76,15 @@ void main()
     vec4 mraoh2 = texture(u_mraohMap2, finalUV);
     vec4 mraoh = mix(mraoh1, mraoh2, blend);
 
-    gNormal = vec4(EncodeNormal(worldNormal), tangentNormal.x, u_useBump ? tangentNormal.y : -2.0);
-    gAlbedo = vec4(albedo.rgb, 1.0);
-    gMRAO.rgb = mraoh.rgb; 
-    
-    gLightmapUV.xy = v_LmCoord;
-    gLightmapUV.z = uintBitsToFloat(packHalf2x16(v_LmSize)); 
+    vec2 size_in_pixels = v_LmSize * vec2(4096.0);
+    float packed_w = size_in_pixels.x / 255.0;
+    float packed_h = size_in_pixels.y / 255.0;
+
+    float packed_tx = tangentNormal.x * 0.5 + 0.5;
+    float packed_ty = u_useBump ? (tangentNormal.y * 0.5 + 0.5) : 0.0;
+
+    gNormal = vec4(EncodeNormal(worldNormal), packed_tx, packed_ty);
+    gAlbedo = vec4(albedo.rgb, packed_w);
+    gMRAO = vec4(mraoh.rgb, packed_h);     
+    gLightmapUV = v_LmCoord;
 }

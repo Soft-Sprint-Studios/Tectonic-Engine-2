@@ -93,16 +93,19 @@ void main()
     float roughness = max(mrao.g, 0.05); 
     float ao = mrao.b;
 
-    vec3 lmDataSample = texture(u_gLightmapUV, gBufferUV).rgb;
-    vec2 lmCoord = lmDataSample.xy;
-    vec2 lmSize = unpackHalf2x16(floatBitsToUint(lmDataSample.z));
+    vec2 lmCoord = texture(u_gLightmapUV, gBufferUV).rg;
+    float w_pixels = texture(u_gAlbedo, gBufferUV).a * 255.0;
+    float h_pixels = texture(u_gMRAO, gBufferUV).a * 255.0;
+    vec2 lmSize = vec2(w_pixels, h_pixels) / 4096.0;
 
     vec4 lightmapData = vec4(0.0);
     vec3 dominantL = N;
 
-    if (normalData.w > -1.0)
+    if (normalData.a > 0.02)
     {
-        vec3 tsNormal = vec3(normalData.zw, sqrt(max(0.0, 1.0 - dot(normalData.zw, normalData.zw))));
+        float tx = normalData.z * 2.0 - 1.0;
+        float ty = normalData.w * 2.0 - 1.0;
+        vec3 tsNormal = vec3(tx, ty, sqrt(max(0.0, 1.0 - (tx * tx + ty * ty))));
 
         vec2 LmCoord2 = lmCoord + vec2(lmSize.x, 0.0);
         vec2 LmCoord3 = lmCoord + vec2(0.0, lmSize.y);
