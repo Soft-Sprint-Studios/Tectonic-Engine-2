@@ -142,9 +142,6 @@ void R_Waters::Draw(const Camera& camera, GLuint vao, GLuint lightmap)
         if (def->flowMap) 
             def->flowMap->Bind(3);
 
-        m_shader.SetInt("u_dudvMap", 1);
-        m_shader.SetInt("u_normalMap", 2);
-        m_shader.SetInt("u_flowMap", 3);
         m_shader.SetFloat("u_flowSpeed", def->flowSpeed);
         m_shader.SetInt("u_hasFlow", def->flowMap ? 1 : 0);
 
