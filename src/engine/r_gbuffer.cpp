@@ -53,7 +53,7 @@ bool R_GBuffer::Init(int width, int height)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, m_normalTex, 0);
 
-    // Albedo
+    // Albedo + lightmap width
     glGenTextures(1, &m_albedoTex);
     glBindTexture(GL_TEXTURE_2D, m_albedoTex);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
@@ -61,7 +61,7 @@ bool R_GBuffer::Init(int width, int height)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, m_albedoTex, 0);
 
-    // MRAO (Metallic, Roughness, AO)
+    // MRAO (Metallic, Roughness, AO) + lightmap height
     glGenTextures(1, &m_mraoTex);
     glBindTexture(GL_TEXTURE_2D, m_mraoTex);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
@@ -69,7 +69,7 @@ bool R_GBuffer::Init(int width, int height)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, m_mraoTex, 0);
 
-    // Lightmap UVs + size
+    // Lightmap UVs
     glGenTextures(1, &m_lightmapUVTex);
     glBindTexture(GL_TEXTURE_2D, m_lightmapUVTex);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, width, height, 0, GL_RG, GL_FLOAT, NULL);
