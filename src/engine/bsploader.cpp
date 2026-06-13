@@ -29,6 +29,7 @@
 #include <algorithm>
 #include <map>
 #include <cstring>
+#include "miniz.h"
 
 namespace BSP
 {
@@ -465,43 +466,51 @@ namespace BSP
             const uint8_t* pakData = m_buffer.data() + m_header->lumps[LUMP_PAKFILE].offset;
             int pakLength = m_header->lumps[LUMP_PAKFILE].length;
 
-            std::map<std::string, const uint8_t*> lmFiles, rnmFiles;
-            int offset = 0;
-            while (offset + 30 <= pakLength)
+            std::map<std::string, std::vector<uint8_t>> lmFiles, rnmFiles;
+            mz_zip_archive zip;
+            std::memset(&zip, 0, sizeof(zip));
+
+            if (mz_zip_reader_init_mem(&zip, pakData, pakLength, 0))
             {
-                if (*(uint32_t*)(pakData + offset) != ZIP_IDENT)
-                    break;
-
-                uint16_t nameLen = *(uint16_t*)(pakData + offset + 26);
-                uint16_t extraLen = *(uint16_t*)(pakData + offset + 28);
-                uint32_t compSize = *(uint32_t*)(pakData + offset + 18);
-
-                std::string path((const char*)(pakData + offset + 30), nameLen);
-                std::string name = path.substr(path.find_last_of("/\\") + 1);
-
-                if (*(uint16_t*)(pakData + offset + 8) == 0)
+                int numFiles = mz_zip_reader_get_num_files(&zip);
+                for (int i = 0; i < numFiles; ++i)
                 {
-                    if (name.find("_rnm.ppl") != std::string::npos)
+                    mz_zip_archive_file_stat file_stat;
+                    if (mz_zip_reader_file_stat(&zip, i, &file_stat))
                     {
-                        rnmFiles[name] = pakData + offset + 30 + nameLen + extraLen;
-                    }
-                    else if (name.find(".ppl") != std::string::npos)
-                    {
-                        lmFiles[name] = pakData + offset + 30 + nameLen + extraLen;
+                        std::string path = file_stat.m_filename;
+                        std::string name = path.substr(path.find_last_of("/\\") + 1);
+
+                        size_t size = 0;
+                        void* data = mz_zip_reader_extract_to_heap(&zip, i, &size, 0);
+                        if (data)
+                        {
+                            std::vector<uint8_t> buffer((uint8_t*)data, (uint8_t*)data + size);
+                            mz_free(data);
+
+                            if (name.find("_rnm.ppl") != std::string::npos)
+                            {
+                                rnmFiles[name] = std::move(buffer);
+                            }
+                            else if (name.find(".ppl") != std::string::npos)
+                            {
+                                lmFiles[name] = std::move(buffer);
+                            }
+                        }
                     }
                 }
-
-                offset += 30 + nameLen + extraLen + compSize;
+                mz_zip_reader_end(&zip);
             }
 
             for (size_t i = 0; i < m_map.staticProps.size(); i++)
             {
                 std::string lmName = (m_header->version >= 21) ? "texelslighting_hdr_" + std::to_string(i) + ".ppl" : "texelslighting_" + std::to_string(i) + ".ppl";
-                if (lmFiles.find(lmName) == lmFiles.end()) lmName = "texelslighting_" + std::to_string(i) + ".ppl";
+                if (lmFiles.find(lmName) == lmFiles.end()) 
+                    lmName = "texelslighting_" + std::to_string(i) + ".ppl";
 
                 if (lmFiles.count(lmName))
                 {
-                    const uint8_t* lmFile = lmFiles[lmName];
+                    const uint8_t* lmFile = lmFiles[lmName].data();
 
                     int nMeshes = *(int*)(lmFile + 12);
 
@@ -524,12 +533,13 @@ namespace BSP
                 }
 
                 std::string rnmName = (m_header->version >= 21) ? "texelslighting_hdr_" + std::to_string(i) + "_rnm.ppl" : "texelslighting_" + std::to_string(i) + "_rnm.ppl";
-                if (rnmFiles.find(rnmName) == rnmFiles.end()) rnmName = "texelslighting_" + std::to_string(i) + "_rnm.ppl";
+                if (rnmFiles.find(rnmName) == rnmFiles.end()) 
+                    rnmName = "texelslighting_" + std::to_string(i) + "_rnm.ppl";
 
                 if (rnmFiles.count(rnmName))
                 {
                     m_map.staticProps[i].hasBumpedLighting = true;
-                    const uint8_t* rnmFile = rnmFiles[rnmName];
+                    const uint8_t* rnmFile = rnmFiles[rnmName].data();
                     int nMeshes = *(int*)(rnmFile + 12);
                     if (nMeshes > 0)
                     {
