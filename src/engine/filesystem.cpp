@@ -26,10 +26,13 @@
 #include <SDL3/SDL.h>
 #include <fstream>
 #include <filesystem>
+#include <set>
+#include "miniz.h"
 
 namespace Filesystem
 {
     static std::string s_basePath;
+    static std::vector<mz_zip_archive*> s_archives;
 
     void Init()
     {
@@ -38,6 +41,41 @@ namespace Filesystem
             s_basePath = base;
             SDL_free(const_cast<char*>(base));
         }
+
+        // Scan base directory for any .zip files
+        if (std::filesystem::exists(s_basePath))
+        {
+            for (const auto& entry : std::filesystem::directory_iterator(s_basePath))
+            {
+                std::string ext = entry.path().extension().string();
+                if (ext == ".zip")
+                {
+                    mz_zip_archive* zip = new mz_zip_archive();
+                    std::memset(zip, 0, sizeof(mz_zip_archive));
+
+                    if (mz_zip_reader_init_file(zip, entry.path().string().c_str(), 0))
+                    {
+                        s_archives.push_back(zip);
+                        Console::Log("Filesystem: Mounted archive " + entry.path().filename().string());
+                    }
+                    else
+                    {
+                        Console::Error("Filesystem: Failed to mount archive " + entry.path().filename().string());
+                        delete zip;
+                    }
+                }
+            }
+        }
+    }
+
+    void Shutdown()
+    {
+        for (auto* zip : s_archives)
+        {
+            mz_zip_reader_end(zip);
+            delete zip;
+        }
+        s_archives.clear();
     }
 
     std::string GetFullPath(const std::string& relativePath)
@@ -47,12 +85,30 @@ namespace Filesystem
 
     std::vector<uint8_t> ReadBinary(const std::string& path)
     {
+        // Try to extract from loaded ZIP archives first
+        for (auto* zip : s_archives)
+        {
+            int fileIndex = mz_zip_reader_locate_file(zip, path.c_str(), nullptr, 0);
+            if (fileIndex >= 0)
+            {
+                size_t size = 0;
+                void* p = mz_zip_reader_extract_file_to_heap(zip, path.c_str(), &size, 0);
+                if (p)
+                {
+                    std::vector<uint8_t> buffer((uint8_t*)p, (uint8_t*)p + size);
+                    mz_free(p);
+                    return buffer;
+                }
+            }
+        }
+
+        // Fallback to loose files on disk
         std::string fullPath = GetFullPath(path);
         std::ifstream file(fullPath, std::ios::ate | std::ios::binary);
 
-        if (!file.is_open()) 
+        if (!file.is_open())
         {
-            Console::Error("Failed to open binary file: " + fullPath);
+            Console::Error("Filesystem: Failed to find file: " + path);
             return {};
         }
 
@@ -60,48 +116,78 @@ namespace Filesystem
         std::vector<uint8_t> buffer(fileSize);
         file.seekg(0);
         file.read((char*)buffer.data(), fileSize);
-        
+
         return buffer;
     }
 
     std::string ReadText(const std::string& path)
     {
-        std::string fullPath = GetFullPath(path);
-        std::ifstream file(fullPath);
-
-        if (!file.is_open()) 
+        std::vector<uint8_t> data = ReadBinary(path);
+        if (data.empty())
         {
-            Console::Error("Failed to open text file: " + fullPath);
             return "";
         }
-
-        return std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+        return std::string(data.begin(), data.end());
     }
 
     bool Exists(const std::string& relativePath)
     {
+        for (auto* zip : s_archives)
+        {
+            if (mz_zip_reader_locate_file(zip, relativePath.c_str(), nullptr, 0) >= 0)
+            {
+                return true;
+            }
+        }
+
         return std::filesystem::exists(GetFullPath(relativePath));
     }
 
     void CreateDirectory(const std::string& relativePath)
     {
-        std::filesystem::create_directory(GetFullPath(relativePath));
+        std::filesystem::create_directories(GetFullPath(relativePath));
     }
 
     std::vector<std::string> ListFiles(const std::string& relativePath, const std::string& extension)
     {
-        std::vector<std::string> results;
-        std::string fullPath = GetFullPath(relativePath);
-        if (!std::filesystem::exists(fullPath)) 
-            return results;
+        std::set<std::string> uniqueResults;
 
-        for (const auto& entry : std::filesystem::directory_iterator(fullPath))
+        // Search mounted archives
+        for (auto* zip : s_archives)
         {
-            if (entry.path().extension() == extension)
+            int numFiles = mz_zip_reader_get_num_files(zip);
+            for (int i = 0; i < numFiles; i++)
             {
-                results.push_back(entry.path().stem().string());
+                mz_zip_archive_file_stat file_stat;
+                if (mz_zip_reader_file_stat(zip, i, &file_stat))
+                {
+                    std::string fname = file_stat.m_filename;
+
+                    if (fname.find(relativePath) == 0)
+                    {
+                        if (fname.size() >= extension.size() && fname.compare(fname.size() - extension.size(), extension.size(), extension) == 0)
+                        {
+                            std::filesystem::path p(fname);
+                            uniqueResults.insert(p.stem().string());
+                        }
+                    }
+                }
             }
         }
-        return results;
+
+        // Search loose files on disk
+        std::string fullPath = GetFullPath(relativePath);
+        if (std::filesystem::exists(fullPath))
+        {
+            for (const auto& entry : std::filesystem::directory_iterator(fullPath))
+            {
+                if (entry.path().extension() == extension)
+                {
+                    uniqueResults.insert(entry.path().stem().string());
+                }
+            }
+        }
+
+        return std::vector<std::string>(uniqueResults.begin(), uniqueResults.end());
     }
 }

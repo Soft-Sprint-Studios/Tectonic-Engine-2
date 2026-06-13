@@ -302,6 +302,7 @@ namespace Sys
         Console::Shutdown();
         Discord::Shutdown();
         Networking::Shutdown();
+        Filesystem::Shutdown();
         s_window.Shutdown();
     }
 

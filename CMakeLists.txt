@@ -22,6 +22,7 @@ set(DISCORDRPC_PATH ${CMAKE_SOURCE_DIR}/libs/DiscordRPC)
 set(PLMPEG_PATH ${CMAKE_SOURCE_DIR}/libs/pl_mpeg)
 set(VTFLIB_PATH ${CMAKE_SOURCE_DIR}/libs/VTFLib)
 set(MINISPEC_PATH ${CMAKE_SOURCE_DIR}/libs/minispec)
+set(MINIZ_PATH ${CMAKE_SOURCE_DIR}/libs/miniz)
 
 # ---- Detect 32/64-bit ----
 if(WIN32)
@@ -36,6 +37,7 @@ endif()
 file(GLOB_RECURSE ENGINE_SRC "src/engine/*.cpp")
 file(GLOB_RECURSE ENGINE_HDR "src/engine/*.h" "src/engine/*.hpp")
 set(GLAD_SRC "${GLAD_PATH}/src/glad.c")
+set(MINIZ_SRC "${MINIZ_PATH}/src/miniz.c")
 
 file(GLOB_RECURSE GAME_SRC "src/game/*.cpp")
 file(GLOB_RECURSE GAME_HDR "src/game/*.h")
@@ -54,7 +56,7 @@ target_include_directories(Game PRIVATE
 )
 
 # ---- ENGINE DLL ----
-add_library(Engine SHARED ${ENGINE_SRC} ${ENGINE_HDR} ${GLAD_SRC})
+add_library(Engine SHARED ${ENGINE_SRC} ${ENGINE_HDR} ${GLAD_SRC} ${MINIZ_SRC})
 
 if(UNIX)
     set_target_properties(Engine PROPERTIES INSTALL_RPATH "$ORIGIN")
@@ -76,6 +78,7 @@ target_include_directories(Engine PRIVATE
     ${DISCORDRPC_PATH}/include
     ${PLMPEG_PATH}/include
     ${MINISPEC_PATH}/include
+    ${MINIZ_PATH}/include
     src/engine
     src/game
 )

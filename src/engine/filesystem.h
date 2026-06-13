@@ -29,8 +29,10 @@
 namespace Filesystem
 {
     void Init();
+    void Shutdown();
 
     std::string GetFullPath(const std::string& relativePath);
+
     std::vector<uint8_t> ReadBinary(const std::string& path);
     std::string ReadText(const std::string& path);
 
