@@ -1,4 +1,4 @@
-#include "lights.glsl"
+#include "lights.h"
 in vec2 TexCoords;
 
 layout(binding = 0) uniform sampler2D u_depthTexture;

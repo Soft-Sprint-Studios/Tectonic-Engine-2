@@ -1,4 +1,4 @@
-#include "common.glsl"
+#include "common.h"
 
 out vec4 FragColor;
 in vec2 TexCoords;

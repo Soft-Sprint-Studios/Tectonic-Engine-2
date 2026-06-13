@@ -1,6 +1,6 @@
-#include "lights.glsl"
-#include "common.glsl"
-#include "pbr.glsl"
+#include "lights.h"
+#include "common.h"
+#include "pbr.h"
 
 out vec4 FragColor;
 in vec2 TexCoords;

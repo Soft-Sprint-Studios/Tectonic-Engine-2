@@ -1,5 +1,5 @@
-#include "common.glsl"
-#include "parallax.glsl"
+#include "common.h"
+#include "parallax.h"
 
 layout (location = 0) out vec4 gNormal;
 layout (location = 1) out vec4 gAlbedo;
