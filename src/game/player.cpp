@@ -208,12 +208,31 @@ void Player::Think(float deltaTime)
     if (wantCrouch && !m_isCrouching)
     {
         m_isCrouching = true;
-        m_character->getGhostObject()->getCollisionShape()->setLocalScaling(btVector3(1, 0.5f, 1));
+        m_character->getGhostObject()->getCollisionShape()->setLocalScaling(btVector3(1.0f, 0.5f, 1.0f));
     }
     else if (!wantCrouch && m_isCrouching)
     {
-        m_isCrouching = false;
-        m_character->getGhostObject()->getCollisionShape()->setLocalScaling(btVector3(1, 1.0f, 1));
+        btVector3 rayStart(m_camera->position.x, m_camera->position.y, m_camera->position.z);
+        btVector3 rayEnd(rayStart.x(), rayStart.y() + (cl_view_height.GetFloat() - cl_crouch_height.GetFloat()), rayStart.z());
+
+        btCollisionWorld::ClosestRayResultCallback ceilingCheck(rayStart, rayEnd);
+        ceilingCheck.m_collisionFilterGroup = Physics::COL_PLAYER;
+        ceilingCheck.m_collisionFilterMask = Physics::COL_WORLD;
+        Physics::GetDynamicsWorld()->rayTest(rayStart, rayEnd, ceilingCheck);
+
+        if (!ceilingCheck.hasHit())
+        {
+            m_isCrouching = false;
+            m_character->getGhostObject()->getCollisionShape()->setLocalScaling(btVector3(1.0f, 1.0f, 1.0f));
+
+            btTransform trans = m_character->getGhostObject()->getWorldTransform();
+            btVector3 pos = trans.getOrigin();
+            float heightDelta = (cl_view_height.GetFloat() - cl_crouch_height.GetFloat()) * 0.5f;
+            pos.setY(pos.y() + heightDelta);
+            trans.setOrigin(pos);
+            m_character->getGhostObject()->setWorldTransform(trans);
+            m_character->reset(Physics::GetDynamicsWorld());
+        }
     }
 
     // OnPress api
