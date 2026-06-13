@@ -824,7 +824,7 @@ namespace BSP
                         vert.lm_uv = glm::vec2((ax + lu + 0.5f) / m_map.lightmapAtlasWidth, (ay + lv + 0.5f) / m_map.lightmapAtlasHeight);
                         vert.lm_size = glm::vec2((float)lw / m_map.lightmapAtlasWidth, (float)lh / m_map.lightmapAtlasHeight);
                     }
-                    vert.alpha = (255.0f - dv.alpha) / 255.0f;
+                    vert.alpha = dv.alpha / 255.0f;
                 }
             }
 
