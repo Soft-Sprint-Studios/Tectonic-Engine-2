@@ -27,6 +27,7 @@
 #include <fstream>
 #include <filesystem>
 #include <set>
+#include <cstring>
 #include "miniz.h"
 
 namespace Filesystem
