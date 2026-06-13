@@ -291,6 +291,148 @@ namespace AssetTool
         }
     }
 
+    bool LoadGLB(const std::string& glbPath, cgltf_data*& outData)
+    {
+        cgltf_options options = {};
+        if (cgltf_parse_file(&options, glbPath.c_str(), &outData) != cgltf_result_success)
+        {
+            return false;
+        }
+        if (cgltf_load_buffers(&options, outData, glbPath.c_str()) != cgltf_result_success)
+        {
+            cgltf_free(outData);
+            outData = nullptr;
+            return false;
+        }
+        return true;
+    }
+
+    bool CompressToDDS(const std::string& inputPng, const std::string& outputDds)
+    {
+        std::string cmd = "\"\"" + g_config.nvcompressPath + "\" -bc3 \"" + inputPng + "\" \"" + outputDds + "\"\"";
+        return system(cmd.c_str()) == 0;
+    }
+
+    bool ExtractMaterialTextures(cgltf_material& mat, const std::string& defaultName, const std::filesystem::path& workDir, MaterialTexturePaths& outPaths)
+    {
+        std::string matName = (mat.name) ? mat.name : defaultName;
+        std::replace(matName.begin(), matName.end(), ' ', '_');
+
+        int w = 0;
+        int h = 0;
+
+        if (mat.has_pbr_metallic_roughness && mat.pbr_metallic_roughness.base_color_texture.texture)
+        {
+            unsigned char* diff = LoadBufferImage(mat.pbr_metallic_roughness.base_color_texture.texture, &w, &h);
+            if (diff)
+            {
+                outPaths.diffuse = matName + "_diffuse.dds";
+                std::string tempPng = (workDir / (matName + "_diffuse.png")).string();
+                stbi_write_png(tempPng.c_str(), w, h, 4, diff, w * 4);
+                ConvertToVTF(matName + "_diffuse", diff, w, h, workDir, false);
+                stbi_image_free(diff);
+
+                CompressToDDS(tempPng, (workDir / outPaths.diffuse).string());
+                std::filesystem::remove(tempPng);
+            }
+        }
+
+        if (mat.normal_texture.texture)
+        {
+            int nW = 0;
+            int nH = 0;
+            unsigned char* norm = LoadBufferImage(mat.normal_texture.texture, &nW, &nH);
+            if (norm)
+            {
+                outPaths.normal = matName + "_normal.dds";
+                std::string tempPng = (workDir / (matName + "_normal.png")).string();
+
+                for (int j = 0; j < nW * nH * 4; j += 4)
+                {
+                    norm[j + 3] = 255;
+                }
+
+                stbi_write_png(tempPng.c_str(), nW, nH, 4, norm, nW * 4);
+                ConvertToVTF(matName + "_normal", norm, nW, nH, workDir, true);
+                stbi_image_free(norm);
+
+                CompressToDDS(tempPng, (workDir / outPaths.normal).string());
+                std::filesystem::remove(tempPng);
+
+                if (w == 0 || h == 0)
+                {
+                    w = nW;
+                    h = nH;
+                }
+            }
+        }
+
+        if (w > 0 && h > 0)
+        {
+            outPaths.mraoh = matName + "_mraoh.dds";
+            unsigned char* mraoh = (unsigned char*)malloc(w * h * 4);
+
+            float mFactor = mat.has_pbr_metallic_roughness ? mat.pbr_metallic_roughness.metallic_factor : 0.0f;
+            float rFactor = mat.has_pbr_metallic_roughness ? mat.pbr_metallic_roughness.roughness_factor : 0.5f;
+
+            for (int j = 0; j < w * h * 4; j += 4)
+            {
+                mraoh[j] = (unsigned char)(mFactor * 255.0f);
+                mraoh[j + 1] = (unsigned char)(rFactor * 255.0f);
+                mraoh[j + 2] = 255;
+                mraoh[j + 3] = 255;
+            }
+
+            if (mat.has_pbr_metallic_roughness && mat.pbr_metallic_roughness.metallic_roughness_texture.texture)
+            {
+                int tW = 0;
+                int tH = 0;
+                unsigned char* pbr = LoadBufferImage(mat.pbr_metallic_roughness.metallic_roughness_texture.texture, &tW, &tH);
+                if (pbr)
+                {
+                    if (tW == w && tH == h)
+                    {
+                        for (int j = 0; j < w * h * 4; j += 4)
+                        {
+                            float texM = pbr[j + 2] / 255.0f;
+                            float texR = pbr[j + 1] / 255.0f;
+                            mraoh[j] = (unsigned char)(texM * mFactor * 255.0f);
+                            mraoh[j + 1] = (unsigned char)(texR * rFactor * 255.0f);
+                        }
+                    }
+                    stbi_image_free(pbr);
+                }
+            }
+
+            if (mat.occlusion_texture.texture)
+            {
+                int tW = 0;
+                int tH = 0;
+                unsigned char* occ = LoadBufferImage(mat.occlusion_texture.texture, &tW, &tH);
+                if (occ)
+                {
+                    if (tW == w && tH == h)
+                    {
+                        for (int j = 0; j < w * h * 4; j += 4)
+                        {
+                            mraoh[j + 2] = occ[j];
+                        }
+                    }
+                    stbi_image_free(occ);
+                }
+            }
+
+            std::string tempPng = (workDir / (matName + "_mraoh.png")).string();
+            stbi_write_png(tempPng.c_str(), w, h, 4, mraoh, w * 4);
+            free(mraoh);
+
+            CompressToDDS(tempPng, (workDir / outPaths.mraoh).string());
+            std::filesystem::remove(tempPng);
+        }
+
+        return true;
+    }
+
     void ProcessModel(const std::string& glbPath)
     {
         std::filesystem::path p(glbPath);
@@ -303,14 +445,11 @@ namespace AssetTool
         std::filesystem::path workDir = std::filesystem::current_path() / "import_work" / modelName;
         std::filesystem::create_directories(workDir);
 
-        cgltf_options options = {};
         cgltf_data* data = nullptr;
-
-        if (cgltf_parse_file(&options, glbPath.c_str(), &data) != cgltf_result_success)
+        if (!LoadGLB(glbPath, data))
         {
             return;
         }
-        cgltf_load_buffers(&options, data, glbPath.c_str());
 
         std::string qcPath = (workDir / (modelName + ".qc")).string();
         std::ofstream qcFile(qcPath);
@@ -324,135 +463,33 @@ namespace AssetTool
         for (cgltf_size i = 0; i < data->materials_count; ++i)
         {
             cgltf_material& mat = data->materials[i];
-            std::string matName = (mat.name) ? mat.name : modelName;
-            std::replace(matName.begin(), matName.end(), ' ', '_');
-
-            int w = 0, h = 0;
             MaterialTexturePaths paths;
 
-            if (mat.has_pbr_metallic_roughness && mat.pbr_metallic_roughness.base_color_texture.texture)
+            if (ExtractMaterialTextures(mat, modelName, workDir, paths))
             {
-                if (unsigned char* diff = LoadBufferImage(mat.pbr_metallic_roughness.base_color_texture.texture, &w, &h))
+                std::string matName = (mat.name) ? mat.name : modelName;
+                std::replace(matName.begin(), matName.end(), ' ', '_');
+
+                std::string vmtPath = (workDir / (matName + ".vmt")).string();
+                std::ofstream vmtFile(vmtPath);
+                vmtFile << "\"VertexLitGeneric\"\n{\n\t\"$basetexture\" \"models/tectonic/" << modelName << "/" << matName << "_diffuse\"\n";
+                vmtFile << "\t\"$bumpmap\" \"models/tectonic/" << modelName << "/" << matName << "_normal\"\n}\n";
+                vmtFile.close();
+
+                std::filesystem::path sdkMaterialDir = std::filesystem::path(g_config.sdkGamePath) / "materials/models/tectonic" / modelName;
+                std::filesystem::create_directories(sdkMaterialDir);
+
+                for (const auto& entry : std::filesystem::directory_iterator(workDir))
                 {
-                    paths.diffuse = matName + "_diffuse.dds";
-                    std::string tempPng = (workDir / (matName + "_diffuse.png")).string();
-                    stbi_write_png(tempPng.c_str(), w, h, 4, diff, w * 4);
-                    ConvertToVTF(matName + "_diffuse", diff, w, h, workDir, false);
-                    stbi_image_free(diff);
-
-                    std::string outDds = (workDir / paths.diffuse).string();
-                    std::string cmd = "\"\"" + g_config.nvcompressPath + "\" -bc3 \"" + tempPng + "\" \"" + outDds + "\"\"";
-                    system(cmd.c_str());
-                    std::filesystem::remove(tempPng);
-                }
-            }
-
-            if (mat.normal_texture.texture)
-            {
-                int nW, nH;
-                if (unsigned char* norm = LoadBufferImage(mat.normal_texture.texture, &nW, &nH))
-                {
-                    paths.normal = matName + "_normal.dds";
-                    std::string tempPng = (workDir / (matName + "_normal.png")).string();
-
-                    for (int j = 0; j < nW * nH * 4; j += 4)
+                    std::string ext = entry.path().extension().string();
+                    if (ext == ".vmt" || ext == ".vtf")
                     {
-                        norm[j + 3] = 255;
-                    }
-
-                    stbi_write_png(tempPng.c_str(), nW, nH, 4, norm, nW * 4);
-                    ConvertToVTF(matName + "_normal", norm, nW, nH, workDir, true);
-                    stbi_image_free(norm);
-
-                    std::string outDds = (workDir / paths.normal).string();
-                    std::string cmd = "\"\"" + g_config.nvcompressPath + "\" -bc3 \"" + tempPng + "\" \"" + outDds + "\"\"";
-                    system(cmd.c_str());
-                    std::filesystem::remove(tempPng);
-
-                    if (w == 0 || h == 0) { w = nW; h = nH; }
-                }
-            }
-
-            if (w > 0 && h > 0)
-            {
-                paths.mraoh = matName + "_mraoh.dds";
-                unsigned char* mraoh = (unsigned char*)malloc(w * h * 4);
-
-                float mFactor = mat.has_pbr_metallic_roughness ? mat.pbr_metallic_roughness.metallic_factor : 0.0f;
-                float rFactor = mat.has_pbr_metallic_roughness ? mat.pbr_metallic_roughness.roughness_factor : 0.5f;
-
-                for (int j = 0; j < w * h * 4; j += 4)
-                {
-                    mraoh[j] = (unsigned char)(mFactor * 255.0f);
-                    mraoh[j + 1] = (unsigned char)(rFactor * 255.0f);
-                    mraoh[j + 2] = 255;
-                    mraoh[j + 3] = 255;
-                }
-
-                if (mat.has_pbr_metallic_roughness && mat.pbr_metallic_roughness.metallic_roughness_texture.texture)
-                {
-                    int tW, tH;
-                    if (unsigned char* pbr = LoadBufferImage(mat.pbr_metallic_roughness.metallic_roughness_texture.texture, &tW, &tH))
-                    {
-                        if (tW == w && tH == h)
-                        {
-                            for (int j = 0; j < w * h * 4; j += 4)
-                            {
-                                float texM = pbr[j + 2] / 255.0f;
-                                float texR = pbr[j + 1] / 255.0f;
-                                mraoh[j] = (unsigned char)(texM * mFactor * 255.0f);
-                                mraoh[j + 1] = (unsigned char)(texR * rFactor * 255.0f);
-                            }
-                        }
-                        stbi_image_free(pbr);
+                        std::filesystem::copy_file(entry.path(), sdkMaterialDir / entry.path().filename(), std::filesystem::copy_options::overwrite_existing);
                     }
                 }
 
-                if (mat.occlusion_texture.texture)
-                {
-                    int tW, tH;
-                    if (unsigned char* occ = LoadBufferImage(mat.occlusion_texture.texture, &tW, &tH))
-                    {
-                        if (tW == w && tH == h)
-                        {
-                            for (int j = 0; j < w * h * 4; j += 4)
-                            {
-                                mraoh[j + 2] = occ[j];
-                            }
-                        }
-                        stbi_image_free(occ);
-                    }
-                }
-
-                std::string tempPng = (workDir / (matName + "_mraoh.png")).string();
-                stbi_write_png(tempPng.c_str(), w, h, 4, mraoh, w * 4);
-                free(mraoh);
-
-                std::string outDds = (workDir / paths.mraoh).string();
-                std::string cmd = "\"\"" + g_config.nvcompressPath + "\" -bc3 \"" + tempPng + "\" \"" + outDds + "\"\"";
-                system(cmd.c_str());
-                std::filesystem::remove(tempPng);
+                UpdateGlobalMaterialDef(matName, paths, modelName);
             }
-
-            std::string vmtPath = (workDir / (matName + ".vmt")).string();
-            std::ofstream vmtFile(vmtPath);
-            vmtFile << "\"VertexLitGeneric\"\n{\n\t\"$basetexture\" \"models/tectonic/" << modelName << "/" << matName << "_diffuse\"\n";
-            vmtFile << "\t\"$bumpmap\" \"models/tectonic/" << modelName << "/" << matName << "_normal\"\n}\n";
-            vmtFile.close();
-
-            std::filesystem::path sdkMaterialDir = std::filesystem::path(g_config.sdkGamePath) / "materials/models/tectonic" / modelName;
-            std::filesystem::create_directories(sdkMaterialDir);
-
-            for (const auto& entry : std::filesystem::directory_iterator(workDir))
-            {
-                std::string ext = entry.path().extension().string();
-                if (ext == ".vmt" || ext == ".vtf")
-                {
-                    std::filesystem::copy_file(entry.path(), sdkMaterialDir / entry.path().filename(), std::filesystem::copy_options::overwrite_existing);
-                }
-            }
-
-            UpdateGlobalMaterialDef(matName, paths, modelName);
         }
 
         std::string cmd = "\"\"" + g_config.sdkBinPath + "/studiomdl.exe\" -game \"" + g_config.sdkGamePath + "\" \"" + qcPath + "\"\"";
@@ -474,303 +511,57 @@ namespace AssetTool
         std::filesystem::path workDir = std::filesystem::current_path() / "import_work" / (modelName + "_tex");
         std::filesystem::create_directories(workDir);
 
-        cgltf_options options = {};
         cgltf_data* data = nullptr;
-
-        if (cgltf_parse_file(&options, glbPath.c_str(), &data) != cgltf_result_success)
+        if (!LoadGLB(glbPath, data))
         {
             return;
         }
-        cgltf_load_buffers(&options, data, glbPath.c_str());
 
         stbi_flip_vertically_on_write(1);
         for (cgltf_size i = 0; i < data->materials_count; ++i)
         {
             cgltf_material& mat = data->materials[i];
-            if (!mat.name)
-            {
-                continue;
-            }
-
-            std::string matName = mat.name;
-            std::replace(matName.begin(), matName.end(), ' ', '_');
-
-            int w = 0, h = 0;
             MaterialTexturePaths paths;
 
-            if (mat.has_pbr_metallic_roughness && mat.pbr_metallic_roughness.base_color_texture.texture)
+            if (ExtractMaterialTextures(mat, modelName, workDir, paths))
             {
-                if (unsigned char* diff = LoadBufferImage(mat.pbr_metallic_roughness.base_color_texture.texture, &w, &h))
+                std::string matName = (mat.name) ? mat.name : modelName;
+                std::replace(matName.begin(), matName.end(), ' ', '_');
+
+                std::string vmtPath = (workDir / (matName + ".vmt")).string();
+                std::ofstream vmtFile(vmtPath);
+                if (vmtFile.is_open())
                 {
-                    paths.diffuse = matName + "_diffuse.dds";
-                    std::string tempPng = (workDir / (matName + "_diffuse.png")).string();
-                    stbi_write_png(tempPng.c_str(), w, h, 4, diff, w * 4);
-                    ConvertToVTF(matName + "_diffuse", diff, w, h, workDir, false);
-                    stbi_image_free(diff);
-
-                    std::string outDds = (workDir / paths.diffuse).string();
-                    std::string cmd = "\"\"" + g_config.nvcompressPath + "\" -bc3 \"" + tempPng + "\" \"" + outDds + "\"\"";
-                    system(cmd.c_str());
-                    std::filesystem::remove(tempPng);
-                }
-            }
-
-            if (mat.normal_texture.texture)
-            {
-                int nW, nH;
-                if (unsigned char* norm = LoadBufferImage(mat.normal_texture.texture, &nW, &nH))
-                {
-                    paths.normal = matName + "_normal.dds";
-                    std::string tempPng = (workDir / (matName + "_normal.png")).string();
-
-                    for (int j = 0; j < nW * nH * 4; j += 4)
+                    vmtFile << "\"LightmappedGeneric\"\n{\n";
+                    vmtFile << "\t\"$basetexture\" \"tectonic_world/" << matName << "_diffuse\"\n";
+                    if (!paths.normal.empty())
                     {
-                        norm[j + 3] = 255;
+                        vmtFile << "\t\"$bumpmap\" \"tectonic_world/" << matName << "_normal\"\n";
                     }
-
-                    stbi_write_png(tempPng.c_str(), nW, nH, 4, norm, nW * 4);
-                    ConvertToVTF(matName + "_normal", norm, nW, nH, workDir, true);
-                    stbi_image_free(norm);
-
-                    std::string outDds = (workDir / paths.normal).string();
-                    std::string cmd = "\"\"" + g_config.nvcompressPath + "\" -bc3 \"" + tempPng + "\" \"" + outDds + "\"\"";
-                    system(cmd.c_str());
-                    std::filesystem::remove(tempPng);
-
-                    if (w == 0 || h == 0) 
-                    { 
-                        w = nW;
-                        h = nH; 
-                    }
-                }
-            }
-
-            if (w > 0 && h > 0)
-            {
-                paths.mraoh = matName + "_mraoh.dds";
-                unsigned char* mraoh = (unsigned char*)malloc(w * h * 4);
-
-                float mFactor = mat.has_pbr_metallic_roughness ? mat.pbr_metallic_roughness.metallic_factor : 0.0f;
-                float rFactor = mat.has_pbr_metallic_roughness ? mat.pbr_metallic_roughness.roughness_factor : 0.5f;
-
-                for (int j = 0; j < w * h * 4; j += 4)
-                {
-                    mraoh[j] = (unsigned char)(mFactor * 255.0f);
-                    mraoh[j + 1] = (unsigned char)(rFactor * 255.0f);
-                    mraoh[j + 2] = 255;
-                    mraoh[j + 3] = 255;
+                    vmtFile << "\t\"$surfaceprop\" \"concrete\"\n";
+                    vmtFile << "}\n";
+                    vmtFile.close();
                 }
 
-                if (mat.has_pbr_metallic_roughness && mat.pbr_metallic_roughness.metallic_roughness_texture.texture)
+                std::filesystem::path sdkMaterialDir = std::filesystem::path(g_config.sdkGamePath) / "materials/tectonic_world";
+                std::filesystem::create_directories(sdkMaterialDir);
+
+                for (const auto& entry : std::filesystem::directory_iterator(workDir))
                 {
-                    int tW, tH;
-                    if (unsigned char* pbr = LoadBufferImage(mat.pbr_metallic_roughness.metallic_roughness_texture.texture, &tW, &tH))
+                    std::string ext = entry.path().extension().string();
+                    if (ext == ".vmt" || ext == ".vtf")
                     {
-                        if (tW == w && tH == h)
-                        {
-                            for (int j = 0; j < w * h * 4; j += 4)
-                            {
-                                float texM = pbr[j + 2] / 255.0f;
-                                float texR = pbr[j + 1] / 255.0f;
-                                mraoh[j] = (unsigned char)(texM * mFactor * 255.0f);
-                                mraoh[j + 1] = (unsigned char)(texR * rFactor * 255.0f);
-                            }
-                        }
-                        stbi_image_free(pbr);
+                        std::filesystem::copy_file(entry.path(), sdkMaterialDir / entry.path().filename(), std::filesystem::copy_options::overwrite_existing);
                     }
                 }
 
-                if (mat.occlusion_texture.texture)
-                {
-                    int tW, tH;
-                    if (unsigned char* occ = LoadBufferImage(mat.occlusion_texture.texture, &tW, &tH))
-                    {
-                        if (tW == w && tH == h)
-                        {
-                            for (int j = 0; j < w * h * 4; j += 4)
-                            {
-                                mraoh[j + 2] = occ[j];
-                            }
-                        }
-                        stbi_image_free(occ);
-                    }
-                }
-
-                std::string tempPng = (workDir / (matName + "_mraoh.png")).string();
-                stbi_write_png(tempPng.c_str(), w, h, 4, mraoh, w * 4);
-                free(mraoh);
-
-                std::string outDds = (workDir / paths.mraoh).string();
-                std::string cmd = "\"\"" + g_config.nvcompressPath + "\" -bc3 \"" + tempPng + "\" \"" + outDds + "\"\"";
-                system(cmd.c_str());
-                std::filesystem::remove(tempPng);
+                UpdateGlobalMaterialDef(matName, paths, "tectonic_world");
             }
-
-            std::string vmtPath = (workDir / (matName + ".vmt")).string();
-            std::ofstream vmtFile(vmtPath);
-            if (vmtFile.is_open())
-            {
-                vmtFile << "\"LightmappedGeneric\"\n{\n";
-                vmtFile << "\t\"$basetexture\" \"tectonic_world/" << matName << "_diffuse\"\n";
-                if (!paths.normal.empty())
-                {
-                    vmtFile << "\t\"$bumpmap\" \"tectonic_world/" << matName << "_normal\"\n";
-                }
-                vmtFile << "\t\"$surfaceprop\" \"concrete\"\n";
-                vmtFile << "}\n";
-                vmtFile.close();
-            }
-
-            std::filesystem::path sdkMaterialDir = std::filesystem::path(g_config.sdkGamePath) / "materials/tectonic_world";
-            std::filesystem::create_directories(sdkMaterialDir);
-
-            for (const auto& entry : std::filesystem::directory_iterator(workDir))
-            {
-                std::string ext = entry.path().extension().string();
-                if (ext == ".vmt" || ext == ".vtf")
-                {
-                    std::filesystem::copy_file(entry.path(), sdkMaterialDir / entry.path().filename(), std::filesystem::copy_options::overwrite_existing);
-                }
-            }
-
-            UpdateGlobalMaterialDef(matName, paths, "tectonic_world");
         }
 
         CopyToEngine(modelName, "", workDir, "tectonic_world");
         cgltf_free(data);
         std::cout << "--- Texture Import Complete ---" << std::endl;
-    }
-
-    bool ExtractGLBTextures(const std::string& glbPath, const std::filesystem::path& workDir, std::string& outMatName, MaterialTexturePaths& outPaths)
-    {
-        cgltf_options options = {};
-        cgltf_data* data = nullptr;
-
-        if (cgltf_parse_file(&options, glbPath.c_str(), &data) != cgltf_result_success)
-        {
-            return false;
-        }
-        cgltf_load_buffers(&options, data, glbPath.c_str());
-
-        stbi_flip_vertically_on_write(1);
-        if (data->materials_count == 0)
-        {
-            cgltf_free(data);
-            return false;
-        }
-
-        cgltf_material& mat = data->materials[0];
-        outMatName = (mat.name) ? mat.name : std::filesystem::path(glbPath).stem().string();
-        std::replace(outMatName.begin(), outMatName.end(), ' ', '_');
-
-        int w = 0, h = 0;
-
-        if (mat.has_pbr_metallic_roughness && mat.pbr_metallic_roughness.base_color_texture.texture)
-        {
-            if (unsigned char* diff = LoadBufferImage(mat.pbr_metallic_roughness.base_color_texture.texture, &w, &h))
-            {
-                outPaths.diffuse = outMatName + "_diffuse.dds";
-                std::string tempPng = (workDir / (outMatName + "_diffuse.png")).string();
-                stbi_write_png(tempPng.c_str(), w, h, 4, diff, w * 4);
-                ConvertToVTF(outMatName + "_diffuse", diff, w, h, workDir, false);
-                stbi_image_free(diff);
-
-                std::string outDds = (workDir / outPaths.diffuse).string();
-                std::string cmd = "\"\"" + g_config.nvcompressPath + "\" -bc3 \"" + tempPng + "\" \"" + outDds + "\"\"";
-                system(cmd.c_str());
-                std::filesystem::remove(tempPng);
-            }
-        }
-
-        if (mat.normal_texture.texture)
-        {
-            int nW, nH;
-            if (unsigned char* norm = LoadBufferImage(mat.normal_texture.texture, &nW, &nH))
-            {
-                outPaths.normal = outMatName + "_normal.dds";
-                std::string tempPng = (workDir / (outMatName + "_normal.png")).string();
-
-                for (int j = 0; j < nW * nH * 4; j += 4)
-                {
-                    norm[j + 3] = 255;
-                }
-
-                stbi_write_png(tempPng.c_str(), nW, nH, 4, norm, nW * 4);
-                ConvertToVTF(outMatName + "_normal", norm, nW, nH, workDir, true);
-                stbi_image_free(norm);
-
-                std::string outDds = (workDir / outPaths.normal).string();
-                std::string cmd = "\"\"" + g_config.nvcompressPath + "\" -bc3 \"" + tempPng + "\" \"" + outDds + "\"\"";
-                system(cmd.c_str());
-                std::filesystem::remove(tempPng);
-
-                if (w == 0 || h == 0) { w = nW; h = nH; }
-            }
-        }
-
-        if (w > 0 && h > 0)
-        {
-            outPaths.mraoh = outMatName + "_mraoh.dds";
-            unsigned char* mraoh = (unsigned char*)malloc(w * h * 4);
-
-            float mFactor = mat.has_pbr_metallic_roughness ? mat.pbr_metallic_roughness.metallic_factor : 0.0f;
-            float rFactor = mat.has_pbr_metallic_roughness ? mat.pbr_metallic_roughness.roughness_factor : 0.5f;
-
-            for (int j = 0; j < w * h * 4; j += 4)
-            {
-                mraoh[j] = (unsigned char)(mFactor * 255.0f);
-                mraoh[j + 1] = (unsigned char)(rFactor * 255.0f);
-                mraoh[j + 2] = 255;
-                mraoh[j + 3] = 255;
-            }
-
-            if (mat.has_pbr_metallic_roughness && mat.pbr_metallic_roughness.metallic_roughness_texture.texture)
-            {
-                int tW, tH;
-                if (unsigned char* pbr = LoadBufferImage(mat.pbr_metallic_roughness.metallic_roughness_texture.texture, &tW, &tH))
-                {
-                    if (tW == w && tH == h)
-                    {
-                        for (int j = 0; j < w * h * 4; j += 4)
-                        {
-                            float texM = pbr[j + 2] / 255.0f;
-                            float texR = pbr[j + 1] / 255.0f;
-                            mraoh[j] = (unsigned char)(texM * mFactor * 255.0f);
-                            mraoh[j + 1] = (unsigned char)(texR * rFactor * 255.0f);
-                        }
-                    }
-                    stbi_image_free(pbr);
-                }
-            }
-
-            if (mat.occlusion_texture.texture)
-            {
-                int tW, tH;
-                if (unsigned char* occ = LoadBufferImage(mat.occlusion_texture.texture, &tW, &tH))
-                {
-                    if (tW == w && tH == h)
-                    {
-                        for (int j = 0; j < w * h * 4; j += 4)
-                        {
-                            mraoh[j + 2] = occ[j];
-                        }
-                    }
-                    stbi_image_free(occ);
-                }
-            }
-
-            std::string tempPng = (workDir / (outMatName + "_mraoh.png")).string();
-            stbi_write_png(tempPng.c_str(), w, h, 4, mraoh, w * 4);
-            free(mraoh);
-
-            std::string outDds = (workDir / outPaths.mraoh).string();
-            std::string cmd = "\"\"" + g_config.nvcompressPath + "\" -bc3 \"" + tempPng + "\" \"" + outDds + "\"\"";
-            system(cmd.c_str());
-            std::filesystem::remove(tempPng);
-        }
-
-        cgltf_free(data);
-        return true;
     }
 
     void UpdateGlobalBlendMaterialDef(const std::string& blendMatName, const MaterialTexturePaths& paths1, const MaterialTexturePaths& paths2, const std::string& subFolder)
@@ -795,18 +586,30 @@ namespace AssetTool
         if (outFile.is_open())
         {
             outFile << "\n\"" << fullKey << "\"\n{\n";
-            if (!paths1.diffuse.empty()) 
+            if (!paths1.diffuse.empty())
+            {
                 outFile << "\tdiffuse = \"" << subFolder << "/" << paths1.diffuse << "\"\n";
-            if (!paths1.normal.empty())  
+            }
+            if (!paths1.normal.empty())
+            {
                 outFile << "\tnormal = \"" << subFolder << "/" << paths1.normal << "\"\n";
-            if (!paths1.mraoh.empty())   
+            }
+            if (!paths1.mraoh.empty())
+            {
                 outFile << "\tmraoh = \"" << subFolder << "/" << paths1.mraoh << "\"\n";
-            if (!paths2.diffuse.empty()) 
+            }
+            if (!paths2.diffuse.empty())
+            {
                 outFile << "\tdiffuse2 = \"" << subFolder << "/" << paths2.diffuse << "\"\n";
-            if (!paths2.normal.empty())  
+            }
+            if (!paths2.normal.empty())
+            {
                 outFile << "\tnormal2 = \"" << subFolder << "/" << paths2.normal << "\"\n";
-            if (!paths2.mraoh.empty())  
+            }
+            if (!paths2.mraoh.empty())
+            {
                 outFile << "\tmraoh2 = \"" << subFolder << "/" << paths2.mraoh << "\"\n";
+            }
             outFile << "}\n";
         }
     }
@@ -827,18 +630,40 @@ namespace AssetTool
         std::filesystem::path workDir = std::filesystem::current_path() / "import_work" / (blendName + "_blend");
         std::filesystem::create_directories(workDir);
 
-        MaterialTexturePaths paths1;
-        std::string matName1;
-        if (!ExtractGLBTextures(glbPath1, workDir, matName1, paths1))
+        cgltf_data* data1 = nullptr;
+        cgltf_data* data2 = nullptr;
+
+        if (!LoadGLB(glbPath1, data1) || !LoadGLB(glbPath2, data2))
         {
+            if (data1)
+            {
+                cgltf_free(data1);
+            }
+            if (data2)
+            {
+                cgltf_free(data2);
+            }
             return;
         }
 
-        MaterialTexturePaths paths2;
-        std::string matName2;
-        if (!ExtractGLBTextures(glbPath2, workDir, matName2, paths2))
+        stbi_flip_vertically_on_write(1);
+
+        MaterialTexturePaths paths1;
+        std::string matName1 = name1;
+        if (data1->materials_count > 0)
         {
-            return;
+            ExtractMaterialTextures(data1->materials[0], name1, workDir, paths1);
+            matName1 = (data1->materials[0].name) ? data1->materials[0].name : name1;
+            std::replace(matName1.begin(), matName1.end(), ' ', '_');
+        }
+
+        MaterialTexturePaths paths2;
+        std::string matName2 = name2;
+        if (data2->materials_count > 0)
+        {
+            ExtractMaterialTextures(data2->materials[0], name2, workDir, paths2);
+            matName2 = (data2->materials[0].name) ? data2->materials[0].name : name2;
+            std::replace(matName2.begin(), matName2.end(), ' ', '_');
         }
 
         std::string vmtPath = (workDir / (blendName + ".vmt")).string();
@@ -876,6 +701,10 @@ namespace AssetTool
 
         UpdateGlobalBlendMaterialDef(blendName, paths1, paths2, "tectonic_world");
         CopyToEngine(blendName, "", workDir, "tectonic_world");
+
+        cgltf_free(data1);
+        cgltf_free(data2);
+
         std::cout << "--- Blended Texture Import Complete ---" << std::endl;
     }
 
@@ -904,12 +733,18 @@ std::vector<std::string> CollectFiles(const std::filesystem::path& inputPath, co
 {
     std::vector<std::string> files;
     std::string targetExt;
-    if (mode == "-sound") 
+    if (mode == "-sound")
+    {
         targetExt = ".mp3";
-    else if (mode == "-model" || mode == "-texture") 
+    }
+    else if (mode == "-model" || mode == "-texture")
+    {
         targetExt = ".glb";
-    else return 
-        files;
+    }
+    else
+    {
+        return files;
+    }
 
     if (std::filesystem::is_directory(inputPath))
     {
@@ -981,8 +816,7 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    std::filesystem::path importRoot =
-        std::filesystem::current_path() / "import_work";
+    std::filesystem::path importRoot = std::filesystem::current_path() / "import_work";
 
     if (std::filesystem::exists(importRoot))
     {
