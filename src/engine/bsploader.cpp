@@ -602,9 +602,9 @@ namespace BSP
                     if (isModel && format == 29)
                     {
                         const float* pf = (const float*)src + (y * w + x) * 4;
-                        m_map.lightmapAtlas[dest + 0] = pow(pf[0], 2.2f) * 2.0f;
-                        m_map.lightmapAtlas[dest + 1] = pow(pf[1], 2.2f) * 2.0f;
-                        m_map.lightmapAtlas[dest + 2] = pow(pf[2], 2.2f) * 2.0f;
+                        m_map.lightmapAtlas[dest + 0] = std::pow(pf[0], 2.2f);
+                        m_map.lightmapAtlas[dest + 1] = std::pow(pf[1], 2.2f);
+                        m_map.lightmapAtlas[dest + 2] = std::pow(pf[2], 2.2f);
                         m_map.lightmapAtlas[dest + 3] = pf[3];
                     }
                     else if (isModel)
