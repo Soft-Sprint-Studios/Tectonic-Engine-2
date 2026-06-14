@@ -1,3 +1,5 @@
+#include "pbr.h"
+
 in vec3 v_FragPos;
 in vec2 v_TexCoord;
 in vec2 v_LmCoord;
@@ -12,13 +14,10 @@ layout(binding = 4) uniform sampler2D u_lightmap;
 
 uniform float u_flowSpeed;
 uniform bool u_hasFlow;
-
 uniform mat4 u_reflectView;
 uniform mat4 u_reflectProj;
-
 uniform vec3 u_viewPos;
 uniform float u_time;
-
 uniform bool u_useBump;
 
 out vec4 FragColor;
@@ -26,10 +25,6 @@ out vec4 FragColor;
 const float waveStrength = 0.02;
 const float normalTiling = 1.0;
 const float normalSpeed = 0.015;
-
-const vec3 basis0 = vec3(0.81649658, 0.0, 0.57735027);
-const vec3 basis1 = vec3(-0.40824829, 0.70710678, 0.57735027);
-const vec3 basis2 = vec3(-0.40824829, -0.70710678, 0.57735027);
 
 void main() 
 {
@@ -58,56 +53,37 @@ void main()
     vec2 scroll = worldUV * normalTiling + vec2(u_time * normalSpeed);
     vec3 normalSample = texture(u_normalMap, scroll + distortion).rgb * 2.0 - 1.0;
     vec3 N = normalize(v_TBN[2]);
-    vec3 tsNormal = vec3(0.0, 0.0, 1.0);
-    
+
     if (u_useBump)
     {
-        tsNormal = normalSample;
-        N = normalize(v_TBN * tsNormal);
+        N = normalize(v_TBN * normalSample);
     }
 
     vec3 V = normalize(u_viewPos - v_FragPos);
-    vec3 diffuseLight = vec3(0.0);
-    vec3 dominantL = N;
-	
-    vec2 v_LmCoord2 = v_LmCoord + vec2(v_LmSize.x, 0.0);
-    vec2 v_LmCoord3 = v_LmCoord + vec2(0.0, v_LmSize.y);
-    vec2 v_LmCoord4 = v_LmCoord + v_LmSize;
 
-    if (u_useBump)
-    {
-        float w1 = clamp(dot(tsNormal, basis0), 0.0, 1.0);
-        float w2 = clamp(dot(tsNormal, basis1), 0.0, 1.0);
-        float w3 = clamp(dot(tsNormal, basis2), 0.0, 1.0);
-        float sumW = w1 + w2 + w3 + 1e-5;
-        w1 /= sumW; 
-        w2 /= sumW; 
-        w3 /= sumW;
+    float dx = texture(u_lightmap, v_LmCoord).a * 2.0 - 1.0;
+    float dy = texture(u_lightmap, v_LmCoord + vec2(v_LmSize.x, 0.0)).a * 2.0 - 1.0;
+    float dz = texture(u_lightmap, v_LmCoord + vec2(0.0, v_LmSize.y)).a * 2.0 - 1.0;
+    vec3 L = normalize(vec3(dx, dz, -dy) + 0.001);
 
-        vec3 l1 = texture(u_lightmap, v_LmCoord2).rgb;
-        vec3 l2 = texture(u_lightmap, v_LmCoord3).rgb;
-        vec3 l3 = texture(u_lightmap, v_LmCoord4).rgb;
-        diffuseLight = (l1 * w1 + l2 * w2 + l3 * w3) * 2.0;
+    vec3 irradiance = texture(u_lightmap, v_LmCoord).rgb * 2.0;
 
-        vec3 L1 = normalize(v_TBN * basis0);
-        vec3 L2 = normalize(v_TBN * basis1);
-        vec3 L3 = normalize(v_TBN * basis2);
-        dominantL = normalize(L1 * w1 + L2 * w2 + L3 * w3);
-    }
-    else
-    {
-        diffuseLight = texture(u_lightmap, v_LmCoord).rgb * 2.0;
-    }
+    float roughness = 0.10;
+    vec3 F0 = vec3(0.04);
+    
+    vec3 H = normalize(L + V);
+    float NDF = DistributionGGX(N, H, roughness);
+    float G = GeometrySmith(N, V, L, roughness);
+    vec3 F_spec = FresnelSchlick(max(dot(H, V), 0.0), F0);
 
-    vec3 H = normalize(dominantL + V);
-    float spec = pow(max(dot(N, H), 0.0), 2048.0);
-    vec3 specularLight = diffuseLight * spec;
+    vec3 numerator = NDF * G * F_spec;
+    float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
+    vec3 specularBaked = (numerator / denominator) * irradiance * max(dot(N, L), 0.0);
 
-    float fresnel = clamp(1.0 - dot(V, vec3(0.0, 1.0, 0.0)), 0.0, 1.0);
-    fresnel = pow(fresnel, 3.0);
-
-    vec3 finalColor = (reflection * fresnel) + specularLight;
-    finalColor *= diffuseLight;
+    vec3 F_reflect = FresnelSchlick(max(dot(N, V), 0.0), F0);
+    
+    vec3 finalColor = (reflection * F_reflect) + specularBaked;
+    finalColor *= irradiance;
 
     FragColor = vec4(finalColor, 0.95);
 }

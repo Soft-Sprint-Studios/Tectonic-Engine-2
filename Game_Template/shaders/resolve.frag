@@ -161,7 +161,7 @@ void main()
 
     vec3 worldLightDir = normalize(vec3(dirX, dirZ, -dirY));
 
-     vec3 specularBaked = CalculateDynamicLightSpecularPBR(worldLightDir, viewDir, N, F0, roughness, irradiance);
+    vec3 specularBaked = CalculateDynamicLightSpecularPBR(worldLightDir, viewDir, N, F0, roughness, irradiance);
 
     if (u_useCubemap) 
     {
