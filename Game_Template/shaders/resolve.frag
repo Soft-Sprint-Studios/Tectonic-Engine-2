@@ -68,6 +68,24 @@ vec3 CalculateDynamicLightPBR(vec3 L, vec3 V, vec3 N, vec3 F0, vec3 albedo, floa
     return (kD * albedo / PI + specular) * lightEnergy * NdotL;
 }
 
+vec3 CalculateDynamicLightSpecularPBR(vec3 L, vec3 V, vec3 N, vec3 F0, float roughness, vec3 lightEnergy)
+{
+    vec3 H = normalize(L + V);
+    
+    float NDF = DistributionGGX(N, H, roughness);
+    float G   = GeometrySmith(N, V, L, roughness);
+    vec3 F    = FresnelSchlick(max(dot(H, V), 0.0), F0);
+
+    vec3 numerator    = NDF * G * F;
+    float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
+    vec3 specular     = numerator / denominator;
+
+    float NdotL = max(dot(N, L), 0.0);
+    
+    return specular * lightEnergy * NdotL;
+}
+
+
 void main()
 {
     vec2 gBufferUV = gl_FragCoord.xy / textureSize(u_gDepth, 0).xy;
@@ -99,6 +117,9 @@ void main()
     vec2 lmSize = vec2(w_pixels, h_pixels) / 4096.0;
 
     vec4 lightmapData = vec4(0.0);
+	vec2 LmCoord2 = lmCoord + vec2(lmSize.x, 0.0);
+    vec2 LmCoord3 = lmCoord + vec2(0.0, lmSize.y);
+    vec2 LmCoord4 = lmCoord + lmSize;
     vec3 dominantL = N;
 
     if (normalData.a > 0.02)
@@ -106,10 +127,6 @@ void main()
         float tx = normalData.z * 2.0 - 1.0;
         float ty = normalData.w * 2.0 - 1.0;
         vec3 tsNormal = vec3(tx, ty, sqrt(max(0.0, 1.0 - (tx * tx + ty * ty))));
-
-        vec2 LmCoord2 = lmCoord + vec2(lmSize.x, 0.0);
-        vec2 LmCoord3 = lmCoord + vec2(0.0, lmSize.y);
-        vec2 LmCoord4 = lmCoord + lmSize;
 
         vec3 w = max(vec3(0.0), vec3(dot(tsNormal, basis0), dot(tsNormal, basis1), dot(tsNormal, basis2)));
 
@@ -137,14 +154,14 @@ void main()
     vec3 ambientDiffuse = irradiance * albedo * kD_ambient;
     vec3 ambientSpecular = vec3(0.0);
 
-    vec3 H_baked = normalize(dominantL + viewDir);
-    float NDF_baked = DistributionGGX(N, H_baked, roughness);
-    float G_baked   = GeometrySmith(N, viewDir, dominantL, roughness);
-    vec3 F_baked    = FresnelSchlick(max(dot(H_baked, viewDir), 0.0), F0);
-    
-    vec3 numerator_baked    = NDF_baked * G_baked * F_baked;
-    float denominator_baked = 4.0 * max(dot(N, viewDir), 0.0) * max(dot(N, dominantL), 0.0) + 0.0001;
-    vec3 specularBaked = (numerator_baked / denominator_baked) * irradiance;
+    // Unpack custom directional data (if map has it)
+    float dirX = texture(u_lightmap, lmCoord).a * 2.0 - 1.0;
+    float dirY = texture(u_lightmap, LmCoord2).a * 2.0 - 1.0;
+    float dirZ = texture(u_lightmap, LmCoord3).a * 2.0 - 1.0;
+
+    vec3 worldLightDir = normalize(vec3(dirX, dirZ, -dirY));
+
+     vec3 specularBaked = CalculateDynamicLightSpecularPBR(worldLightDir, viewDir, N, F0, roughness, irradiance);
 
     if (u_useCubemap) 
     {

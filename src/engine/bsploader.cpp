@@ -590,7 +590,7 @@ namespace BSP
                 LoadBrush(face, tex, td, ax, ay, lw, lh, hasLM, numMaps, render, outVerts, outCollision);
         }
 
-        void WriteToAtlas(const uint8_t* src, int w, int h, int destX, int destY, const uint8_t* alphaSrc = nullptr, bool isModel = false, int format = 0)
+        void WriteToAtlas(const uint8_t* src, int w, int h, int destX, int destY, const uint8_t* alphaSrc = nullptr, bool isModel = false, int format = 0, int alphaChannel = 0)
         {
             for (int y = 0; y < h; y++)
             {
@@ -605,7 +605,7 @@ namespace BSP
                         m_map.lightmapAtlas[dest + 0] = pow(pf[0], 2.2f) * 2.0f;
                         m_map.lightmapAtlas[dest + 1] = pow(pf[1], 2.2f) * 2.0f;
                         m_map.lightmapAtlas[dest + 2] = pow(pf[2], 2.2f) * 2.0f;
-                        m_map.lightmapAtlas[dest + 3] = 1.0f;
+                        m_map.lightmapAtlas[dest + 3] = pf[3];
                     }
                     else if (isModel)
                     {
@@ -622,7 +622,7 @@ namespace BSP
                         m_map.lightmapAtlas[dest + 0] = (c->r / 255.0f) * p;
                         m_map.lightmapAtlas[dest + 1] = (c->g / 255.0f) * p;
                         m_map.lightmapAtlas[dest + 2] = (c->b / 255.0f) * p;
-                        m_map.lightmapAtlas[dest + 3] = alphaSrc ? (alphaSrc[pIdx] / 255.0f) : 1.0f;
+                        m_map.lightmapAtlas[dest + 3] = alphaSrc ? (alphaSrc[pIdx + alphaChannel] / 255.0f) : 1.0f;
                     }
                 }
             }
@@ -656,10 +656,10 @@ namespace BSP
                 }
                 else
                 {
-                    WriteToAtlas(data + (3 * w * h * 4), w, h, outX, outY, alphaData);
-                    WriteToAtlas(data + (0 * w * h * 4), w, h, outX + w, outY);
-                    WriteToAtlas(data + (1 * w * h * 4), w, h, outX, outY + h);
-                    WriteToAtlas(data + (2 * w * h * 4), w, h, outX + w, outY + h);
+                    WriteToAtlas(data + (0 * w * h * 4), w, h, outX, outY, alphaData, isModel, format, 0);
+                    WriteToAtlas(data + (1 * w * h * 4), w, h, outX + w, outY, alphaData, isModel, format, 1);
+                    WriteToAtlas(data + (2 * w * h * 4), w, h, outX, outY + h, alphaData, isModel, format, 2);
+                    WriteToAtlas(data + (3 * w * h * 4), w, h, outX + w, outY + h, alphaData, isModel, format, 3);
                 }
             }
             m_atlasX += pW;
