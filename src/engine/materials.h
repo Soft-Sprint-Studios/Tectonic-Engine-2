@@ -31,6 +31,7 @@ class Materials
 {
 public:
     static void Init();
+    static void Clear();
     static void LoadDefinitions(const std::string& path);
     static std::shared_ptr<R_Texture> GetTexture(const std::string& name);
     static std::shared_ptr<R_Texture> GetNormalMap(const std::string& name);

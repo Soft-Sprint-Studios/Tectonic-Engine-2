@@ -39,6 +39,7 @@
 #include "main_menu.h"
 #include "nodegraph.h"
 #include "decals.h"
+#include "materials.h"
 
 namespace Maps
 {
@@ -114,6 +115,7 @@ namespace Maps
         EntityManager::Shutdown();
         Physics::Shutdown();
         DynamicLights::Clear();
+        Materials::Clear();
         Particles::Shutdown();
         Sprites::Clear();
         Decals::Clear();

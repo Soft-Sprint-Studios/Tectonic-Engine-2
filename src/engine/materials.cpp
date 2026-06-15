@@ -47,6 +47,19 @@ void Materials::Init()
     CreateFallbackTexture();
 }
 
+void Materials::Clear()
+{
+    m_textures.clear();
+    m_normals.clear();
+    m_mraohs.clear();
+    m_textures2.clear();
+    m_normals2.clear();
+    m_mraohs2.clear();
+    m_heightScales.clear();
+    m_heightScales2.clear();
+    CreateFallbackTexture();
+}
+
 void Materials::CreateFallbackTexture()
 {
     const int size = 32;
