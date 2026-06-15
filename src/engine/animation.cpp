@@ -46,9 +46,13 @@ namespace Animation
             for (const auto& channel : anim.channels)
             {
                 const auto& sampler = anim.samplers[channel.samplerIndex];
-                int next = 0;
-                while (next < sampler.timestamps.size() && sampler.timestamps[next] < modTime) 
-                    next++;
+                auto it = std::upper_bound(sampler.timestamps.begin(), sampler.timestamps.end(), modTime);
+                int next = int(std::distance(sampler.timestamps.begin(), it));
+
+                if (next >= int(sampler.timestamps.size()))
+                {
+                    next = int(sampler.timestamps.size()) - 1;
+                }
 
                 int prev = (next == 0) ? 0 : next - 1;
                 float factor = (next == prev) ? 0.0f : (modTime - sampler.timestamps[prev]) / (sampler.timestamps[next] - sampler.timestamps[prev]);
