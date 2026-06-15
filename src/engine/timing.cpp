@@ -54,7 +54,7 @@ namespace Time
         // Convert nanoseconds to float seconds
         float rawDelta = (float)((double)deltaNS / 1000000000.0);
         float unscaledDelta = std::clamp(rawDelta, 0.0001f, 0.066f);
-        s_deltaTime = std::clamp(rawDelta, 0.0001f, 0.066f) * host_timescale.GetFloat();
+        s_deltaTime = unscaledDelta * host_timescale.GetFloat();
         s_totalTime += s_deltaTime;
 
         // FPS Calculation
