@@ -239,9 +239,10 @@ void R_Shader::Bind() const
 
 GLint R_Shader::GetUniformLocation(const std::string& name) const
 {
-    if (m_uniformLocationCache.find(name) != m_uniformLocationCache.end())
+    auto it = m_uniformLocationCache.find(name);
+    if (it != m_uniformLocationCache.end())
     {
-        return m_uniformLocationCache[name];
+        return it->second;
     }
 
     GLint location = glGetUniformLocation(m_program, name.c_str());
