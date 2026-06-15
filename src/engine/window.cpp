@@ -25,6 +25,9 @@
 #include "console.h"
 #include "cvar.h"
 #include <glad/glad.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+#include "filesystem.h"
 
 CVar r_fullscreen("r_fullscreen", "1", "Enable fullscreen mode.", CVAR_SAVE);
 CVar r_vsync("r_vsync", "1", "Enable vertical synchronization.", CVAR_SAVE);
@@ -79,6 +82,25 @@ bool Window::Init(const char* title, int width, int height)
 
     SDL_SetWindowRelativeMouseMode(m_window, true);
 
+	// Setup custom cursor
+    int w, h, channels;
+    std::string path = Filesystem::GetFullPath("media/cursor.png");
+    unsigned char* pixels = stbi_load(path.c_str(), &w, &h, &channels, 4);
+    if (pixels)
+    {
+        SDL_Surface* surface = SDL_CreateSurfaceFrom(w, h, SDL_PIXELFORMAT_RGBA32, pixels, w * 4);
+        if (surface)
+        {
+            m_cursor = SDL_CreateColorCursor(surface, 0, 0);
+            if (m_cursor)
+            {
+                SDL_SetCursor(m_cursor);
+            }
+            SDL_DestroySurface(surface);
+        }
+        stbi_image_free(pixels);
+    }
+
     return true;
 }
 
@@ -97,6 +119,12 @@ void Window::Shutdown()
     if (m_window)
     {
         SDL_DestroyWindow(m_window);
+    }
+
+    if (m_cursor)
+    {
+        SDL_DestroyCursor(m_cursor);
+        m_cursor = nullptr;
     }
 
     SDL_Quit();
