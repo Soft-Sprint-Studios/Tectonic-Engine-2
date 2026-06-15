@@ -79,7 +79,6 @@ bool Window::Init(const char* title, int width, int height)
     }
 
     SDL_GL_SetSwapInterval(r_vsync.GetInt());
-
     SDL_SetWindowRelativeMouseMode(m_window, true);
 
 	// Setup custom cursor
