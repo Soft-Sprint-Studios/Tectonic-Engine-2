@@ -27,6 +27,8 @@
 #include "cvar.h"
 #include "mp3.h"
 #include "dsp.h"
+#include "ambient_zone.h"
+#include "timing.h"
 #include <vector>
 #include <algorithm>
 #include <cstring>
@@ -158,6 +160,8 @@ namespace Sound
                 alAuxiliaryEffectSloti(s_efxAuxSlot, AL_EFFECTSLOT_EFFECT, s_efxEffect);
             }
         }
+
+        AmbientZone::Init();
     }
 
     void Update(const glm::vec3& listenerPos, const glm::vec3& listenerForward)
@@ -169,6 +173,8 @@ namespace Sound
         alListenerfv(AL_POSITION, &listenerPos.x);
         float orientation[] = { listenerForward.x, listenerForward.y, listenerForward.z, 0.0f, 1.0f, 0.0f };
         alListenerfv(AL_ORIENTATION, orientation);
+
+        AmbientZone::Update(Time::DeltaTime(), listenerPos);
     }
 
     void SetRoomStyle(int styleID)
@@ -220,6 +226,8 @@ namespace Sound
 
     void Shutdown()
     {
+        AmbientZone::Shutdown();
+
         if (s_efxSupported)
         {
             if (s_efxAuxSlot)

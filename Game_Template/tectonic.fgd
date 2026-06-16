@@ -932,3 +932,8 @@
     input StopAnimation(void) : "Stops the current animation."
     output OnAnimationDone(void) : "Fired when a non-looping animation finishes."
 ]
+
+@SolidClass base(Targetname) = trigger_ambient_zone : "A brush-based trigger volume that activates an ambient audio zone when the player enters."
+[
+    zone_name(string) : "Ambient Zone Name" : "" : "The name of the ambient zone defined in ambient_zones.def"
+]

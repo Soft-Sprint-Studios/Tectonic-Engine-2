@@ -40,6 +40,7 @@
 #include "nodegraph.h"
 #include "decals.h"
 #include "materials.h"
+#include "ambient_zone.h"
 
 namespace Maps
 {
@@ -80,6 +81,7 @@ namespace Maps
         ScreenOverlay::Clear();
         DynamicSky::Reset();
         Sound::SetRoomStyle(0);
+        AmbientZone::Clear();
 
         Physics::Init();
         EntityManager::Init();
@@ -124,6 +126,7 @@ namespace Maps
         ScreenOverlay::Clear();
         DynamicSky::Reset();
         Sound::SetRoomStyle(0);
+        AmbientZone::Clear();
 
         Discord::UpdatePresence("Main Menu", "");
         MainMenu::SetActive(true);
