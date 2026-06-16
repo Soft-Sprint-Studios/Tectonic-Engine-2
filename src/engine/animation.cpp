@@ -77,7 +77,8 @@ namespace Animation
         {
             const auto& node = model.nodes[i];
             auto& state = states[i];
-            glm::mat4 local = glm::translate(glm::mat4(1.0f), state.translation) * glm::toMat4(state.rotation) * glm::scale(glm::mat4(1.0f), state.scale);
+            glm::mat4 local = glm::translate(glm::mat4(1.0f), state.translation) * glm::toMat4(state.rotation);
+            local = glm::scale(local, state.scale);
 
             if (node.parent == -1)
             {
