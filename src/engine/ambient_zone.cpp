@@ -29,6 +29,7 @@
 #include <sstream>
 #include <algorithm>
 #include <random>
+#include <memory>
 
 namespace AmbientZone
 {
