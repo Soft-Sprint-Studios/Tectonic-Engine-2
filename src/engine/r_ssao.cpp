@@ -49,7 +49,6 @@ bool R_SSAO::Init(int width, int height)
     m_blurShader.Load("shaders/postprocess.vert", "shaders/ssao_blur.frag");
     
     GenerateSampleKernel();
-    GenerateNoiseTexture();
     
     CreateBuffers(width, height);
     return true;
