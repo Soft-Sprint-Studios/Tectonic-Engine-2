@@ -175,6 +175,7 @@ if (WIN32)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${SDL3_PATH}/lib/${ARCH_FOLDER}/SDL3.dll"
         "${SDL_TTF_PATH}/lib/${ARCH_FOLDER}/SDL3_ttf.dll"
+        "${OPENAL_PATH}/lib/${ARCH_FOLDER}/OpenAL32.dll"
         $<TARGET_FILE_DIR:Engine>
     )
 elseif(UNIX)

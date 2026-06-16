@@ -39,6 +39,7 @@
 
 CVar s_volume("s_volume", "1.0", "Master audio volume.", CVAR_SAVE);
 CVar s_mute("s_mute", "0", "Mute all audio output.", CVAR_SAVE);
+CVar s_hrtf("s_hrtf", "1", "Enable Head-Related Transfer Function (HRTF).", CVAR_SAVE);
 
 namespace Sound
 {
@@ -141,7 +142,10 @@ namespace Sound
             return;
         }
 
-        s_context = alcCreateContext(s_device, nullptr);
+        ALCint attrs[] = { ALC_HRTF_SOFT, s_hrtf.GetInt() > 0 ? ALC_TRUE : ALC_FALSE, 0 };
+
+        s_context = alcCreateContext(s_device, alcIsExtensionPresent(s_device, "ALC_SOFT_HRTF") ? attrs : nullptr);
+
         alcMakeContextCurrent(s_context);
 
         alDistanceModel(AL_LINEAR_DISTANCE_CLAMPED);
