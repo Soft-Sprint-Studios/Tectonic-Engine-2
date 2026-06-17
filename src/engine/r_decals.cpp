@@ -64,7 +64,7 @@ void R_Decals::Init()
     glNamedBufferData(m_instanceSSBO, 1024 * sizeof(glm::mat4), NULL, GL_DYNAMIC_DRAW);
 }
 
-void R_Decals::Draw(const Camera& camera, const std::vector<std::shared_ptr<Decal>>& decals)
+void R_Decals::Draw(const Camera& camera, const Frustum& frustum, const std::vector<std::shared_ptr<Decal>>& decals)
 {
     if (decals.empty())
     {
@@ -90,6 +90,16 @@ void R_Decals::Draw(const Camera& camera, const std::vector<std::shared_ptr<Deca
     std::unordered_map<std::string, std::vector<glm::mat4>> groups;
     for (const auto& d : decals)
     {
+        const auto& def = d->GetDef();
+        float halfSize = def.size * 0.5f;
+        glm::vec3 mins = def.position - glm::vec3(halfSize);
+        glm::vec3 maxs = def.position + glm::vec3(halfSize);
+
+        if (frustum.valid && !frustum.IsBoxVisible(mins, maxs))
+        {
+            continue;
+        }
+
         groups[d->GetDef().textureName].push_back(d->GetModelMatrix());
     }
 

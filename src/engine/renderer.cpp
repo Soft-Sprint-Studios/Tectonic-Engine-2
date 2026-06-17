@@ -225,7 +225,7 @@ void Renderer::GeometryPass(Camera& camera, int renderW, int renderH)
 
     m_bspRenderer->Draw(m_gbufferShader, frustum);
     m_modelRenderer->Draw(m_gbufferShader, frustum);
-    m_decalRenderer->Draw(camera, Decals::GetActiveDecals());
+    m_decalRenderer->Draw(camera, frustum, Decals::GetActiveDecals());
 
     m_gbuffer->Unbind();
 }
