@@ -117,6 +117,7 @@ void R_Decals::Draw(const Camera& camera, const Frustum& frustum, const std::vec
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_instanceSSBO);
         glNamedBufferSubData(m_instanceSSBO, 0, matrices.size() * sizeof(glm::mat4), matrices.data());
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, m_instanceSSBO);
 
         glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, (GLsizei)matrices.size());
     }
