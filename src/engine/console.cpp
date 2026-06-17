@@ -429,4 +429,24 @@ namespace Console
         }
         Console::Log("Executed " + path);
     }
+
+    CON_COMMAND(echo, "Prints text to the console")
+    {
+        if (args.size() < 2)
+        {
+            Console::Log("Usage: echo <message>");
+            return;
+        }
+
+        std::string message;
+        for (size_t i = 1; i < args.size(); ++i)
+        {
+            message += args[i];
+            if (i + 1 < args.size())
+            {
+                message += " ";
+            }
+        }
+        Console::Log(message);
+    }
 }
