@@ -54,6 +54,8 @@ namespace Console
     static bool s_opened = false;
     static float s_animPos = 0.0f;
     static int s_scrollOffset = 0;
+    static std::vector<std::string> s_cmdHistory;
+    static int s_historyIndex = -1;
 
     // Colors
     static const glm::vec4 COL_NORMAL = { 1.0f, 1.0f, 1.0f, 1.0f }; // White
@@ -110,6 +112,7 @@ namespace Console
     {
         s_opened = !s_opened;
         s_scrollOffset = 0;
+        s_historyIndex = -1;
         if (s_opened)
         {
             SDL_StartTextInput(SDL_GL_GetCurrentWindow());
@@ -175,6 +178,37 @@ namespace Console
                 return true;
             }
 
+            if (e.key.key == SDLK_UP)
+            {
+                if (!s_cmdHistory.empty())
+                {
+                    if (s_historyIndex == -1)
+                        s_historyIndex = (int)s_cmdHistory.size() - 1;
+                    else if (s_historyIndex > 0)
+                        s_historyIndex--;
+
+                    s_inputBuffer = s_cmdHistory[s_historyIndex];
+                }
+                return true;
+            }
+            else if (e.key.key == SDLK_DOWN)
+            {
+                if (!s_cmdHistory.empty() && s_historyIndex != -1)
+                {
+                    if (s_historyIndex < (int)s_cmdHistory.size() - 1)
+                    {
+                        s_historyIndex++;
+                        s_inputBuffer = s_cmdHistory[s_historyIndex];
+                    }
+                    else
+                    {
+                        s_historyIndex = -1;
+                        s_inputBuffer.clear();
+                    }
+                }
+                return true;
+            }
+
             if (e.key.key == SDLK_BACKSPACE)
             {
                 if (!s_inputBuffer.empty()) 
@@ -187,6 +221,12 @@ namespace Console
                 {
                     Log("> " + s_inputBuffer);
                     s_history.back().color = COL_INPUT;
+
+                    if (s_cmdHistory.empty() || s_cmdHistory.back() != s_inputBuffer)
+                    {
+                        s_cmdHistory.push_back(s_inputBuffer);
+                    }
+                    s_historyIndex = -1;
 
                     Execute(s_inputBuffer);
                     s_inputBuffer.clear();
