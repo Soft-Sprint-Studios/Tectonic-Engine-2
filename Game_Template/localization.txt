@@ -10,6 +10,7 @@
     "Opt_Volumetrics"   "Volumetric Lighting"
     "Opt_Shadows"       "Dynamic Shadows"
     "Opt_Tonemap"       "Filmic Tonemapping"
+    "Opt_CAS" "AMD Contrast Adaptive Sharpening" 
     "Opt_MasterVol"     "Master Volume"
     "Opt_FOV"           "Field of View"
     "Opt_Sens"          "Mouse Sensitivity"

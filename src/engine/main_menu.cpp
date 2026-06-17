@@ -180,6 +180,10 @@ namespace MainMenu
             if (Checkbox(renderer, Localization::Get("Opt_Tonemap"), tonemap, startX, startY + 140.0f))
                 CVar::Set("r_tonemap", tonemap ? "1" : "0");
 
+            bool cas = CVar::Find("r_cas")->GetInt() > 0;
+            if (Checkbox(renderer, Localization::Get("Opt_CAS"), cas, startX, startY + 175.0f))
+                CVar::Set("r_cas", cas ? "1" : "0");
+
             float vol = CVar::Find("s_volume")->GetFloat();
             Slider(renderer, Localization::Get("Opt_MasterVol"), vol, 0.0f, 1.0f, startX, startY + 245.0f);
             CVar::Set("s_volume", std::to_string(vol));

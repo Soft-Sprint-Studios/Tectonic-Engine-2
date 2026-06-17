@@ -1,0 +1,46 @@
+layout(local_size_x = 64) in;
+
+layout(binding = 0) uniform sampler2D u_input;
+layout(rgba8, binding = 1) uniform writeonly image2D u_output;
+
+uniform vec4 u_const0;
+uniform vec4 u_const1;
+
+#define A_GPU 1
+#define A_GLSL 1
+#include "ffx_a.h"
+
+AF3 CasLoad(ASU2 p)
+{
+    return texelFetch(u_input, p, 0).rgb;
+}
+
+void CasInput(inout AF1 r, inout AF1 g, inout AF1 b) 
+{
+}
+
+#include "ffx_cas.h"
+
+void main()
+{
+    AU4 const0 = AU4(floatBitsToUint(u_const0.x), floatBitsToUint(u_const0.y), floatBitsToUint(u_const0.z), floatBitsToUint(u_const0.w));
+    AU4 const1 = AU4(floatBitsToUint(u_const1.x), floatBitsToUint(u_const1.y), floatBitsToUint(u_const1.z), floatBitsToUint(u_const1.w));
+
+    AU2 gxy = ARmp8x8(gl_LocalInvocationID.x) + AU2(gl_WorkGroupID.x << 4u, gl_WorkGroupID.y << 4u);
+    
+    AF4 c;
+    CasFilter(c.r, c.g, c.b, gxy, const0, const1, false);
+    imageStore(u_output, ASU2(gxy), c);
+    
+    gxy.x += 8u;
+    CasFilter(c.r, c.g, c.b, gxy, const0, const1, false);
+    imageStore(u_output, ASU2(gxy), c);
+    
+    gxy.y += 8u;
+    CasFilter(c.r, c.g, c.b, gxy, const0, const1, false);
+    imageStore(u_output, ASU2(gxy), c);
+    
+    gxy.x -= 8u;
+    CasFilter(c.r, c.g, c.b, gxy, const0, const1, false);
+    imageStore(u_output, ASU2(gxy), c);
+}

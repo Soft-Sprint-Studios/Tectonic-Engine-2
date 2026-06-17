@@ -68,6 +68,9 @@ bool R_PostProcess::Init(int width, int height)
     m_ssr = std::make_unique<R_SSR>();
     m_ssr->Init(m_width, m_height);
 
+    m_cas = std::make_unique<R_CAS>();
+    m_cas->Init(m_width, m_height);
+
     SetupBuffers();
 
     // Full-screen quad
@@ -184,7 +187,16 @@ void R_PostProcess::Draw(const Camera& camera, R_Lights* lights, R_GBuffer* gbuf
     glBindTextureUnit(0, m_texture);
     glBindTextureUnit(1, gbuffer->GetDepthTex());
 
+    bool useCas = (CVar::Find("r_cas")->GetInt() > 0);
+    GLuint targetFBO = useCas ? m_cas->GetInputFBO() : 0;
+
+    glBindFramebuffer(GL_FRAMEBUFFER, targetFBO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    if (useCas)
+    {
+        m_cas->Render(m_quadVAO, m_width, m_height);
+    }
 }
 
 void R_PostProcess::Rescale(int width, int height)
@@ -195,6 +207,7 @@ void R_PostProcess::Rescale(int width, int height)
     m_volumetrics->Rescale(width, height);
     m_ssao->Rescale(width, height);
     m_ssr->Rescale(width, height);
+    m_cas->Rescale(width, height);
     SetupBuffers();
 }
 
@@ -228,6 +241,12 @@ void R_PostProcess::Shutdown()
     {
         m_ssr->Shutdown();
         m_ssr.reset();
+    }
+
+    if (m_cas)
+    {
+        m_cas->Shutdown();
+        m_cas.reset();
     }
 
     if (m_fbo != 0) 
