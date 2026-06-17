@@ -37,12 +37,12 @@
 #include <AL/alext.h>
 #include <AL/efx.h>
 
-CVar s_volume("s_volume", "1.0", "Master audio volume.", CVAR_SAVE);
-CVar s_mute("s_mute", "0", "Mute all audio output.", CVAR_SAVE);
-CVar s_hrtf("s_hrtf", "1", "Enable Head-Related Transfer Function (HRTF).", CVAR_SAVE);
-
 namespace Sound
 {
+    CVar s_volume("s_volume", "1.0", "Master audio volume.", CVAR_SAVE);
+    CVar s_mute("s_mute", "0", "Mute all audio output.", CVAR_SAVE);
+    CVar s_hrtf("s_hrtf", "1", "Enable Head-Related Transfer Function (HRTF).", CVAR_SAVE);
+
     static ALCdevice* s_device = nullptr;
     static ALCcontext* s_context = nullptr;
     static std::unordered_map<std::string, ALuint> s_bufferCache;
