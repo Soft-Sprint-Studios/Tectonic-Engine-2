@@ -38,7 +38,7 @@ bool R_GBuffer::Init(int width, int height)
     m_width = width;
     m_height = height;
 
-    m_debugShader.Load("shaders/postprocess.vert", "shaders/gbuffer_debug.frag");
+    m_debugShader.Load("shaders/gbuffer_debug.vert", "shaders/gbuffer_debug.frag");
     m_debugShader.Bind();
     InitDebugQuad();
 

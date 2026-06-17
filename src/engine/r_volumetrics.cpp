@@ -40,8 +40,8 @@ R_Volumetrics::~R_Volumetrics()
 
 bool R_Volumetrics::Init(int width, int height) 
 {
-    m_volShader.Load("shaders/postprocess.vert", "shaders/volumetrics.frag");
-    m_blurShader.Load("shaders/postprocess.vert", "shaders/volumetrics_blur.frag");
+    m_volShader.Load("shaders/volumetrics.vert", "shaders/volumetrics.frag");
+    m_blurShader.Load("shaders/volumetrics_blur.vert", "shaders/volumetrics_blur.frag");
     CreateBuffers(width, height);
     return true;
 }

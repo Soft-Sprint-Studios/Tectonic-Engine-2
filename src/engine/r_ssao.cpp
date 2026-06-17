@@ -45,8 +45,8 @@ R_SSAO::~R_SSAO()
 
 bool R_SSAO::Init(int width, int height) 
 {
-    m_ssaoShader.Load("shaders/postprocess.vert", "shaders/ssao.frag");
-    m_blurShader.Load("shaders/postprocess.vert", "shaders/ssao_blur.frag");
+    m_ssaoShader.Load("shaders/ssao.vert", "shaders/ssao.frag");
+    m_blurShader.Load("shaders/ssao_blur.vert", "shaders/ssao_blur.frag");
     
     GenerateSampleKernel();
     

@@ -42,8 +42,8 @@ R_Bloom::~R_Bloom()
 
 bool R_Bloom::Init(int width, int height)
 {
-    m_downsampleShader.Load("shaders/postprocess.vert", "shaders/bloom_downsample.frag");
-    m_upsampleShader.Load("shaders/postprocess.vert", "shaders/bloom_upsample.frag");
+    m_downsampleShader.Load("shaders/bloom_downsample.vert", "shaders/bloom_downsample.frag");
+    m_upsampleShader.Load("shaders/bloom_upsample.vert", "shaders/bloom_upsample.frag");
     CreateChain(width, height);
     return true;
 }

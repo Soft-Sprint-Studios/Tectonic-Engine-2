@@ -160,8 +160,10 @@ void main()
     float dirZ = texture(u_lightmap, LmCoord3).a * 2.0 - 1.0;
 
     vec3 worldLightDir = normalize(vec3(dirX, dirZ, -dirY));
+    float lightmapLuminance = dot(irradiance, vec3(0.333));
 
     vec3 specularBaked = CalculateDynamicLightSpecularPBR(worldLightDir, viewDir, N, F0, roughness, irradiance);
+	specularBaked *= lightmapLuminance;
 
     if (u_useCubemap) 
     {
@@ -171,7 +173,7 @@ void main()
         vec3 prefilteredColor = textureLod(u_cubemap, lookup, roughness * 5.0).rgb; 
         vec2 envBRDF = vec2(1.0 - roughness, roughness); 
         
-        ambientSpecular = prefilteredColor * (F_ambient * envBRDF.x + envBRDF.y) * dot(irradiance, vec3(0.333));
+        ambientSpecular = prefilteredColor * (F_ambient * envBRDF.x + envBRDF.y) * lightmapLuminance;
     }
     
     vec3 ambient = (ambientDiffuse + ambientSpecular + specularBaked) * ao;
