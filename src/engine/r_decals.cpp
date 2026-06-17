@@ -77,6 +77,10 @@ void R_Decals::Draw(const Camera& camera, const Frustum& frustum, const std::vec
     glEnable(GL_POLYGON_OFFSET_FILL);
     glPolygonOffset(-1.0f, -1.0f);
 
+    // Prevent overriding lightmap width/height stored in albedo/mrao
+    glColorMaski(1, GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
+    glColorMaski(2, GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
+
     m_shader.Bind();
     m_shader.SetMat4("u_view", camera.GetViewMatrix());
     m_shader.SetMat4("u_projection", camera.GetProjectionMatrix());
@@ -122,6 +126,8 @@ void R_Decals::Draw(const Camera& camera, const Frustum& frustum, const std::vec
         glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, (GLsizei)matrices.size());
     }
 
+    glColorMaski(1, GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glColorMaski(2, GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glDisable(GL_POLYGON_OFFSET_FILL);
     glDepthMask(GL_TRUE);
     glEnable(GL_CULL_FACE);
