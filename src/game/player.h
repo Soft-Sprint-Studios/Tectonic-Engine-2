@@ -70,6 +70,8 @@ public:
         return true; 
     }
 
+    bool IsRenderable() const override;
+
     void OnSave() override;
 
 private:

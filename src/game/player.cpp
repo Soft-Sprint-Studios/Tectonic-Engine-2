@@ -42,6 +42,8 @@ CVar cl_jump_force("cl_jump_force", "5.0", "Initial upward velocity of a jump.",
 CVar cl_view_height("cl_view_height", "1.5", "Standing eye level height.", CVAR_SAVE);
 CVar cl_crouch_height("cl_crouch_height", "0.7", "Crouching eye level height.", CVAR_SAVE);
 CVar cl_view_interp("cl_view_interp", "12.0", "Speed of view height interpolation.", CVAR_SAVE);
+CVar cl_thirdperson("cl_thirdperson", "0", "Enable third person camera view.", CVAR_SAVE);
+CVar cl_thirdperson_dist("cl_thirdperson_dist", "3.0", "Third person camera distance.", CVAR_SAVE);
 
 CON_COMMAND(noclip, "Toggles player noclip mode")
 {
@@ -366,7 +368,35 @@ void Player::Think(float deltaTime)
 
         btTransform currentTransform = m_character->getGhostObject()->getWorldTransform();
         btVector3 bulletPos = currentTransform.getOrigin();
-        m_camera->position = glm::vec3(bulletPos.getX(), bulletPos.getY() + m_viewHeight, bulletPos.getZ());
+        glm::vec3 eyePos = glm::vec3(bulletPos.getX(), bulletPos.getY() + m_viewHeight, bulletPos.getZ());
+
+        if (cl_thirdperson.GetInt() > 0)
+        {
+            glm::vec3 targetPos = eyePos - forward * cl_thirdperson_dist.GetFloat();
+            btVector3 rayFrom(eyePos.x, eyePos.y, eyePos.z);
+            btVector3 rayTo(targetPos.x, targetPos.y, targetPos.z);
+
+            btCollisionWorld::ClosestRayResultCallback rayCallback(rayFrom, rayTo);
+            rayCallback.m_collisionFilterGroup = Physics::COL_PLAYER;
+            rayCallback.m_collisionFilterMask = Physics::COL_WORLD;
+
+            Physics::GetDynamicsWorld()->rayTest(rayFrom, rayTo, rayCallback);
+
+            if (rayCallback.hasHit())
+            {
+                float hitDist = cl_thirdperson_dist.GetFloat() * rayCallback.m_closestHitFraction;
+                float safeDist = glm::max(0.0f, hitDist - 0.35f);
+                m_camera->position = eyePos - forward * safeDist;
+            }
+            else
+            {
+                m_camera->position = targetPos;
+            }
+        }
+        else
+        {
+            m_camera->position = eyePos;
+        }
 
         if (m_character->onGround() && glm::length(wishDir) > 0.1f)
         {
@@ -488,6 +518,11 @@ void Player::TakeDamage(float amount)
 float Player::GetHealth() const
 {
     return m_health; 
+}
+
+bool Player::IsRenderable() const
+{
+    return cl_thirdperson.GetInt() > 0;
 }
 
 void Player::SetFOV(float targetFov, float duration)

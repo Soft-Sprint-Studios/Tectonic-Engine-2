@@ -270,6 +270,7 @@ void R_Models::LoadModel(const std::string& path)
 
 void R_Models::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOnly)
 {
+    // Render static props
     shader.SetInt("u_isInstanced", 1);
 
     for (auto& [path, group] : m_propGroups)
@@ -416,6 +417,28 @@ void R_Models::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOn
         else
         {
             DrawSkinned(shader, p->m_modelPath, mat * p->m_nodeStates[0].globalMatrix, {});
+        }
+    }
+
+    // Render player model
+    for (auto& ent : EntityManager::GetEntities())
+    {
+        if (ent->IsPlayer() && ent->IsRenderable())
+        {
+            // error mdl for now
+            std::string modelPath = "models/error.glb";
+            LoadModel(modelPath);
+
+            auto* data = GetModelData(modelPath);
+            if (data)
+            {
+                glm::vec3 a = ent->GetAngles();
+                glm::mat4 mat = glm::translate(glm::mat4(1.0f), ent->GetOrigin());
+                mat = glm::rotate(mat, glm::radians(a.y), { 0, 1, 0 });
+                mat = glm::scale(mat, glm::vec3(0.025f));
+
+                DrawSkinned(shader, modelPath, mat, {});
+            }
         }
     }
 }
