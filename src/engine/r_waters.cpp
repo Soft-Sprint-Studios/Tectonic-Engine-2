@@ -112,9 +112,6 @@ void R_Waters::Draw(const Camera& camera, GLuint vao, GLuint lightmap)
     glEnable(GL_DEPTH_TEST);
     glDepthMask(GL_TRUE);
 
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
     m_shader.Bind();
     m_shader.SetMat4("u_projection", camera.GetProjectionMatrix());
     m_shader.SetMat4("u_view", camera.GetViewMatrix());
@@ -148,8 +145,6 @@ void R_Waters::Draw(const Camera& camera, GLuint vao, GLuint lightmap)
 
         glDrawArrays(GL_TRIANGLES, s.start, s.count);
     }
-
-    glDisable(GL_BLEND);
 }
 
 void R_Waters::Shutdown()

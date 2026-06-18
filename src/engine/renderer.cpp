@@ -189,7 +189,7 @@ void Renderer::RenderWorld(Camera& camera, GLuint cubemapToExclude, bool drawWat
     int w, h;
     SDL_GetWindowSize(m_windowRef->Get(), &w, &h);
 
-    GeometryPass(camera, renderW, renderH);
+    GeometryPass(camera, renderW, renderH, drawWater);
     LightingPass(camera, cubemapToExclude, targetFBO, renderW, renderH, w, h);
     if (targetFBO == m_postProcess->GetActiveFBO())
     {
@@ -199,10 +199,10 @@ void Renderer::RenderWorld(Camera& camera, GLuint cubemapToExclude, bool drawWat
     {
         DepthBlit(targetFBO, renderW, renderH);
     }
-    ForwardPass(camera, targetFBO, renderW, renderH, drawWater);
+    ForwardPass(camera, targetFBO, renderW, renderH);
 }
 
-void Renderer::GeometryPass(Camera& camera, int renderW, int renderH)
+void Renderer::GeometryPass(Camera& camera, int renderW, int renderH, bool drawWater)
 {
     m_gbuffer->Bind();
     glViewport(0, 0, renderW, renderH);
@@ -227,6 +227,9 @@ void Renderer::GeometryPass(Camera& camera, int renderW, int renderH)
     m_bspRenderer->Draw(m_gbufferShader, frustum);
     m_modelRenderer->Draw(m_gbufferShader, frustum);
     m_decalRenderer->Draw(camera, frustum, Decals::GetActiveDecals());
+
+    if (drawWater && r_water.GetInt() > 0)
+        m_waterRenderer->Draw(camera, m_bspRenderer->GetVAO(), m_bspRenderer->GetLightmapTexture());
 
     m_gbuffer->Unbind();
 }
@@ -283,13 +286,10 @@ void Renderer::DepthBlit(GLint targetFBO, int renderW, int renderH)
     glBindFramebuffer(GL_FRAMEBUFFER, targetFBO);
 }
 
-void Renderer::ForwardPass(Camera& camera, GLint targetFBO, int renderW, int renderH, bool drawWater)
+void Renderer::ForwardPass(Camera& camera, GLint targetFBO, int renderW, int renderH)
 {
     glEnable(GL_DEPTH_TEST);
     glDepthMask(GL_FALSE);
-
-    if (drawWater && r_water.GetInt() > 0)
-        m_waterRenderer->Draw(camera, m_bspRenderer->GetVAO(), m_bspRenderer->GetLightmapTexture());
 
     if (r_skybox.GetInt() > 0)
         m_skyRenderer->Draw(camera);

@@ -1,5 +1,5 @@
 #include "pbr.h"
-#include "lightmap.h"
+#include "common.h"
 
 in vec3 v_FragPos;
 in vec2 v_TexCoord;
@@ -11,7 +11,6 @@ layout(binding = 0) uniform sampler2D u_reflectionTexture;
 layout(binding = 1) uniform sampler2D u_dudvMap;
 layout(binding = 2) uniform sampler2D u_normalMap;
 layout(binding = 3) uniform sampler2D u_flowMap;
-layout(binding = 4) uniform sampler2D u_lightmap;
 
 uniform float u_flowSpeed;
 uniform bool u_hasFlow;
@@ -21,7 +20,10 @@ uniform vec3 u_viewPos;
 uniform float u_time;
 uniform bool u_useBump;
 
-out vec4 FragColor;
+layout (location = 0) out vec4 gNormal;
+layout (location = 1) out vec4 gAlbedo;
+layout (location = 2) out vec4 gMRAO;
+layout (location = 3) out vec2 gLightmapUV;
 
 const float waveStrength = 0.02;
 const float normalTiling = 1.0;
@@ -61,30 +63,21 @@ void main()
     }
 
     vec3 V = normalize(u_viewPos - v_FragPos);
-
-    float dx = SampleLightmap(u_lightmap, v_LmCoord).a * 2.0 - 1.0;
-    float dy = SampleLightmap(u_lightmap, v_LmCoord + vec2(v_LmSize.x, 0.0)).a * 2.0 - 1.0;
-    float dz = SampleLightmap(u_lightmap, v_LmCoord + vec2(0.0, v_LmSize.y)).a * 2.0 - 1.0;
-    vec3 L = normalize(vec3(dx, dz, -dy) + 0.001);
-
-    vec3 irradiance = SampleLightmap(u_lightmap, v_LmCoord).rgb * 2.0;
-
-    float roughness = 0.10;
     vec3 F0 = vec3(0.04);
-    
-    vec3 H = normalize(L + V);
-    float NDF = DistributionGGX(N, H, roughness);
-    float G = GeometrySmith(N, V, L, roughness);
-    vec3 F_spec = FresnelSchlick(max(dot(H, V), 0.0), F0);
-
-    vec3 numerator = NDF * G * F_spec;
-    float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
-    vec3 specularBaked = (numerator / denominator) * irradiance * max(dot(N, L), 0.0);
-
     vec3 F_reflect = FresnelSchlick(max(dot(N, V), 0.0), F0);
-    
-    vec3 finalColor = (reflection * F_reflect) + specularBaked;
-    finalColor *= irradiance;
 
-    FragColor = vec4(finalColor, 0.95);
+    vec3 worldNormal = N;
+    vec3 albedo = reflection * F_reflect;
+    vec3 mraoh = vec3(0.0, 0.1, 1.0);
+
+    float packed_tx = normalSample.x * 0.5 + 0.5;
+    float packed_ty = u_useBump ? (normalSample.y * 0.5 + 0.5) : 0.0;
+    vec2 size_in_pixels = v_LmSize * vec2(4096.0);
+    float packed_w = size_in_pixels.x / 255.0;
+    float packed_h = size_in_pixels.y / 255.0;
+
+    gNormal = vec4(EncodeNormal(worldNormal), packed_tx, packed_ty);
+    gAlbedo = vec4(albedo.rgb, packed_w);
+    gMRAO = vec4(mraoh.rgb, packed_h);     
+    gLightmapUV = v_LmCoord;
 }

@@ -67,10 +67,10 @@ public:
     }
 
 private:
-    void GeometryPass(Camera& camera, int renderW, int renderH);
+    void GeometryPass(Camera& camera, int renderW, int renderH, bool drawWater);
     void LightingPass(Camera& camera, GLuint cubemapToExclude, GLint targetFBO, int renderW, int renderH, int w, int h);
     void DepthBlit(GLint targetFBO, int renderW, int renderH);
-    void ForwardPass(Camera& camera, GLint targetFBO, int renderW, int renderH, bool drawWater);
+    void ForwardPass(Camera& camera, GLint targetFBO, int renderW, int renderH);
 
     Window* m_windowRef;
     R_Shader m_gbufferShader;
