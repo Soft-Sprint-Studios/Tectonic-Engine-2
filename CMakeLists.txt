@@ -79,7 +79,7 @@ target_include_directories(Engine PRIVATE
     ${PLMPEG_PATH}/include
     ${MINISPEC_PATH}/include
     ${MINIZ_PATH}/include
-    ${CMAKE_SOURCE_DIR}/game_template/shaders
+    ${CMAKE_SOURCE_DIR}/Game_Template/shaders
     src/engine
     src/game
 )
