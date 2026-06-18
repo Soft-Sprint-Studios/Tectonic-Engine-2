@@ -1,6 +1,7 @@
 #include "lights.h"
 #include "common.h"
 #include "pbr.h"
+#include "lightmap.h"
 
 out vec4 FragColor;
 in vec2 TexCoords;
@@ -133,12 +134,12 @@ void main()
         float sumW = w.x + w.y + w.z;
         w /= max(sumW, 0.0001); 
 
-        lightmapData = texture(u_lightmap, LmCoord2) * w.x + texture(u_lightmap, LmCoord3) * w.y + texture(u_lightmap, LmCoord4) * w.z;
+        lightmapData = SampleLightmap(u_lightmap, LmCoord2) * w.x + SampleLightmap(u_lightmap, LmCoord3) * w.y + SampleLightmap(u_lightmap, LmCoord4) * w.z;
         dominantL = N; 
     }
     else
     {
-        lightmapData = texture(u_lightmap, lmCoord);
+        lightmapData = SampleLightmap(u_lightmap, lmCoord);
     }
 
     vec3 viewDir = normalize(u_viewPos - fragPos);

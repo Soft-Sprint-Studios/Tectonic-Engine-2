@@ -1,4 +1,5 @@
 #include "pbr.h"
+#include "lightmap.h"
 
 in vec3 v_FragPos;
 in vec2 v_TexCoord;
@@ -61,12 +62,12 @@ void main()
 
     vec3 V = normalize(u_viewPos - v_FragPos);
 
-    float dx = texture(u_lightmap, v_LmCoord).a * 2.0 - 1.0;
-    float dy = texture(u_lightmap, v_LmCoord + vec2(v_LmSize.x, 0.0)).a * 2.0 - 1.0;
-    float dz = texture(u_lightmap, v_LmCoord + vec2(0.0, v_LmSize.y)).a * 2.0 - 1.0;
+    float dx = SampleLightmap(u_lightmap, v_LmCoord).a * 2.0 - 1.0;
+    float dy = SampleLightmap(u_lightmap, v_LmCoord + vec2(v_LmSize.x, 0.0)).a * 2.0 - 1.0;
+    float dz = SampleLightmap(u_lightmap, v_LmCoord + vec2(0.0, v_LmSize.y)).a * 2.0 - 1.0;
     vec3 L = normalize(vec3(dx, dz, -dy) + 0.001);
 
-    vec3 irradiance = texture(u_lightmap, v_LmCoord).rgb * 2.0;
+    vec3 irradiance = SampleLightmap(u_lightmap, v_LmCoord).rgb * 2.0;
 
     float roughness = 0.10;
     vec3 F0 = vec3(0.04);

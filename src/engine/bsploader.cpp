@@ -592,16 +592,20 @@ namespace BSP
 
         void WriteToAtlas(const uint8_t* src, int w, int h, int destX, int destY, const uint8_t* alphaSrc = nullptr, bool isModel = false, int format = 0, int alphaChannel = 0)
         {
-            for (int y = 0; y < h; y++)
+            const int padding = 2;
+            for (int y = -padding; y < h + padding; y++)
             {
-                for (int x = 0; x < w; x++)
+                for (int x = -padding; x < w + padding; x++)
                 {
+                    int srcX = std::clamp(x, 0, w - 1);
+                    int srcY = std::clamp(y, 0, h - 1);
+
                     int dest = ((destY + y) * m_map.lightmapAtlasWidth + (destX + x)) * 4;
-                    int pIdx = (y * w + x) * 4;
+                    int pIdx = (srcY * w + srcX) * 4;
 
                     if (isModel && format == 29)
                     {
-                        const float* pf = (const float*)src + (y * w + x) * 4;
+                        const float* pf = (const float*)src + (srcY * w + srcX) * 4;
                         m_map.lightmapAtlas[dest + 0] = std::pow(pf[0], 2.2f);
                         m_map.lightmapAtlas[dest + 1] = std::pow(pf[1], 2.2f);
                         m_map.lightmapAtlas[dest + 2] = std::pow(pf[2], 2.2f);
@@ -609,7 +613,7 @@ namespace BSP
                     }
                     else if (isModel)
                     {
-                        int mIdx = (y * w + x) * 3;
+                        int mIdx = (srcY * w + srcX) * 3;
                         m_map.lightmapAtlas[dest + 0] = src[mIdx + 0] / 255.0f;
                         m_map.lightmapAtlas[dest + 1] = src[mIdx + 1] / 255.0f;
                         m_map.lightmapAtlas[dest + 2] = src[mIdx + 2] / 255.0f;
@@ -630,8 +634,12 @@ namespace BSP
 
         void PackLightmap(const uint8_t* data, int w, int h, int& outX, int& outY, bool isModel = false, const uint8_t* alphaData = nullptr, bool isBumped = false, int format = 0)
         {
-            int pW = isBumped ? w * 2 : w;
-            int pH = isBumped ? h * 2 : h;
+            const int padding = 2;
+            int singleW = w + 2 * padding;
+            int singleH = h + 2 * padding;
+
+            int pW = isBumped ? singleW * 2 : singleW;
+            int pH = isBumped ? singleH * 2 : singleH;
 
             if (m_atlasX + pW > m_map.lightmapAtlasWidth)
             {
@@ -645,8 +653,8 @@ namespace BSP
                 m_rowHeight = pH;
             }
 
-            outX = m_atlasX;
-            outY = m_atlasY;
+            outX = m_atlasX + padding;
+            outY = m_atlasY + padding;
 
             if (data)
             {
@@ -657,9 +665,9 @@ namespace BSP
                 else
                 {
                     WriteToAtlas(data + (0 * w * h * 4), w, h, outX, outY, alphaData, isModel, format, 0);
-                    WriteToAtlas(data + (1 * w * h * 4), w, h, outX + w, outY, alphaData, isModel, format, 1);
-                    WriteToAtlas(data + (2 * w * h * 4), w, h, outX, outY + h, alphaData, isModel, format, 2);
-                    WriteToAtlas(data + (3 * w * h * 4), w, h, outX + w, outY + h, alphaData, isModel, format, 3);
+                    WriteToAtlas(data + (1 * w * h * 4), w, h, outX + singleW, outY, alphaData, isModel, format, 1);
+                    WriteToAtlas(data + (2 * w * h * 4), w, h, outX, outY + singleH, alphaData, isModel, format, 2);
+                    WriteToAtlas(data + (3 * w * h * 4), w, h, outX + singleW, outY + singleH, alphaData, isModel, format, 3);
                 }
             }
             m_atlasX += pW;
@@ -714,7 +722,7 @@ namespace BSP
                     lv -= face.lightmapTextureMinsInLuxels[1];
 
                     v.lm_uv = glm::vec2((ax + lu + 0.5f) / m_map.lightmapAtlasWidth, (ay + lv + 0.5f) / m_map.lightmapAtlasHeight);
-                    v.lm_size = glm::vec2((float)lw / m_map.lightmapAtlasWidth, (float)lh / m_map.lightmapAtlasHeight);
+                    v.lm_size = glm::vec2((float)(lw + 4) / m_map.lightmapAtlasWidth, (float)(lh + 4) / m_map.lightmapAtlasHeight);
                 }
 
                 v.alpha = 0.0f;
@@ -832,7 +840,7 @@ namespace BSP
                         glm::vec3 n = plane.normal;
 
                         vert.lm_uv = glm::vec2((ax + lu + 0.5f) / m_map.lightmapAtlasWidth, (ay + lv + 0.5f) / m_map.lightmapAtlasHeight);
-                        vert.lm_size = glm::vec2((float)lw / m_map.lightmapAtlasWidth, (float)lh / m_map.lightmapAtlasHeight);
+                        vert.lm_size = glm::vec2((float)(lw + 4) / m_map.lightmapAtlasWidth, (float)(lh + 4) / m_map.lightmapAtlasHeight);
                     }
                     vert.alpha = dv.alpha / 255.0f;
                 }

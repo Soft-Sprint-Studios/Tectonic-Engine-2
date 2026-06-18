@@ -44,6 +44,7 @@ CVar r_water("r_water", "1", "Enable water rendering.", CVAR_SAVE);
 CVar r_sprites("r_sprites", "1", "Enable sprite rendering.", CVAR_SAVE);
 CVar r_wireframe("r_wireframe", "0", "Render the scene in wireframe mode.", CVAR_NONE);
 CVar r_debug_gbuffer("r_debug_gbuffer", "0", "Enable G-Buffer diagnostic overlay.", CVAR_SAVE);
+CVar r_lightmap_bicubic("r_lightmap_bicubic", "1", "Enable high-quality bicubic filtering for lightmaps.", CVAR_SAVE);
 
 CVar mat_parallax("mat_parallax", "1", "Enable Parallax Mapping.", CVAR_SAVE);
 CVar mat_parallax_min_steps("mat_parallax_min_steps", "8", "Minimum ray steps for Parallax Mapping.", CVAR_SAVE);
@@ -242,6 +243,8 @@ void Renderer::LightingPass(Camera& camera, GLuint cubemapToExclude, GLint targe
 
     m_resolveShader.SetMat4("u_invProjection", glm::inverse(camera.GetProjectionMatrix()));
     m_resolveShader.SetMat4("u_invView", glm::inverse(camera.GetViewMatrix()));
+
+    m_resolveShader.SetInt("r_lightmap_bicubic", r_lightmap_bicubic.GetInt());
 
     glBindTextureUnit(0, m_gbuffer->GetDepthTex());
     glBindTextureUnit(1, m_gbuffer->GetNormalTex());

@@ -124,6 +124,7 @@ void R_Waters::Draw(const Camera& camera, GLuint vao, GLuint lightmap)
     m_shader.SetVec3("u_viewPos", camera.position);
     m_shader.SetFloat("u_time", (float)Time::TotalTime());
     m_shader.SetInt("u_useBump", 1);
+    m_shader.SetInt("r_lightmap_bicubic", CVar::GetInt("r_lightmap_bicubic"));
 
     glBindTextureUnit(0, m_reflectTex);
     glBindTextureUnit(4, lightmap);
