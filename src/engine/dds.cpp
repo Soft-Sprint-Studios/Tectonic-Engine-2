@@ -84,6 +84,11 @@ namespace DDS
                 format = srgb ? GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT : GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
                 blockSize = 16;
             }
+            else if (dxgiFormat == 98 || dxgiFormat == 99)
+            {
+                format = srgb ? GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM : GL_COMPRESSED_RGBA_BPTC_UNORM;
+                blockSize = 16;
+            }
             else 
             {
                 Console::Error("Failed to load DDS");
