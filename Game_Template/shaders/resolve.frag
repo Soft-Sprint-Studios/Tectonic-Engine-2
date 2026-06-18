@@ -121,7 +121,6 @@ void main()
 	vec2 LmCoord2 = lmCoord + vec2(lmSize.x, 0.0);
     vec2 LmCoord3 = lmCoord + vec2(0.0, lmSize.y);
     vec2 LmCoord4 = lmCoord + lmSize;
-    vec3 dominantL = N;
 
     if (normalData.a > 0.02)
     {
@@ -135,7 +134,6 @@ void main()
         w /= max(sumW, 0.0001); 
 
         lightmapData = SampleLightmap(u_lightmap, LmCoord2) * w.x + SampleLightmap(u_lightmap, LmCoord3) * w.y + SampleLightmap(u_lightmap, LmCoord4) * w.z;
-        dominantL = N; 
     }
     else
     {
