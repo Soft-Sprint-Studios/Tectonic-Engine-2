@@ -51,6 +51,7 @@ target_include_directories(Game PRIVATE
     ${GLM_PATH}/include
     ${BULLET_PATH}/include
     ${OPENAL_PATH}/include
+    ${CMAKE_SOURCE_DIR}/Game_Template/shaders
     src/engine
     src/game
 )

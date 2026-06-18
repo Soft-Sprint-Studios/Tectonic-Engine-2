@@ -1,3 +1,10 @@
+#ifdef __cplusplus
+#pragma once
+#endif
+
+#define LIGHTMAP_ATLAS_SIZE 4096
+
+#ifndef __cplusplus
 uniform int r_lightmap_bicubic;
 
 vec4 cubic(float v)
@@ -37,3 +44,4 @@ vec4 SampleLightmap(sampler2D tex, vec2 uv)
         return texture(tex, uv);
     }
 }
+#endif

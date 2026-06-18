@@ -1,5 +1,6 @@
 #include "parallax.h"
 #include "common.h"
+#include "lightmap.h"
 
 layout (location = 0) out vec4 gNormal;
 layout (location = 1) out vec4 gAlbedo;
@@ -76,7 +77,7 @@ void main()
     vec4 mraoh2 = texture(u_mraohMap2, finalUV);
     vec4 mraoh = mix(mraoh1, mraoh2, blend);
 
-    vec2 size_in_pixels = v_LmSize * vec2(4096.0);
+    vec2 size_in_pixels = v_LmSize * vec2(float(LIGHTMAP_ATLAS_SIZE));
     float packed_w = size_in_pixels.x / 255.0;
     float packed_h = size_in_pixels.y / 255.0;
 
