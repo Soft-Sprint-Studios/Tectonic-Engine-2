@@ -77,7 +77,7 @@ void main()
 
             if (attenuation > 0.0) 
             {
-                float shadow = PointShadowCalc(currentPos, lPos, lRad, u_pointLights[i].shadowHandle);
+                float shadow = PointShadowCalc(currentPos, lPos, lRad, u_pointLights[i].shadowLayer);
                 lightFog += u_pointLights[i].colorVol.rgb * attenuation * (1.0 - shadow) * stepSize;
             }
             currentPos += rayDirection * stepSize;
@@ -125,7 +125,7 @@ void main()
 
             if (attenuation > 0.0 && intensity > 0.0) 
             {
-                float shadow = SpotShadowCalc(currentPos, lPos, lRad, u_spotLights[i].lightSpace, u_spotLights[i].shadowHandle);
+                float shadow = SpotShadowCalc(currentPos, lPos, lRad, u_spotLights[i].lightSpace, u_spotLights[i].shadowLayer);
                 lightFog += u_spotLights[i].colorVol.rgb * intensity * attenuation * (1.0 - shadow) * stepSize;
             }
             currentPos += rayDirection * stepSize;

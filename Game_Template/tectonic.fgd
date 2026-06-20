@@ -118,7 +118,6 @@
         11 : "Slow Pulse No Black"
 		12 : "Underwater light mutation"
 	]
-    shadow_res(integer) : "Shadow Map Resolution" : 512
 ]
 
 @PointClass base(Targetname, Angles) lightprop("models/editor/spot.mdl") lightcone() = light_dynamic_spot :
@@ -152,7 +151,6 @@
         11 : "Slow Pulse No Black"
 		12 : "Underwater light mutation"
 	]
-    shadow_res(integer) : "Shadow Map Resolution" : 512
 ]
 
 //-------------------------------------------------------------------------

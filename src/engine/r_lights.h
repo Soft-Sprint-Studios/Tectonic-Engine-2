@@ -53,11 +53,16 @@ private:
         glm::vec4 dirInner;
         glm::vec4 shadowData;
         glm::mat4 lightSpace;
-        uint64_t  shadowHandle;
-        uint64_t  padding;
+        float     shadowLayer;
+        float     pad1;
+        float     pad2;
+        float     pad3;
     };
 
     GLuint m_lightSSBO = 0;
+    GLuint m_shadowFBO = 0;
+    int m_nextSpotLayer = 0;
+    int m_nextPointLayer = 0;
 
     R_Shader m_shadowSpotShader;
     R_Shader m_shadowCascadeShader;
@@ -65,6 +70,8 @@ private:
 
     GLuint m_SpotShadow;
     GLuint m_PointShadow;
+    GLuint m_shadowDepthTex;
+    GLuint m_PointDepth;
 
     std::unique_ptr<R_Cascade> m_cascade;
     static glm::vec3 s_sunDir;

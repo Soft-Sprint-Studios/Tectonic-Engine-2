@@ -48,6 +48,8 @@ R_Lights::~R_Lights()
 bool R_Lights::Init()
 {
     Shutdown();
+    m_nextSpotLayer = 0;
+    m_nextPointLayer = 0;
     m_shadowSpotShader.Load("shaders/shadow_spot.vert", "shaders/shadow_spot.frag");
     m_shadowCascadeShader.Load("shaders/shadow_cascade.vert", "shaders/shadow_cascade.frag", "shaders/shadow_cascade.geom");
     m_shadowPointShader.Load("shaders/shadow_point.vert", "shaders/shadow_point.frag", "shaders/shadow_point.geom");
@@ -55,16 +57,35 @@ bool R_Lights::Init()
     m_cascade = std::make_unique<R_Cascade>();
     m_cascade->Init(r_csm_res.GetInt());
 
-    float dummyData[] = { 1e10f, 1e20f };
+    glGenFramebuffers(1, &m_shadowFBO);
+
+    glGenTextures(1, &m_shadowDepthTex);
+    glBindTexture(GL_TEXTURE_2D, m_shadowDepthTex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, 256, 256, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+
+    glGenTextures(1, &m_PointDepth);
+    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, m_PointDepth);
+    glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, GL_DEPTH_COMPONENT24, 256, 256, 32 * 6, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 
     glGenTextures(1, &m_SpotShadow);
-    glBindTexture(GL_TEXTURE_2D, m_SpotShadow);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, 1, 1, 0, GL_RG, GL_FLOAT, dummyData);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, m_SpotShadow);
+    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RG16F, 256, 256, 32, 0, GL_RG, GL_FLOAT, NULL);
+
+    const GLfloat spotClear[2] = { 1e10f, 1e20f };
+    glClearTexImage(m_SpotShadow, 0, GL_RG, GL_FLOAT, spotClear);
+
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     glGenTextures(1, &m_PointShadow);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, m_PointShadow);
-    for (int i = 0; i < 6; ++i)
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RG32F, 1, 1, 0, GL_RG, GL_FLOAT, dummyData);
+    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, m_PointShadow);
+    glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, GL_RG16F, 256, 256, 32 * 6, 0, GL_RG, GL_FLOAT, NULL);
+
+    const GLfloat pointClear[2] = { 1e10f, 1e20f };
+    glClearTexImage(m_PointShadow, 0, GL_RG, GL_FLOAT, pointClear);
+
+    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     glGenBuffers(1, &m_lightSSBO);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_lightSSBO);
@@ -76,78 +97,13 @@ bool R_Lights::Init()
 void R_Lights::SetupShadowMap(std::shared_ptr<DynamicLight> light)
 {
     auto& def = const_cast<DynamicLightDef&>(light->GetDef());
-
-    if (def.shadowFBO != 0)
-    {
+    if (def.shadowLayer != -1) 
         return;
-    }
 
-    glGenFramebuffers(1, &def.shadowFBO);
-    glGenTextures(1, &def.shadowTex);
-
-    glGenTextures(1, &def.shadowDepthTex);
-
-    if (def.type == LightType::Spot)
-    {
-        glBindTexture(GL_TEXTURE_2D, def.shadowTex);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, def.shadowRes, def.shadowRes, 0, GL_RG, GL_FLOAT, NULL);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-
-        float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-
-        glBindTexture(GL_TEXTURE_2D, def.shadowDepthTex);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, def.shadowRes, def.shadowRes, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, def.shadowFBO);
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, def.shadowTex, 0);
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, def.shadowDepthTex, 0);
-
-        if (def.shadowHandle == 0)
-        {
-            def.shadowHandle = glGetTextureHandleARB(def.shadowTex);
-            glMakeTextureHandleResidentARB(def.shadowHandle);
-        }
-    }
-    else
-    {
-        glBindTexture(GL_TEXTURE_CUBE_MAP, def.shadowTex);
-        for (int i = 0; i < 6; ++i)
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RG32F, def.shadowRes, def.shadowRes, 0, GL_RG, GL_FLOAT, NULL);
-
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-        glBindTexture(GL_TEXTURE_CUBE_MAP, def.shadowDepthTex);
-        for (int i = 0; i < 6; ++i)
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT24, def.shadowRes, def.shadowRes, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, def.shadowFBO);
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, def.shadowTex, 0);
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, def.shadowDepthTex, 0);
-
-        if (def.shadowHandle == 0)
-        {
-            def.shadowHandle = glGetTextureHandleARB(def.shadowTex);
-            glMakeTextureHandleResidentARB(def.shadowHandle);
-        }
-    }
-
-    static const GLenum drawBuffers[] = { GL_COLOR_ATTACHMENT0 };
-    glDrawBuffers(1, drawBuffers);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    if (def.type == LightType::Spot && m_nextSpotLayer < 32)
+        def.shadowLayer = m_nextSpotLayer++;
+    else if (def.type == LightType::Point && m_nextPointLayer < 32)
+        def.shadowLayer = m_nextPointLayer++;
 }
 
 void R_Lights::RenderShadowMaps(Camera& camera, Renderer* renderer)
@@ -183,14 +139,19 @@ void R_Lights::RenderShadowMaps(Camera& camera, Renderer* renderer)
         }
 
         SetupShadowMap(light);
+        if (def.shadowLayer == -1) 
+            continue;
 
-        glViewport(0, 0, def.shadowRes, def.shadowRes);
-        glBindFramebuffer(GL_FRAMEBUFFER, def.shadowFBO);
-        glClearColor(1e10f, 1e20f, 0.0f, 0.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glViewport(0, 0, 256, 256);
+        glBindFramebuffer(GL_FRAMEBUFFER, m_shadowFBO);
 
         if (def.type == LightType::Spot)
         {
+            glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_SpotShadow, 0, def.shadowLayer);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_shadowDepthTex, 0);
+            glClearColor(1e10f, 1e20f, 0.0f, 0.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
             m_shadowSpotShader.Bind();
 
             // Create temporary camera for the light
@@ -213,6 +174,17 @@ void R_Lights::RenderShadowMaps(Camera& camera, Renderer* renderer)
         }
         else
         {
+            for (int face = 0; face < 6; ++face) 
+            {
+                glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_PointShadow, 0, def.shadowLayer * 6 + face);
+                glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_PointDepth, 0, def.shadowLayer * 6 + face);
+                glClearColor(1e10f, 1e20f, 0.0f, 0.0f);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            }
+
+            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_PointShadow, 0);
+            glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_PointDepth, 0);
+
             m_shadowPointShader.Bind();
 
             float farP = def.radius;
@@ -235,6 +207,7 @@ void R_Lights::RenderShadowMaps(Camera& camera, Renderer* renderer)
                 m_shadowPointShader.SetMat4("u_shadowMatrices[" + std::to_string(i) + "]", shadowTransforms[i]);
             }
 
+            m_shadowPointShader.SetInt("u_shadowLayer", def.shadowLayer);
             m_shadowPointShader.SetFloat("u_farPlane", farP);
             m_shadowPointShader.SetVec3("u_lightPos", pos);
 
@@ -266,6 +239,10 @@ void R_Lights::Bind(const R_Shader& shader)
 
     // Then the scene dynamic lights
     std::vector<GPULight> points, spots;
+
+    glBindTextureUnit(14, m_SpotShadow);
+    glBindTextureUnit(15, m_PointShadow);
+
     for (const auto& light : DynamicLights::GetActiveLights())
     {
         if (!light->IsActive()) 
@@ -278,7 +255,7 @@ void R_Lights::Bind(const R_Shader& shader)
         gpu.dirInner = glm::vec4(light->GetDirection(), glm::cos(glm::radians(d.innerAngle)));
         gpu.shadowData = glm::vec4(glm::cos(glm::radians(d.outerAngle)), (float)d.volumetricSteps, 0, 0);
         gpu.lightSpace = d.lightSpaceMatrix;
-        gpu.shadowHandle = d.shadowHandle;
+        gpu.shadowLayer = (float)d.shadowLayer;
 
         if (d.type == LightType::Point)
             points.push_back(gpu);
@@ -305,36 +282,16 @@ void R_Lights::Bind(const R_Shader& shader)
 
 void R_Lights::Shutdown()
 {
-    const auto& lights = DynamicLights::GetActiveLights();
-    for (auto& l : lights)
-    {
-        auto& d = const_cast<DynamicLightDef&>(l->GetDef());
-        if (d.shadowHandle != 0)
-        {
-            glMakeTextureHandleNonResidentARB(d.shadowHandle);
-            d.shadowHandle = 0;
-        }
-        if (d.shadowFBO != 0)
-        {
-            glDeleteFramebuffers(1, &d.shadowFBO);
-        }
-        if (d.shadowTex != 0)
-        {
-            glDeleteTextures(1, &d.shadowTex);
-        }
-        if (d.shadowDepthTex != 0)
-        {
-            glDeleteTextures(1, &d.shadowDepthTex);
-        }
-    }
-
-    if (m_SpotShadow != 0)
-    {
+    if (m_shadowFBO != 0)
+        glDeleteFramebuffers(1, &m_shadowFBO);
+    if (m_SpotShadow != 0) 
         glDeleteTextures(1, &m_SpotShadow);
-    }
-
-    if (m_PointShadow != 0)
-    {
+    if (m_PointShadow != 0) 
         glDeleteTextures(1, &m_PointShadow);
-    }
+    if (m_shadowDepthTex != 0) 
+        glDeleteTextures(1, &m_shadowDepthTex);
+    if (m_PointDepth != 0) 
+        glDeleteTextures(1, &m_PointDepth);
+    m_shadowFBO = m_SpotShadow = m_PointShadow = m_shadowDepthTex = m_PointDepth = 0;
+    m_nextSpotLayer = m_nextPointLayer = 0;
 }

@@ -197,7 +197,7 @@ void main()
         float intensity = clamp((theta - u_spotLights[i].shadowData.x) / epsilon, 0.0, 1.0);
         float attenuation = 1.0 - (dist / lRad);
 
-        float shadow = SpotShadowCalc(fragPos, lPos, lRad, u_spotLights[i].lightSpace, u_spotLights[i].shadowHandle);
+        float shadow = SpotShadowCalc(fragPos, lPos, lRad, u_spotLights[i].lightSpace, u_spotLights[i].shadowLayer);
         vec3 lightEnergy = u_spotLights[i].colorVol.rgb * intensity * attenuation * (1.0 - shadow);
 
         dynDiffuse += CalculateDynamicLightPBR(L, viewDir, N, F0, albedo, metallic, roughness, lightEnergy);
@@ -217,7 +217,7 @@ void main()
         }
 
         float attenuation = 1.0 - (dist / lRad);
-        float shadow = PointShadowCalc(fragPos, lPos, lRad, u_pointLights[i].shadowHandle);
+        float shadow = PointShadowCalc(fragPos, lPos, lRad, u_pointLights[i].shadowLayer);
         vec3 lightEnergy = u_pointLights[i].colorVol.rgb * attenuation * (1.0 - shadow);
 
         dynDiffuse += CalculateDynamicLightPBR(L, viewDir, N, F0, albedo, metallic, roughness, lightEnergy);

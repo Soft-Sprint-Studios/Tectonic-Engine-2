@@ -46,12 +46,7 @@ struct DynamicLightDef
     bool castsShadows = false;
     bool isStaticShadow = false;
     bool shadowRendered = false;
-    int shadowRes = 512;
-
-    uint32_t shadowFBO = 0;
-    uint32_t shadowTex = 0;
-    uint32_t shadowDepthTex = 0;
-    uint64_t shadowHandle = 0;
+    int shadowLayer = -1;
 
     glm::mat4 lightSpaceMatrix = glm::mat4(1.0f);
 };

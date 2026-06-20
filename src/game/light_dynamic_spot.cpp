@@ -57,7 +57,6 @@ public:
             auto& def = const_cast<DynamicLightDef&>(m_light->GetDef());
             def.castsShadows = HasSpawnFlag(2);
             def.isStaticShadow = HasSpawnFlag(4);
-            def.shadowRes = GetInt("shadow_res", 512);
             def.volumetricIntensity = GetFloat("volumetric_intensity", 0.0f);
             def.volumetricSteps = GetInt("volumetric_steps", 32);
         }
