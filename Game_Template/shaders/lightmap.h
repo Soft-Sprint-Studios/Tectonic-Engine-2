@@ -19,18 +19,27 @@ vec4 texture_bicubic(sampler2D tex, vec2 uv)
     vec2 texSize = vec2(textureSize(tex, 0));
     vec2 texelSize = 1.0 / texSize;
     
-    vec2 f = fract(uv * texSize - 0.5);
-    vec2 centroidUV = floor(uv * texSize - 0.5) + 0.5;
+    vec2 p = uv * texSize - 0.5;
+    vec2 f = fract(p);
+    vec2 centroidUV = floor(p) + 0.5;
 
-    vec4 colX = cubic(f.x);
-    vec4 colY = cubic(f.y);
+    vec4 wX = cubic(f.x);
+    vec4 wY = cubic(f.y);
 
-    vec4 r0 = colX.x * texture(tex, (centroidUV + vec2(-1.0, -1.0)) * texelSize) + colX.y * texture(tex, (centroidUV + vec2(0.0, -1.0)) * texelSize) + colX.z * texture(tex, (centroidUV + vec2(1.0, -1.0)) * texelSize) + colX.w * texture(tex, (centroidUV + vec2(2.0, -1.0)) * texelSize);
-    vec4 r1 = colX.x * texture(tex, (centroidUV + vec2(-1.0,  0.0)) * texelSize) + colX.y * texture(tex, (centroidUV + vec2(0.0,  0.0)) * texelSize) + colX.z * texture(tex, (centroidUV + vec2(1.0,  0.0)) * texelSize) + colX.w * texture(tex, (centroidUV + vec2(2.0,  0.0)) * texelSize);
-    vec4 r2 = colX.x * texture(tex, (centroidUV + vec2(-1.0,  1.0)) * texelSize) + colX.y * texture(tex, (centroidUV + vec2(0.0,  1.0)) * texelSize) + colX.z * texture(tex, (centroidUV + vec2(1.0,  1.0)) * texelSize) + colX.w * texture(tex, (centroidUV + vec2(2.0,  1.0)) * texelSize);
-    vec4 r3 = colX.x * texture(tex, (centroidUV + vec2(-1.0,  2.0)) * texelSize) + colX.y * texture(tex, (centroidUV + vec2(0.0,  2.0)) * texelSize) + colX.z * texture(tex, (centroidUV + vec2(1.0,  2.0)) * texelSize) + colX.w * texture(tex, (centroidUV + vec2(2.0,  2.0)) * texelSize);
+    vec2 wInner = vec2(wX.y + wX.z, wY.y + wY.z);
+    vec2 offset = vec2(wX.z, wY.z) / wInner;
 
-    return colY.x * r0 + colY.y * r1 + colY.z * r2 + colY.w * r3;
+    vec3 cX = (centroidUV.x + vec3(-1.0, offset.x, 2.0)) * texelSize.x;
+    vec3 cY = (centroidUV.y + vec3(-1.0, offset.y, 2.0)) * texelSize.y;
+
+    vec3 wtX = vec3(wX.x, wInner.x, wX.w);
+    vec3 wtY = vec3(wY.x, wInner.y, wY.w);
+
+    vec4 r0 = wtX.x * texture(tex, vec2(cX.x, cY.x)) + wtX.y * texture(tex, vec2(cX.y, cY.x)) + wtX.z * texture(tex, vec2(cX.z, cY.x));
+    vec4 r1 = wtX.x * texture(tex, vec2(cX.x, cY.y)) + wtX.y * texture(tex, vec2(cX.y, cY.y)) + wtX.z * texture(tex, vec2(cX.z, cY.y));
+    vec4 r2 = wtX.x * texture(tex, vec2(cX.x, cY.z)) + wtX.y * texture(tex, vec2(cX.y, cY.z)) + wtX.z * texture(tex, vec2(cX.z, cY.z));
+
+    return wtY.x * r0 + wtY.y * r1 + wtY.z * r2;
 }
 
 vec4 SampleLightmap(sampler2D tex, vec2 uv)
