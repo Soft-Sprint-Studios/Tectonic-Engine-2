@@ -200,8 +200,8 @@ void R_GBuffer::DrawDebug(int w, int h)
     glDisable(GL_DEPTH_TEST);
     m_debugShader.Bind();
 
-    int dw = w / 8;
-    int dh = h / 8;
+    int dw = w / 9;
+    int dh = h / 9;
     int debugY = h - dh - 10;
 
     glBindVertexArray(m_quadVAO);
@@ -218,33 +218,38 @@ void R_GBuffer::DrawDebug(int w, int h)
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glViewport(dw * 2, debugY, dw, dh);
+    m_debugShader.SetInt("u_mode", 8);
+    glBindTexture(GL_TEXTURE_2D, m_normalTex);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    glViewport(dw * 3, debugY, dw, dh);
     m_debugShader.SetInt("u_mode", 2);
     glBindTexture(GL_TEXTURE_2D, m_albedoTex);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
-    glViewport(dw * 3, debugY, dw, dh);
+    glViewport(dw * 4, debugY, dw, dh);
     m_debugShader.SetInt("u_mode", 4);
     glBindTexture(GL_TEXTURE_2D, m_mraoTex);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
-    glViewport(dw * 4, debugY, dw, dh);
+    glViewport(dw * 5, debugY, dw, dh);
     m_debugShader.SetInt("u_mode", 5);
     glBindTexture(GL_TEXTURE_2D, m_mraoTex);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
-    glViewport(dw * 5, debugY, dw, dh);
+    glViewport(dw * 6, debugY, dw, dh);
     m_debugShader.SetInt("u_mode", 6);
     glBindTexture(GL_TEXTURE_2D, m_mraoTex);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-
-    glViewport(dw * 6, debugY, dw, dh);
-    m_debugShader.SetInt("u_mode", 3);
-    glBindTexture(GL_TEXTURE_2D, m_lightmapUVTex);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glViewport(dw * 7, debugY, dw, dh);
     m_debugShader.SetInt("u_mode", 7);
     glBindTexture(GL_TEXTURE_2D, m_velocityTex);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    glViewport(dw * 8, debugY, dw, dh);
+    m_debugShader.SetInt("u_mode", 3);
+    glBindTexture(GL_TEXTURE_2D, m_lightmapUVTex);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glViewport(0, 0, w, h);

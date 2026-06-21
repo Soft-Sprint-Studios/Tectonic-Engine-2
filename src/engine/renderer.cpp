@@ -346,16 +346,17 @@ void Renderer::Render(Camera& camera)
     {
         m_gbuffer->DrawDebug(w, h);
 
-        int dw = w / 8;
-        int dh = h / 8;
-        m_uiRenderer->DrawText("G-BUFFER: DEPTH", 10.0f, (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
-        m_uiRenderer->DrawText("G-BUFFER: NORMAL", (float)(dw + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
-        m_uiRenderer->DrawText("G-BUFFER: ALBEDO", (float)(dw * 2 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
-        m_uiRenderer->DrawText("G-BUFFER: METALLIC", (float)(dw * 3 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
-        m_uiRenderer->DrawText("G-BUFFER: ROUGHNESS", (float)(dw * 4 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
-        m_uiRenderer->DrawText("G-BUFFER: AO", (float)(dw * 5 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
-        m_uiRenderer->DrawText("G-BUFFER: LM_UV", (float)(dw * 6 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
-        m_uiRenderer->DrawText("G-BUFFER: VELOCITY", (float)(dw * 7 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+        int dw = w / 9;
+        int dh = h / 9;
+        m_uiRenderer->DrawText("GBUFFER: DEPTH", 10.0f, (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+        m_uiRenderer->DrawText("GBUFFER: WORLD N", (float)(dw + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+        m_uiRenderer->DrawText("GBUFFER: TANGENT N", (float)(dw * 2 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+        m_uiRenderer->DrawText("GBUFFER: ALBEDO", (float)(dw * 3 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+        m_uiRenderer->DrawText("GBUFFER: METALLIC", (float)(dw * 4 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+        m_uiRenderer->DrawText("GBUFFER: ROUGHNESS", (float)(dw * 5 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+        m_uiRenderer->DrawText("GBUFFER: AO", (float)(dw * 6 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+        m_uiRenderer->DrawText("GBUFFER: VELOCITY", (float)(dw * 7 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+        m_uiRenderer->DrawText("GBUFFER: LM_UV", (float)(dw * 8 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
     }
 
     glEnable(GL_DEPTH_TEST);

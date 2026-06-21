@@ -50,4 +50,9 @@ void main()
         vec2 vel = texture(u_debugTex, TexCoords).rg;
         FragColor = vec4(abs(vel) * 50.0, 0.0, 1.0); 
     }
+    else if (u_mode == 8)
+    {
+        vec2 ts = texture(u_debugTex, TexCoords).ba;
+        FragColor = vec4(ts, 1.0, 1.0);
+    }
 }
