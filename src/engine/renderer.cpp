@@ -214,8 +214,8 @@ void Renderer::GeometryPass(Camera& camera, int renderW, int renderH, bool drawW
 
     m_gbufferShader.Bind();
     m_gbufferShader.SetMat4("u_projection", camera.GetProjectionMatrix());
+    m_gbufferShader.SetMat4("u_prevViewProj", camera.GetPrevViewProj());
     m_gbufferShader.SetMat4("u_view", camera.GetViewMatrix());
-    m_gbufferShader.SetMat4("u_prevViewProj", m_prevViewProj);
     m_gbufferShader.SetMat4("u_model", glm::mat4(1.0f));
     m_gbufferShader.SetVec3("u_viewPos", camera.position);
     m_gbufferShader.SetInt("u_mat_parallax", mat_parallax.GetInt());
@@ -370,7 +370,7 @@ void Renderer::Render(Camera& camera)
     }
 
     m_uiRenderer->Render();
-    m_prevViewProj = camera.GetProjectionMatrix() * camera.GetViewMatrix();
+    camera.UpdatePreviousState();
     m_windowRef->Swap();
 }
 

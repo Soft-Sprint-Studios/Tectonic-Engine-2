@@ -80,8 +80,6 @@ private:
     GLuint m_quadVAO = 0;
     GLuint m_quadVBO = 0;
 
-    glm::mat4 m_prevViewProj = glm::mat4(1.0f);
-
     // Sub-renderers
     std::unique_ptr<R_PostProcess> m_postProcess;
     std::unique_ptr<R_BSP> m_bspRenderer;

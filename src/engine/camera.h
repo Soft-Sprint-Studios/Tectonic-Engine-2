@@ -78,6 +78,11 @@ public:
         return glm::perspective(glm::radians(m_fov), m_aspect, m_near, m_far);
     }
 
+    glm::mat4 GetPrevViewProj() const
+    {
+        return m_prevViewProj;
+    }
+
     void SetAspectRatio(float ratio) 
     { 
         m_aspect = ratio; 
@@ -96,6 +101,11 @@ public:
     float GetFOV() const 
     { 
         return m_fov; 
+    }
+
+    void UpdatePreviousState()
+    {
+        m_prevViewProj = GetProjectionMatrix() * GetViewMatrix();
     }
 
     Frustum GetFrustum() const 
@@ -120,4 +130,5 @@ public:
 
 private:
     float m_fov, m_aspect, m_near, m_far;
+    glm::mat4 m_prevViewProj{ 1.0f };
 };
