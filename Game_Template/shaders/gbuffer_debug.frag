@@ -45,4 +45,9 @@ void main()
         float ao = texture(u_debugTex, TexCoords).b;
         FragColor = vec4(vec3(ao), 1.0);
     }
+    else if (u_mode == 7)
+    {
+        vec2 vel = texture(u_debugTex, TexCoords).rg;
+        FragColor = vec4(abs(vel) * 50.0, 0.0, 1.0); 
+    }
 }

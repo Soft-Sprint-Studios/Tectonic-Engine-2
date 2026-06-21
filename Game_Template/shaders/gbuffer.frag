@@ -6,11 +6,14 @@ layout (location = 0) out vec4 gNormal;
 layout (location = 1) out vec4 gAlbedo;
 layout (location = 2) out vec4 gMRAO;
 layout (location = 3) out vec2 gLightmapUV;
+layout (location = 4) out vec2 gVelocity;
 
 in vec2 TexCoord;
 in vec2 v_LmCoord;
 in vec2 v_LmSize;
 in float v_alpha;
+in vec4 v_currClipPos;
+in vec4 v_prevClipPos;
 in vec3 FragPos;
 in mat3 TBN;
 
@@ -84,8 +87,12 @@ void main()
     float packed_tx = tangentNormal.x * 0.5 + 0.5;
     float packed_ty = u_useBump ? (tangentNormal.y * 0.5 + 0.5) : 0.0;
 
+    vec2 a = (v_currClipPos.xy / v_currClipPos.w) * 0.5 + 0.5;
+    vec2 b = (v_prevClipPos.xy / v_prevClipPos.w) * 0.5 + 0.5;
+
     gNormal = vec4(EncodeNormal(worldNormal), packed_tx, packed_ty);
     gAlbedo = vec4(albedo.rgb, packed_w);
     gMRAO = vec4(mraoh.rgb, packed_h);     
     gLightmapUV = v_LmCoord;
+    gVelocity = a - b;
 }

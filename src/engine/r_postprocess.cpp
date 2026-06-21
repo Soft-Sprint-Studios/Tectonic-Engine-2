@@ -68,6 +68,9 @@ bool R_PostProcess::Init(int width, int height)
     m_ssr = std::make_unique<R_SSR>();
     m_ssr->Init(m_width, m_height);
 
+    m_motionBlur = std::make_unique<R_MotionBlur>();
+    m_motionBlur->Init(m_width, m_height);
+
     m_cas = std::make_unique<R_CAS>();
     m_cas->Init(m_width, m_height);
 
@@ -154,6 +157,7 @@ void R_PostProcess::Draw(const Camera& camera, R_Lights* lights, R_GBuffer* gbuf
     m_volumetrics->Render(gbuffer->GetDepthTex(), camera, lights, m_quadVAO, m_width, m_height);
     m_ssao->Render(gbuffer->GetDepthTex(), camera, m_quadVAO, m_width, m_height);
     m_ssr->Render(gbuffer->GetDepthTex(), gbuffer->GetNormalTex(), gbuffer->GetMRAOTex(), m_texture, camera, m_quadVAO);
+    m_motionBlur->Render(m_texture, gbuffer->GetVelocityTex(), m_quadVAO);
 
     m_shader.Bind();
     m_autoExposure->Bind();
@@ -161,6 +165,7 @@ void R_PostProcess::Draw(const Camera& camera, R_Lights* lights, R_GBuffer* gbuf
     m_volumetrics->Bind(m_shader);
     m_ssao->Bind(m_shader);
     m_ssr->Bind(m_shader);
+    m_motionBlur->Bind(m_shader);
 
     m_shader.SetInt("u_postprocess_enabled", r_postprocess.GetInt());
 
@@ -207,6 +212,7 @@ void R_PostProcess::Rescale(int width, int height)
     m_volumetrics->Rescale(width, height);
     m_ssao->Rescale(width, height);
     m_ssr->Rescale(width, height);
+    m_motionBlur->Rescale(width, height);
     m_cas->Rescale(width, height);
     SetupBuffers();
 }
@@ -241,6 +247,12 @@ void R_PostProcess::Shutdown()
     {
         m_ssr->Shutdown();
         m_ssr.reset();
+    }
+
+    if (m_motionBlur)
+    {
+        m_motionBlur->Shutdown();
+        m_motionBlur.reset();
     }
 
     if (m_cas)

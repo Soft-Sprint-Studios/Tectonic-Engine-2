@@ -23,46 +23,26 @@
  */
 #pragma once
 #include "r_shader.h"
-#include "r_ui.h"
 #include <glad/glad.h>
 
-class R_GBuffer
+class R_MotionBlur
 {
 public:
-    R_GBuffer();
-    ~R_GBuffer();
+    R_MotionBlur();
+    ~R_MotionBlur();
 
     bool Init(int width, int height);
     void Shutdown();
     void Rescale(int width, int height);
-
-    void Bind();
-    void Unbind();
-
-    void DrawDebug(int w, int h);
-
-    GLuint GetFBO() const;
-    GLuint GetNormalTex() const;
-    GLuint GetAlbedoTex() const;
-    GLuint GetMRAOTex() const;
-    GLuint GetLightmapUVTex() const;
-    GLuint GetVelocityTex() const;
-    GLuint GetDepthTex() const;
+    void Render(GLuint sceneTex, GLuint velocityTex, GLuint quadVAO);
+    void Bind(const R_Shader& shader);
 
 private:
+    void CreateBuffers(int width, int height);
+    void DeleteBuffers();
+
+    R_Shader m_shader;
     GLuint m_fbo = 0;
-    GLuint m_normalTex = 0;
-    GLuint m_albedoTex = 0;
-    GLuint m_mraoTex = 0;
-    GLuint m_lightmapUVTex = 0;
-    GLuint m_velocityTex = 0;
-    GLuint m_depthTex = 0;
-
-    R_Shader m_debugShader;
-    GLuint m_quadVAO = 0;
-    GLuint m_quadVBO = 0;
-    void InitDebugQuad();
-
-    int m_width = 0;
-    int m_height = 0;
+    GLuint m_texture = 0;
+    int m_width, m_height;
 };

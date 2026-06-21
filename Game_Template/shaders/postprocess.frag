@@ -7,6 +7,7 @@ layout(binding = 2) uniform sampler2D u_bloomTexture;
 layout(binding = 3) uniform sampler2D u_volumetricTexture;
 layout(binding = 4) uniform sampler2D u_ssaoTexture;
 layout(binding = 5) uniform sampler2D u_ssrTexture;
+layout(binding = 7) uniform sampler2D u_motionBlurTexture;
 
 uniform float u_time;
 
@@ -29,6 +30,7 @@ uniform float u_bloom_intensity;
 uniform int u_volumetrics_enabled;
 uniform int u_ssao_enabled;
 uniform int u_ssr_enabled;
+uniform int u_motionblur_enabled;
 uniform int u_tonemap_enabled;
 uniform int u_fxaa;
 uniform float u_fxaaStrength;
@@ -119,11 +121,22 @@ void main()
     // Chromatic Aberration
     vec2 caDir = (TexCoords - 0.5) * u_chromaStrength;
     
-    float r = (u_fxaa == 1) ? ApplyFXAA(u_screenTexture, TexCoords - caDir).r : texture(u_screenTexture, TexCoords - caDir).r;
-    float g = (u_fxaa == 1) ? ApplyFXAA(u_screenTexture, TexCoords - caDir * 0.5).g : texture(u_screenTexture, TexCoords - caDir * 0.5).g;
-    float b = (u_fxaa == 1) ? ApplyFXAA(u_screenTexture, TexCoords).b : texture(u_screenTexture, TexCoords).b;
-    
-    vec3 hdrColor = vec3(r, g, b);
+    vec3 sampledColor;
+
+    if (u_motionblur_enabled == 1)
+    {
+        sampledColor.r = (u_fxaa == 1) ? ApplyFXAA(u_motionBlurTexture, TexCoords - caDir).r : texture(u_motionBlurTexture, TexCoords - caDir).r;
+        sampledColor.g = (u_fxaa == 1) ? ApplyFXAA(u_motionBlurTexture, TexCoords - caDir * 0.5).g : texture(u_motionBlurTexture, TexCoords - caDir * 0.5).g;
+        sampledColor.b = (u_fxaa == 1) ? ApplyFXAA(u_motionBlurTexture, TexCoords).b : texture(u_motionBlurTexture, TexCoords).b;
+    }
+    else
+    {
+        sampledColor.r = (u_fxaa == 1) ? ApplyFXAA(u_screenTexture, TexCoords - caDir).r : texture(u_screenTexture, TexCoords - caDir).r;
+        sampledColor.g = (u_fxaa == 1) ? ApplyFXAA(u_screenTexture, TexCoords - caDir * 0.5).g : texture(u_screenTexture, TexCoords - caDir * 0.5).g;
+        sampledColor.b = (u_fxaa == 1) ? ApplyFXAA(u_screenTexture, TexCoords).b : texture(u_screenTexture, TexCoords).b;
+    }
+
+    vec3 hdrColor = sampledColor;
 
     hdrColor *= u_exposure;
 	

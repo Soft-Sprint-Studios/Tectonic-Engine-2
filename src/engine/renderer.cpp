@@ -215,6 +215,7 @@ void Renderer::GeometryPass(Camera& camera, int renderW, int renderH, bool drawW
     m_gbufferShader.Bind();
     m_gbufferShader.SetMat4("u_projection", camera.GetProjectionMatrix());
     m_gbufferShader.SetMat4("u_view", camera.GetViewMatrix());
+    m_gbufferShader.SetMat4("u_prevViewProj", m_prevViewProj);
     m_gbufferShader.SetMat4("u_model", glm::mat4(1.0f));
     m_gbufferShader.SetVec3("u_viewPos", camera.position);
     m_gbufferShader.SetInt("u_mat_parallax", mat_parallax.GetInt());
@@ -345,8 +346,8 @@ void Renderer::Render(Camera& camera)
     {
         m_gbuffer->DrawDebug(w, h);
 
-        int dw = w / 7;
-        int dh = h / 7;
+        int dw = w / 8;
+        int dh = h / 8;
         m_uiRenderer->DrawText("G-BUFFER: DEPTH", 10.0f, (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
         m_uiRenderer->DrawText("G-BUFFER: NORMAL", (float)(dw + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
         m_uiRenderer->DrawText("G-BUFFER: ALBEDO", (float)(dw * 2 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
@@ -354,6 +355,7 @@ void Renderer::Render(Camera& camera)
         m_uiRenderer->DrawText("G-BUFFER: ROUGHNESS", (float)(dw * 4 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
         m_uiRenderer->DrawText("G-BUFFER: AO", (float)(dw * 5 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
         m_uiRenderer->DrawText("G-BUFFER: LM_UV", (float)(dw * 6 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+        m_uiRenderer->DrawText("G-BUFFER: VELOCITY", (float)(dw * 7 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
     }
 
     glEnable(GL_DEPTH_TEST);
@@ -368,6 +370,7 @@ void Renderer::Render(Camera& camera)
     }
 
     m_uiRenderer->Render();
+    m_prevViewProj = camera.GetProjectionMatrix() * camera.GetViewMatrix();
     m_windowRef->Swap();
 }
 

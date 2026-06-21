@@ -28,6 +28,7 @@
 #include "r_autoexposure.h"
 #include "r_ssao.h"
 #include "r_ssr.h"
+#include "r_motionblur.h"
 #include "r_cas.h"
 #include "camera.h"
 #include "r_shader.h"
@@ -67,5 +68,6 @@ private:
     std::unique_ptr<R_AutoExposure> m_autoExposure;
     std::unique_ptr<R_SSAO> m_ssao;
     std::unique_ptr<R_SSR> m_ssr;
+    std::unique_ptr<R_MotionBlur> m_motionBlur;
     std::unique_ptr<R_CAS> m_cas;
 };
