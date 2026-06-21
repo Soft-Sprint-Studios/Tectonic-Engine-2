@@ -27,7 +27,7 @@
 CVar r_ssr("r_ssr", "0", "Enable Screen Space Reflections.", CVAR_SAVE);
 CVar r_ssr_max_dist("r_ssr_max_dist", "20.0", "Maximum ray distance for SSR.", CVAR_SAVE);
 CVar r_ssr_resolution("r_ssr_resolution", "0.3", "Step resolution for ray marching.", CVAR_SAVE);
-CVar r_ssr_thickness("r_ssr_thickness", "0.2", "Z-thickness for ray collision.", CVAR_SAVE);
+CVar r_ssr_thickness("r_ssr_thickness", "1.0", "Z-thickness for ray collision.", CVAR_SAVE);
 CVar r_ssr_steps("r_ssr_steps", "64", "Number of linear search steps for SSR.", CVAR_SAVE);
 CVar r_ssr_binary_steps("r_ssr_binary_steps", "16", "Number of binary search refinement steps.", CVAR_SAVE);
 CVar r_ssr_downsample("r_ssr_downsample", "2", "Downscaling factor for SSR buffer (higher = faster).", CVAR_SAVE);
