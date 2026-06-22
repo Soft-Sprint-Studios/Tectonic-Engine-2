@@ -92,17 +92,19 @@ bool Renderer::Init(Window& window)
          1.0f,  1.0f,  1.0f, 1.0f
     };
 
-    glGenVertexArrays(1, &m_quadVAO);
-    glGenBuffers(1, &m_quadVBO);
-    glBindVertexArray(m_quadVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, m_quadVBO);
+    glCreateVertexArrays(1, &m_quadVAO);
+    glCreateBuffers(1, &m_quadVBO);
     glNamedBufferData(m_quadVBO, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
 
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-    glBindVertexArray(0);
+    glVertexArrayVertexBuffer(m_quadVAO, 0, m_quadVBO, 0, 4 * sizeof(float));
+
+    glEnableVertexArrayAttrib(m_quadVAO, 0);
+    glVertexArrayAttribFormat(m_quadVAO, 0, 2, GL_FLOAT, GL_FALSE, 0);
+    glVertexArrayAttribBinding(m_quadVAO, 0, 0);
+
+    glEnableVertexArrayAttrib(m_quadVAO, 1);
+    glVertexArrayAttribFormat(m_quadVAO, 1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float));
+    glVertexArrayAttribBinding(m_quadVAO, 1, 0);
 
     m_postProcess->Init(ww, wh);
 
@@ -281,10 +283,7 @@ void Renderer::LightingPass(Camera& camera, GLuint cubemapToExclude, GLint targe
 
 void Renderer::DepthBlit(GLint targetFBO, int renderW, int renderH)
 {
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, m_gbuffer->GetFBO());
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, targetFBO);
-    glBlitFramebuffer(0, 0, renderW, renderH, 0, 0, renderW, renderH, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-    glBindFramebuffer(GL_FRAMEBUFFER, targetFBO);
+    glBlitNamedFramebuffer(m_gbuffer->GetFBO(), targetFBO, 0, 0, renderW, renderH, 0, 0, renderW, renderH, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 }
 
 void Renderer::ForwardPass(Camera& camera, GLint targetFBO, int renderW, int renderH)

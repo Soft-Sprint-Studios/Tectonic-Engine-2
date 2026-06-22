@@ -46,12 +46,10 @@ void R_AutoExposure::Init()
     m_histogramShader.LoadCompute("shaders/lum_histogram.comp");
     m_averageShader.LoadCompute("shaders/lum_average.comp");
 
-    glGenBuffers(1, &m_histogramBuffer);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_histogramBuffer);
+    glCreateBuffers(1, &m_histogramBuffer);
     glNamedBufferData(m_histogramBuffer, 256 * sizeof(uint32_t), NULL, GL_DYNAMIC_COPY);
 
-    glGenBuffers(1, &m_lumBuffer);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_lumBuffer);
+    glCreateBuffers(1, &m_lumBuffer);
     float initialExposure = 1.0f;
     glNamedBufferData(m_lumBuffer, sizeof(float), &initialExposure, GL_DYNAMIC_COPY);
 }

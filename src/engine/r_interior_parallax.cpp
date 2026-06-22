@@ -39,26 +39,26 @@ GLuint R_InteriorParallax::GetCubemap(const std::string& name)
         return m_cubemapCache[name];
 
     GLuint tex;
-    glGenTextures(1, &tex);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, tex);
+    glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &tex);
+    glTextureStorage2D(tex, 10, GL_SRGB8_ALPHA8, 512, 512);
 
     std::vector<std::string> faces = { "right", "left", "top", "bottom", "front", "back" };
     for (unsigned int i = 0; i < faces.size(); i++)
     {
         std::string path = "textures/interiors/" + name + "_" + faces[i] + ".dds";
-        if (!DDS::LoadCubemapFace(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, path, true))
+        if (!DDS::LoadCubemapFace(tex, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, path, true))
         {
-            uint8_t black[3] = { 0, 0, 0 };
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, black);
+            uint8_t black[4] = { 0, 0, 0, 255 };
+            glTextureSubImage3D(tex, 0, 0, 0, i, 1, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, black);
         }
     }
-    
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+
+    glTextureParameteri(tex, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTextureParameteri(tex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureParameteri(tex, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(tex, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(tex, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glGenerateTextureMipmap(tex);
 
     m_cubemapCache[name] = tex;
     return tex;

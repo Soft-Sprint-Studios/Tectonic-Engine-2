@@ -31,35 +31,31 @@
 void R_Glass::Init(int width, int height)
 {
     m_shader.Load("shaders/glass.vert", "shaders/glass.frag");
-
-    glGenTextures(1, &m_refractTex);
     Rescale(width, height);
 }
 
 void R_Glass::Rescale(int width, int height)
 {
-    glBindTexture(GL_TEXTURE_2D, m_refractTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    if (m_refractTex != 0)
+        glDeleteTextures(1, &m_refractTex);
+
+    glCreateTextures(GL_TEXTURE_2D, 1, &m_refractTex);
+    glTextureStorage2D(m_refractTex, 1, GL_RGB16F, width, height);
+    glTextureParameteri(m_refractTex, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(m_refractTex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureParameteri(m_refractTex, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(m_refractTex, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     if (m_fbo == 0)
     {
-        glGenFramebuffers(1, &m_fbo);
+        glCreateFramebuffers(1, &m_fbo);
     }
-    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_refractTex, 0);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glNamedFramebufferTexture(m_fbo, GL_COLOR_ATTACHMENT0, m_refractTex, 0);
 }
 
 void R_Glass::CaptureScreen(GLuint screenFBO, int width, int height)
 {
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, screenFBO);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_fbo);
-    glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-    glBindFramebuffer(GL_FRAMEBUFFER, screenFBO);
+    glBlitNamedFramebuffer(screenFBO, m_fbo, 0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 }
 
 void R_Glass::Draw(const Camera& camera, R_BSP* bsp)

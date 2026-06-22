@@ -29,6 +29,6 @@
 namespace DDS
 {
     bool Load2D(GLuint textureID, const std::string& path, bool srgb, int& outWidth, int& outHeight, int& outChannels);
-    bool LoadCubemapFace(GLenum target, const std::string& path, bool srgb);
+    bool LoadCubemapFace(GLuint textureID, GLenum target, const std::string& path, bool srgb);
     bool WriteUncompressedRGB(const std::string& path, int width, int height, const uint8_t* rgbData);
 }

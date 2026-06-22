@@ -27,8 +27,8 @@ void R_Cables::Init()
 {
     m_shader.Load("shaders/cable.vert", "shaders/cable.frag");
     
-    glGenVertexArrays(1, &m_vao);
-    glGenBuffers(1, &m_vbo);
+    glCreateVertexArrays(1, &m_vao);
+    glCreateBuffers(1, &m_vbo);
 }
 
 static glm::vec3 GetBezierPoint(float t, glm::vec3 p0, glm::vec3 p1, glm::vec3 p2) 
@@ -53,7 +53,6 @@ void R_Cables::Draw(const Camera& camera, const std::vector<std::shared_ptr<Cabl
     m_shader.SetVec3("u_viewPos", camera.position);
 
     glBindVertexArray(m_vao);
-    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
 
     for (auto& cable : cables)
     {
@@ -84,8 +83,10 @@ void R_Cables::Draw(const Camera& camera, const std::vector<std::shared_ptr<Cabl
         }
 
         glNamedBufferData(m_vbo, vertices.size() * sizeof(glm::vec3), vertices.data(), GL_STREAM_DRAW);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), 0);
+        glVertexArrayVertexBuffer(m_vao, 0, m_vbo, 0, sizeof(glm::vec3));
+        glEnableVertexArrayAttrib(m_vao, 0);
+        glVertexArrayAttribFormat(m_vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
+        glVertexArrayAttribBinding(m_vao, 0, 0);
         
         glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)vertices.size());
     }

@@ -49,22 +49,16 @@ R_Monitors::RenderTarget& R_Monitors::GetTarget(Monitor* m)
         }
 
         rt.res = def.resolution;
-        glGenFramebuffers(1, &rt.fbo);
-        glBindFramebuffer(GL_FRAMEBUFFER, rt.fbo);
+        glCreateFramebuffers(1, &rt.fbo);
+        glCreateTextures(GL_TEXTURE_2D, 1, &rt.texture);
+        glTextureStorage2D(rt.texture, 1, GL_RGB16F, rt.res, rt.res);
+        glTextureParameteri(rt.texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTextureParameteri(rt.texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glNamedFramebufferTexture(rt.fbo, GL_COLOR_ATTACHMENT0, rt.texture, 0);
 
-        glGenTextures(1, &rt.texture);
-        glBindTexture(GL_TEXTURE_2D, rt.texture);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, rt.res, rt.res, 0, GL_RGB, GL_FLOAT, NULL);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rt.texture, 0);
-
-        glGenRenderbuffers(1, &rt.rbo);
-        glBindRenderbuffer(GL_RENDERBUFFER, rt.rbo);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, rt.res, rt.res);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rt.rbo);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glCreateRenderbuffers(1, &rt.rbo);
+        glNamedRenderbufferStorage(rt.rbo, GL_DEPTH_COMPONENT24, rt.res, rt.res);
+        glNamedFramebufferRenderbuffer(rt.fbo, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rt.rbo);
     }
     return m_targets[m];
 }

@@ -118,26 +118,26 @@ namespace Cubemap
             ss >> probe.mins.x >> probe.mins.y >> probe.mins.z;
             ss >> probe.maxs.x >> probe.maxs.y >> probe.maxs.z;
 
-            glGenTextures(1, &probe.textureID);
-            glBindTexture(GL_TEXTURE_CUBE_MAP, probe.textureID);
+            glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &probe.textureID);
+            glTextureStorage2D(probe.textureID, 10, GL_SRGB8_ALPHA8, 512, 512);
 
             std::vector<std::string> faces = { "right", "left", "top", "bottom", "front", "back" };
 
             for (unsigned int i = 0; i < faces.size(); i++)
             {
                 std::string facePath = basePath + "_" + faces[i] + ".dds";
-                if (!DDS::LoadCubemapFace(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, facePath, true))
+                if (!DDS::LoadCubemapFace(probe.textureID, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, facePath, true))
                 {
                     Console::Error("Failed to load cubemap face: " + facePath);
                 }
             }
 
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-            glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+            glTextureParameteri(probe.textureID, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+            glTextureParameteri(probe.textureID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTextureParameteri(probe.textureID, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTextureParameteri(probe.textureID, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTextureParameteri(probe.textureID, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+            glGenerateTextureMipmap(probe.textureID);
 
             s_probes.push_back(probe);
             probeIndex++;
@@ -165,12 +165,10 @@ namespace Cubemap
         const int resolution = r_cubemap_resolution.GetInt();
 
         GLuint fbo, rbo;
-        glGenFramebuffers(1, &fbo);
-        glGenRenderbuffers(1, &rbo);
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-        glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, resolution, resolution);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo);
+        glCreateFramebuffers(1, &fbo);
+        glCreateRenderbuffers(1, &rbo);
+        glNamedRenderbufferStorage(rbo, GL_DEPTH_COMPONENT24, resolution, resolution);
+        glNamedFramebufferRenderbuffer(fbo, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
         Camera buildCam(90.0f, 1.0f, 0.1f, 2000.0f);
 
@@ -201,17 +199,13 @@ namespace Cubemap
             glm::vec3 origin = (mins + maxs) * 0.5f;
 
             GLuint cubemapTex;
-            glGenTextures(1, &cubemapTex);
-            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTex);
-            for (int j = 0; j < 6; ++j)
-            {
-                glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + j, 0, GL_RGB, resolution, resolution, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-            }
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &cubemapTex);
+            glTextureStorage2D(cubemapTex, 1, GL_RGB8, resolution, resolution);
+            glTextureParameteri(cubemapTex, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTextureParameteri(cubemapTex, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTextureParameteri(cubemapTex, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+            glTextureParameteri(cubemapTex, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTextureParameteri(cubemapTex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
             glViewport(0, 0, resolution, resolution);
             glBindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -219,37 +213,36 @@ namespace Cubemap
 
             for (int j = 0; j < 6; ++j)
             {
-                buildCam.yaw = 0; 
+                buildCam.yaw = 0;
                 buildCam.pitch = 0;
 
-                if(j==0) 
+                if (j == 0)
                     buildCam.yaw = 0;
-                if(j==1) 
+                if (j == 1)
                     buildCam.yaw = 180;
-                if(j==2) 
+                if (j == 2)
                     buildCam.pitch = 90;
-                if(j==3) 
+                if (j == 3)
                     buildCam.pitch = -90;
-                if(j==4) 
+                if (j == 4)
                     buildCam.yaw = 90;
-                if(j==5) 
+                if (j == 5)
                     buildCam.yaw = -90;
 
-                if(j == 2 || j == 3) 
+                if (j == 2 || j == 3)
                     buildCam.yaw = -90;
 
-                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + j, cubemapTex, 0);
+                glNamedFramebufferTextureLayer(fbo, GL_COLOR_ATTACHMENT0, cubemapTex, 0, j);
                 renderer->RenderWorld(buildCam, cubemapTex);
             }
 
             std::vector<unsigned char> buffer(resolution * resolution * 3);
             std::string basePath = cubemapDir + "cubemap_" + std::to_string(i);
             std::vector<std::string> faceNames = { "right", "left", "top", "bottom", "front", "back" };
-            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTex);
 
             for (int j = 0; j < 6; ++j)
             {
-                glGetTexImage(GL_TEXTURE_CUBE_MAP_POSITIVE_X + j, 0, GL_RGB, GL_UNSIGNED_BYTE, buffer.data());
+                glGetTextureSubImage(cubemapTex, 0, 0, 0, j, resolution, resolution, 1, GL_RGB, GL_UNSIGNED_BYTE, (GLsizei)buffer.size(), buffer.data());
                 std::string path = Filesystem::GetFullPath(basePath + "_" + faceNames[j] + ".dds");
                 DDS::WriteUncompressedRGB(path, resolution, resolution, buffer.data());
             }

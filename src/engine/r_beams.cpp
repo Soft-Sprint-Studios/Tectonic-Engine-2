@@ -34,13 +34,14 @@ void R_Beams::Init()
         0, -1,  1,  1,  0, 1
     };
 
-    glGenVertexArrays(1, &m_vao);
-    glGenBuffers(1, &m_vbo);
-    glBindVertexArray(m_vao);
-    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+    glCreateVertexArrays(1, &m_vao);
+    glCreateBuffers(1, &m_vbo);
     glNamedBufferData(m_vbo, sizeof(verts), verts, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
+
+    glVertexArrayVertexBuffer(m_vao, 0, m_vbo, 0, 2 * sizeof(float));
+    glEnableVertexArrayAttrib(m_vao, 0);
+    glVertexArrayAttribFormat(m_vao, 0, 2, GL_FLOAT, GL_FALSE, 0);
+    glVertexArrayAttribBinding(m_vao, 0, 0);
 }
 
 void R_Beams::Draw(const Camera& camera, const std::vector<std::shared_ptr<Beam>>& beams)

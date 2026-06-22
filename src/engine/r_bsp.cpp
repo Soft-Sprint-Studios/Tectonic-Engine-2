@@ -47,38 +47,49 @@ bool R_BSP::Init(const BSP::MapData& map)
         return false;
     }
 
-    glGenVertexArrays(1, &m_vao);
-    glGenBuffers(1, &m_vbo);
-
-    glBindVertexArray(m_vao);
-    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+    glCreateVertexArrays(1, &m_vao);
+    glCreateBuffers(1, &m_vbo);
     glNamedBufferData(m_vbo, map.renderVertices.size() * sizeof(BSP::Vertex), map.renderVertices.data(), GL_STATIC_DRAW);
 
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_HALF_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, uv));
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, lm_uv));
-    glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, lm_size));
-    glEnableVertexAttribArray(4);
-    glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, alpha));
-    glEnableVertexAttribArray(5);
-    glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, normal));
-    glEnableVertexAttribArray(6);
-    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, tangent));
+    glVertexArrayVertexBuffer(m_vao, 0, m_vbo, 0, sizeof(BSP::Vertex));
+
+    glEnableVertexArrayAttrib(m_vao, 0);
+    glVertexArrayAttribFormat(m_vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
+    glVertexArrayAttribBinding(m_vao, 0, 0);
+
+    glEnableVertexArrayAttrib(m_vao, 1);
+    glVertexArrayAttribFormat(m_vao, 1, 2, GL_HALF_FLOAT, GL_FALSE, offsetof(BSP::Vertex, uv));
+    glVertexArrayAttribBinding(m_vao, 1, 0);
+
+    glEnableVertexArrayAttrib(m_vao, 2);
+    glVertexArrayAttribFormat(m_vao, 2, 2, GL_FLOAT, GL_FALSE, offsetof(BSP::Vertex, lm_uv));
+    glVertexArrayAttribBinding(m_vao, 2, 0);
+
+    glEnableVertexArrayAttrib(m_vao, 3);
+    glVertexArrayAttribFormat(m_vao, 3, 2, GL_FLOAT, GL_FALSE, offsetof(BSP::Vertex, lm_size));
+    glVertexArrayAttribBinding(m_vao, 3, 0);
+
+    glEnableVertexArrayAttrib(m_vao, 4);
+    glVertexArrayAttribFormat(m_vao, 4, 1, GL_FLOAT, GL_FALSE, offsetof(BSP::Vertex, alpha));
+    glVertexArrayAttribBinding(m_vao, 4, 0);
+
+    glEnableVertexArrayAttrib(m_vao, 5);
+    glVertexArrayAttribFormat(m_vao, 5, 3, GL_FLOAT, GL_FALSE, offsetof(BSP::Vertex, normal));
+    glVertexArrayAttribBinding(m_vao, 5, 0);
+
+    glEnableVertexArrayAttrib(m_vao, 6);
+    glVertexArrayAttribFormat(m_vao, 6, 4, GL_FLOAT, GL_FALSE, offsetof(BSP::Vertex, tangent));
+    glVertexArrayAttribBinding(m_vao, 6, 0);
 
     if (!map.lightmapAtlas.empty())
     {
-        glGenTextures(1, &m_lightmapTexture);
-        glBindTexture(GL_TEXTURE_2D, m_lightmapTexture);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, map.lightmapAtlasWidth, map.lightmapAtlasHeight, 0, GL_RGBA, GL_FLOAT, map.lightmapAtlas.data());
-        glBindTexture(GL_TEXTURE_2D, 0);
+        glCreateTextures(GL_TEXTURE_2D, 1, &m_lightmapTexture);
+        glTextureStorage2D(m_lightmapTexture, 1, GL_RGBA16F, map.lightmapAtlasWidth, map.lightmapAtlasHeight);
+        glTextureSubImage2D(m_lightmapTexture, 0, 0, 0, map.lightmapAtlasWidth, map.lightmapAtlasHeight, GL_RGBA, GL_FLOAT, map.lightmapAtlas.data());
+        glTextureParameteri(m_lightmapTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTextureParameteri(m_lightmapTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTextureParameteri(m_lightmapTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(m_lightmapTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     }
 
     m_drawCalls.clear();
@@ -114,26 +125,39 @@ bool R_BSP::Init(const BSP::MapData& map)
             continue;
 
         BrushModel bm;
-        glGenVertexArrays(1, &bm.vao);
-        glGenBuffers(1, &bm.vbo);
-        glBindVertexArray(bm.vao);
-        glBindBuffer(GL_ARRAY_BUFFER, bm.vbo);
+        glCreateVertexArrays(1, &bm.vao);
+        glCreateBuffers(1, &bm.vbo);
         glNamedBufferData(bm.vbo, ent.renderVertices.size() * sizeof(BSP::Vertex), ent.renderVertices.data(), GL_STATIC_DRAW);
 
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)0);
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_HALF_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, uv));
-        glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, lm_uv));
-        glEnableVertexAttribArray(3);
-        glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, lm_size));
-        glEnableVertexAttribArray(4);
-        glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, alpha));
-        glEnableVertexAttribArray(5);
-        glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, normal));
-        glEnableVertexAttribArray(6);
-        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(BSP::Vertex), (void*)offsetof(BSP::Vertex, tangent));
+        glVertexArrayVertexBuffer(bm.vao, 0, bm.vbo, 0, sizeof(BSP::Vertex));
+
+        glEnableVertexArrayAttrib(bm.vao, 0);
+        glVertexArrayAttribFormat(bm.vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
+        glVertexArrayAttribBinding(bm.vao, 0, 0);
+
+        glEnableVertexArrayAttrib(bm.vao, 1);
+        glVertexArrayAttribFormat(bm.vao, 1, 2, GL_HALF_FLOAT, GL_FALSE, offsetof(BSP::Vertex, uv));
+        glVertexArrayAttribBinding(bm.vao, 1, 0);
+
+        glEnableVertexArrayAttrib(bm.vao, 2);
+        glVertexArrayAttribFormat(bm.vao, 2, 2, GL_FLOAT, GL_FALSE, offsetof(BSP::Vertex, lm_uv));
+        glVertexArrayAttribBinding(bm.vao, 2, 0);
+
+        glEnableVertexArrayAttrib(bm.vao, 3);
+        glVertexArrayAttribFormat(bm.vao, 3, 2, GL_FLOAT, GL_FALSE, offsetof(BSP::Vertex, lm_size));
+        glVertexArrayAttribBinding(bm.vao, 3, 0);
+
+        glEnableVertexArrayAttrib(bm.vao, 4);
+        glVertexArrayAttribFormat(bm.vao, 4, 1, GL_FLOAT, GL_FALSE, offsetof(BSP::Vertex, alpha));
+        glVertexArrayAttribBinding(bm.vao, 4, 0);
+
+        glEnableVertexArrayAttrib(bm.vao, 5);
+        glVertexArrayAttribFormat(bm.vao, 5, 3, GL_FLOAT, GL_FALSE, offsetof(BSP::Vertex, normal));
+        glVertexArrayAttribBinding(bm.vao, 5, 0);
+
+        glEnableVertexArrayAttrib(bm.vao, 6);
+        glVertexArrayAttribFormat(bm.vao, 6, 4, GL_FLOAT, GL_FALSE, offsetof(BSP::Vertex, tangent));
+        glVertexArrayAttribBinding(bm.vao, 6, 0);
 
         for (auto& dc : ent.drawCalls)
         {

@@ -47,35 +47,28 @@ void R_Cascade::Init(int res)
     // Cascade ranges
     m_splits = { 0.1f, 20.0f, 60.0f, 150.0f, 500.0f };
 
-    glGenFramebuffers(1, &m_fbo);
-    glGenTextures(1, &m_texArray);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, m_texArray);
+    glCreateFramebuffers(1, &m_fbo);
+    glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &m_texArray);
+    glTextureStorage3D(m_texArray, 1, GL_DEPTH_COMPONENT32F, m_resolution, m_resolution, 4);
 
-    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT32F, m_resolution, m_resolution, 4, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    glTextureParameteri(m_texArray, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(m_texArray, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureParameteri(m_texArray, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTextureParameteri(m_texArray, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    
     float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-    glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, borderColor);
+    glTextureParameterfv(m_texArray, GL_TEXTURE_BORDER_COLOR, borderColor);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_texArray, 0);
+    glNamedFramebufferTexture(m_fbo, GL_DEPTH_ATTACHMENT, m_texArray, 0);
 
-    glGenBuffers(1, &m_matrixSSBO);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_matrixSSBO);
+    glCreateBuffers(1, &m_matrixSSBO);
     glNamedBufferData(m_matrixSSBO, sizeof(glm::mat4) * 4, nullptr, GL_DYNAMIC_DRAW);
 
-    glDrawBuffer(GL_NONE);
-    glReadBuffer(GL_NONE);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glNamedFramebufferDrawBuffer(m_fbo, GL_NONE);
+    glNamedFramebufferReadBuffer(m_fbo, GL_NONE);
 
-    glGenTextures(1, &m_dummyTex);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, m_dummyTex);
-    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT32F, 1, 1, 1, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+    glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &m_dummyTex);
+    glTextureStorage3D(m_dummyTex, 1, GL_DEPTH_COMPONENT32F, 1, 1, 1);
 }
 
 std::vector<glm::vec4> R_Cascade::GetFrustumCornersWorldSpace(const glm::mat4& proj, const glm::mat4& view)

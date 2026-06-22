@@ -43,24 +43,25 @@ void R_Decals::Init()
         2, 3, 0
     };
 
-    glGenVertexArrays(1, &m_vao);
-    glGenBuffers(1, &m_vbo);
-    glGenBuffers(1, &m_ebo);
+    glCreateVertexArrays(1, &m_vao);
+    glCreateBuffers(1, &m_vbo);
+    glCreateBuffers(1, &m_ebo);
 
-    glBindVertexArray(m_vao);
-    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
     glNamedBufferData(m_vbo, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
     glNamedBufferData(m_ebo, sizeof(indices), indices, GL_STATIC_DRAW);
 
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(DecalVertex), (void*)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(DecalVertex), (void*)offsetof(DecalVertex, uv));
+    glVertexArrayVertexBuffer(m_vao, 0, m_vbo, 0, sizeof(DecalVertex));
+    glVertexArrayElementBuffer(m_vao, m_ebo);
 
-    glGenBuffers(1, &m_instanceSSBO);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_instanceSSBO);
+    glEnableVertexArrayAttrib(m_vao, 0);
+    glVertexArrayAttribFormat(m_vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
+    glVertexArrayAttribBinding(m_vao, 0, 0);
+
+    glEnableVertexArrayAttrib(m_vao, 1);
+    glVertexArrayAttribFormat(m_vao, 1, 2, GL_FLOAT, GL_FALSE, offsetof(DecalVertex, uv));
+    glVertexArrayAttribBinding(m_vao, 1, 0);
+
+    glCreateBuffers(1, &m_instanceSSBO);
     glNamedBufferData(m_instanceSSBO, 1024 * sizeof(glm::mat4), NULL, GL_DYNAMIC_DRAW);
 }
 

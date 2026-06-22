@@ -40,18 +40,23 @@ bool R_Particles::Init()
 {
     m_shader.Load("shaders/particle.vert", "shaders/particle.frag", "shaders/particle.geom");
 
-    glGenVertexArrays(1, &m_vao);
-    glGenBuffers(1, &m_vbo);
-    glBindVertexArray(m_vao);
-    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-    glBufferData(GL_ARRAY_BUFFER, 10000 * sizeof(PVertex), NULL, GL_DYNAMIC_DRAW);
+    glCreateVertexArrays(1, &m_vao);
+    glCreateBuffers(1, &m_vbo);
+    glNamedBufferData(m_vbo, 10000 * sizeof(PVertex), NULL, GL_DYNAMIC_DRAW);
 
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(PVertex), (void*)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(PVertex), (void*)offsetof(PVertex, col));
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(PVertex), (void*)offsetof(PVertex, size));
+    glVertexArrayVertexBuffer(m_vao, 0, m_vbo, 0, sizeof(PVertex));
+
+    glEnableVertexArrayAttrib(m_vao, 0);
+    glVertexArrayAttribFormat(m_vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
+    glVertexArrayAttribBinding(m_vao, 0, 0);
+
+    glEnableVertexArrayAttrib(m_vao, 1);
+    glVertexArrayAttribFormat(m_vao, 1, 4, GL_FLOAT, GL_FALSE, offsetof(PVertex, col));
+    glVertexArrayAttribBinding(m_vao, 1, 0);
+
+    glEnableVertexArrayAttrib(m_vao, 2);
+    glVertexArrayAttribFormat(m_vao, 2, 1, GL_FLOAT, GL_FALSE, offsetof(PVertex, size));
+    glVertexArrayAttribBinding(m_vao, 2, 0);
     
     return true;
 }
@@ -100,8 +105,7 @@ void R_Particles::Draw(const Camera& camera, uint32_t depthTex)
         for (auto& p : pts) 
             vts.push_back({p.pos, p.col, p.size});
 
-        glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, vts.size() * sizeof(PVertex), vts.data());
+        glNamedBufferSubData(m_vbo, 0, vts.size() * sizeof(PVertex), vts.data());
         glDrawArrays(GL_POINTS, 0, (GLsizei)vts.size());
     }
     glDepthMask(GL_TRUE);

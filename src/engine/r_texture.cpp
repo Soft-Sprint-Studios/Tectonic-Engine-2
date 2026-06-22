@@ -49,7 +49,7 @@ bool R_Texture::Load(const std::string& path, bool srgb)
         glDeleteTextures(1, &m_id);
     }
 
-    glGenTextures(1, &m_id);
+    glCreateTextures(GL_TEXTURE_2D, 1, &m_id);
 
     if (!DDS::Load2D(m_id, path, srgb, m_width, m_height, m_channels))
     {
@@ -71,20 +71,28 @@ void R_Texture::Create(int width, int height, unsigned char* data, bool srgb)
         glDeleteTextures(1, &m_id);
     }
 
-    glGenTextures(1, &m_id);
-    glBindTexture(GL_TEXTURE_2D, m_id);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glCreateTextures(GL_TEXTURE_2D, 1, &m_id);
+    glTextureParameteri(m_id, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTextureParameteri(m_id, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTextureParameteri(m_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTextureParameteri(m_id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     GLint internalFormat = srgb ? GL_SRGB8_ALPHA8 : GL_RGBA8;
-    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, m_width, m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, r_textureAnisotropy.GetFloat());
 
-    glBindTexture(GL_TEXTURE_2D, 0);
+    int levels = 1;
+    int tempW = width;
+    int tempH = height;
+    while (tempW > 1 || tempH > 1) 
+    {
+        tempW = std::max(1, tempW / 2);
+        tempH = std::max(1, tempH / 2);
+        levels++;
+    }
+
+    glTextureStorage2D(m_id, levels, internalFormat, m_width, m_height);
+    glTextureSubImage2D(m_id, 0, 0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    glGenerateTextureMipmap(m_id);
+    glTextureParameterf(m_id, GL_TEXTURE_MAX_ANISOTROPY_EXT, r_textureAnisotropy.GetFloat());
 }
 
 void R_Texture::Bind(unsigned int unit) const

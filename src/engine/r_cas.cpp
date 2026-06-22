@@ -53,27 +53,22 @@ bool R_CAS::Init(int width, int height)
 
 void R_CAS::CreateBuffers(int width, int height)
 {
-    glGenFramebuffers(1, &m_inputFbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, m_inputFbo);
+    glCreateFramebuffers(1, &m_inputFbo);
 
-    glGenTextures(1, &m_inputTex);
-    glBindTexture(GL_TEXTURE_2D, m_inputTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_inputTex, 0);
+    glCreateTextures(GL_TEXTURE_2D, 1, &m_inputTex);
+    glTextureStorage2D(m_inputTex, 1, GL_RGBA8, width, height);
+    glTextureParameteri(m_inputTex, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(m_inputTex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureParameteri(m_inputTex, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(m_inputTex, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glNamedFramebufferTexture(m_inputFbo, GL_COLOR_ATTACHMENT0, m_inputTex, 0);
 
-    glGenTextures(1, &m_outputTex);
-    glBindTexture(GL_TEXTURE_2D, m_outputTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glCreateTextures(GL_TEXTURE_2D, 1, &m_outputTex);
+    glTextureStorage2D(m_outputTex, 1, GL_RGBA8, width, height);
+    glTextureParameteri(m_outputTex, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(m_outputTex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureParameteri(m_outputTex, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(m_outputTex, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
 
 void R_CAS::DeleteBuffers()

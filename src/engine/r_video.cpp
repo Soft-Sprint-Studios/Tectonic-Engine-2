@@ -65,29 +65,26 @@ bool R_VideoInstance::Load(const std::string& path, bool loop)
         return false;
     }
 
-    glGenTextures(1, &m_texY);
-    glBindTexture(GL_TEXTURE_2D, m_texY);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, w, h, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+    glCreateTextures(GL_TEXTURE_2D, 1, &m_texY);
+    glTextureStorage2D(m_texY, 1, GL_R8, w, h);
+    glTextureParameteri(m_texY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(m_texY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureParameteri(m_texY, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTextureParameteri(m_texY, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-    glGenTextures(1, &m_texCb);
-    glBindTexture(GL_TEXTURE_2D, m_texCb);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, w / 2, h / 2, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+    glCreateTextures(GL_TEXTURE_2D, 1, &m_texCb);
+    glTextureStorage2D(m_texCb, 1, GL_R8, w / 2, h / 2);
+    glTextureParameteri(m_texCb, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(m_texCb, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureParameteri(m_texCb, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTextureParameteri(m_texCb, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-    glGenTextures(1, &m_texCr);
-    glBindTexture(GL_TEXTURE_2D, m_texCr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, w / 2, h / 2, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+    glCreateTextures(GL_TEXTURE_2D, 1, &m_texCr);
+    glTextureStorage2D(m_texCr, 1, GL_R8, w / 2, h / 2);
+    glTextureParameteri(m_texCr, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(m_texCr, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureParameteri(m_texCr, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTextureParameteri(m_texCr, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
     return true;
 }
@@ -106,12 +103,9 @@ void R_VideoInstance::Update(float dt)
         plm_frame_t* frame = plm_decode_video(m_plm);
         if (frame)
         {
-            glBindTexture(GL_TEXTURE_2D, m_texY);
-            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, frame->width, frame->height, GL_RED, GL_UNSIGNED_BYTE, frame->y.data);
-            glBindTexture(GL_TEXTURE_2D, m_texCb);
-            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, frame->width / 2, frame->height / 2, GL_RED, GL_UNSIGNED_BYTE, frame->cb.data);
-            glBindTexture(GL_TEXTURE_2D, m_texCr);
-            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, frame->width / 2, frame->height / 2, GL_RED, GL_UNSIGNED_BYTE, frame->cr.data);
+            glTextureSubImage2D(m_texY, 0, 0, 0, frame->width, frame->height, GL_RED, GL_UNSIGNED_BYTE, frame->y.data);
+            glTextureSubImage2D(m_texCb, 0, 0, 0, frame->width / 2, frame->height / 2, GL_RED, GL_UNSIGNED_BYTE, frame->cb.data);
+            glTextureSubImage2D(m_texCr, 0, 0, 0, frame->width / 2, frame->height / 2, GL_RED, GL_UNSIGNED_BYTE, frame->cr.data);
 
             m_nextFrameTime += 1.0 / plm_get_framerate(m_plm);
         }

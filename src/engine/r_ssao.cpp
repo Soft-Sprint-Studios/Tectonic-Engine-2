@@ -96,13 +96,13 @@ void R_SSAO::GenerateNoiseTexture()
         ssaoNoise.push_back(noise);
     }
 
-    glGenTextures(1, &m_noiseTexture);
-    glBindTexture(GL_TEXTURE_2D, m_noiseTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, 4, 4, 0, GL_RGB, GL_FLOAT, &ssaoNoise[0]);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glCreateTextures(GL_TEXTURE_2D, 1, &m_noiseTexture);
+    glTextureStorage2D(m_noiseTexture, 1, GL_RGB16F, 4, 4);
+    glTextureSubImage2D(m_noiseTexture, 0, 0, 0, 4, 4, GL_RGB, GL_FLOAT, ssaoNoise.data());
+    glTextureParameteri(m_noiseTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTextureParameteri(m_noiseTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTextureParameteri(m_noiseTexture, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTextureParameteri(m_noiseTexture, GL_TEXTURE_WRAP_T, GL_REPEAT);
 }
 
 void R_SSAO::CreateBuffers(int width, int height)
@@ -115,28 +115,22 @@ void R_SSAO::CreateBuffers(int width, int height)
     int vW = width / ds;
     int vH = height / ds;
 
-    glGenFramebuffers(1, &m_fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-    glGenTextures(1, &m_texture);
-    glBindTexture(GL_TEXTURE_2D, m_texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, vW, vH, 0, GL_RED, GL_FLOAT, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_texture, 0);
+    glCreateFramebuffers(1, &m_fbo);
+    glCreateTextures(GL_TEXTURE_2D, 1, &m_texture);
+    glTextureStorage2D(m_texture, 1, GL_R8, vW, vH);
+    glTextureParameteri(m_texture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTextureParameteri(m_texture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glNamedFramebufferTexture(m_fbo, GL_COLOR_ATTACHMENT0, m_texture, 0);
 
-    glGenFramebuffers(2, m_blurFbo);
-    glGenTextures(2, m_blurTexture);
+    glCreateFramebuffers(2, m_blurFbo);
+    glCreateTextures(GL_TEXTURE_2D, 2, m_blurTexture);
     for (int i = 0; i < 2; i++)
     {
-        glBindFramebuffer(GL_FRAMEBUFFER, m_blurFbo[i]);
-        glBindTexture(GL_TEXTURE_2D, m_blurTexture[i]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, vW, vH, 0, GL_RED, GL_FLOAT, NULL);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_blurTexture[i], 0);
+        glTextureStorage2D(m_blurTexture[i], 1, GL_R8, vW, vH);
+        glTextureParameteri(m_blurTexture[i], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTextureParameteri(m_blurTexture[i], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glNamedFramebufferTexture(m_blurFbo[i], GL_COLOR_ATTACHMENT0, m_blurTexture[i], 0);
     }
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     GenerateNoiseTexture();
 }

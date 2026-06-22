@@ -73,21 +73,17 @@ void R_Bloom::CreateChain(int width, int height)
         Mip mip;
         mip.size = mipSize;
 
-        glGenFramebuffers(1, &mip.fbo);
-        glBindFramebuffer(GL_FRAMEBUFFER, mip.fbo);
-
-        glGenTextures(1, &mip.texture);
-        glBindTexture(GL_TEXTURE_2D, mip.texture);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, mip.size.x, mip.size.y, 0, GL_RGBA, GL_FLOAT, nullptr);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mip.texture, 0);
+        glCreateFramebuffers(1, &mip.fbo);
+        glCreateTextures(GL_TEXTURE_2D, 1, &mip.texture);
+        glTextureStorage2D(mip.texture, 1, GL_RGBA16F, mip.size.x, mip.size.y);
+        glTextureParameteri(mip.texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTextureParameteri(mip.texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTextureParameteri(mip.texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(mip.texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glNamedFramebufferTexture(mip.fbo, GL_COLOR_ATTACHMENT0, mip.texture, 0);
 
         m_mipChain.push_back(mip);
     }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void R_Bloom::DeleteChain()

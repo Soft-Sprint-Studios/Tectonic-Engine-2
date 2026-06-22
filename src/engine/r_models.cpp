@@ -84,8 +84,7 @@ bool R_Models::Init(const BSP::MapData& mapData)
 
         if (group.hasLightmap) 
         {
-            glGenBuffers(1, &group.lmUVSSBO);
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, group.lmUVSSBO);
+            glCreateBuffers(1, &group.lmUVSSBO);
             glNamedBufferData(group.lmUVSSBO, allUVTransforms.size() * sizeof(glm::vec4), allUVTransforms.data(), GL_STATIC_DRAW);
         }
 
@@ -128,8 +127,7 @@ bool R_Models::Init(const BSP::MapData& mapData)
             }
         }
 
-        glGenBuffers(1, &group.transformSSBO);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, group.transformSSBO);
+        glCreateBuffers(1, &group.transformSSBO);
         glNamedBufferData(group.transformSSBO, transforms.size() * sizeof(glm::mat4), transforms.data(), GL_STATIC_DRAW);
     }
 
@@ -173,80 +171,85 @@ void R_Models::LoadModel(const std::string& path)
         m.vertexOffset = currentVertexOffset;
         m.vertexCount = (uint32_t)prim.positions.size();
 
-        glGenVertexArrays(1, &m.vao);
-        glBindVertexArray(m.vao);
+        glCreateVertexArrays(1, &m.vao);
 
         if (!prim.positions.empty())
         {
             GLuint vbo;
-            glGenBuffers(1, &vbo);
-            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            glCreateBuffers(1, &vbo);
             glNamedBufferData(vbo, prim.positions.size() * sizeof(glm::vec3), prim.positions.data(), GL_STATIC_DRAW);
             m.vbos.push_back(vbo);
-            glEnableVertexAttribArray(0);
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), 0);
+            glVertexArrayVertexBuffer(m.vao, 0, vbo, 0, sizeof(glm::vec3));
+            glEnableVertexArrayAttrib(m.vao, 0);
+            glVertexArrayAttribFormat(m.vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
+            glVertexArrayAttribBinding(m.vao, 0, 0);
         }
 
         if (!prim.uvs.empty())
         {
             GLuint vbo;
-            glGenBuffers(1, &vbo);
-            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            glCreateBuffers(1, &vbo);
             glNamedBufferData(vbo, prim.uvs.size() * sizeof(glm::vec2), prim.uvs.data(), GL_STATIC_DRAW);
             m.vbos.push_back(vbo);
-            glEnableVertexAttribArray(1);
-            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), 0);
+            glVertexArrayVertexBuffer(m.vao, 1, vbo, 0, sizeof(glm::vec2));
+            glEnableVertexArrayAttrib(m.vao, 1);
+            glVertexArrayAttribFormat(m.vao, 1, 2, GL_FLOAT, GL_FALSE, 0);
+            glVertexArrayAttribBinding(m.vao, 1, 1);
         }
 
         if (!prim.normals.empty())
         {
             GLuint vbo;
-            glGenBuffers(1, &vbo);
-            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            glCreateBuffers(1, &vbo);
             glNamedBufferData(vbo, prim.normals.size() * sizeof(glm::vec3), prim.normals.data(), GL_STATIC_DRAW);
             m.vbos.push_back(vbo);
-            glEnableVertexAttribArray(5);
-            glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), 0);
+            glVertexArrayVertexBuffer(m.vao, 5, vbo, 0, sizeof(glm::vec3));
+            glEnableVertexArrayAttrib(m.vao, 5);
+            glVertexArrayAttribFormat(m.vao, 5, 3, GL_FLOAT, GL_FALSE, 0);
+            glVertexArrayAttribBinding(m.vao, 5, 5);
         }
 
         if (!prim.tangents.empty())
         {
             GLuint vbo;
-            glGenBuffers(1, &vbo);
-            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            glCreateBuffers(1, &vbo);
             glNamedBufferData(vbo, prim.tangents.size() * sizeof(glm::vec4), prim.tangents.data(), GL_STATIC_DRAW);
             m.vbos.push_back(vbo);
-            glEnableVertexAttribArray(6);
-            glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4), 0);
+            glVertexArrayVertexBuffer(m.vao, 6, vbo, 0, sizeof(glm::vec4));
+            glEnableVertexArrayAttrib(m.vao, 6);
+            glVertexArrayAttribFormat(m.vao, 6, 4, GL_FLOAT, GL_FALSE, 0);
+            glVertexArrayAttribBinding(m.vao, 6, 6);
         }
 
         if (!prim.joints.empty())
         {
             GLuint vbo;
-            glGenBuffers(1, &vbo);
-            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            glCreateBuffers(1, &vbo);
             glNamedBufferData(vbo, prim.joints.size() * sizeof(glm::uvec4), prim.joints.data(), GL_STATIC_DRAW);
             m.vbos.push_back(vbo);
-            glEnableVertexAttribArray(7);
-            glVertexAttribIPointer(7, 4, GL_UNSIGNED_INT, sizeof(glm::uvec4), 0);
+            glVertexArrayVertexBuffer(m.vao, 7, vbo, 0, sizeof(glm::uvec4));
+            glEnableVertexArrayAttrib(m.vao, 7);
+            glVertexArrayAttribIFormat(m.vao, 7, 4, GL_UNSIGNED_INT, 0);
+            glVertexArrayAttribBinding(m.vao, 7, 7);
         }
 
         if (!prim.weights.empty())
         {
             GLuint vbo;
-            glGenBuffers(1, &vbo);
-            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            glCreateBuffers(1, &vbo);
             glNamedBufferData(vbo, prim.weights.size() * sizeof(glm::vec4), prim.weights.data(), GL_STATIC_DRAW);
             m.vbos.push_back(vbo);
-            glEnableVertexAttribArray(8);
-            glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4), 0);
+            glVertexArrayVertexBuffer(m.vao, 8, vbo, 0, sizeof(glm::vec4));
+            glEnableVertexArrayAttrib(m.vao, 8);
+            glVertexArrayAttribFormat(m.vao, 8, 4, GL_FLOAT, GL_FALSE, 0);
+            glVertexArrayAttribBinding(m.vao, 8, 8);
         }
 
         if (!prim.indices.empty())
         {
-            glGenBuffers(1, &m.ebo);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m.ebo);
+            glCreateBuffers(1, &m.ebo);
             glNamedBufferData(m.ebo, prim.indices.size() * sizeof(uint32_t), prim.indices.data(), GL_STATIC_DRAW);
+            glVertexArrayElementBuffer(m.vao, m.ebo);
             m.indexCount = (uint32_t)prim.indices.size();
             m.indexType = GL_UNSIGNED_INT;
         }

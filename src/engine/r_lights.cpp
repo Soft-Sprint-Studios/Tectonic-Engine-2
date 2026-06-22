@@ -57,38 +57,31 @@ bool R_Lights::Init()
     m_cascade = std::make_unique<R_Cascade>();
     m_cascade->Init(r_csm_res.GetInt());
 
-    glGenFramebuffers(1, &m_shadowFBO);
+    glCreateFramebuffers(1, &m_shadowFBO);
 
-    glGenTextures(1, &m_shadowDepthTex);
-    glBindTexture(GL_TEXTURE_2D, m_shadowDepthTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, 256, 256, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glCreateTextures(GL_TEXTURE_2D, 1, &m_shadowDepthTex);
+    glTextureStorage2D(m_shadowDepthTex, 1, GL_DEPTH_COMPONENT24, 256, 256);
 
-    glGenTextures(1, &m_PointDepth);
-    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, m_PointDepth);
-    glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, GL_DEPTH_COMPONENT24, 256, 256, 32 * 6, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glCreateTextures(GL_TEXTURE_CUBE_MAP_ARRAY, 1, &m_PointDepth);
+    glTextureStorage3D(m_PointDepth, 1, GL_DEPTH_COMPONENT24, 256, 256, 32 * 6);
 
-    glGenTextures(1, &m_SpotShadow);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, m_SpotShadow);
-    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RG16F, 256, 256, 32, 0, GL_RG, GL_FLOAT, NULL);
+    glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &m_SpotShadow);
+    glTextureStorage3D(m_SpotShadow, 1, GL_RG16F, 256, 256, 32);
 
     const GLfloat spotClear[2] = { 1e10f, 1e20f };
     glClearTexImage(m_SpotShadow, 0, GL_RG, GL_FLOAT, spotClear);
+    glTextureParameteri(m_SpotShadow, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(m_SpotShadow, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    glGenTextures(1, &m_PointShadow);
-    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, m_PointShadow);
-    glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, GL_RG16F, 256, 256, 32 * 6, 0, GL_RG, GL_FLOAT, NULL);
+    glCreateTextures(GL_TEXTURE_CUBE_MAP_ARRAY, 1, &m_PointShadow);
+    glTextureStorage3D(m_PointShadow, 1, GL_RG16F, 256, 256, 32 * 6);
 
     const GLfloat pointClear[2] = { 1e10f, 1e20f };
     glClearTexImage(m_PointShadow, 0, GL_RG, GL_FLOAT, pointClear);
+    glTextureParameteri(m_PointShadow, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(m_PointShadow, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    glGenBuffers(1, &m_lightSSBO);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_lightSSBO);
+    glCreateBuffers(1, &m_lightSSBO);
     glNamedBufferData(m_lightSSBO, 64 * sizeof(GPULight), NULL, GL_DYNAMIC_DRAW);
 
     return true;
@@ -147,8 +140,8 @@ void R_Lights::RenderShadowMaps(Camera& camera, Renderer* renderer)
 
         if (def.type == LightType::Spot)
         {
-            glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_SpotShadow, 0, def.shadowLayer);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_shadowDepthTex, 0);
+            glNamedFramebufferTextureLayer(m_shadowFBO, GL_COLOR_ATTACHMENT0, m_SpotShadow, 0, def.shadowLayer);
+            glNamedFramebufferTexture(m_shadowFBO, GL_DEPTH_ATTACHMENT, m_shadowDepthTex, 0);
             glClearColor(1e10f, 1e20f, 0.0f, 0.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -176,14 +169,14 @@ void R_Lights::RenderShadowMaps(Camera& camera, Renderer* renderer)
         {
             for (int face = 0; face < 6; ++face) 
             {
-                glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_PointShadow, 0, def.shadowLayer * 6 + face);
-                glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_PointDepth, 0, def.shadowLayer * 6 + face);
+                glNamedFramebufferTextureLayer(m_shadowFBO, GL_COLOR_ATTACHMENT0, m_PointShadow, 0, def.shadowLayer * 6 + face);
+                glNamedFramebufferTextureLayer(m_shadowFBO, GL_DEPTH_ATTACHMENT, m_PointDepth, 0, def.shadowLayer * 6 + face);
                 glClearColor(1e10f, 1e20f, 0.0f, 0.0f);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             }
 
-            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_PointShadow, 0);
-            glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_PointDepth, 0);
+            glNamedFramebufferTexture(m_shadowFBO, GL_COLOR_ATTACHMENT0, m_PointShadow, 0);
+            glNamedFramebufferTexture(m_shadowFBO, GL_DEPTH_ATTACHMENT, m_PointDepth, 0);
 
             m_shadowPointShader.Bind();
 

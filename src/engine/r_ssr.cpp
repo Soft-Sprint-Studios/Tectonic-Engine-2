@@ -58,33 +58,23 @@ void R_SSR::CreateBuffers(int width, int height)
     int ssrW = width / ds;
     int ssrH = height / ds;
 
-    glGenFramebuffers(1, &m_fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+    glCreateFramebuffers(1, &m_fbo);
+    glCreateTextures(GL_TEXTURE_2D, 1, &m_texture);
+    glTextureStorage2D(m_texture, 1, GL_RGB16F, ssrW, ssrH);
+    glTextureParameteri(m_texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(m_texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureParameteri(m_texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(m_texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glNamedFramebufferTexture(m_fbo, GL_COLOR_ATTACHMENT0, m_texture, 0);
 
-    glGenTextures(1, &m_texture);
-    glBindTexture(GL_TEXTURE_2D, m_texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, ssrW, ssrH, 0, GL_RGB, GL_FLOAT, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_texture, 0);
-
-    glGenFramebuffers(1, &m_blurFbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, m_blurFbo);
-
-    glGenTextures(1, &m_blurTexture);
-    glBindTexture(GL_TEXTURE_2D, m_blurTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, ssrW, ssrH, 0, GL_RGB, GL_FLOAT, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_blurTexture, 0);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glCreateFramebuffers(1, &m_blurFbo);
+    glCreateTextures(GL_TEXTURE_2D, 1, &m_blurTexture);
+    glTextureStorage2D(m_blurTexture, 1, GL_RGB16F, ssrW, ssrH);
+    glTextureParameteri(m_blurTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(m_blurTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureParameteri(m_blurTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(m_blurTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glNamedFramebufferTexture(m_blurFbo, GL_COLOR_ATTACHMENT0, m_blurTexture, 0);
 }
 
 void R_SSR::Render(GLuint depthTex, GLuint normalTex, GLuint mraoTex, GLuint sceneTex, const Camera& camera, GLuint quadVAO)

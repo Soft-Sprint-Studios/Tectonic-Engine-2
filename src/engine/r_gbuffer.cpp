@@ -42,65 +42,57 @@ bool R_GBuffer::Init(int width, int height)
     m_debugShader.Bind();
     InitDebugQuad();
 
-    glGenFramebuffers(1, &m_fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+    glCreateFramebuffers(1, &m_fbo);
 
     // Normal
-    glGenTextures(1, &m_normalTex);
-    glBindTexture(GL_TEXTURE_2D, m_normalTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_normalTex, 0);
+    glCreateTextures(GL_TEXTURE_2D, 1, &m_normalTex);
+    glTextureStorage2D(m_normalTex, 1, GL_RGBA16F, width, height);
+    glTextureParameteri(m_normalTex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTextureParameteri(m_normalTex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glNamedFramebufferTexture(m_fbo, GL_COLOR_ATTACHMENT0, m_normalTex, 0);
 
     // Albedo + lightmap width
-    glGenTextures(1, &m_albedoTex);
-    glBindTexture(GL_TEXTURE_2D, m_albedoTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, m_albedoTex, 0);
+    glCreateTextures(GL_TEXTURE_2D, 1, &m_albedoTex);
+    glTextureStorage2D(m_albedoTex, 1, GL_RGBA8, width, height);
+    glTextureParameteri(m_albedoTex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTextureParameteri(m_albedoTex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glNamedFramebufferTexture(m_fbo, GL_COLOR_ATTACHMENT1, m_albedoTex, 0);
 
     // MRAO (Metallic, Roughness, AO) + lightmap height
-    glGenTextures(1, &m_mraoTex);
-    glBindTexture(GL_TEXTURE_2D, m_mraoTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, m_mraoTex, 0);
+    glCreateTextures(GL_TEXTURE_2D, 1, &m_mraoTex);
+    glTextureStorage2D(m_mraoTex, 1, GL_RGBA8, width, height);
+    glTextureParameteri(m_mraoTex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTextureParameteri(m_mraoTex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glNamedFramebufferTexture(m_fbo, GL_COLOR_ATTACHMENT2, m_mraoTex, 0);
 
     // Lightmap UVs
-    glGenTextures(1, &m_lightmapUVTex);
-    glBindTexture(GL_TEXTURE_2D, m_lightmapUVTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, width, height, 0, GL_RG, GL_FLOAT, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, m_lightmapUVTex, 0);
+    glCreateTextures(GL_TEXTURE_2D, 1, &m_lightmapUVTex);
+    glTextureStorage2D(m_lightmapUVTex, 1, GL_RG32F, width, height);
+    glTextureParameteri(m_lightmapUVTex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTextureParameteri(m_lightmapUVTex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glNamedFramebufferTexture(m_fbo, GL_COLOR_ATTACHMENT3, m_lightmapUVTex, 0);
 
     // Velocity
-    glGenTextures(1, &m_velocityTex);
-    glBindTexture(GL_TEXTURE_2D, m_velocityTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, width, height, 0, GL_RG, GL_FLOAT, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, m_velocityTex, 0);
+    glCreateTextures(GL_TEXTURE_2D, 1, &m_velocityTex);
+    glTextureStorage2D(m_velocityTex, 1, GL_RG16F, width, height);
+    glTextureParameteri(m_velocityTex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTextureParameteri(m_velocityTex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glNamedFramebufferTexture(m_fbo, GL_COLOR_ATTACHMENT4, m_velocityTex, 0);
 
-    GLuint attachments[5] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 };
-    glDrawBuffers(5, attachments);
+    GLenum attachments[5] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 };
+    glNamedFramebufferDrawBuffers(m_fbo, 5, attachments);
 
     // Depth Buffer
-    glGenTextures(1, &m_depthTex);
-    glBindTexture(GL_TEXTURE_2D, m_depthTex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glCreateTextures(GL_TEXTURE_2D, 1, &m_depthTex);
+    glTextureStorage2D(m_depthTex, 1, GL_DEPTH_COMPONENT24, width, height);
+    glTextureParameteri(m_depthTex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTextureParameteri(m_depthTex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTextureParameteri(m_depthTex, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTextureParameteri(m_depthTex, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
     float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depthTex, 0);
+    glTextureParameterfv(m_depthTex, GL_TEXTURE_BORDER_COLOR, borderColor);
+    glNamedFramebufferTexture(m_fbo, GL_DEPTH_ATTACHMENT, m_depthTex, 0);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
     return true;
 }
 
@@ -182,17 +174,19 @@ void R_GBuffer::InitDebugQuad()
          1.0f,  1.0f,  1.0f, 1.0f
     };
 
-    glGenVertexArrays(1, &m_quadVAO);
-    glGenBuffers(1, &m_quadVBO);
-    glBindVertexArray(m_quadVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, m_quadVBO);
+    glCreateVertexArrays(1, &m_quadVAO);
+    glCreateBuffers(1, &m_quadVBO);
     glNamedBufferData(m_quadVBO, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
 
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-    glBindVertexArray(0);
+    glVertexArrayVertexBuffer(m_quadVAO, 0, m_quadVBO, 0, 4 * sizeof(float));
+
+    glEnableVertexArrayAttrib(m_quadVAO, 0);
+    glVertexArrayAttribFormat(m_quadVAO, 0, 2, GL_FLOAT, GL_FALSE, 0);
+    glVertexArrayAttribBinding(m_quadVAO, 0, 0);
+
+    glEnableVertexArrayAttrib(m_quadVAO, 1);
+    glVertexArrayAttribFormat(m_quadVAO, 1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float));
+    glVertexArrayAttribBinding(m_quadVAO, 1, 0);
 }
 
 void R_GBuffer::DrawDebug(int w, int h)
@@ -205,51 +199,50 @@ void R_GBuffer::DrawDebug(int w, int h)
     int debugY = h - dh - 10;
 
     glBindVertexArray(m_quadVAO);
-    glActiveTexture(GL_TEXTURE0);
 
     glViewport(0, debugY, dw, dh);
     m_debugShader.SetInt("u_mode", 0);
-    glBindTexture(GL_TEXTURE_2D, m_depthTex);
+    glBindTextureUnit(0, m_depthTex);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glViewport(dw, debugY, dw, dh);
     m_debugShader.SetInt("u_mode", 1);
-    glBindTexture(GL_TEXTURE_2D, m_normalTex);
+    glBindTextureUnit(0, m_normalTex);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glViewport(dw * 2, debugY, dw, dh);
     m_debugShader.SetInt("u_mode", 8);
-    glBindTexture(GL_TEXTURE_2D, m_normalTex);
+    glBindTextureUnit(0, m_normalTex);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glViewport(dw * 3, debugY, dw, dh);
     m_debugShader.SetInt("u_mode", 2);
-    glBindTexture(GL_TEXTURE_2D, m_albedoTex);
+    glBindTextureUnit(0, m_albedoTex);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glViewport(dw * 4, debugY, dw, dh);
     m_debugShader.SetInt("u_mode", 4);
-    glBindTexture(GL_TEXTURE_2D, m_mraoTex);
+    glBindTextureUnit(0, m_mraoTex);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glViewport(dw * 5, debugY, dw, dh);
     m_debugShader.SetInt("u_mode", 5);
-    glBindTexture(GL_TEXTURE_2D, m_mraoTex);
+    glBindTextureUnit(0, m_mraoTex);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glViewport(dw * 6, debugY, dw, dh);
     m_debugShader.SetInt("u_mode", 6);
-    glBindTexture(GL_TEXTURE_2D, m_mraoTex);
+    glBindTextureUnit(0, m_mraoTex);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glViewport(dw * 7, debugY, dw, dh);
     m_debugShader.SetInt("u_mode", 7);
-    glBindTexture(GL_TEXTURE_2D, m_velocityTex);
+    glBindTextureUnit(0, m_velocityTex);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glViewport(dw * 8, debugY, dw, dh);
     m_debugShader.SetInt("u_mode", 3);
-    glBindTexture(GL_TEXTURE_2D, m_lightmapUVTex);
+    glBindTextureUnit(0, m_lightmapUVTex);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glViewport(0, 0, w, h);

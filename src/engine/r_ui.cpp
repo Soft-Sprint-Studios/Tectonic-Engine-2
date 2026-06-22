@@ -57,14 +57,15 @@ void R_UI::Init(Window* window)
     SDL_GetWindowSize(window->Get(), &w, &h);
     OnWindowResize(w, h);
 
-    glGenVertexArrays(1, &m_vao);
-    glGenBuffers(1, &m_vbo);
-    glBindVertexArray(m_vao);
-    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+    glCreateVertexArrays(1, &m_vao);
+    glCreateBuffers(1, &m_vbo);
     glNamedBufferData(m_vbo, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glVertexArrayVertexBuffer(m_vao, 0, m_vbo, 0, 4 * sizeof(float));
+
+    glEnableVertexArrayAttrib(m_vao, 0);
+    glVertexArrayAttribFormat(m_vao, 0, 4, GL_FLOAT, GL_FALSE, 0);
+    glVertexArrayAttribBinding(m_vao, 0, 0);
 }
 
 void R_UI::Shutdown()
@@ -135,7 +136,7 @@ void R_UI::Render()
     m_shader.Bind();
     m_shader.SetMat4("projection", m_projection);
     m_shader.SetMat4("model", glm::mat4(1.0f));
-    glActiveTexture(GL_TEXTURE0);
+
     glBindVertexArray(m_vao);
 
     // Render Rectangles first
@@ -180,14 +181,14 @@ void R_UI::Render()
             newCache.width = converted->w;
             newCache.height = converted->h;
 
-            glGenTextures(1, &newCache.textureID);
-            glBindTexture(GL_TEXTURE_2D, newCache.textureID);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, converted->w, converted->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, converted->pixels);
-            
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glCreateTextures(GL_TEXTURE_2D, 1, &newCache.textureID);
+            glTextureStorage2D(newCache.textureID, 1, GL_RGBA8, converted->w, converted->h);
+            glTextureSubImage2D(newCache.textureID, 0, 0, 0, converted->w, converted->h, GL_RGBA, GL_UNSIGNED_BYTE, converted->pixels);
+
+            glTextureParameteri(newCache.textureID, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTextureParameteri(newCache.textureID, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTextureParameteri(newCache.textureID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTextureParameteri(newCache.textureID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
             m_textCache[cmd.text] = newCache;
             SDL_DestroySurface(converted);

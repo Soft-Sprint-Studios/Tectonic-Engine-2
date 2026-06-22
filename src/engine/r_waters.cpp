@@ -62,24 +62,18 @@ void R_Waters::RenderReflection(Renderer* renderer, const Camera& mainCam)
         int fboW = m_width / ds;
         int fboH = m_height / ds;
 
-        glGenFramebuffers(1, &m_reflectFBO);
-        glBindFramebuffer(GL_FRAMEBUFFER, m_reflectFBO);
+        glCreateFramebuffers(1, &m_reflectFBO);
+        glCreateTextures(GL_TEXTURE_2D, 1, &m_reflectTex);
+        glTextureStorage2D(m_reflectTex, 1, GL_RGB16F, fboW, fboH);
+        glTextureParameteri(m_reflectTex, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTextureParameteri(m_reflectTex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTextureParameteri(m_reflectTex, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(m_reflectTex, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glNamedFramebufferTexture(m_reflectFBO, GL_COLOR_ATTACHMENT0, m_reflectTex, 0);
 
-        glGenTextures(1, &m_reflectTex);
-        glBindTexture(GL_TEXTURE_2D, m_reflectTex);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, fboW, fboH, 0, GL_RGB, GL_FLOAT, NULL);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_reflectTex, 0);
-
-        glGenRenderbuffers(1, &m_reflectRBO);
-        glBindRenderbuffer(GL_RENDERBUFFER, m_reflectRBO);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, fboW, fboH);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_reflectRBO);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glCreateRenderbuffers(1, &m_reflectRBO);
+        glNamedRenderbufferStorage(m_reflectRBO, GL_DEPTH_COMPONENT24, fboW, fboH);
+        glNamedFramebufferRenderbuffer(m_reflectFBO, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_reflectRBO);
     }
 
     // Planar reflection algorithm

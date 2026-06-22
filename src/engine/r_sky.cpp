@@ -60,13 +60,14 @@ bool R_Sky::Init(const std::string& skyName)
         -1.0f, -1.0f, -1.0f, -1.0f, -1.0f,  1.0f,  1.0f, -1.0f, -1.0f,  1.0f, -1.0f, -1.0f, -1.0f, -1.0f,  1.0f,  1.0f, -1.0f,  1.0f
     };
 
-    glGenVertexArrays(1, &m_vao);
-    glGenBuffers(1, &m_vbo);
-    glBindVertexArray(m_vao);
-    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glCreateVertexArrays(1, &m_vao);
+    glCreateBuffers(1, &m_vbo);
+    glNamedBufferData(m_vbo, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+
+    glVertexArrayVertexBuffer(m_vao, 0, m_vbo, 0, 3 * sizeof(float));
+    glEnableVertexArrayAttrib(m_vao, 0);
+    glVertexArrayAttribFormat(m_vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
+    glVertexArrayAttribBinding(m_vao, 0, 0);
 
     LoadCubemap(skyName);
     return true;
@@ -74,33 +75,38 @@ bool R_Sky::Init(const std::string& skyName)
 
 void R_Sky::LoadCubemap(const std::string& skyName)
 {
-    glGenTextures(1, &m_cubemapTexture);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, m_cubemapTexture);
+    glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &m_cubemapTexture);
+    glTextureParameteri(m_cubemapTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(m_cubemapTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureParameteri(m_cubemapTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(m_cubemapTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(m_cubemapTexture, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-    std::vector<std::string> faces = 
+    std::vector<std::string> faces =
     {
         "right", "left", "top", "bottom", "front", "back"
     };
+
+    bool firstAlloc = true;
 
     for (unsigned int i = 0; i < faces.size(); i++)
     {
         std::string path = "textures/skybox/" + skyName + "_" + faces[i] + ".dds";
 
-        if (!DDS::LoadCubemapFace(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, path, true))
+        int w, h, c;
+        if (firstAlloc)
+        {
+            glTextureStorage2D(m_cubemapTexture, 10, GL_SRGB8_ALPHA8, 512, 512);
+            firstAlloc = false;
+        }
+
+        if (!DDS::LoadCubemapFace(m_cubemapTexture, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, path, true))
         {
             Console::Warn("Skybox: face [" + faces[i] + "] missing - using fallback color.");
-            uint8_t black[3] = { 0, 0, 0 };
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, black);
+            uint8_t black[4] = { 0, 0, 0, 255 };
+            glTextureSubImage3D(m_cubemapTexture, 0, 0, 0, i, 1, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, black);
         }
     }
-
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 }
 
 void R_Sky::Draw(const Camera& camera)
