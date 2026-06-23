@@ -51,7 +51,7 @@ bool R_GBuffer::Init(int width, int height)
     glTextureParameteri(m_normalTex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glNamedFramebufferTexture(m_fbo, GL_COLOR_ATTACHMENT0, m_normalTex, 0);
 
-    // Albedo + Emissive
+    // Albedo
     glCreateTextures(GL_TEXTURE_2D, 1, &m_albedoTex);
     glTextureStorage2D(m_albedoTex, 1, GL_RGBA8, width, height);
     glTextureParameteri(m_albedoTex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
