@@ -46,7 +46,6 @@ public:
     GLuint GetAlbedoTex() const;
     GLuint GetMRAOTex() const;
     GLuint GetLightmapUVTex() const;
-    GLuint GetVelocityTex() const;
     GLuint GetDepthTex() const;
 
 private:
@@ -55,7 +54,6 @@ private:
     GLuint m_albedoTex = 0;
     GLuint m_mraoTex = 0;
     GLuint m_lightmapUVTex = 0;
-    GLuint m_velocityTex = 0;
     GLuint m_depthTex = 0;
 
     R_Shader m_debugShader;

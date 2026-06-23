@@ -1,4 +1,5 @@
 #include "common.h"
+#include "lightmap.h"
 
 out vec4 FragColor;
 in vec2 TexCoords;
@@ -28,7 +29,10 @@ void main()
     }
     else if (u_mode == 3)
     {
-        FragColor = vec4(texture(u_debugTex, TexCoords).rgb * 2.0, 1.0);
+        vec2 packedFloat = texture(u_debugTex, TexCoords).rg;
+        vec2 lmCoord, lmSize;
+        UnpackLightmapUV(packedFloat, lmCoord, lmSize);
+        FragColor = vec4(lmCoord, 0.0, 1.0);
     }
     else if (u_mode == 4)
     {
@@ -46,11 +50,6 @@ void main()
         FragColor = vec4(vec3(ao), 1.0);
     }
     else if (u_mode == 7)
-    {
-        vec2 vel = texture(u_debugTex, TexCoords).rg;
-        FragColor = vec4(abs(vel) * 50.0, 0.0, 1.0); 
-    }
-    else if (u_mode == 8)
     {
         vec2 ts = texture(u_debugTex, TexCoords).ba;
         FragColor = vec4(ts, 1.0, 1.0);

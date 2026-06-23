@@ -155,7 +155,7 @@ void R_PostProcess::Draw(const Camera& camera, R_Lights* lights, R_GBuffer* gbuf
     m_volumetrics->Render(gbuffer->GetDepthTex(), camera, lights, m_quadVAO, m_width, m_height);
     m_ssao->Render(gbuffer->GetDepthTex(), camera, m_quadVAO, m_width, m_height);
     m_ssr->Render(gbuffer->GetDepthTex(), gbuffer->GetNormalTex(), gbuffer->GetMRAOTex(), m_texture, camera, m_quadVAO);
-    m_motionBlur->Render(m_texture, gbuffer->GetVelocityTex(), m_quadVAO);
+    m_motionBlur->Render(m_texture, gbuffer->GetDepthTex(), camera, m_quadVAO);
 
     m_shader.Bind();
     m_autoExposure->Bind();

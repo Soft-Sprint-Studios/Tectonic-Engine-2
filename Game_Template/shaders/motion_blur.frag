@@ -2,14 +2,28 @@ out vec4 FragColor;
 in vec2 TexCoords;
 
 layout(binding = 0) uniform sampler2D u_sceneTex;
-layout(binding = 1) uniform sampler2D u_velocityTex;
+layout(binding = 1) uniform sampler2D u_depthTex;
+
+uniform mat4 u_invViewProj;
+uniform mat4 u_prevViewProj;
 
 uniform int u_samples;
 uniform float u_blurScale;
 
 void main()
 {
-    vec2 velocity = texture(u_velocityTex, TexCoords).rg * u_blurScale;
+    float depth = texture(u_depthTex, TexCoords).r;
+
+    vec4 ndc = vec4(TexCoords * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+
+    vec4 worldPos = u_invViewProj * ndc;
+    worldPos /= worldPos.w;
+
+    vec4 prevNdc = u_prevViewProj * worldPos;
+    prevNdc /= prevNdc.w;
+
+    vec2 prevUV = prevNdc.xy * 0.5 + 0.5;
+    vec2 velocity = (TexCoords - prevUV) * u_blurScale;
     
     if (length(velocity) < 0.0001)
     {

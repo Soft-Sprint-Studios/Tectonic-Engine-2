@@ -112,13 +112,15 @@ void main()
     float roughness = max(mrao.g, 0.05); 
     float ao = mrao.b;
 
-    vec2 lmCoord = texture(u_gLightmapUV, gBufferUV).rg;
-    float w_pixels = texture(u_gAlbedo, gBufferUV).a * 255.0;
-    float h_pixels = texture(u_gMRAO, gBufferUV).a * 255.0;
-    vec2 lmSize = vec2(w_pixels, h_pixels) / float(LIGHTMAP_ATLAS_SIZE);
+    vec2 lmCoord;
+    vec2 lmSize;
+
+    vec2 packedFloat = texture(u_gLightmapUV, gBufferUV).rg;
+    UnpackLightmapUV(packedFloat, lmCoord, lmSize);
 
     vec4 lightmapData = vec4(0.0);
-	vec2 LmCoord2 = lmCoord + vec2(lmSize.x, 0.0);
+
+    vec2 LmCoord2 = lmCoord + vec2(lmSize.x, 0.0);
     vec2 LmCoord3 = lmCoord + vec2(0.0, lmSize.y);
     vec2 LmCoord4 = lmCoord + lmSize;
 
@@ -227,7 +229,7 @@ void main()
     if (u_csmEnabled == 1)
     {
         vec3 sunL = normalize(u_sunDir);
-        float sunMask = lmSize.x > 0.0 ? lightmapData.a : 1.0;
+        float sunMask = lightmapData.a;
         float sunShadow = CalculateSunShadow(fragPos, u_view, u_csmSplits, u_csmMatrices, u_csmArray);
         vec3 sunEnergy = u_sunColor * (1.0 - sunShadow) * sunMask;
 

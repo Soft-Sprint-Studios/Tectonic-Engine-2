@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 #pragma once
+#include "camera.h"
 #include "r_shader.h"
 #include <glad/glad.h>
 
@@ -34,7 +35,7 @@ public:
     bool Init(int width, int height);
     void Shutdown();
     void Rescale(int width, int height);
-    void Render(GLuint sceneTex, GLuint velocityTex, GLuint quadVAO);
+    void Render(GLuint sceneTex, GLuint depthTex, const Camera& camera, GLuint quadVAO);
     void Bind(const R_Shader& shader);
 
 private:

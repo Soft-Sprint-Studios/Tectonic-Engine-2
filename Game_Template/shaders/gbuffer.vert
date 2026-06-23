@@ -11,7 +11,6 @@ layout (location = 8) in vec4 aWeights;
 uniform mat4 u_model;
 uniform mat4 u_view;
 uniform mat4 u_projection;
-uniform mat4 u_prevViewProj;
 uniform int u_isInstanced;
 uniform int u_totalVertices;
 uniform int u_vertexOffset;
@@ -33,8 +32,6 @@ out vec2 TexCoord;
 out vec2 v_LmCoord;
 out vec2 v_LmSize;
 out float v_alpha;
-out vec4 v_currClipPos;
-out vec4 v_prevClipPos;
 out vec3 FragPos;
 out mat3 TBN;
 
@@ -86,7 +83,5 @@ void main()
 
     v_alpha = aAlpha;
     
-    v_currClipPos = u_projection * u_view * modelMat * vec4(aPos, 1.0);
-    v_prevClipPos = u_prevViewProj * modelMat * vec4(aPos, 1.0);
-    gl_Position = v_currClipPos;
+    gl_Position = u_projection * u_view * modelMat * vec4(aPos, 1.0);
 }

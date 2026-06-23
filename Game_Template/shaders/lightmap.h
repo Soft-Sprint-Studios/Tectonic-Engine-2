@@ -42,6 +42,30 @@ vec4 texture_bicubic(sampler2D tex, vec2 uv)
     return wtY.x * r0 + wtY.y * r1 + wtY.z * r2;
 }
 
+vec2 PackLightmapUV(vec2 lmCoord, vec2 lmSize)
+{
+    vec2 size_in_pixels = lmSize * vec2(float(LIGHTMAP_ATLAS_SIZE));
+    uint w_pixels = uint(round(clamp(size_in_pixels.x, 0.0, 255.0)));
+    uint h_pixels = uint(round(clamp(size_in_pixels.y, 0.0, 255.0)));
+
+    uint u_val = uint(clamp(lmCoord.x, 0.0, 1.0) * 16777215.0);
+    uint v_val = uint(clamp(lmCoord.y, 0.0, 1.0) * 16777215.0);
+
+    uint packed_u = (u_val & 0x00FFFFFFu) | (w_pixels << 24);
+    uint packed_v = (v_val & 0x00FFFFFFu) | (h_pixels << 24);
+
+    return vec2(uintBitsToFloat(packed_u), uintBitsToFloat(packed_v));
+}
+
+void UnpackLightmapUV(vec2 packedFloat, out vec2 lmCoord, out vec2 lmSize)
+{
+    uint packed_u = floatBitsToUint(packedFloat.x);
+    uint packed_v = floatBitsToUint(packedFloat.y);
+
+    lmCoord = vec2(float(packed_u & 0x00FFFFFFu), float(packed_v & 0x00FFFFFFu)) / 16777215.0;
+    lmSize = vec2(float(packed_u >> 24), float(packed_v >> 24)) / float(LIGHTMAP_ATLAS_SIZE);
+}
+
 vec4 SampleLightmap(sampler2D tex, vec2 uv)
 {
     if (r_lightmap_bicubic == 1)

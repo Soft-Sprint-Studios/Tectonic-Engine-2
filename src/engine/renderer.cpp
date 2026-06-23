@@ -345,7 +345,7 @@ void Renderer::Render(Camera& camera)
     {
         m_gbuffer->DrawDebug(w, h);
 
-        int dw = w / 9;
+        int dw = w / 8;
         int dh = h / 8;
 
         m_uiRenderer->DrawText("DEPTH", 10.0f, (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
@@ -355,8 +355,7 @@ void Renderer::Render(Camera& camera)
         m_uiRenderer->DrawText("METALLIC", (float)(dw * 4 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
         m_uiRenderer->DrawText("ROUGHNESS", (float)(dw * 5 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
         m_uiRenderer->DrawText("AO", (float)(dw * 6 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
-        m_uiRenderer->DrawText("VELOCITY", (float)(dw * 7 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
-        m_uiRenderer->DrawText("LM UV", (float)(dw * 8 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+        m_uiRenderer->DrawText("LM UV", (float)(dw * 7 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
     }
 
     glEnable(GL_DEPTH_TEST);

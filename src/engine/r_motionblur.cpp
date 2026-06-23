@@ -59,7 +59,7 @@ void R_MotionBlur::CreateBuffers(int width, int height)
     glNamedFramebufferTexture(m_fbo, GL_COLOR_ATTACHMENT0, m_texture, 0);
 }
 
-void R_MotionBlur::Render(GLuint sceneTex, GLuint velocityTex, GLuint quadVAO)
+void R_MotionBlur::Render(GLuint sceneTex, GLuint depthTex, const Camera& camera, GLuint quadVAO)
 {
     if (r_motionblur.GetInt() == 0)
     {
@@ -73,8 +73,15 @@ void R_MotionBlur::Render(GLuint sceneTex, GLuint velocityTex, GLuint quadVAO)
     m_shader.SetInt("u_samples", r_motionblur_samples.GetInt());
     m_shader.SetFloat("u_blurScale", r_motionblur_scale.GetFloat());
 
+    glm::mat4 viewProj = camera.GetProjectionMatrix() * camera.GetViewMatrix();
+    glm::mat4 invViewProj = glm::inverse(viewProj);
+    glm::mat4 prevViewProj = camera.GetPrevViewProj();
+
+    m_shader.SetMat4("u_invViewProj", invViewProj);
+    m_shader.SetMat4("u_prevViewProj", prevViewProj);
+
     glBindTextureUnit(0, sceneTex);
-    glBindTextureUnit(1, velocityTex);
+    glBindTextureUnit(1, depthTex);
 
     glBindVertexArray(quadVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);

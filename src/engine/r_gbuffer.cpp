@@ -51,14 +51,14 @@ bool R_GBuffer::Init(int width, int height)
     glTextureParameteri(m_normalTex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glNamedFramebufferTexture(m_fbo, GL_COLOR_ATTACHMENT0, m_normalTex, 0);
 
-    // Albedo + lightmap width
+    // Albedo
     glCreateTextures(GL_TEXTURE_2D, 1, &m_albedoTex);
     glTextureStorage2D(m_albedoTex, 1, GL_RGBA8, width, height);
     glTextureParameteri(m_albedoTex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTextureParameteri(m_albedoTex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glNamedFramebufferTexture(m_fbo, GL_COLOR_ATTACHMENT1, m_albedoTex, 0);
 
-    // MRAO (Metallic, Roughness, AO) + lightmap height
+    // MRAO (Metallic, Roughness, AO)
     glCreateTextures(GL_TEXTURE_2D, 1, &m_mraoTex);
     glTextureStorage2D(m_mraoTex, 1, GL_RGBA8, width, height);
     glTextureParameteri(m_mraoTex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -72,15 +72,8 @@ bool R_GBuffer::Init(int width, int height)
     glTextureParameteri(m_lightmapUVTex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glNamedFramebufferTexture(m_fbo, GL_COLOR_ATTACHMENT3, m_lightmapUVTex, 0);
 
-    // Velocity
-    glCreateTextures(GL_TEXTURE_2D, 1, &m_velocityTex);
-    glTextureStorage2D(m_velocityTex, 1, GL_RG16F, width, height);
-    glTextureParameteri(m_velocityTex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTextureParameteri(m_velocityTex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glNamedFramebufferTexture(m_fbo, GL_COLOR_ATTACHMENT4, m_velocityTex, 0);
-
-    GLenum attachments[5] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 };
-    glNamedFramebufferDrawBuffers(m_fbo, 5, attachments);
+    GLenum attachments[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
+    glNamedFramebufferDrawBuffers(m_fbo, 4, attachments);
 
     // Depth Buffer
     glCreateTextures(GL_TEXTURE_2D, 1, &m_depthTex);
@@ -117,10 +110,6 @@ void R_GBuffer::Shutdown()
     if (m_lightmapUVTex != 0)
     {
         glDeleteTextures(1, &m_lightmapUVTex);
-    }
-    if (m_velocityTex != 0)
-    {
-        glDeleteTextures(1, &m_velocityTex);
     }
     if (m_depthTex != 0)
     {
@@ -194,8 +183,8 @@ void R_GBuffer::DrawDebug(int w, int h)
     glDisable(GL_DEPTH_TEST);
     m_debugShader.Bind();
 
-    int dw = w / 9;
-    int dh = h / 9;
+    int dw = w / 8;
+    int dh = h / 8;
     int debugY = h - dh - 10;
 
     glBindVertexArray(m_quadVAO);
@@ -211,7 +200,7 @@ void R_GBuffer::DrawDebug(int w, int h)
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glViewport(dw * 2, debugY, dw, dh);
-    m_debugShader.SetInt("u_mode", 8);
+    m_debugShader.SetInt("u_mode", 7);
     glBindTextureUnit(0, m_normalTex);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -236,11 +225,6 @@ void R_GBuffer::DrawDebug(int w, int h)
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glViewport(dw * 7, debugY, dw, dh);
-    m_debugShader.SetInt("u_mode", 7);
-    glBindTextureUnit(0, m_velocityTex);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-
-    glViewport(dw * 8, debugY, dw, dh);
     m_debugShader.SetInt("u_mode", 3);
     glBindTextureUnit(0, m_lightmapUVTex);
     glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -272,11 +256,6 @@ GLuint R_GBuffer::GetMRAOTex() const
 GLuint R_GBuffer::GetLightmapUVTex() const
 {
     return m_lightmapUVTex;
-}
-
-GLuint R_GBuffer::GetVelocityTex() const
-{
-    return m_velocityTex;
 }
 
 GLuint R_GBuffer::GetDepthTex() const

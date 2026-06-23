@@ -73,12 +73,9 @@ void main()
 
     float packed_tx = normalSample.x * 0.5 + 0.5;
     float packed_ty = u_useBump ? (normalSample.y * 0.5 + 0.5) : 0.0;
-    vec2 size_in_pixels = v_LmSize * vec2(float(LIGHTMAP_ATLAS_SIZE));
-    float packed_w = size_in_pixels.x / 255.0;
-    float packed_h = size_in_pixels.y / 255.0;
 
     gNormal = vec4(EncodeNormal(worldNormal), packed_tx, packed_ty);
-    gAlbedo = vec4(albedo.rgb, packed_w);
-    gMRAO = vec4(mraoh.rgb, packed_h);     
-    gLightmapUV = v_LmCoord;
+    gAlbedo = vec4(albedo.rgb, 1.0);
+    gMRAO = vec4(mraoh.rgb, 1.0);     
+    gLightmapUV = PackLightmapUV(v_LmCoord, v_LmSize);
 }
