@@ -160,7 +160,11 @@ namespace DDS
 
                 int maxDim = std::max(width, height);
                 int mips = 0;
-                while (maxDim > 0) { maxDim >>= 1; mips++; }
+                while (maxDim > 0) 
+                { 
+                    maxDim >>= 1; 
+                    mips++; 
+                }
                 glTextureParameteri(textureID, GL_TEXTURE_MAX_LEVEL, mips - 1);
             }
             glTextureParameterf(textureID, GL_TEXTURE_MAX_ANISOTROPY_EXT, CVar::GetFloat("r_textureAnisotropy", 16.0f));
