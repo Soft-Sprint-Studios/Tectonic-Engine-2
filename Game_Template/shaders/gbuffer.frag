@@ -58,6 +58,7 @@ void main()
         discard;
     }
 
+    float emissive = 0.0;
     vec3 worldNormal = normalize(TBN[2]);
     vec3 tangentNormal = vec3(0.0, 0.0, 1.0);
 
@@ -69,6 +70,7 @@ void main()
         vec3 n1 = norm1.rgb * 2.0 - 1.0;
         vec3 n2 = norm2.rgb * 2.0 - 1.0;
 
+        emissive = mix(norm1.a, norm2.a, blend);
         tangentNormal = normalize(mix(n1, n2, blend));
         worldNormal = normalize(TBN * tangentNormal);
     }
@@ -81,7 +83,7 @@ void main()
     float packed_ty = u_useBump ? (tangentNormal.y * 0.5 + 0.5) : 0.0;
 
     gNormal = vec4(EncodeNormal(worldNormal), packed_tx, packed_ty);
-    gAlbedo = vec4(albedo.rgb, 1.0);
+    gAlbedo = vec4(albedo.rgb, emissive);
     gMRAO = vec4(mraoh.rgb, 1.0);     
     gLightmapUV = PackLightmapUV(v_LmCoord, v_LmSize);
 }

@@ -347,9 +347,25 @@ namespace AssetTool
                 outPaths.normal = matName + "_normal.dds";
                 std::string tempPng = (workDir / (matName + "_normal.png")).string();
 
+                unsigned char* emissiveData = nullptr;
+                int eW = 0, eH = 0;
+                if (mat.emissive_texture.texture)
+                {
+                    emissiveData = LoadBufferImage(mat.emissive_texture.texture, &eW, &eH);
+                }
+
                 for (int j = 0; j < nW * nH * 4; j += 4)
                 {
-                    norm[j + 3] = 255;
+                    unsigned char emVal = 0;
+                    if (emissiveData && eW == nW && eH == nH)
+                    {
+                        emVal = (unsigned char)((emissiveData[j] + emissiveData[j + 1] + emissiveData[j + 2]) / 3);
+                    }
+                    norm[j + 3] = emVal;
+                }
+                if (emissiveData)
+                {
+                    stbi_image_free(emissiveData);
                 }
 
                 stbi_write_png(tempPng.c_str(), nW, nH, 4, norm, nW * 4);
