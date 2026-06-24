@@ -55,6 +55,7 @@
 #include "networking.h"
 #include "sound.h"
 #include "discord.h"
+#include "sentry.h"
 #include "shake.h"
 #include "fade.h"
 #include "video.h"
@@ -77,6 +78,7 @@ namespace Sys
         Console::Init();
         Gamedef::Init();
         Discord::Init();
+        Sentry::Init();
         Cubemap::Init();
         Sound::Init();
         Networking::Init();
@@ -301,6 +303,7 @@ namespace Sys
         CVar::Save();
         Console::Shutdown();
         Discord::Shutdown();
+        Sentry::Shutdown();
         Networking::Shutdown();
         Filesystem::Shutdown();
         s_window.Shutdown();

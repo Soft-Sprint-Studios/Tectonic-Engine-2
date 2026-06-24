@@ -19,6 +19,7 @@ set(CGLTF_PATH ${CMAKE_SOURCE_DIR}/libs/cgltf)
 set(OPENAL_PATH ${CMAKE_SOURCE_DIR}/libs/openal-soft-1.24.3)
 set(MINIMP3_PATH ${CMAKE_SOURCE_DIR}/libs/minimp3)
 set(DISCORDRPC_PATH ${CMAKE_SOURCE_DIR}/libs/DiscordRPC)
+set(SENTRY_PATH ${CMAKE_SOURCE_DIR}/libs/sentry)
 set(PLMPEG_PATH ${CMAKE_SOURCE_DIR}/libs/pl_mpeg)
 set(VTFLIB_PATH ${CMAKE_SOURCE_DIR}/libs/VTFLib)
 set(MINISPEC_PATH ${CMAKE_SOURCE_DIR}/libs/minispec)
@@ -77,6 +78,7 @@ target_include_directories(Engine PRIVATE
     ${OPENAL_PATH}/include
     ${MINIMP3_PATH}/include
     ${DISCORDRPC_PATH}/include
+    ${SENTRY_PATH}/include
     ${PLMPEG_PATH}/include
     ${MINISPEC_PATH}/include
     ${MINIZ_PATH}/include
@@ -102,6 +104,7 @@ if(WIN32)
         ${BULLET_PATH}/lib/${ARCH_FOLDER}/LinearMath.lib
         ${OPENAL_PATH}/lib/${ARCH_FOLDER}/OpenAL32.lib
         ${DISCORDRPC_PATH}/lib/${ARCH_FOLDER}/discord-rpc.lib
+        ${SENTRY_PATH}/lib/${ARCH_FOLDER}/sentry.lib
         OpenGL::GL
         ws2_32
     )
@@ -115,6 +118,7 @@ elseif(UNIX)
         "${BULLET_PATH}/lib/linux/libBulletCollision.a"
         "${BULLET_PATH}/lib/linux/libLinearMath.a"
         "${DISCORDRPC_PATH}/lib/linux/libdiscord-rpc.a"
+        "${SENTRY_PATH}/lib/linux/libsentry.so"
         "${OPENAL_PATH}/lib/Linux/libopenal.a"
         OpenGL::GL
         ${CMAKE_DL_LIBS}
@@ -177,11 +181,16 @@ if (WIN32)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${SDL3_PATH}/lib/${ARCH_FOLDER}/SDL3.dll"
         "${SDL_TTF_PATH}/lib/${ARCH_FOLDER}/SDL3_ttf.dll"
+        "${SENTRY_PATH}/lib/${ARCH_FOLDER}/sentry.dll"
+        "${SENTRY_PATH}/lib/${ARCH_FOLDER}/crashpad_wer.dll"
+        "${SENTRY_PATH}/lib/${ARCH_FOLDER}/crashpad_handler.exe"
         "${OPENAL_PATH}/lib/${ARCH_FOLDER}/OpenAL32.dll"
         $<TARGET_FILE_DIR:Engine>
     )
 elseif(UNIX)
     add_custom_command(TARGET Engine POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SENTRY_PATH}/lib/linux/libsentry.so" $<TARGET_FILE_DIR:Engine>
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SENTRY_PATH}/lib/linux/crashpad_handler" $<TARGET_FILE_DIR:Engine>
         COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENAL_PATH}/lib/Linux/libopenal.a" $<TARGET_FILE_DIR:Engine>
         COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SDL3_PATH}/lib/linux/libSDL3.so" $<TARGET_FILE_DIR:Engine>/libSDL3.so.0
         COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SDL3_PATH}/lib/linux/libSDL3.so" $<TARGET_FILE_DIR:Engine>/libSDL3.so
