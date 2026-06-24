@@ -54,4 +54,9 @@ void main()
         vec2 ts = texture(u_debugTex, TexCoords).ba;
         FragColor = vec4(ts, 1.0, 1.0);
     }
+    else if (u_mode == 8)
+    {
+        float emissive = 1.0 - texture(u_debugTex, TexCoords).a;
+        FragColor = vec4(vec3(emissive), 1.0);
+    }
 }

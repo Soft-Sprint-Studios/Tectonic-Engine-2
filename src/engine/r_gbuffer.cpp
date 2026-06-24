@@ -51,7 +51,7 @@ bool R_GBuffer::Init(int width, int height)
     glTextureParameteri(m_normalTex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glNamedFramebufferTexture(m_fbo, GL_COLOR_ATTACHMENT0, m_normalTex, 0);
 
-    // Albedo
+    // Albedo + Emissive
     glCreateTextures(GL_TEXTURE_2D, 1, &m_albedoTex);
     glTextureStorage2D(m_albedoTex, 1, GL_RGBA8, width, height);
     glTextureParameteri(m_albedoTex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -183,7 +183,7 @@ void R_GBuffer::DrawDebug(int w, int h)
     glDisable(GL_DEPTH_TEST);
     m_debugShader.Bind();
 
-    int dw = w / 8;
+    int dw = w / 9;
     int dh = h / 8;
     int debugY = h - dh - 10;
 
@@ -225,6 +225,11 @@ void R_GBuffer::DrawDebug(int w, int h)
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glViewport(dw * 7, debugY, dw, dh);
+    m_debugShader.SetInt("u_mode", 8);
+    glBindTextureUnit(0, m_albedoTex);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    glViewport(dw * 8, debugY, dw, dh);
     m_debugShader.SetInt("u_mode", 3);
     glBindTextureUnit(0, m_lightmapUVTex);
     glDrawArrays(GL_TRIANGLES, 0, 6);

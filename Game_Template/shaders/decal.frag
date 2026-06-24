@@ -34,7 +34,8 @@ void main()
         discard;
     }
 
-    vec3 tsSample = texture(u_normal, finalUV).rgb * 2.0 - 1.0;
+    vec4 normalSample = texture(u_normal, finalUV);
+    vec3 tsSample = normalSample.rgb * 2.0 - 1.0;
     vec3 tangentNormal = normalize(tsSample);
 		
     if (!gl_FrontFacing)
@@ -46,6 +47,6 @@ void main()
     vec4 mraoh = texture(u_mraohMap, finalUV);
 
     gNormal = vec4(EncodeNormal(worldNormal), tangentNormal.x, tangentNormal.y);
-    gAlbedo = vec4(albedo.rgb, 1.0);
+    gAlbedo = vec4(albedo.rgb, normalSample.a); 
     gMRAO.rgb = mraoh.rgb;
 }

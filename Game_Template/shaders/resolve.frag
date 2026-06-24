@@ -105,7 +105,10 @@ void main()
     vec4 normalData = texture(u_gNormal, gBufferUV);
     vec3 N = DecodeNormal(normalData.rg);
     
-    vec3 albedo = texture(u_gAlbedo, gBufferUV).rgb;
+    vec4 albedoData = texture(u_gAlbedo, gBufferUV);
+    vec3 albedo = albedoData.rgb;
+    float emissive = albedoData.a;
+
     vec3 mrao = texture(u_gMRAO, gBufferUV).rgb;
     
     float metallic = mrao.r;
@@ -236,6 +239,6 @@ void main()
         dynDiffuse += CalculateDynamicLightPBR(sunL, viewDir, N, F0, albedo, metallic, roughness, sunEnergy);
     }
 
-    vec3 finalColor = ambient + dynDiffuse;
+    vec3 finalColor = ambient + dynDiffuse + (albedo * (1.0 - emissive) * 10.0);
     FragColor = vec4(finalColor, 1.0);
 }

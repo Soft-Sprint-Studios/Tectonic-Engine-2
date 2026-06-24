@@ -83,7 +83,7 @@ void Materials::CreateFallbackTexture()
     m_fallback = std::make_shared<R_Texture>();
     m_fallback->Create(size, size, data.data(), true);
 
-    uint8_t normalData[] = { 128, 128, 255, 0 };
+    uint8_t normalData[] = { 128, 128, 255, 255 };
     m_defaultNormal = std::make_shared<R_Texture>();
     m_defaultNormal->Create(1, 1, normalData, false);
 
