@@ -24,6 +24,7 @@
 #pragma once
 #include <string>
 #include <unordered_map>
+#include <functional>
 
 enum CVarFlags
 {
@@ -34,11 +35,21 @@ enum CVarFlags
 class CVar
 {
 public:
-    CVar(const std::string& name, const std::string& defaultValue, const std::string& description, int flags = CVAR_NONE);
+    using CVarCallback = std::function<void(CVar*)>;
+    CVar(const std::string& name, const std::string& defaultValue, const std::string& description, int flags = CVAR_NONE, CVarCallback callback = nullptr);
 
     std::string GetString() const
     {
         return m_value;
+    }
+
+    void SetValue(const std::string& value)
+    {
+        m_value = value;
+        if (m_callback)
+        {
+            m_callback(this);
+        }
     }
 
     int GetInt() const
@@ -92,4 +103,5 @@ private:
     std::string m_value;
     std::string m_description;
     int m_flags;
+    CVarCallback m_callback;
 };
