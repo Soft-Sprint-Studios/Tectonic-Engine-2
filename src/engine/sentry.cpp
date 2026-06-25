@@ -26,6 +26,7 @@
 #include "cvar.h"
 #include "concmd.h"
 #include "console.h"
+#include "build_date.h"
 #include <sentry.h>
 
 namespace Sentry
@@ -45,7 +46,11 @@ namespace Sentry
         sentry_options_t *options = sentry_options_new();
 
         sentry_options_set_dsn(options, dsn.c_str());
-        sentry_options_set_release(options, "tectonic-engine-2@1.0.0");
+
+        char sentry_release[128];
+        snprintf(sentry_release, sizeof(sentry_release), "tectonic-engine-2@%d", Build::GetBuildNumber());
+        sentry_options_set_release(options, sentry_release);
+
         sentry_options_set_environment(options, "development");
 
         #ifdef PLATFORM_WINDOWS
