@@ -8,7 +8,7 @@ out vec2 fTex;
 out vec4 fCol;
 out float fDepth;
 
-uniform mat4 u_proj;
+uniform mat4 u_projection;
 uniform mat4 u_view;
 uniform vec3 u_right;
 uniform vec3 u_up;
@@ -27,7 +27,7 @@ void main()
     {
         vec4 viewPos = u_view * vec4(corners[i], 1.0);
         fDepth = -viewPos.z;
-        gl_Position = u_proj * viewPos;
+        gl_Position = u_projection * viewPos;
         fTex = uvs[i];
         EmitVertex();
     }

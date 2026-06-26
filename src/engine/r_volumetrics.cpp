@@ -134,7 +134,7 @@ void R_Volumetrics::Render(GLuint depthTexture, const Camera& camera, R_Lights* 
     for (int i = 0; i < r_volumetrics_blur_passes.GetInt(); i++) 
     {
         glBindFramebuffer(GL_FRAMEBUFFER, m_blurFbo[horizontal]);
-        m_blurShader.SetInt("horizontal", horizontal);
+        m_blurShader.SetInt("u_horizontal", horizontal);
         
         glBindTextureUnit(0, first_iteration ? m_texture : m_blurTexture[!horizontal]);
         

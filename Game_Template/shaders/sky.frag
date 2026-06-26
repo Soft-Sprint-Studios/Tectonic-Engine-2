@@ -6,11 +6,11 @@ in vec3 TexCoords;
 in vec3 v_worldPos;
 
 uniform bool u_use_dynamic;
-layout(binding = 0) uniform samplerCube skybox;
+layout(binding = 0) uniform samplerCube u_skybox;
 
 uniform vec3 u_sunDir;
 uniform vec3 u_sunColor;
-uniform vec3 u_cameraPos;
+uniform vec3 u_viewPos;
 uniform float u_time;
 
 uniform int u_sky_steps_primary;
@@ -178,12 +178,12 @@ void main()
 {
     if (u_use_dynamic == false) 
     {
-        FragColor = texture(skybox, TexCoords);
+        FragColor = texture(u_skybox, TexCoords);
         return;
     }
 
     vec3 rayDir = normalize(v_worldPos);
-    vec3 rayOrigin = vec3(0.0, u_cameraPos.y + 6371e3, 0.0);
+    vec3 rayOrigin = vec3(0.0, u_viewPos.y + 6371e3, 0.0);
 
     float sunIntensity = length(u_sunColor) * 10.0; 
     

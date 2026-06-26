@@ -1,8 +1,8 @@
 out vec4 FragColor;
 in vec2 TexCoords;
 
-uniform sampler2D text;
-uniform vec4 textColor;
+layout(binding = 0) uniform sampler2D u_texture;
+uniform vec4 u_textColor;
 uniform int u_type;
 
 void main()
@@ -17,8 +17,8 @@ void main()
     }
     else
     {
-        alpha = texture(text, TexCoords).a;
+        alpha = texture(u_texture, TexCoords).a;
     }
 
-    FragColor = vec4(textColor.rgb, textColor.a * alpha);
+    FragColor = vec4(u_textColor.rgb, u_textColor.a * alpha);
 }

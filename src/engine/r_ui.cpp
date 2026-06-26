@@ -134,8 +134,8 @@ void R_UI::Render()
     glDisable(GL_DEPTH_TEST);
 
     m_shader.Bind();
-    m_shader.SetMat4("projection", m_projection);
-    m_shader.SetMat4("model", glm::mat4(1.0f));
+    m_shader.SetMat4("u_projection", m_projection);
+    m_shader.SetMat4("u_model", glm::mat4(1.0f));
 
     glBindVertexArray(m_vao);
 
@@ -143,7 +143,7 @@ void R_UI::Render()
     Materials::GetTexture("")->Bind(0);
     for (const auto& rect : m_rectCommands)
     {
-        m_shader.SetVec4("textColor", rect.color);
+        m_shader.SetVec4("u_textColor", rect.color);
         m_shader.SetInt("u_type", rect.type);
         float vertices[6][4] = 
         {
@@ -195,7 +195,7 @@ void R_UI::Render()
         }
 
         CachedText& cached = m_textCache[cmd.text];
-        m_shader.SetVec4("textColor", cmd.color);
+        m_shader.SetVec4("u_textColor", cmd.color);
         glBindTextureUnit(0, cached.textureID);
 
         float xpos = cmd.x;

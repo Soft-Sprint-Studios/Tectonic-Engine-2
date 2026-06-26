@@ -70,9 +70,9 @@ void R_Particles::Draw(const Camera& camera, uint32_t depthTex)
     glEnable(GL_BLEND);
     glDepthMask(GL_FALSE);
     m_shader.Bind();
-    m_shader.SetMat4("u_proj", camera.GetProjectionMatrix());
+    m_shader.SetMat4("u_projection", camera.GetProjectionMatrix());
     m_shader.SetMat4("u_view", camera.GetViewMatrix());
-    m_shader.SetMat4("u_invProj", glm::inverse(camera.GetProjectionMatrix()));
+    m_shader.SetMat4("u_invProjection", glm::inverse(camera.GetProjectionMatrix()));
     glBindTextureUnit(1, depthTex);
 
     int w, h;

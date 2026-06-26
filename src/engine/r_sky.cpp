@@ -116,9 +116,9 @@ void R_Sky::Draw(const Camera& camera)
     m_shader.Bind();
     
     // Remove translation from view matrix so sky stays at infinity
-    glm::mat4 view = glm::mat4(glm::mat3(camera.GetViewMatrix())); 
-    m_shader.SetMat4("view", view);
-    m_shader.SetMat4("projection", camera.GetProjectionMatrix());
+    glm::mat4 view = glm::mat4(glm::mat3(camera.GetViewMatrix()));
+    m_shader.SetMat4("u_view", view);
+    m_shader.SetMat4("u_projection", camera.GetProjectionMatrix());
 
     // Dynamic sky
     const auto& sky = DynamicSky::GetSettings();
@@ -127,7 +127,7 @@ void R_Sky::Draw(const Camera& camera)
     m_shader.SetInt("u_sky_steps_light", r_sky_steps_light.GetInt());
     m_shader.SetVec3("u_sunDir", sky.sunDir);
     m_shader.SetVec3("u_sunColor", sky.sunColor);
-    m_shader.SetVec3("u_cameraPos", camera.position);
+    m_shader.SetVec3("u_viewPos", camera.position);
     m_shader.SetFloat("u_time", (float)Time::TotalTime());
 
     glBindVertexArray(m_vao);

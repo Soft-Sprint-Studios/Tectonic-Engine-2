@@ -202,7 +202,7 @@ void R_SSAO::Render(GLuint depthTexture, const Camera& camera, GLuint quadVAO, i
     for (int i = 0; i < r_ssao_blur_passes.GetInt(); i++)
     {
         glBindFramebuffer(GL_FRAMEBUFFER, m_blurFbo[horizontal]);
-        m_blurShader.SetInt("horizontal", horizontal);
+        m_blurShader.SetInt("u_horizontal", horizontal ? 1 : 0);
 
         glBindTextureUnit(0, first_iteration ? m_texture : m_blurTexture[!horizontal]);
 
