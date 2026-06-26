@@ -2,7 +2,7 @@
 #include "common.h"
 #include "lightmap.h"
 
-layout (location = 0) out vec4 gNormal;
+layout (location = 0) out vec2 gNormal;
 layout (location = 1) out vec4 gAlbedo;
 layout (location = 2) out vec4 gMRAO;
 layout (location = 3) out vec2 gLightmapUV;
@@ -58,7 +58,6 @@ void main()
         discard;
     }
 
-    float emissive = 1.0;
     vec3 worldNormal = normalize(TBN[2]);
     vec3 tangentNormal = vec3(0.0, 0.0, 1.0);
 
@@ -70,7 +69,6 @@ void main()
         vec3 n1 = norm1.rgb * 2.0 - 1.0;
         vec3 n2 = norm2.rgb * 2.0 - 1.0;
 
-        emissive = mix(norm1.a, norm2.a, blend);
         tangentNormal = normalize(mix(n1, n2, blend));
         worldNormal = normalize(TBN * tangentNormal);
     }
@@ -82,8 +80,8 @@ void main()
     float packed_tx = tangentNormal.x * 0.5 + 0.5;
     float packed_ty = u_useBump ? (tangentNormal.y * 0.5 + 0.5) : 0.0;
 
-    gNormal = vec4(EncodeNormal(worldNormal), packed_tx, packed_ty);
-    gAlbedo = vec4(albedo.rgb, emissive);
-    gMRAO = vec4(mraoh.rgb, 1.0);     
+    gNormal = EncodeNormal(worldNormal);
+    gAlbedo = vec4(albedo.rgb, packed_tx);
+    gMRAO = vec4(mraoh.rgb, packed_ty);
     gLightmapUV = PackLightmapUV(v_LmCoord, v_LmSize);
 }

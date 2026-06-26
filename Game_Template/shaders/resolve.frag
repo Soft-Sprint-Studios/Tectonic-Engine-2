@@ -107,13 +107,14 @@ void main()
     
     vec4 albedoData = texture(u_gAlbedo, gBufferUV);
     vec3 albedo = albedoData.rgb;
-    float emissive = albedoData.a;
 
-    vec3 mrao = texture(u_gMRAO, gBufferUV).rgb;
+    vec4 mrao = texture(u_gMRAO, gBufferUV);
     
     float metallic = mrao.r;
     float roughness = max(mrao.g, 0.05); 
     float ao = mrao.b;
+    float packed_tx = albedoData.a;
+    float packed_ty = mrao.a;
 
     vec2 lmCoord;
     vec2 lmSize;
@@ -127,10 +128,10 @@ void main()
     vec2 LmCoord3 = lmCoord + vec2(0.0, lmSize.y);
     vec2 LmCoord4 = lmCoord + lmSize;
 
-    if (normalData.a > 0.02)
+    if (packed_ty > 0.02)
     {
-        float tx = normalData.z * 2.0 - 1.0;
-        float ty = normalData.w * 2.0 - 1.0;
+        float tx = packed_tx * 2.0 - 1.0;
+        float ty = packed_ty * 2.0 - 1.0;
         vec3 tsNormal = vec3(tx, ty, sqrt(max(0.0, 1.0 - (tx * tx + ty * ty))));
 
         vec3 w = max(vec3(0.0), vec3(dot(tsNormal, basis0), dot(tsNormal, basis1), dot(tsNormal, basis2)));
@@ -239,6 +240,6 @@ void main()
         dynDiffuse += CalculateDynamicLightPBR(sunL, viewDir, N, F0, albedo, metallic, roughness, sunEnergy);
     }
 
-    vec3 finalColor = ambient + dynDiffuse + (albedo * (1.0 - emissive) * 10.0);
+    vec3 finalColor = ambient + dynDiffuse;
     FragColor = vec4(finalColor, 1.0);
 }

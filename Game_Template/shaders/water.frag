@@ -2,7 +2,7 @@
 #include "common.h"
 #include "lightmap.h"
 
-layout (location = 0) out vec4 gNormal;
+layout (location = 0) out vec2 gNormal;
 layout (location = 1) out vec4 gAlbedo;
 layout (location = 2) out vec4 gMRAO;
 layout (location = 3) out vec2 gLightmapUV;
@@ -88,8 +88,8 @@ void main()
     float packed_tx = normalSample.x * 0.5 + 0.5;
     float packed_ty = u_useBump ? (normalSample.y * 0.5 + 0.5) : 0.0;
 
-    gNormal = vec4(EncodeNormal(worldNormal), packed_tx, packed_ty);
-    gAlbedo = vec4(albedo.rgb, 1.0);
-    gMRAO = vec4(mraoh.rgb, 1.0);     
+    gNormal = EncodeNormal(worldNormal);
+    gAlbedo = vec4(albedo.rgb, packed_tx);
+    gMRAO = vec4(mraoh.rgb, packed_ty);     
     gLightmapUV = PackLightmapUV(v_LmCoord, v_LmSize);
 }

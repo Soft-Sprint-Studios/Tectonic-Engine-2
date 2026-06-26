@@ -1,7 +1,7 @@
 #include "common.h"
 #include "parallax.h"
 
-layout (location = 0) out vec4 gNormal;
+layout (location = 0) out vec2 gNormal;
 layout (location = 1) out vec4 gAlbedo;
 layout (location = 2) out vec4 gMRAO;
 
@@ -46,7 +46,10 @@ void main()
     vec3 worldNormal = normalize(TBN * tangentNormal);
     vec4 mraoh = texture(u_mraohMap, finalUV);
 
-    gNormal = vec4(EncodeNormal(worldNormal), tangentNormal.x, tangentNormal.y);
-    gAlbedo = vec4(albedo.rgb, normalSample.a); 
-    gMRAO.rgb = mraoh.rgb;
+    float packed_tx = tangentNormal.x * 0.5 + 0.5;
+    float packed_ty = tangentNormal.y * 0.5 + 0.5;
+
+    gNormal = EncodeNormal(worldNormal);
+    gAlbedo = vec4(albedo.rgb, packed_tx);
+    gMRAO = vec4(mraoh.rgb, packed_ty);
 }

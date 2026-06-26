@@ -46,19 +46,19 @@ bool R_GBuffer::Init(int width, int height)
 
     // Normal
     glCreateTextures(GL_TEXTURE_2D, 1, &m_normalTex);
-    glTextureStorage2D(m_normalTex, 1, GL_RGBA16F, width, height);
+    glTextureStorage2D(m_normalTex, 1, GL_RG16F, width, height);
     glTextureParameteri(m_normalTex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTextureParameteri(m_normalTex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glNamedFramebufferTexture(m_fbo, GL_COLOR_ATTACHMENT0, m_normalTex, 0);
 
-    // Albedo + Emissive
+    // Albedo + packed tangent X
     glCreateTextures(GL_TEXTURE_2D, 1, &m_albedoTex);
     glTextureStorage2D(m_albedoTex, 1, GL_RGBA8, width, height);
     glTextureParameteri(m_albedoTex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTextureParameteri(m_albedoTex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glNamedFramebufferTexture(m_fbo, GL_COLOR_ATTACHMENT1, m_albedoTex, 0);
 
-    // MRAO (Metallic, Roughness, AO)
+    // MRAO (Metallic, Roughness, AO) + packed tangent Y
     glCreateTextures(GL_TEXTURE_2D, 1, &m_mraoTex);
     glTextureStorage2D(m_mraoTex, 1, GL_RGBA8, width, height);
     glTextureParameteri(m_mraoTex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -183,7 +183,7 @@ void R_GBuffer::DrawDebug(int w, int h)
     glDisable(GL_DEPTH_TEST);
     m_debugShader.Bind();
 
-    int dw = w / 9;
+    int dw = w / 8;
     int dh = h / 8;
     int debugY = h - dh - 10;
 
@@ -201,7 +201,8 @@ void R_GBuffer::DrawDebug(int w, int h)
 
     glViewport(dw * 2, debugY, dw, dh);
     m_debugShader.SetInt("u_mode", 7);
-    glBindTextureUnit(0, m_normalTex);
+    glBindTextureUnit(0, m_albedoTex);
+    glBindTextureUnit(1, m_mraoTex);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glViewport(dw * 3, debugY, dw, dh);
@@ -225,11 +226,6 @@ void R_GBuffer::DrawDebug(int w, int h)
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glViewport(dw * 7, debugY, dw, dh);
-    m_debugShader.SetInt("u_mode", 8);
-    glBindTextureUnit(0, m_albedoTex);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-
-    glViewport(dw * 8, debugY, dw, dh);
     m_debugShader.SetInt("u_mode", 3);
     glBindTextureUnit(0, m_lightmapUVTex);
     glDrawArrays(GL_TRIANGLES, 0, 6);

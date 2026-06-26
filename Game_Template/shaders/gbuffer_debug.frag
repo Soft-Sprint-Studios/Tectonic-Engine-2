@@ -5,6 +5,7 @@ out vec4 FragColor;
 in vec2 TexCoords;
 
 layout(binding = 0) uniform sampler2D u_debugTex;
+layout(binding = 1) uniform sampler2D u_debugTex2;
 uniform int u_mode;
 
 void main()
@@ -51,12 +52,8 @@ void main()
     }
     else if (u_mode == 7)
     {
-        vec2 ts = texture(u_debugTex, TexCoords).ba;
-        FragColor = vec4(ts, 1.0, 1.0);
-    }
-    else if (u_mode == 8)
-    {
-        float emissive = 1.0 - texture(u_debugTex, TexCoords).a;
-        FragColor = vec4(vec3(emissive), 1.0);
+        float tx = texture(u_debugTex, TexCoords).a * 2.0 - 1.0;
+        float ty = texture(u_debugTex2, TexCoords).a * 2.0 - 1.0;
+        FragColor = vec4(tx, ty, 1.0, 1.0);
     }
 }
