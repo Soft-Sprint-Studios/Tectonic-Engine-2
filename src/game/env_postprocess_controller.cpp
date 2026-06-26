@@ -40,6 +40,7 @@ public:
         m_fogStart = GetFloat("fog_start", 50.0f);
         m_fogEnd = GetFloat("fog_end", 200.0f);
         m_fogAffectsSky = GetInt("fog_affects_sky", 1) != 0;
+        m_fogEnabled = GetInt("fog_enabled", 0) != 0;
 
         if (IsEnabled())
         {
@@ -77,6 +78,7 @@ public:
         AddSaveField(DATA_FIELD(EnvPostProcessController, m_fogStart, FieldType::Float));
         AddSaveField(DATA_FIELD(EnvPostProcessController, m_fogEnd, FieldType::Float));
         AddSaveField(DATA_FIELD(EnvPostProcessController, m_fogAffectsSky, FieldType::Bool));
+        AddSaveField(DATA_FIELD(EnvPostProcessController, m_fogEnabled, FieldType::Bool));
     }
 
     void AcceptInput(const std::string& inputName, const std::string& parameter) override
@@ -121,13 +123,15 @@ public:
         }
         else if (inputName == "EnableFog")
         {
+            m_fogEnabled = true;
             if (m_enabled) 
                 PostProcess::SetFog(true, m_fogColor, m_fogStart, m_fogEnd, m_fogAffectsSky);
         }
         else if (inputName == "DisableFog")
         {
-            if (m_enabled) 
-                PostProcess::SetFog(true, m_fogColor, m_fogStart, m_fogEnd, m_fogAffectsSky);
+            m_fogEnabled = false;
+            if (m_enabled)
+                PostProcess::SetFog(false, m_fogColor, m_fogStart, m_fogEnd, m_fogAffectsSky);
         }
     }
 
@@ -140,7 +144,7 @@ private:
         PostProcess::SetBW(m_bw);
         PostProcess::SetNegative(m_negative);
         PostProcess::SetSepia(m_sepia);
-        PostProcess::SetFog(true, m_fogColor, m_fogStart, m_fogEnd, m_fogAffectsSky);
+        PostProcess::SetFog(m_fogEnabled, m_fogColor, m_fogStart, m_fogEnd, m_fogAffectsSky);
     }
 
     float m_vignette = 0.0f;
@@ -153,6 +157,7 @@ private:
     float m_fogStart, m_fogEnd;
     bool m_fogAffectsSky;
     bool m_enabled = false;
+    bool m_fogEnabled = false;
 };
 
 LINK_ENTITY_TO_CLASS("env_postprocess_controller", EnvPostProcessController)

@@ -276,6 +276,11 @@
 		0 : "No"
 		1 : "Yes"
 	]
+	fog_enabled(choices) : "Fog Enabled on Spawn" : 0 : "Whether the fog should be enabled as soon as the map loads." =
+	[
+		0 : "No"
+		1 : "Yes"
+	]
 
 	input SetVignette(float) : "Sets a new vignette strength."
 	input SetChroma(float) : "Sets a new chromatic aberration strength."
