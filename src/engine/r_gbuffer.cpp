@@ -77,14 +77,14 @@ bool R_GBuffer::Init(int width, int height)
 
     // Depth Buffer
     glCreateTextures(GL_TEXTURE_2D, 1, &m_depthTex);
-    glTextureStorage2D(m_depthTex, 1, GL_DEPTH_COMPONENT24, width, height);
+    glTextureStorage2D(m_depthTex, 1, GL_DEPTH24_STENCIL8, width, height);
     glTextureParameteri(m_depthTex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTextureParameteri(m_depthTex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTextureParameteri(m_depthTex, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
     glTextureParameteri(m_depthTex, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
     float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
     glTextureParameterfv(m_depthTex, GL_TEXTURE_BORDER_COLOR, borderColor);
-    glNamedFramebufferTexture(m_fbo, GL_DEPTH_ATTACHMENT, m_depthTex, 0);
+    glNamedFramebufferTexture(m_fbo, GL_DEPTH_STENCIL_ATTACHMENT, m_depthTex, 0);
 
     return true;
 }
