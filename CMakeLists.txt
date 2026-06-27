@@ -27,7 +27,9 @@ set(MINIZ_PATH ${CMAKE_SOURCE_DIR}/libs/miniz)
 
 # ---- Detect 32/64-bit ----
 if(WIN32)
-    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    if(CMAKE_GENERATOR_PLATFORM STREQUAL "ARM64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "(ARM64|arm64)")
+        set(ARCH_FOLDER "x64arm")
+    elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
         set(ARCH_FOLDER "x64")
     else()
         set(ARCH_FOLDER "x86")

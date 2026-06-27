@@ -47,6 +47,24 @@ jobs:
           name: windows-x86-release
           path: build/Release
 
+  build-windows-arm64-release:
+    name: Build - Windows ARM64 (Release)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: cmake -S . -B build -G "Visual Studio 18 2026" -A ARM64
+
+      - name: Build with CMake
+        run: cmake --build build --config Release
+
+      - name: Upload Windows ARM64 Release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-arm64-release
+          path: build/Release
+
   build-linux-x64-release:
     name: Build - Linux x64 (Release)
     runs-on: ubuntu-latest
@@ -109,6 +127,7 @@ jobs:
     needs:
       - build-windows-x64-release
       - build-windows-x86-release
+      - build-windows-arm64-release
       - build-linux-x64-release
       - build-freebsd-x64-release
     runs-on: ubuntu-latest
@@ -131,6 +150,12 @@ jobs:
           name: windows-x86-release
           path: artifacts/windows-x86
 
+      - name: Download Windows ARM64 Release
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-arm64-release
+          path: artifacts/windows-arm64
+
       - name: Download Linux x64 Release
         uses: actions/download-artifact@v4
         with:
@@ -147,6 +172,7 @@ jobs:
         run: |
           mkdir -p release/windows-x64
           mkdir -p release/windows-x86
+          mkdir -p release/windows-arm64
           mkdir -p release/linux-x64
           mkdir -p release/freebsd-x64
 
@@ -154,6 +180,7 @@ jobs:
         run: |
           cp -r Game_Template/* release/windows-x64/
           cp -r Game_Template/* release/windows-x86/
+          cp -r Game_Template/* release/windows-arm64/
           cp -r Game_Template/* release/linux-x64/
           cp -r Game_Template/* release/freebsd-x64/
 
@@ -161,6 +188,7 @@ jobs:
         run: |
           cp -r artifacts/windows-x64/* release/windows-x64/
           cp -r artifacts/windows-x86/* release/windows-x86/
+          cp -r artifacts/windows-arm64/* release/windows-arm64/
           cp -r artifacts/linux-x64/* release/linux-x64/
           cp -r artifacts/freebsd-x64/* release/freebsd-x64/
 
@@ -169,6 +197,7 @@ jobs:
           cd release
           zip -r windows-x64.zip windows-x64
           zip -r windows-x86.zip windows-x86
+          zip -r windows-arm64.zip windows-arm64
           zip -r linux-x64.zip linux-x64
           zip -r freebsd-x64.zip freebsd-x64
 
@@ -187,5 +216,6 @@ jobs:
           files: |
             release/windows-x64.zip
             release/windows-x86.zip
+            release/windows-arm64.zip
             release/linux-x64.zip
             release/freebsd-x64.zip

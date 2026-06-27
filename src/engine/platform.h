@@ -33,10 +33,14 @@
     #error "Unsupported platform"
 #endif
 
-#if defined(_WIN64) || defined(__x86_64__) || defined(__ppc64__)
+#if defined(_WIN64) || defined(__x86_64__) || defined(__ppc64__) || defined(_M_ARM64) || defined(__aarch64__)
     #define ARCH_64BIT
 #else
     #define ARCH_32BIT
+#endif
+
+#if defined(_M_ARM64) || defined(__aarch64__)
+    #define ARCH_ARM64
 #endif
 
 #if defined(_MSC_VER)
@@ -63,7 +67,9 @@
     #error "Unsupported compiler"
 #endif
 
-#ifdef ARCH_64BIT
+#if defined(ARCH_ARM64)
+    #define ARCH_STRING "ARM64"
+#elif defined(ARCH_64BIT)
     #define ARCH_STRING "x64"
 #else
     #define ARCH_STRING "x86"
