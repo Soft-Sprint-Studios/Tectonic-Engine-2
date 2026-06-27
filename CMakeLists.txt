@@ -162,8 +162,10 @@ if(WIN32)
     target_link_options(Launcher PRIVATE "/MANIFEST:EMBED" "/MANIFESTINPUT:${LAUNCHER_MANIFEST}" /subsystem:windows)
 endif()
 
-# for now 64 bit only as havent built vtflib for linux and 32 bit win
-if(WIN32 AND CMAKE_SIZEOF_VOID_P EQUAL 8)
+# for now win 64 bit only
+if(WIN32 AND CMAKE_SIZEOF_VOID_P EQUAL 8 
+   AND NOT CMAKE_GENERATOR_PLATFORM STREQUAL "ARM64"
+   AND NOT CMAKE_SYSTEM_PROCESSOR MATCHES "(ARM64|arm64)")
 
     set(TOOL_SRC "src/tools/importer/main.cpp")
     add_executable(TectonicImport ${TOOL_SRC})
