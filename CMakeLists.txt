@@ -112,8 +112,8 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
     include_directories(/usr/local/include)
     link_directories(/usr/local/lib)
 
-    target_link_libraries(TectonicEngine2 PRIVATE -Wl,--whole-archive Game -Wl,--no-whole-archive)
-    target_link_libraries(TectonicEngine2 PRIVATE
+    target_link_libraries(Engine PRIVATE -Wl,--whole-archive Game -Wl,--no-whole-archive)
+    target_link_libraries(Engine PRIVATE
         SDL3
         SDL3_ttf
         BulletDynamics
