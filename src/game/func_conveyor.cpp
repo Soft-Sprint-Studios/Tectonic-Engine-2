@@ -29,7 +29,7 @@
 class FuncConveyor : public Entity
 {
 public:
-    void Spawn(const BSP::EntityData& entData)
+    void Spawn(const BSP::EntityData& entData) override
     {
         Entity::Spawn(entData);
         m_speed = GetFloat("speed", 100.0f) * BSP::MAPSCALE;
@@ -45,7 +45,7 @@ public:
         m_direction = glm::normalize(glm::vec3(hX, hZ, -hY));
     }
 
-    void Touch(Entity* other)
+    void Touch(Entity* other) override
     {
         if (other)
         {
@@ -53,7 +53,7 @@ public:
         }
     }
 
-    void EndTouch(Entity* other)
+    void EndTouch(Entity* other) override
     {
         if (other)
         {
@@ -61,7 +61,7 @@ public:
         }
     }
 
-    void Think(float dt)
+    void Think(float dt) override
     {
         for (auto* ent : m_targets)
         {

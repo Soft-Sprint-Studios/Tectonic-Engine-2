@@ -25,8 +25,12 @@
 #include "console.h"
 #include "cvar.h"
 #include "timing.h"
-#include <discord_rpc.h>
+#include "platform.h"
 #include <cstring>
+
+#ifndef PLATFORM_FREEBSD
+#include <discord_rpc.h>
+#endif
 
 namespace Discord
 {
@@ -38,51 +42,59 @@ namespace Discord
 
     void Init()
     {
-        if (discord_enabled.GetInt() == 0) 
+#ifndef PLATFORM_FREEBSD
+        if (discord_enabled.GetInt() == 0)
             return;
 
         DiscordEventHandlers handlers;
         std::memset(&handlers, 0, sizeof(handlers));
 
         Discord_Initialize(discord_appid.GetString().c_str(), &handlers, 1, nullptr);
-        
+
         s_initialized = true;
         s_startTime = (int64_t)Time::TotalTime();
-        
+
         // Initial state
         UpdatePresence("Loading Engine...", "");
+#endif
     }
 
     void Update()
     {
-        if (!s_initialized || discord_enabled.GetInt() == 0) 
+#ifndef PLATFORM_FREEBSD
+        if (!s_initialized || discord_enabled.GetInt() == 0)
             return;
 
         Discord_RunCallbacks();
+#endif
     }
 
     void Shutdown()
     {
-        if (!s_initialized) 
+#ifndef PLATFORM_FREEBSD
+        if (!s_initialized)
             return;
 
         Discord_Shutdown();
         s_initialized = false;
+#endif
     }
 
     void UpdatePresence(const std::string& details, const std::string& state)
     {
-        if (!s_initialized || discord_enabled.GetInt() == 0) 
+#ifndef PLATFORM_FREEBSD
+        if (!s_initialized || discord_enabled.GetInt() == 0)
             return;
 
         DiscordRichPresence discordPresence;
         std::memset(&discordPresence, 0, sizeof(discordPresence));
-        
+
         discordPresence.details = details.c_str();
         discordPresence.state = state.c_str();
         discordPresence.startTimestamp = s_startTime;
         discordPresence.largeImageText = "Tectonic Engine 2";
-        
+
         Discord_UpdatePresence(&discordPresence);
+#endif
     }
 }
