@@ -72,8 +72,8 @@ void R_Waters::RenderReflection(Renderer* renderer, const Camera& mainCam)
         glNamedFramebufferTexture(m_reflectFBO, GL_COLOR_ATTACHMENT0, m_reflectTex, 0);
 
         glCreateRenderbuffers(1, &m_reflectRBO);
-        glNamedRenderbufferStorage(m_reflectRBO, GL_DEPTH_COMPONENT24, fboW, fboH);
-        glNamedFramebufferRenderbuffer(m_reflectFBO, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_reflectRBO);
+        glNamedRenderbufferStorage(m_reflectRBO, GL_DEPTH24_STENCIL8, fboW, fboH);
+        glNamedFramebufferRenderbuffer(m_reflectFBO, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_reflectRBO);
     }
 
     // Planar reflection algorithm
@@ -90,7 +90,7 @@ void R_Waters::RenderReflection(Renderer* renderer, const Camera& mainCam)
     int ds = std::max(1, r_water_downsample.GetInt());
     glViewport(0, 0, m_width / ds, m_height / ds);
 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     renderer->RenderWorld(reflectCam, 0, false);
 

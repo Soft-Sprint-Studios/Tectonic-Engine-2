@@ -57,8 +57,8 @@ R_Monitors::RenderTarget& R_Monitors::GetTarget(Monitor* m)
         glNamedFramebufferTexture(rt.fbo, GL_COLOR_ATTACHMENT0, rt.texture, 0);
 
         glCreateRenderbuffers(1, &rt.rbo);
-        glNamedRenderbufferStorage(rt.rbo, GL_DEPTH_COMPONENT24, rt.res, rt.res);
-        glNamedFramebufferRenderbuffer(rt.fbo, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rt.rbo);
+        glNamedRenderbufferStorage(rt.rbo, GL_DEPTH24_STENCIL8, rt.res, rt.res);
+        glNamedFramebufferRenderbuffer(rt.fbo, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rt.rbo);
     }
     return m_targets[m];
 }

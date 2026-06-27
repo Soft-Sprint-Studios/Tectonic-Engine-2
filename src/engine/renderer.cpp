@@ -195,7 +195,7 @@ void Renderer::RenderWorld(Camera& camera, GLuint cubemapToExclude, bool drawWat
     LightingPass(camera, cubemapToExclude, targetFBO, renderW, renderH, w, h);
     if (targetFBO == m_postProcess->GetActiveFBO())
     {
-        glNamedFramebufferTexture(targetFBO, GL_DEPTH_ATTACHMENT, m_gbuffer->GetDepthTex(), 0);
+        glNamedFramebufferTexture(targetFBO, GL_DEPTH_STENCIL_ATTACHMENT, m_gbuffer->GetDepthTex(), 0);
     }
     else
     {
@@ -212,7 +212,7 @@ void Renderer::GeometryPass(Camera& camera, int renderW, int renderH, bool drawW
     glDepthMask(GL_TRUE);
     glDepthFunc(GL_LESS);
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     m_gbufferShader.Bind();
     m_gbufferShader.SetMat4("u_projection", camera.GetProjectionMatrix());
@@ -283,7 +283,7 @@ void Renderer::LightingPass(Camera& camera, GLuint cubemapToExclude, GLint targe
 
 void Renderer::DepthBlit(GLint targetFBO, int renderW, int renderH)
 {
-    glBlitNamedFramebuffer(m_gbuffer->GetFBO(), targetFBO, 0, 0, renderW, renderH, 0, 0, renderW, renderH, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+    glBlitNamedFramebuffer(m_gbuffer->GetFBO(), targetFBO, 0, 0, renderW, renderH, 0, 0, renderW, renderH, GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT, GL_NEAREST);
 }
 
 void Renderer::ForwardPass(Camera& camera, GLint targetFBO, int renderW, int renderH)

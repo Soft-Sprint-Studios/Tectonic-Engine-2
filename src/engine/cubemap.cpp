@@ -167,8 +167,8 @@ namespace Cubemap
         GLuint fbo, rbo;
         glCreateFramebuffers(1, &fbo);
         glCreateRenderbuffers(1, &rbo);
-        glNamedRenderbufferStorage(rbo, GL_DEPTH_COMPONENT24, resolution, resolution);
-        glNamedFramebufferRenderbuffer(fbo, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo);
+        glNamedRenderbufferStorage(rbo, GL_DEPTH24_STENCIL8, resolution, resolution);
+        glNamedFramebufferRenderbuffer(fbo, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
         Camera buildCam(90.0f, 1.0f, 0.1f, 2000.0f);
 
