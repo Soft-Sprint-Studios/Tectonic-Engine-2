@@ -27,6 +27,8 @@
     #define PLATFORM_WINDOWS
 #elif defined(__linux__)
     #define PLATFORM_LINUX
+#elif defined(__FreeBSD__)
+    #define PLATFORM_FREEBSD
 #else
     #error "Unsupported platform"
 #endif
@@ -45,8 +47,10 @@
     #error "Unsupported compiler"
 #endif
 
-#ifdef PLATFORM_WINDOWS
+#if defined(PLATFORM_WINDOWS)
     #define OS_STRING "Windows"
+#elif defined(PLATFORM_FREEBSD)
+    #define OS_STRING "FreeBSD"
 #else
     #define OS_STRING "Linux"
 #endif

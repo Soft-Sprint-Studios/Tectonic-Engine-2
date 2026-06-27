@@ -108,6 +108,21 @@ if(WIN32)
         OpenGL::GL
         ws2_32
     )
+elseif(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+    include_directories(/usr/local/include)
+    link_directories(/usr/local/lib)
+
+    target_link_libraries(TectonicEngine2 PRIVATE -Wl,--whole-archive Game -Wl,--no-whole-archive)
+    target_link_libraries(TectonicEngine2 PRIVATE
+        SDL3
+        SDL3_ttf
+        BulletDynamics
+        BulletCollision
+        LinearMath
+        openal
+        OpenGL::GL
+        pthread
+    )
 elseif(UNIX)
     target_link_libraries(Engine PRIVATE -Wl,--whole-archive Game -Wl,--no-whole-archive)
 
