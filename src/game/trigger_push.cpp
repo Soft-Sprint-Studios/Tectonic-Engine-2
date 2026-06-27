@@ -28,7 +28,7 @@
 class TriggerPush : public Entity
 {
 public:
-    void Spawn(const BSP::EntityData& entData)
+    void Spawn(const BSP::EntityData& entData) override
     {
         Entity::Spawn(entData);
         m_speed = GetFloat("speed", 400.0f) * BSP::MAPSCALE;

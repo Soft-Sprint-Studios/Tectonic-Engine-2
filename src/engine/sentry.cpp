@@ -73,6 +73,6 @@ namespace Sentry
         {
             sentry_close();
         }
-    }
 #endif
+    }
 }

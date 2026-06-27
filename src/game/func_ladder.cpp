@@ -27,7 +27,7 @@
 class FuncLadder : public Entity
 {
 public:
-    void Spawn(const BSP::EntityData& entData)
+    void Spawn(const BSP::EntityData& entData) override
     {
         Entity::Spawn(entData);
         m_speed = GetFloat("speed", 3.0f);
@@ -48,7 +48,7 @@ public:
         }
     }
 
-    void Touch(Entity* other)
+    void Touch(Entity* other) override
     {
         if (other && other->IsPlayer())
         {
@@ -56,7 +56,7 @@ public:
         }
     }
 
-    void EndTouch(Entity* other)
+    void EndTouch(Entity* other) override
     {
         if (other && other->IsPlayer())
         {

@@ -153,8 +153,9 @@ namespace Networking
                 response.insert(response.end(), buffer, buffer + bytes);
             }
 
-            auto it = std::search(response.begin(), response.end(), "\r\n\r\n", "\r\n\r\n" + 4);
-            if (it != response.end()) 
+            const char* sep = "\r\n\r\n";
+            auto it = std::search(response.begin(), response.end(), sep, sep + 4);
+            if (it != response.end())
             {
                 std::vector<uint8_t> body(it + 4, response.end());
 
