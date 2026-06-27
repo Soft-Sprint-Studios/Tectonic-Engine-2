@@ -1,7 +1,7 @@
 @echo off
-if not exist buildx86 (
-    mkdir buildx86
+if not exist build_windows_x86 (
+    mkdir build_windows_x86
 )
 
-cd buildx86
+cd build_windows_x86
 cmake -G "Visual Studio 18 2026" -A Win32 ..

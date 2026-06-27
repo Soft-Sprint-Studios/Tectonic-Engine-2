@@ -109,8 +109,9 @@ if(WIN32)
         ws2_32
     )
 elseif(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
-    include_directories(/usr/local/include)
-    link_directories(/usr/local/lib)
+    target_include_directories(Engine PRIVATE /usr/local/include)
+    target_include_directories(Game PRIVATE /usr/local/include)
+    target_link_directories(Engine PRIVATE /usr/local/lib)
 
     target_link_libraries(Engine PRIVATE -Wl,--whole-archive Game -Wl,--no-whole-archive)
     target_link_libraries(Engine PRIVATE

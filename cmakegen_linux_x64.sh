@@ -18,11 +18,11 @@ sudo apt-get install -y \
     libfontconfig1-dev \
     libopenal-dev
 
-if [ ! -d "buildlinux" ]; then
-    mkdir buildlinux
+if [ ! -d "build_linux_x64" ]; then
+    mkdir build_linux_x64
 fi
 
-cd buildlinux
+cd build_linux_x64
 
 echo "Configuring CMake..."
 cmake -S .. -B . -DCMAKE_BUILD_TYPE=Release

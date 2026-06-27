@@ -1,7 +1,7 @@
 @echo off
-if not exist buildx64 (
-    mkdir buildx64
+if not exist build_windows_x64 (
+    mkdir build_windows_x64
 )
 
-cd buildx64
+cd build_windows_x64
 cmake -G "Visual Studio 18 2026" ..
