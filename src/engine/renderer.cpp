@@ -42,7 +42,6 @@ CVar r_skybox("r_skybox", "1", "Enable skybox rendering.", CVAR_SAVE);
 CVar r_particles("r_particles", "1", "Enable particle system rendering.", CVAR_SAVE);
 CVar r_water("r_water", "1", "Enable water rendering.", CVAR_SAVE);
 CVar r_sprites("r_sprites", "1", "Enable sprite rendering.", CVAR_SAVE);
-CVar r_wireframe("r_wireframe", "0", "Render the scene in wireframe mode.", CVAR_NONE);
 CVar r_debug_gbuffer("r_debug_gbuffer", "0", "Enable G-Buffer diagnostic overlay.", CVAR_SAVE);
 CVar r_lightmap_bicubic("r_lightmap_bicubic", "1", "Enable high-quality bicubic filtering for lightmaps.", CVAR_SAVE);
 
@@ -319,8 +318,6 @@ void Renderer::Render(Camera& camera)
 
     camera.SetAspectRatio((float)w / (float)h);
 
-    glPolygonMode(GL_FRONT_AND_BACK, r_wireframe.GetInt() > 0 ? GL_LINE : GL_FILL);
-
     if (r_water.GetInt() == 1)
         m_waterRenderer->RenderReflection(this, camera);
 
@@ -333,8 +330,6 @@ void Renderer::Render(Camera& camera)
     m_glassRenderer->Draw(camera, m_bspRenderer.get());
 
     m_postProcess->End();
-
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     // Draw postprocessing
     glDisable(GL_DEPTH_TEST);
