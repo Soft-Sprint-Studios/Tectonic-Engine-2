@@ -322,7 +322,6 @@ void Renderer::Render(Camera& camera)
         m_waterRenderer->RenderReflection(this, camera);
 
     m_postProcess->Begin();
-    glViewport(0, 0, w, h);
 
     RenderWorld(camera, 0);
 
