@@ -69,23 +69,32 @@ void R_Texture::CreateFromInfo(const DDS::ImageInfo& info)
     switch (info.format)
     {
     case DDS::Format::BC1:      
-        internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT; break;
+        internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT; 
+        break;
     case DDS::Format::BC1_SRGB: 
-        internalFormat = GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT; break;
+        internalFormat = GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT; 
+        break;
     case DDS::Format::BC2:     
-        internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT; break;
+        internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT; 
+        break;
     case DDS::Format::BC2_SRGB:
-        internalFormat = GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT; break;
+        internalFormat = GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT; 
+        break;
     case DDS::Format::BC3:     
-        internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT; break;
+        internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT; 
+        break;
     case DDS::Format::BC3_SRGB: 
-        internalFormat = GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT; break;
+        internalFormat = GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT; 
+        break;
     case DDS::Format::RGBA8:   
-        internalFormat = GL_RGBA8; break;
+        internalFormat = GL_RGBA8; 
+        break;
     case DDS::Format::SRGB8:   
-        internalFormat = GL_SRGB8_ALPHA8; break;
-    default:                   
-        internalFormat = GL_RGBA8; break;
+        internalFormat = GL_SRGB8_ALPHA8; 
+        break;
+    default:
+        internalFormat = GL_RGBA8;
+        break;
     }
 
     glTextureStorage2D(m_id, (GLsizei)info.mips.size(), internalFormat, info.width, info.height);
