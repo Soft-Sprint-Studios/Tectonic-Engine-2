@@ -22,67 +22,59 @@
  * SOFTWARE.
  */
 #include "cubemap.h"
-#include "console.h"
+#include "r_cubemap.h"
 #include "filesystem.h"
-#include "entities.h"
-#include "renderer.h"
-#include "camera.h"
-#include "maps.h"
-#include "cvar.h"
-#include "dds.h"
-#include <vector>
-#include <glm/gtx/norm.hpp>
-#include <fstream>
 #include <sstream>
-
+#include <glm/gtx/norm.hpp>
 
 namespace Cubemap
 {
-    static std::vector<CubemapProbe> s_probes;
-    CVar r_cubemap_resolution("r_cubemap_resolution", "512", "Resolution of rendered cubemap faces.", CVAR_SAVE);
+    static std::vector<Probe> s_probes;
 
-    void Init() 
+    void Init()
     {
     }
 
-    void Shutdown() 
-    { 
-        Clear(); 
+    void Shutdown()
+    {
+        Clear();
     }
 
     void Clear()
     {
-        for (auto& probe : s_probes)
+        for (auto& p : s_probes)
         {
-            if (probe.textureID != 0)
-            {
-                glDeleteTextures(1, &probe.textureID);
-            }
+            R_Cubemap::Release(p.id);
         }
         s_probes.clear();
     }
 
-    const std::vector<CubemapProbe>& GetProbes()
+    const std::vector<Probe>& GetProbes()
     {
         return s_probes;
     }
 
-    const CubemapProbe* FindClosest(const glm::vec3& position)
+    void AddProbe(const Probe& probe)
+    {
+        s_probes.push_back(probe);
+    }
+
+    const Probe* FindClosest(const glm::vec3& position)
     {
         if (s_probes.empty())
         {
             return nullptr;
         }
 
-        const CubemapProbe* closest = &s_probes[0];
-        float min_dist_sq = glm::length2(position - closest->origin);
+        const Probe* closest = &s_probes[0];
+        float minDistSq = glm::length2(position - closest->origin);
 
         for (size_t i = 1; i < s_probes.size(); ++i)
         {
-            float dist_sq = glm::length2(position - s_probes[i].origin);
-            if (dist_sq < min_dist_sq)
+            float distSq = glm::length2(position - s_probes[i].origin);
+            if (distSq < minDistSq)
             {
-                min_dist_sq = dist_sq;
+                minDistSq = distSq;
                 closest = &s_probes[i];
             }
         }
@@ -92,175 +84,36 @@ namespace Cubemap
     void LoadForMap(const std::string& mapName)
     {
         Clear();
-        std::string cubemapDir = "cubemaps/" + mapName + "/";
-        if (!Filesystem::Exists(cubemapDir))
+        std::string dir = "cubemaps/" + mapName + "/";
+        if (!Filesystem::Exists(dir))
         {
-            Console::Warn("No cubemaps found for map: " + mapName);
             return;
         }
 
-        int probeIndex = 0;
+        int index = 0;
         while (true)
         {
-            std::string basePath = cubemapDir + "cubemap_" + std::to_string(probeIndex);
-            std::string metaPath = basePath + ".txt";
-
-            if (!Filesystem::Exists(metaPath))
+            std::string base = dir + "cubemap_" + std::to_string(index);
+            if (!Filesystem::Exists(base + ".txt"))
             {
                 break;
             }
 
-            CubemapProbe probe;
+            Probe p;
+            std::string meta = Filesystem::ReadText(base + ".txt");
+            std::stringstream ss(meta);
+            ss >> p.origin.x >> p.origin.y >> p.origin.z;
+            ss >> p.mins.x >> p.mins.y >> p.mins.z;
+            ss >> p.maxs.x >> p.maxs.y >> p.maxs.z;
 
-            std::string metaContent = Filesystem::ReadText(metaPath);
-            std::stringstream ss(metaContent);
-            ss >> probe.origin.x >> probe.origin.y >> probe.origin.z;
-            ss >> probe.mins.x >> probe.mins.y >> probe.mins.z;
-            ss >> probe.maxs.x >> probe.maxs.y >> probe.maxs.z;
-
-            glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &probe.textureID);
-            glTextureStorage2D(probe.textureID, 10, GL_SRGB8_ALPHA8, 512, 512);
-
-            std::vector<std::string> faces = { "right", "left", "top", "bottom", "front", "back" };
-
-            for (unsigned int i = 0; i < faces.size(); i++)
-            {
-                std::string facePath = basePath + "_" + faces[i] + ".dds";
-                if (!DDS::LoadCubemapFace(probe.textureID, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, facePath, true))
-                {
-                    Console::Error("Failed to load cubemap face: " + facePath);
-                }
-            }
-
-            glTextureParameteri(probe.textureID, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-            glTextureParameteri(probe.textureID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTextureParameteri(probe.textureID, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTextureParameteri(probe.textureID, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTextureParameteri(probe.textureID, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-            glGenerateTextureMipmap(probe.textureID);
-
-            s_probes.push_back(probe);
-            probeIndex++;
+            p.id = R_Cubemap::CreateFromFiles(base);
+            s_probes.push_back(p);
+            index++;
         }
     }
 
     void BuildCubemaps(const std::string& mapName, Renderer* renderer)
     {
-        Console::Log("Building cubemaps for " + mapName + "...");
-
-        std::vector<std::shared_ptr<Entity>> cubemapEntities;
-        for (const auto& ent : EntityManager::GetEntities())
-        {
-            if (ent->GetClassName() == "env_cubemap_box")
-            {
-                cubemapEntities.push_back(ent);
-            }
-        }
-
-        if (cubemapEntities.empty())
-        {
-            return;
-        }
-        
-        const int resolution = r_cubemap_resolution.GetInt();
-
-        GLuint fbo, rbo;
-        glCreateFramebuffers(1, &fbo);
-        glCreateRenderbuffers(1, &rbo);
-        glNamedRenderbufferStorage(rbo, GL_DEPTH24_STENCIL8, resolution, resolution);
-        glNamedFramebufferRenderbuffer(fbo, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
-
-        Camera buildCam(90.0f, 1.0f, 0.1f, 2000.0f);
-
-        glm::mat4 projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 2000.0f);
-        glm::mat4 views[] =
-        {
-           glm::lookAt(glm::vec3(0.0f), glm::vec3(1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)), // right
-           glm::lookAt(glm::vec3(0.0f), glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)), // left
-           glm::lookAt(glm::vec3(0.0f), glm::vec3(0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)), // top
-           glm::lookAt(glm::vec3(0.0f), glm::vec3(0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)), // bottom
-           glm::lookAt(glm::vec3(0.0f), glm::vec3(0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)), // front
-           glm::lookAt(glm::vec3(0.0f), glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))  // back
-        };
-
-        std::string cubemapDir = "cubemaps/" + mapName + "/";
-        Filesystem::CreateDirectory("cubemaps/");
-        Filesystem::CreateDirectory(cubemapDir);
-
-        for (size_t i = 0; i < cubemapEntities.size(); ++i)
-        {
-            auto& ent = cubemapEntities[i];
-            
-            btVector3 aabbMin, aabbMax;
-            ent->GetPhysObject()->getCollisionShape()->getAabb(ent->GetPhysObject()->getWorldTransform(), aabbMin, aabbMax);
-            
-            glm::vec3 mins = { aabbMin.x(), aabbMin.y(), aabbMin.z() };
-            glm::vec3 maxs = { aabbMax.x(), aabbMax.y(), aabbMax.z() };
-            glm::vec3 origin = (mins + maxs) * 0.5f;
-
-            GLuint cubemapTex;
-            glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &cubemapTex);
-            glTextureStorage2D(cubemapTex, 1, GL_RGB8, resolution, resolution);
-            glTextureParameteri(cubemapTex, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTextureParameteri(cubemapTex, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glTextureParameteri(cubemapTex, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-            glTextureParameteri(cubemapTex, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTextureParameteri(cubemapTex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-            glViewport(0, 0, resolution, resolution);
-            glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-            buildCam.position = origin;
-
-            for (int j = 0; j < 6; ++j)
-            {
-                buildCam.yaw = 0;
-                buildCam.pitch = 0;
-
-                if (j == 0)
-                    buildCam.yaw = 0;
-                if (j == 1)
-                    buildCam.yaw = 180;
-                if (j == 2)
-                    buildCam.pitch = 90;
-                if (j == 3)
-                    buildCam.pitch = -90;
-                if (j == 4)
-                    buildCam.yaw = 90;
-                if (j == 5)
-                    buildCam.yaw = -90;
-
-                if (j == 2 || j == 3)
-                    buildCam.yaw = -90;
-
-                glNamedFramebufferTextureLayer(fbo, GL_COLOR_ATTACHMENT0, cubemapTex, 0, j);
-                renderer->RenderWorld(buildCam, cubemapTex);
-            }
-
-            std::vector<unsigned char> buffer(resolution * resolution * 3);
-            std::string basePath = cubemapDir + "cubemap_" + std::to_string(i);
-            std::vector<std::string> faceNames = { "right", "left", "top", "bottom", "front", "back" };
-
-            for (int j = 0; j < 6; ++j)
-            {
-                glGetTextureSubImage(cubemapTex, 0, 0, 0, j, resolution, resolution, 1, GL_RGB, GL_UNSIGNED_BYTE, (GLsizei)buffer.size(), buffer.data());
-                std::string path = Filesystem::GetFullPath(basePath + "_" + faceNames[j] + ".dds");
-                DDS::WriteUncompressedRGB(path, resolution, resolution, buffer.data());
-            }
-
-            std::ofstream metaFile(Filesystem::GetFullPath(basePath + ".txt"));
-            metaFile << origin.x << " " << origin.y << " " << origin.z << std::endl;
-            metaFile << mins.x << " " << mins.y << " " << mins.z << std::endl;
-            metaFile << maxs.x << " " << maxs.y << " " << maxs.z << std::endl;
-            metaFile.close();
-
-            glDeleteTextures(1, &cubemapTex);
-        }
-
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glDeleteFramebuffers(1, &fbo);
-        glDeleteRenderbuffers(1, &rbo);
-
-        Console::Log("Cubemap build complete!");
-        LoadForMap(mapName);
+        R_Cubemap::BuildProbes(mapName, renderer);
     }
 }

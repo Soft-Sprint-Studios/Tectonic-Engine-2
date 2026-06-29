@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#include "r_waters.h"
+#include "r_water.h"
 #include "renderer.h"
 #include "timing.h"
 #include "waters.h"
@@ -31,7 +31,7 @@
 
 CVar r_water_downsample("r_water_downsample", "2", "Downscaling factor for water reflection buffer.", CVAR_SAVE);
 
-void R_Waters::Init(int width, int height)
+void R_Water::Init(int width, int height)
 {
     m_width = width;
     m_height = height;
@@ -39,19 +39,19 @@ void R_Waters::Init(int width, int height)
     m_shader.Load("shaders/water.vert", "shaders/water.frag");
 }
 
-void R_Waters::AddSurface(const WaterSurface& surface)
+void R_Water::AddSurface(const WaterSurface& surface)
 {
     m_surfaces.push_back(surface);
     m_starts.push_back((GLint)surface.start);
     m_counts.push_back((GLsizei)surface.count);
 }
 
-void R_Waters::ClearSurfaces()
+void R_Water::ClearSurfaces()
 {
     Shutdown();
 }
 
-void R_Waters::RenderReflection(Renderer* renderer, const Camera& mainCam)
+void R_Water::RenderReflection(Renderer* renderer, const Camera& mainCam)
 {
     if (m_surfaces.empty())
         return;
@@ -98,7 +98,7 @@ void R_Waters::RenderReflection(Renderer* renderer, const Camera& mainCam)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void R_Waters::Draw(const Camera& camera, GLuint vao, GLuint lightmap)
+void R_Water::Draw(const Camera& camera, GLuint vao, GLuint lightmap)
 {
     if (m_surfaces.empty() || m_starts.empty())
         return;
@@ -140,7 +140,7 @@ void R_Waters::Draw(const Camera& camera, GLuint vao, GLuint lightmap)
     }
 }
 
-void R_Waters::Shutdown()
+void R_Water::Shutdown()
 {
     if (m_reflectFBO != 0)
     {

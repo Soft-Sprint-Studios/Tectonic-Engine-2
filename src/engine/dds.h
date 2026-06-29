@@ -23,12 +23,44 @@
  */
 #pragma once
 #include <string>
+#include <vector>
 #include <cstdint>
-#include <glad/glad.h>
 
 namespace DDS
 {
-    bool Load2D(GLuint textureID, const std::string& path, bool srgb, int& outWidth, int& outHeight, int& outChannels);
-    bool LoadCubemapFace(GLuint textureID, GLenum target, const std::string& path, bool srgb);
+    enum class Format
+    {
+        Unknown,
+        RGBA8,
+        SRGB8,
+        BC1,
+        BC1_SRGB,
+        BC2,
+        BC2_SRGB,
+        BC3,
+        BC3_SRGB,
+        BC7,
+        BC7_SRGB
+    };
+
+    struct MipLevel
+    {
+        uint32_t width;
+        uint32_t height;
+        uint32_t size;
+        size_t offset;
+    };
+
+    struct ImageInfo
+    {
+        uint32_t width;
+        uint32_t height;
+        Format format;
+        bool compressed;
+        std::vector<MipLevel> mips;
+        std::vector<uint8_t> data;
+    };
+
+    bool Load(const std::string& path, bool srgb, ImageInfo& outInfo);
     bool WriteUncompressedRGB(const std::string& path, int width, int height, const uint8_t* rgbData);
 }

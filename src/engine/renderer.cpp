@@ -120,7 +120,7 @@ bool Renderer::Init(Window& window)
     m_overlayRenderer = std::make_unique<R_Overlay>();
     m_interiorRenderer = std::make_unique<R_InteriorParallax>();
     m_glassRenderer = std::make_unique<R_Glass>();
-    m_waterRenderer = std::make_unique<R_Waters>();
+    m_waterRenderer = std::make_unique<R_Water>();
     m_uiRenderer = std::make_unique<R_UI>();
     m_decalRenderer = std::make_unique<R_Decals>();
 
@@ -261,14 +261,14 @@ void Renderer::LightingPass(Camera& camera, GLuint cubemapToExclude, GLint targe
     m_resolveShader.SetInt("u_useCubemap", 0);
     glBindTextureUnit(4, 0);
 
-    const Cubemap::CubemapProbe* probe = Cubemap::FindClosest(camera.position);
-    if (probe && probe->textureID != 0 && probe->textureID != cubemapToExclude)
+    const Cubemap::Probe* probe = Cubemap::FindClosest(camera.position);
+    if (probe && probe->id != 0 && probe->id != cubemapToExclude)
     {
         m_resolveShader.SetInt("u_useCubemap", 1);
         m_resolveShader.SetVec3("u_cubemapOrigin", probe->origin);
         m_resolveShader.SetVec3("u_cubemapMins", probe->mins);
         m_resolveShader.SetVec3("u_cubemapMaxs", probe->maxs);
-        glBindTextureUnit(4, probe->textureID);
+        glBindTextureUnit(4, probe->id);
     }
 
     m_lightRenderer->Bind(m_resolveShader);

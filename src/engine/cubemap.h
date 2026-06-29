@@ -25,27 +25,26 @@
 #include <string>
 #include <vector>
 #include <glm/glm.hpp>
-#include <glad/glad.h>
 
 class Renderer;
 
 namespace Cubemap
 {
-    struct CubemapProbe
+    struct Probe
     {
-        GLuint textureID = 0;
-        glm::vec3 origin{0.0f};
-        glm::vec3 mins{0.0f};
-        glm::vec3 maxs{0.0f};
+        uint32_t id = 0;
+        glm::vec3 origin{ 0.0f };
+        glm::vec3 mins{ 0.0f };
+        glm::vec3 maxs{ 0.0f };
     };
 
     void Init();
     void Shutdown();
     void Clear();
-
     void LoadForMap(const std::string& mapName);
     void BuildCubemaps(const std::string& mapName, Renderer* renderer);
 
-    const CubemapProbe* FindClosest(const glm::vec3& position);
-    const std::vector<CubemapProbe>& GetProbes();
+    const Probe* FindClosest(const glm::vec3& position);
+    const std::vector<Probe>& GetProbes();
+    void AddProbe(const Probe& probe);
 }

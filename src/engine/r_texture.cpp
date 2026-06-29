@@ -49,16 +49,64 @@ bool R_Texture::Load(const std::string& path, bool srgb)
         glDeleteTextures(1, &m_id);
     }
 
-    glCreateTextures(GL_TEXTURE_2D, 1, &m_id);
-
-    if (!DDS::Load2D(m_id, path, srgb, m_width, m_height, m_channels))
+    DDS::ImageInfo info;
+    if (!DDS::Load(path, srgb, info))
     {
-        glDeleteTextures(1, &m_id);
-        m_id = 0;
         return false;
     }
 
+    m_width = info.width;
+    m_height = info.height;
+    CreateFromInfo(info);
     return true;
+}
+
+void R_Texture::CreateFromInfo(const DDS::ImageInfo& info)
+{
+    glCreateTextures(GL_TEXTURE_2D, 1, &m_id);
+
+    GLenum internalFormat;
+    switch (info.format)
+    {
+    case DDS::Format::BC1:      
+        internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT; break;
+    case DDS::Format::BC1_SRGB: 
+        internalFormat = GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT; break;
+    case DDS::Format::BC2:     
+        internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT; break;
+    case DDS::Format::BC2_SRGB:
+        internalFormat = GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT; break;
+    case DDS::Format::BC3:     
+        internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT; break;
+    case DDS::Format::BC3_SRGB: 
+        internalFormat = GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT; break;
+    case DDS::Format::RGBA8:   
+        internalFormat = GL_RGBA8; break;
+    case DDS::Format::SRGB8:   
+        internalFormat = GL_SRGB8_ALPHA8; break;
+    default:                   
+        internalFormat = GL_RGBA8; break;
+    }
+
+    glTextureStorage2D(m_id, (GLsizei)info.mips.size(), internalFormat, info.width, info.height);
+
+    for (uint32_t i = 0; i < info.mips.size(); i++)
+    {
+        if (info.compressed)
+        {
+            glCompressedTextureSubImage2D(m_id, i, 0, 0, info.mips[i].width, info.mips[i].height, internalFormat, info.mips[i].size, &info.data[info.mips[i].offset]);
+        }
+        else
+        {
+            glTextureSubImage2D(m_id, i, 0, 0, info.mips[i].width, info.mips[i].height, GL_RGBA, GL_UNSIGNED_BYTE, &info.data[info.mips[i].offset]);
+        }
+    }
+
+    glTextureParameteri(m_id, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTextureParameteri(m_id, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTextureParameteri(m_id, GL_TEXTURE_MIN_FILTER, info.mips.size() > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+    glTextureParameteri(m_id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureParameterf(m_id, GL_TEXTURE_MAX_ANISOTROPY_EXT, CVar::GetFloat("r_textureAnisotropy", 16.0f));
 }
 
 void R_Texture::Create(int width, int height, unsigned char* data, bool srgb)

@@ -22,41 +22,15 @@
  * SOFTWARE.
  */
 #pragma once
-#include "r_shader.h"
-#include "r_texture.h"
-#include "camera.h"
-#include <vector>
-#include <memory>
-#include <glm/glm.hpp>
-#include <glad/glad.h>
+#include <string>
+#include <cstdint>
 
-struct WaterSurface
+class Renderer;
+class Camera;
+
+namespace R_Cubemap
 {
-    uint32_t start;
-    uint32_t count;
-    float height;
-    std::string textureName;
-};
-
-class R_Waters
-{
-public:
-    void Init(int width, int height);
-    void AddSurface(const WaterSurface& surface);
-    void ClearSurfaces();
-    void RenderReflection(class Renderer* renderer, const Camera& mainCam);
-    void Draw(const Camera& camera, GLuint vao, GLuint lightmap);
-    void Shutdown();
-
-private:
-    R_Shader m_shader;
-    std::vector<WaterSurface> m_surfaces;
-    std::vector<GLint> m_starts;
-    std::vector<GLsizei> m_counts;
-    GLuint m_reflectFBO = 0;
-    GLuint m_reflectTex = 0;
-    GLuint m_reflectRBO = 0;
-    glm::mat4 m_reflectView;
-    glm::mat4 m_reflectProj;
-    int m_width, m_height;
-};
+    uint32_t CreateFromFiles(const std::string& basePath);
+    void BuildProbes(const std::string& mapName, Renderer* renderer);
+    void Release(uint32_t id);
+}

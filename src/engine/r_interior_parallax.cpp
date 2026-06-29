@@ -46,7 +46,13 @@ GLuint R_InteriorParallax::GetCubemap(const std::string& name)
     for (unsigned int i = 0; i < faces.size(); i++)
     {
         std::string path = "textures/interiors/" + name + "_" + faces[i] + ".dds";
-        if (!DDS::LoadCubemapFace(tex, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, path, true))
+
+        DDS::ImageInfo info;
+        if (DDS::Load(path, true, info) && !info.mips.empty())
+        {
+            glTextureSubImage3D(tex, 0, 0, 0, i, info.width, info.height, 1, GL_RGBA, GL_UNSIGNED_BYTE, &info.data[info.mips[0].offset]);
+        }
+        else
         {
             uint8_t black[4] = { 0, 0, 0, 255 };
             glTextureSubImage3D(tex, 0, 0, 0, i, 1, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, black);

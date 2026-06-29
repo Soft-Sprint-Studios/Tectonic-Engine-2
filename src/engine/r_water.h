@@ -22,35 +22,41 @@
  * SOFTWARE.
  */
 #pragma once
-#include "dds.h"
+#include "r_shader.h"
+#include "r_texture.h"
+#include "camera.h"
+#include <vector>
+#include <memory>
+#include <glm/glm.hpp>
 #include <glad/glad.h>
-#include <string>
 
-class R_Texture
+struct WaterSurface
+{
+    uint32_t start;
+    uint32_t count;
+    float height;
+    std::string textureName;
+};
+
+class R_Water
 {
 public:
-    R_Texture();
-    ~R_Texture();
-
-    bool Load(const std::string& path, bool srgb = true);
-    void CreateFromInfo(const DDS::ImageInfo& info);
-    void Create(int width, int height, unsigned char* data, bool srgb = true);
-    void Bind(unsigned int unit = 0) const;
-    void Release();
-
-    int GetWidth() const
-    {
-        return m_width;
-    }
-
-    int GetHeight() const
-    {
-        return m_height;
-    }
+    void Init(int width, int height);
+    void AddSurface(const WaterSurface& surface);
+    void ClearSurfaces();
+    void RenderReflection(class Renderer* renderer, const Camera& mainCam);
+    void Draw(const Camera& camera, GLuint vao, GLuint lightmap);
+    void Shutdown();
 
 private:
-    GLuint m_id;
-    int m_width;
-    int m_height;
-    int m_channels;
+    R_Shader m_shader;
+    std::vector<WaterSurface> m_surfaces;
+    std::vector<GLint> m_starts;
+    std::vector<GLsizei> m_counts;
+    GLuint m_reflectFBO = 0;
+    GLuint m_reflectTex = 0;
+    GLuint m_reflectRBO = 0;
+    glm::mat4 m_reflectView;
+    glm::mat4 m_reflectProj;
+    int m_width, m_height;
 };

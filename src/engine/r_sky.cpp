@@ -93,16 +93,23 @@ void R_Sky::LoadCubemap(const std::string& skyName)
     {
         std::string path = "textures/skybox/" + skyName + "_" + faces[i] + ".dds";
 
-        int w, h, c;
-        if (firstAlloc)
+        DDS::ImageInfo info;
+        if (DDS::Load(path, true, info) && !info.mips.empty())
         {
-            glTextureStorage2D(m_cubemapTexture, 10, GL_SRGB8_ALPHA8, 512, 512);
-            firstAlloc = false;
+            if (firstAlloc)
+            {
+                glTextureStorage2D(m_cubemapTexture, 10, GL_SRGB8_ALPHA8, info.width, info.height);
+                firstAlloc = false;
+            }
+            glTextureSubImage3D(m_cubemapTexture, 0, 0, 0, i, info.width, info.height, 1, GL_RGBA, GL_UNSIGNED_BYTE, &info.data[info.mips[0].offset]);
         }
-
-        if (!DDS::LoadCubemapFace(m_cubemapTexture, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, path, true))
+        else
         {
-            Console::Warn("Skybox: face [" + faces[i] + "] missing - using fallback color.");
+            if (firstAlloc)
+            {
+                glTextureStorage2D(m_cubemapTexture, 10, GL_SRGB8_ALPHA8, 512, 512);
+                firstAlloc = false;
+            }
             uint8_t black[4] = { 0, 0, 0, 255 };
             glTextureSubImage3D(m_cubemapTexture, 0, 0, 0, i, 1, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, black);
         }

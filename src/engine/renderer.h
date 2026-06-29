@@ -32,7 +32,7 @@
 #include "r_particles.h"
 #include "r_lights.h"
 #include "r_sprites.h"
-#include "r_waters.h"
+#include "r_water.h"
 #include "r_ui.h"
 #include "r_beams.h"
 #include "r_cables.h"
@@ -96,6 +96,6 @@ private:
     std::unique_ptr<R_Glass> m_glassRenderer;
     std::unique_ptr<R_Decals> m_decalRenderer;
     std::unique_ptr<R_InteriorParallax> m_interiorRenderer;
-    std::unique_ptr<R_Waters> m_waterRenderer;
+    std::unique_ptr<R_Water> m_waterRenderer;
     std::unique_ptr<R_UI> m_uiRenderer;
 };
