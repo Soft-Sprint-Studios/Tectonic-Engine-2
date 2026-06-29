@@ -1,3 +1,4 @@
 Main credits:
-Pathos engine: https://github.com/TheOverfloater/pathos-public
-Source-parsers https://github.com/tasbox-org/source-parsers (referenced for bsp loader)
+Pathos engine: https://github.com/TheOverfloater/pathos-public (for inspiration of some coding style)
+Source-parsers: https://github.com/tasbox-org/source-parsers (referenced for bsp loader)
+all third party libs under 3rdpartylicenses.txt
