@@ -35,11 +35,11 @@
 
 struct ModelMesh
 {
-    uint32_t vao;
+    uint32_t vao = 0;
     std::vector<uint32_t> vbos;
-    uint32_t ebo;
-    uint32_t indexCount;
-    uint32_t indexType;
+    uint32_t ebo = 0;
+    uint32_t indexCount = 0;
+    uint32_t indexType = 0;
     std::shared_ptr<R_Texture> texture;
     std::shared_ptr<R_Texture> normalMap;
     std::shared_ptr<R_Texture> mraohMap;

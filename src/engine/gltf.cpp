@@ -51,7 +51,12 @@ namespace GLTF
         cgltf_data* data = nullptr;
 
         std::string fullPath = Filesystem::GetFullPath(targetPath);
-        cgltf_result result = cgltf_parse_file(&options, fullPath.c_str(), &data);
+        std::vector<uint8_t> buffer = Filesystem::ReadBinary(targetPath);
+
+        if (buffer.empty()) 
+            return outData;
+
+        cgltf_result result = cgltf_parse(&options, buffer.data(), buffer.size(), &data);
 
         if (result != cgltf_result_success)
         {

@@ -28,6 +28,7 @@
 #include "filesystem.h"
 #include <fstream>
 #include <sstream>
+#include <filesystem>
 
 namespace Binds
 {
@@ -62,7 +63,7 @@ namespace Binds
 
     void Save()
     {
-        std::ofstream file(Filesystem::GetFullPath("binds.txt"));
+        std::ofstream file(std::filesystem::path(Filesystem::GetFullPath("binds.txt")));
         for (auto const& [code, cmd] : s_bindMap)
         {
             std::string keyName = SDL_GetScancodeName(code);

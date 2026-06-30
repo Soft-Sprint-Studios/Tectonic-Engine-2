@@ -31,6 +31,7 @@
 #include <atomic>
 #include <algorithm>
 #include <cstdio>
+#include <fstream>
 
 #ifdef PLATFORM_WINDOWS
     #include <winsock2.h>
@@ -159,11 +160,11 @@ namespace Networking
             {
                 std::vector<uint8_t> body(it + 4, response.end());
 
-                FILE* f = fopen(Filesystem::GetFullPath(savePath).c_str(), "wb");
-                if (f) 
+                std::ofstream file(std::filesystem::path(Filesystem::GetFullPath(savePath)), std::ios::binary);
+                if (file.is_open())
                 {
-                    fwrite(body.data(), 1, body.size(), f);
-                    fclose(f);
+                    file.write((const char*)body.data(), body.size());
+                    file.close();
                     Console::Log("Download finished: " + savePath + " (" + std::to_string(body.size()) + " bytes)");
                 } 
                 else 

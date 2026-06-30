@@ -84,8 +84,8 @@ bool Window::Init(const char* title, int width, int height)
 
 	// Setup custom cursor
     int w, h, channels;
-    std::string path = Filesystem::GetFullPath("media/cursor.png");
-    unsigned char* pixels = stbi_load(path.c_str(), &w, &h, &channels, 4);
+    std::vector<uint8_t> fileData = Filesystem::ReadBinary("media/cursor.png");
+    unsigned char* pixels = stbi_load_from_memory(fileData.data(), (int)fileData.size(), &w, &h, &channels, 4);
     if (pixels)
     {
         SDL_Surface* surface = SDL_CreateSurfaceFrom(w, h, SDL_PIXELFORMAT_RGBA32, pixels, w * 4);

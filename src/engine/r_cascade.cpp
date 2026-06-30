@@ -46,6 +46,7 @@ void R_Cascade::Init(int res)
 
     // Cascade ranges
     m_splits = { 0.1f, 20.0f, 60.0f, 150.0f, 500.0f };
+    m_matrices.assign(4, glm::mat4(1.0f));
 
     glCreateFramebuffers(1, &m_fbo);
     glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &m_texArray);

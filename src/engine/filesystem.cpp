@@ -44,9 +44,11 @@ namespace Filesystem
         }
 
         // Scan base directory for any .zip files
-        if (std::filesystem::exists(s_basePath))
+        std::filesystem::path rootPath = std::filesystem::u8path(s_basePath);
+
+        if (std::filesystem::exists(rootPath))
         {
-            for (const auto& entry : std::filesystem::directory_iterator(s_basePath))
+            for (const auto& entry : std::filesystem::directory_iterator(rootPath))
             {
                 std::string ext = entry.path().extension().string();
                 if (ext == ".zip")
@@ -105,7 +107,7 @@ namespace Filesystem
 
         // Fallback to loose files on disk
         std::string fullPath = GetFullPath(path);
-        std::ifstream file(fullPath, std::ios::ate | std::ios::binary);
+        std::ifstream file(std::filesystem::u8path(fullPath), std::ios::ate | std::ios::binary);
 
         if (!file.is_open())
         {
@@ -141,7 +143,7 @@ namespace Filesystem
             }
         }
 
-        return std::filesystem::exists(GetFullPath(relativePath));
+        return std::filesystem::exists(std::filesystem::u8path(GetFullPath(relativePath)));
     }
 
     void CreateDirectory(const std::string& relativePath)
@@ -168,7 +170,7 @@ namespace Filesystem
                     {
                         if (fname.size() >= extension.size() && fname.compare(fname.size() - extension.size(), extension.size(), extension) == 0)
                         {
-                            std::filesystem::path p(fname);
+                            std::filesystem::path p = std::filesystem::u8path(fname);
                             uniqueResults.insert(p.stem().string());
                         }
                     }
@@ -177,7 +179,7 @@ namespace Filesystem
         }
 
         // Search loose files on disk
-        std::string fullPath = GetFullPath(relativePath);
+        std::filesystem::path fullPath = std::filesystem::u8path(GetFullPath(relativePath));
         if (std::filesystem::exists(fullPath))
         {
             for (const auto& entry : std::filesystem::directory_iterator(fullPath))

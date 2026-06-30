@@ -124,7 +124,7 @@ namespace DDS
 
     bool WriteUncompressedRGB(const std::string& path, int width, int height, const uint8_t* rgbData)
     {
-        std::ofstream file(path, std::ios::binary);
+        std::ofstream file(std::filesystem::path(path), std::ios::binary);
         if (!file.is_open())
         {
             return false;

@@ -98,7 +98,7 @@ void CVar::Init()
 
 void CVar::Save()
 {
-    std::ofstream file(Filesystem::GetFullPath("cvars.txt"));
+    std::ofstream file(std::filesystem::path(Filesystem::GetFullPath("cvars.txt")));
     if (!file.is_open())
     {
         return;
