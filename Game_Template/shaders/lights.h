@@ -23,14 +23,17 @@ layout(std430, binding = 10) readonly buffer LightBlock
 uniform int u_numPointLights;
 uniform int u_numSpotLights;
 
-uniform int u_csmEnabled;
 layout(binding = 13) uniform sampler2DArray u_csmArray;
-uniform mat4 u_csmMatrices[4];
-uniform float u_csmSplits[5];
-uniform vec3 u_sunColor;
-uniform vec3 u_sunDir;
-uniform float u_sunVolIntensity;
-uniform int u_sunVolSteps;
+
+layout(std430, binding = 6) readonly buffer SunBlock 
+{
+    mat4 u_csmMatrices[4];
+    vec4 u_csmSplitsLow;
+    vec4 u_sunDirVol;
+    vec4 u_sunColorEn;
+    float u_csmSplit4;
+    float u_sunVolSteps;
+};
 
 const float EVSM_EXP = 10.0;
 
@@ -89,18 +92,26 @@ float PointShadowCalc(vec3 worldPos, vec3 lightPos, float far_plane, float layer
     return 1.0 - ChebyshevUpperBound(moments, warpedDepth);
 }
 
-float CalculateSunShadow(vec3 worldPos, mat4 viewMat, float splits[5], mat4 matrices[4], sampler2DArray shadowArray)
+float CalculateSunShadow(vec3 worldPos, mat4 viewMat, sampler2DArray shadowArray)
 {
     float viewDepth = abs((viewMat * vec4(worldPos, 1.0)).z);
     int layer = -1;
 
-    for (int i = 0; i < 4; i++)
+    if (viewDepth < u_csmSplitsLow.y)
     {
-        if (viewDepth < splits[i + 1])
-        {
-            layer = i;
-            break;
-        }
+        layer = 0;
+    }
+    else if (viewDepth < u_csmSplitsLow.z)
+    {
+        layer = 1;
+    }
+    else if (viewDepth < u_csmSplitsLow.w)
+    {
+        layer = 2;
+    }
+    else if (viewDepth < u_csmSplit4)
+    {
+        layer = 3;
     }
 
     if (layer == -1) 
@@ -108,7 +119,7 @@ float CalculateSunShadow(vec3 worldPos, mat4 viewMat, float splits[5], mat4 matr
         return 0.0;
     }
 
-    vec4 fragPosLightSpace = matrices[layer] * vec4(worldPos, 1.0);
+    vec4 fragPosLightSpace = u_csmMatrices[layer] * vec4(worldPos, 1.0);
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     projCoords = projCoords * 0.5 + 0.5;
 

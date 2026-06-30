@@ -50,7 +50,19 @@ private:
     GLuint m_fbo = 0;
     GLuint m_texArray = 0;
     GLuint m_dummyTex = 0;
-    GLuint m_matrixSSBO = 0;
+    GLuint m_sunSSBO = 0;
+
+    struct GPUSunData 
+    {
+        glm::mat4 matrices[4];
+        glm::vec4 splits;
+        glm::vec4 sunDir_vol;
+        glm::vec4 sunColor_en;
+        float split4;
+        float volSteps;
+        float pad[2];
+    };
+
     int m_resolution;
 
     std::vector<glm::mat4> m_matrices;

@@ -86,7 +86,6 @@ vec3 CalculateDynamicLightSpecularPBR(vec3 L, vec3 V, vec3 N, vec3 F0, float rou
     return specular * lightEnergy * NdotL;
 }
 
-
 void main()
 {
     vec2 gBufferUV = gl_FragCoord.xy / textureSize(u_gDepth, 0).xy;
@@ -122,29 +121,20 @@ void main()
     vec2 packedFloat = texture(u_gLightmapUV, gBufferUV).rg;
     UnpackLightmapUV(packedFloat, lmCoord, lmSize);
 
-    vec4 lightmapData = vec4(0.0);
-
     vec2 LmCoord2 = lmCoord + vec2(lmSize.x, 0.0);
     vec2 LmCoord3 = lmCoord + vec2(0.0, lmSize.y);
     vec2 LmCoord4 = lmCoord + lmSize;
 
-    if (packed_ty > 0.02)
-    {
-        float tx = packed_tx * 2.0 - 1.0;
-        float ty = packed_ty * 2.0 - 1.0;
-        vec3 tsNormal = vec3(tx, ty, sqrt(max(0.0, 1.0 - (tx * tx + ty * ty))));
+    vec4 baseLM = SampleLightmap(u_lightmap, lmCoord);
+    vec3 tsN = vec3(packed_tx * 2.0 - 1.0, packed_ty * 2.0 - 1.0, 0.0);
+    tsN.z = sqrt(max(0.0, 1.0 - dot(tsN.xy, tsN.xy)));
 
-        vec3 w = max(vec3(0.0), vec3(dot(tsNormal, basis0), dot(tsNormal, basis1), dot(tsNormal, basis2)));
+    vec3 w = max(vec3(0.0), vec3(dot(tsN, basis0), dot(tsN, basis1), dot(tsN, basis2)));
+    w /= max(w.x + w.y + w.z, 0.0001);
 
-        float sumW = w.x + w.y + w.z;
-        w /= max(sumW, 0.0001); 
+    vec3 bumped = SampleLightmap(u_lightmap, LmCoord2).rgb * w.x + SampleLightmap(u_lightmap, LmCoord3).rgb * w.y + SampleLightmap(u_lightmap, LmCoord4).rgb * w.z;
 
-        lightmapData = SampleLightmap(u_lightmap, LmCoord2) * w.x + SampleLightmap(u_lightmap, LmCoord3) * w.y + SampleLightmap(u_lightmap, LmCoord4) * w.z;
-    }
-    else
-    {
-        lightmapData = SampleLightmap(u_lightmap, lmCoord);
-    }
+    vec4 lightmapData = vec4(mix(baseLM.rgb, bumped, step(0.02, packed_ty)), baseLM.a);
 
     vec3 viewDir = normalize(u_viewPos - fragPos);
     vec3 F0 = vec3(0.04); 
@@ -230,12 +220,12 @@ void main()
     }
     
     // CSM Cascaded Shadows
-    if (u_csmEnabled == 1)
+    if (u_sunColorEn.w > 0.5)
     {
-        vec3 sunL = normalize(u_sunDir);
+        vec3 sunL = normalize(u_sunDirVol.xyz);
         float sunMask = lightmapData.a;
-        float sunShadow = CalculateSunShadow(fragPos, u_view, u_csmSplits, u_csmMatrices, u_csmArray);
-        vec3 sunEnergy = u_sunColor * (1.0 - sunShadow) * sunMask;
+        float sunShadow = CalculateSunShadow(fragPos, u_view, u_csmArray);
+        vec3 sunEnergy = u_sunColorEn.rgb * (1.0 - sunShadow) * sunMask;
 
         dynDiffuse += CalculateDynamicLightPBR(sunL, viewDir, N, F0, albedo, metallic, roughness, sunEnergy);
     }

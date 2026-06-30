@@ -61,8 +61,8 @@ void R_Cascade::Init(int res)
 
     glNamedFramebufferTexture(m_fbo, GL_DEPTH_ATTACHMENT, m_texArray, 0);
 
-    glCreateBuffers(1, &m_matrixSSBO);
-    glNamedBufferData(m_matrixSSBO, sizeof(glm::mat4) * 4, nullptr, GL_DYNAMIC_DRAW);
+    glCreateBuffers(1, &m_sunSSBO);
+    glNamedBufferData(m_sunSSBO, sizeof(GPUSunData), nullptr, GL_DYNAMIC_DRAW);
 
     glNamedFramebufferDrawBuffer(m_fbo, GL_NONE);
     glNamedFramebufferReadBuffer(m_fbo, GL_NONE);
@@ -132,8 +132,8 @@ void R_Cascade::Render(const Camera& camera, R_Shader& shadowShader, Renderer* r
 {
     UpdateMatrices(camera, DynamicSky::GetSettings().sunDir);
 
-    glNamedBufferSubData(m_matrixSSBO, 0, sizeof(glm::mat4) * 4, m_matrices.data());
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, m_matrixSSBO);
+    glNamedBufferSubData(m_sunSSBO, offsetof(GPUSunData, matrices), sizeof(glm::mat4) * 4, m_matrices.data());
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, m_sunSSBO);
     
     glViewport(0, 0, m_resolution, m_resolution);
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
@@ -154,30 +154,19 @@ void R_Cascade::Render(const Camera& camera, R_Shader& shadowShader, Renderer* r
 
 void R_Cascade::Bind(R_Shader& shader, const glm::vec3& sunColor, const glm::vec3& sunDir, bool enabled, float sunVolIntensity, int sunVolSteps)
 {
-    if (enabled)
-    {
-        shader.SetInt("u_csmEnabled", 1);
-        glBindTextureUnit(13, m_texArray);
-        shader.SetVec3("u_sunColor", sunColor);
-        shader.SetVec3("u_sunDir", sunDir);
-        shader.SetFloat("u_sunVolIntensity", sunVolIntensity);
-        shader.SetInt("u_sunVolSteps", sunVolSteps);
+    GPUSunData data;
+    for (int i = 0; i < 4; ++i) 
+        data.matrices[i] = m_matrices[i];
 
-        for (int i = 0; i < 4; i++)
-        {
-            shader.SetMat4("u_csmMatrices[" + std::to_string(i) + "]", m_matrices[i]);
-        }
+    data.splits = glm::vec4(m_splits[0], m_splits[1], m_splits[2], m_splits[3]);
+    data.sunDir_vol = glm::vec4(sunDir, sunVolIntensity);
+    data.sunColor_en = glm::vec4(sunColor, enabled ? 1.0f : 0.0f);
+    data.split4 = m_splits[4];
+    data.volSteps = (float)sunVolSteps;
 
-        for (int i = 0; i < 5; i++)
-        {
-            shader.SetFloat("u_csmSplits[" + std::to_string(i) + "]", m_splits[i]);
-        }
-    }
-    else
-    {
-        shader.SetInt("u_csmEnabled", 0);
-        glBindTextureUnit(13, m_dummyTex);
-    }
+    glNamedBufferSubData(m_sunSSBO, 0, sizeof(GPUSunData), &data);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, m_sunSSBO);
+    glBindTextureUnit(13, enabled ? m_texArray : m_dummyTex);
 }
 
 void R_Cascade::Shutdown()
@@ -192,9 +181,9 @@ void R_Cascade::Shutdown()
         glDeleteTextures(1, &m_texArray);
     }
 
-    if (m_matrixSSBO)
+    if (m_sunSSBO)
     {
-        glDeleteBuffers(1, &m_matrixSSBO);
+        glDeleteBuffers(1, &m_sunSSBO);
     }
 
     if (m_dummyTex) 

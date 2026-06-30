@@ -134,20 +134,20 @@ void main()
     }
 
     // Evaluate Sun Volumetrics
-    if (u_csmEnabled == 1 && u_sunVolIntensity > 0.0)
+    if (u_sunColorEn.w > 0.5 && u_sunDirVol.w > 0.0)
     {
-        int steps = u_sunVolSteps;
+        int steps = int(u_sunVolSteps);
         float stepSize = rayLength / float(steps);
         vec3 currentPos = startPosition + rayDirection * (stepSize * ditherVal);
         
         vec3 sunFogAccum = vec3(0.0);
         for (int s = 0; s < steps; ++s)
         {
-            float shadow = CalculateSunShadow(currentPos, u_view, u_csmSplits, u_csmMatrices, u_csmArray);
-            sunFogAccum += u_sunColor * (1.0 - shadow) * stepSize;
+            float shadow = CalculateSunShadow(currentPos, u_view, u_csmArray);
+            sunFogAccum += u_sunColorEn.rgb * (1.0 - shadow) * stepSize;
             currentPos += rayDirection * stepSize;
         }
-        accumFog += sunFogAccum * u_sunVolIntensity;
+        accumFog += sunFogAccum * u_sunDirVol.w;
     }
 
     FragColor = vec4(accumFog, 1.0);
