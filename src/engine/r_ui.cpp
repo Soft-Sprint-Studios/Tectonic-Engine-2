@@ -154,6 +154,8 @@ void R_UI::Render()
             { rect.x + rect.w, rect.y,          1.0f, 0.0f },
             { rect.x + rect.w, rect.y + rect.h, 1.0f, 1.0f }
         };
+
+        glNamedBufferData(m_vbo, sizeof(vertices), NULL, GL_DYNAMIC_DRAW);
         glNamedBufferSubData(m_vbo, 0, sizeof(vertices), vertices);
         glDrawArrays(GL_TRIANGLES, 0, 6);
     }
@@ -214,6 +216,7 @@ void R_UI::Render()
             { xpos + w, ypos + h,   1.0f, 1.0f }
         };
 
+        glNamedBufferData(m_vbo, sizeof(vertices), NULL, GL_DYNAMIC_DRAW);
         glNamedBufferSubData(m_vbo, 0, sizeof(vertices), vertices);
         glDrawArrays(GL_TRIANGLES, 0, 6);
     }
