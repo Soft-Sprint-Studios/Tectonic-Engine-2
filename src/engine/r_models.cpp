@@ -302,15 +302,10 @@ void R_Models::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOn
                 continue;
             }
 
-            glBindVertexArray(mesh.vao);
-
             if (depthOnly)
             {
-                for (auto& mesh : group.meshes)
-                {
-                    glBindVertexArray(mesh.vao);
-                    glDrawElementsInstanced(GL_TRIANGLES, mesh.indexCount, mesh.indexType, 0, group.instanceCount);
-                }
+                glBindVertexArray(mesh.vao);
+                glDrawElementsInstanced(GL_TRIANGLES, mesh.indexCount, mesh.indexType, 0, group.instanceCount);
             }
             else
             {
