@@ -40,17 +40,13 @@ public:
     Video(const VideoDef& def);
     ~Video();
 
-    void Update(float dt);
     VideoDef& GetDef();
 
     bool IsActive() const;
     void SetActive(bool state);
 
-    class R_VideoInstance* GetInternalPlayer();
-
 private:
     VideoDef m_def;
-    std::unique_ptr<class R_VideoInstance> m_player;
 };
 
 namespace Videos

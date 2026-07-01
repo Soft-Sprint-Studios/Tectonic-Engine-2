@@ -31,6 +31,9 @@
 
 #include <cstdio>
 #include "pl_mpeg.h"
+#include <map>
+
+class Video;
 
 class R_VideoInstance
 {
@@ -60,4 +63,5 @@ public:
 
 private:
     R_Shader m_shader;
+    std::map<Video*, std::unique_ptr<R_VideoInstance>> m_instances;
 };

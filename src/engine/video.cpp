@@ -22,24 +22,13 @@
  * SOFTWARE.
  */
 #include "video.h"
-#include "r_video.h"
 
 Video::Video(const VideoDef& def) : m_def(def)
 {
-    m_player = std::make_unique<R_VideoInstance>();
-    m_player->Load(def.videoPath, def.loop);
 }
 
 Video::~Video()
 {
-}
-
-void Video::Update(float dt)
-{
-    if (m_def.active && m_player)
-    {
-        m_player->Update(dt);
-    }
 }
 
 VideoDef& Video::GetDef()
@@ -55,11 +44,6 @@ bool Video::IsActive() const
 void Video::SetActive(bool state)
 {
     m_def.active = state;
-}
-
-class R_VideoInstance* Video::GetInternalPlayer()
-{
-    return m_player.get();
 }
 
 namespace Videos
@@ -80,7 +64,6 @@ namespace Videos
             }
             else
             {
-                (*it)->Update(dt);
                 ++it;
             }
         }

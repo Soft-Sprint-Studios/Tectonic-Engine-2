@@ -30,6 +30,7 @@
 #include "r_bsp.h"
 #include "entities.h"
 #include "func_video.h"
+#include "timing.h"
 #include <glm/gtc/matrix_transform.hpp>
 
 R_VideoInstance::R_VideoInstance()
@@ -131,11 +132,11 @@ void R_VideoInstance::Shutdown()
     {
         plm_destroy(m_plm);
     }
-    if (m_texY) 
+    if (m_texY)
         glDeleteTextures(1, &m_texY);
-    if (m_texCb) 
+    if (m_texCb)
         glDeleteTextures(1, &m_texCb);
-    if (m_texCr) 
+    if (m_texCr)
         glDeleteTextures(1, &m_texCr);
     m_plm = nullptr;
 }
@@ -174,6 +175,17 @@ void R_Video::Draw(const Camera& camera, R_BSP* bsp)
             continue;
         }
 
+        auto it = m_instances.find(video_handle.get());
+        if (it == m_instances.end())
+        {
+            auto instance = std::make_unique<R_VideoInstance>();
+            instance->Load(video_handle->GetDef().videoPath, video_handle->GetDef().loop);
+            m_instances[video_handle.get()] = std::move(instance);
+            it = m_instances.find(video_handle.get());
+        }
+
+        it->second->Update(Time::DeltaTime());
+
         glm::mat4 model = glm::translate(glm::mat4(1.0f), ent->GetOrigin());
         glm::vec3 ang = ent->GetAngles();
         model = glm::rotate(model, glm::radians(ang.y), glm::vec3(0, 1, 0));
@@ -181,7 +193,7 @@ void R_Video::Draw(const Camera& camera, R_BSP* bsp)
         model = glm::rotate(model, glm::radians(ang.z), glm::vec3(0, 0, 1));
 
         m_shader.SetMat4("u_model", model);
-        video_handle->GetInternalPlayer()->BindTextures();
+        it->second->BindTextures();
 
         bsp->DrawBModel(ent->GetBModelIndex(), m_shader, model, true);
     }
@@ -189,4 +201,5 @@ void R_Video::Draw(const Camera& camera, R_BSP* bsp)
 
 void R_Video::Shutdown()
 {
+    m_instances.clear();
 }
