@@ -30,6 +30,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+CVar r_shadows("r_shadows", "1", "Global toggle for dynamic shadows.", CVAR_SAVE);
+CVar r_csm("r_csm", "1", "Enable Cascaded Shadow Maps for the sun.", CVAR_SAVE);
+CVar r_csm_res("r_csm_res", "4096", "Resolution of the CSM shadow map array.", CVAR_SAVE);
+
 R_Lights::R_Lights()
 {
     m_lightSSBO = BGFX_INVALID_HANDLE;
