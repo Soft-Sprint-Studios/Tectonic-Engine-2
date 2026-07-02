@@ -24,15 +24,11 @@
 #include "renderer.h"
 #include "console.h"
 #include "cvar.h"
-#include "bsploader.h"
+#include "platform.h"
 #include "physics.h"
 #include "entities.h"
-#include "cubemap.h"
-#include "fade.h"
-#include <glm/glm.hpp>
-#include <ctime>
-#include "concmd.h"
-#include <cstring>
+#include <SDL3/SDL.h>
+#include <glm/gtc/type_ptr.hpp>
 
 CVar cl_showfps("cl_showfps", "0", "Draw the current frames per second at the top of the screen.", CVAR_SAVE);
 CVar cl_showpos("cl_showpos", "0", "Draw current position and angles at the top of the screen.", CVAR_SAVE);
@@ -63,80 +59,41 @@ bool Renderer::Init(Window& window)
 {
     m_windowRef = &window;
 
-    m_gbufferShader.Load("shaders/gbuffer.vert", "shaders/gbuffer.frag");
-    m_resolveShader.Load("shaders/resolve.vert", "shaders/resolve.frag");
+    bgfx::Init init;
+    init.type = bgfx::RendererType::Vulkan;
 
-    // Global GL State
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    int w, h;
+    SDL_GetWindowSize(m_windowRef->Get(), &w, &h);
 
-    m_postProcess = std::make_unique<R_PostProcess>();
-    int ww, wh;
-    SDL_GetWindowSize(m_windowRef->Get(), &ww, &wh);
+    init.resolution.width = (uint32_t)w;
+    init.resolution.height = (uint32_t)h;
+    init.resolution.reset = CVar::GetInt("r_vsync", 1) > 0 ? BGFX_RESET_VSYNC : BGFX_RESET_NONE;
 
-    m_gbuffer = std::make_unique<R_GBuffer>();
-    m_gbuffer->Init(ww, wh);
+    bgfx::PlatformData pd;
+#if defined(PLATFORM_WINDOWS)
+    pd.nwh = (void*)SDL_GetPointerProperty(SDL_GetWindowProperties(m_windowRef->Get()), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+#endif
+    init.platformData = pd;
 
-    float quadVertices[] =
+    if (!bgfx::init(init))
     {
-        -1.0f,  1.0f,  0.0f, 1.0f,
-        -1.0f, -1.0f,  0.0f, 0.0f,
-         1.0f, -1.0f,  1.0f, 0.0f,
+        Console::Error("BGFX: Failed to initialize Vulkan backend.");
+        return false;
+    }
 
-        -1.0f,  1.0f,  0.0f, 1.0f,
-         1.0f, -1.0f,  1.0f, 0.0f,
-         1.0f,  1.0f,  1.0f, 1.0f
-    };
+    bgfx::setViewClear(m_mainView, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x0000FFFF, 1.0f, 0);
+    bgfx::setViewRect(m_mainView, 0, 0, (uint16_t)w, (uint16_t)h);
 
-    glCreateVertexArrays(1, &m_quadVAO);
-    glCreateBuffers(1, &m_quadVBO);
-    glNamedBufferData(m_quadVBO, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-
-    glVertexArrayVertexBuffer(m_quadVAO, 0, m_quadVBO, 0, 4 * sizeof(float));
-
-    glEnableVertexArrayAttrib(m_quadVAO, 0);
-    glVertexArrayAttribFormat(m_quadVAO, 0, 2, GL_FLOAT, GL_FALSE, 0);
-    glVertexArrayAttribBinding(m_quadVAO, 0, 0);
-
-    glEnableVertexArrayAttrib(m_quadVAO, 1);
-    glVertexArrayAttribFormat(m_quadVAO, 1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float));
-    glVertexArrayAttribBinding(m_quadVAO, 1, 0);
-
-    m_postProcess->Init(ww, wh);
-
-    m_bspRenderer = std::make_unique<R_BSP>();
-    m_modelRenderer = std::make_unique<R_Models>();
-    m_skyRenderer = std::make_unique<R_Sky>();
-    m_particleRenderer = std::make_unique<R_Particles>();
-    m_lightRenderer = std::make_unique<R_Lights>();
-    m_spriteRenderer = std::make_unique<R_Sprites>();
-    m_beamRenderer = std::make_unique<R_Beams>();
-    m_cableRenderer = std::make_unique<R_Cables>();
-    m_videoRenderer = std::make_unique<R_Video>();
-    m_monitorRenderer = std::make_unique<R_Monitors>();
-    m_overlayRenderer = std::make_unique<R_Overlay>();
-    m_interiorRenderer = std::make_unique<R_InteriorParallax>();
-    m_glassRenderer = std::make_unique<R_Glass>();
-    m_waterRenderer = std::make_unique<R_Water>();
     m_uiRenderer = std::make_unique<R_UI>();
-    m_decalRenderer = std::make_unique<R_Decals>();
-
-    m_glassRenderer->Init(ww, wh);
-    m_waterRenderer->Init(ww, wh);
     m_uiRenderer->Init(m_windowRef);
-    m_particleRenderer->Init();
-    m_lightRenderer->Init();
-    m_spriteRenderer->Init();
-    m_beamRenderer->Init();
-    m_cableRenderer->Init();
-    m_videoRenderer->Init();
-    m_monitorRenderer->Init();
-    m_overlayRenderer->Init();
-    m_interiorRenderer->Init();
-    m_decalRenderer->Init();
+    m_gbuffer = std::make_unique<R_GBuffer>();
+    m_gbuffer->Init(w, h);
+    m_bspRenderer = std::make_unique<R_BSP>();
+
+    if (!m_gbufferShader.Load("shaders/gbuffer.vert", "shaders/gbuffer.frag"))
+    {
+        Console::Error("BGFX: Failed to load G-Buffer Shader binaries!");
+    }
 
     return true;
 }
@@ -149,17 +106,7 @@ bool Renderer::LoadMap(const std::string& path)
         return false;
     }
 
-    Cubemap::LoadForMap(path.substr(5, path.find_last_of('.') - 5));
-
     m_bspRenderer->Init(map);
-    m_modelRenderer->Init(map);
-    m_skyRenderer->Init(map.skyName);
-
-    m_waterRenderer->ClearSurfaces();
-    for (const auto& s : map.waterSurfaces)
-    {
-        m_waterRenderer->AddSurface({ s.start, s.count, s.height, s.textureName });
-    }
 
     Physics::AddBSPCollision(map.collision.vertices, map.collision.indices);
 
@@ -171,220 +118,53 @@ bool Renderer::LoadMap(const std::string& path)
     return true;
 }
 
-void Renderer::DrawSceneDepth(R_Shader& shader, const Frustum& frustum)
+void Renderer::Render(Camera& camera)
 {
-    m_bspRenderer->Draw(shader, frustum, true);
-    m_modelRenderer->Draw(shader, frustum, true);
+    bgfx::touch(m_mainView);
+
+    RenderWorld(camera);
+
+    m_uiRenderer->Render();
+
+    bgfx::frame();
 }
 
-void Renderer::RenderWorld(Camera& camera, GLuint cubemapToExclude, bool drawWater)
+void Renderer::RenderWorld(Camera& camera, uint32_t cubemapToExclude, bool drawWater)
 {
-    GLint targetFBO = 0;
-    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &targetFBO);
-
-    GLint viewport[4];
-    glGetIntegerv(GL_VIEWPORT, viewport);
-    int renderW = viewport[2];
-    int renderH = viewport[3];
-
     int w, h;
     SDL_GetWindowSize(m_windowRef->Get(), &w, &h);
 
-    GeometryPass(camera, renderW, renderH, drawWater);
-    LightingPass(camera, cubemapToExclude, targetFBO, renderW, renderH, w, h);
-    if (targetFBO == m_postProcess->GetActiveFBO())
-    {
-        glNamedFramebufferTexture(targetFBO, GL_DEPTH_STENCIL_ATTACHMENT, m_gbuffer->GetDepthTex(), 0);
-    }
-    else
-    {
-        DepthBlit(targetFBO, renderW, renderH);
-    }
-    ForwardPass(camera, targetFBO, renderW, renderH);
+    GeometryPass(camera, w, h, drawWater);
 }
 
 void Renderer::GeometryPass(Camera& camera, int renderW, int renderH, bool drawWater)
 {
-    m_gbuffer->Bind();
-    glViewport(0, 0, renderW, renderH);
-    glEnable(GL_DEPTH_TEST);
-    glDepthMask(GL_TRUE);
-    glDepthFunc(GL_LESS);
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    bgfx::ViewId geoView = 0;
 
-    m_gbufferShader.Bind();
-    m_gbufferShader.SetMat4("u_projection", camera.GetProjectionMatrix());
-    m_gbufferShader.SetMat4("u_prevViewProj", camera.GetPrevViewProj());
-    m_gbufferShader.SetMat4("u_view", camera.GetViewMatrix());
-    m_gbufferShader.SetMat4("u_model", glm::mat4(1.0f));
-    m_gbufferShader.SetVec3("u_viewPos", camera.position);
-    m_gbufferShader.SetInt("u_mat_parallax", mat_parallax.GetInt());
-    m_gbufferShader.SetFloat("u_pomMinSteps", mat_parallax_min_steps.GetFloat());
-    m_gbufferShader.SetFloat("u_pomMaxSteps", mat_parallax_max_steps.GetFloat());
-    m_gbufferShader.SetInt("u_pomRefineSteps", mat_parallax_refine.GetInt());
+    bgfx::setViewClear(geoView, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH | BGFX_CLEAR_STENCIL, 0x1A1A1AFF, 1.0f, 0);
+    bgfx::setViewRect(geoView, 0, 0, (uint16_t)renderW, (uint16_t)renderH);
+    bgfx::setViewFrameBuffer(geoView, BGFX_INVALID_HANDLE);
+
+    glm::mat4 view = camera.GetViewMatrix();
+    glm::mat4 proj = camera.GetProjectionMatrix();
+    bgfx::setViewTransform(geoView, glm::value_ptr(view), glm::value_ptr(proj));
 
     Frustum frustum = camera.GetFrustum();
 
-    m_bspRenderer->Draw(m_gbufferShader, frustum);
-    m_modelRenderer->Draw(m_gbufferShader, frustum);
-    m_decalRenderer->Draw(camera, frustum, Decals::GetActiveDecals());
-
-    if (drawWater && r_water.GetInt() > 0)
-        m_waterRenderer->Draw(camera, m_bspRenderer->GetVAO(), m_bspRenderer->GetLightmapTexture());
-
-    m_gbuffer->Unbind();
+    m_bspRenderer->Draw(m_gbufferShader, geoView, frustum, camera.position);
 }
 
-void Renderer::LightingPass(Camera& camera, GLuint cubemapToExclude, GLint targetFBO, int renderW, int renderH, int w, int h)
+void Renderer::DrawSceneDepth(R_Shader& shader, const struct Frustum& frustum)
 {
-    glBindFramebuffer(GL_FRAMEBUFFER, targetFBO);
-    glViewport(0, 0, renderW, renderH);
-
-    m_resolveShader.Bind();
-    m_resolveShader.SetMat4("u_view", camera.GetViewMatrix());
-    m_resolveShader.SetMat4("u_projection", camera.GetProjectionMatrix());
-    m_resolveShader.SetVec3("u_viewPos", camera.position);
-
-    m_resolveShader.SetMat4("u_invProjection", glm::inverse(camera.GetProjectionMatrix()));
-    m_resolveShader.SetMat4("u_invView", glm::inverse(camera.GetViewMatrix()));
-
-    m_resolveShader.SetInt("r_lightmap_bicubic", r_lightmap_bicubic.GetInt());
-
-    glBindTextureUnit(0, m_gbuffer->GetDepthTex());
-    glBindTextureUnit(1, m_gbuffer->GetNormalTex());
-    glBindTextureUnit(2, m_gbuffer->GetAlbedoTex());
-    glBindTextureUnit(3, m_gbuffer->GetMRAOTex());
-    glBindTextureUnit(6, m_gbuffer->GetLightmapUVTex());
-    glBindTextureUnit(5, m_bspRenderer->GetLightmapTexture());
-
-    m_resolveShader.SetInt("u_useCubemap", 0);
-    glBindTextureUnit(4, 0);
-
-    const Cubemap::Probe* probe = Cubemap::FindClosest(camera.position);
-    if (probe && probe->id != 0 && probe->id != cubemapToExclude)
-    {
-        m_resolveShader.SetInt("u_useCubemap", 1);
-        m_resolveShader.SetVec3("u_cubemapOrigin", probe->origin);
-        m_resolveShader.SetVec3("u_cubemapMins", probe->mins);
-        m_resolveShader.SetVec3("u_cubemapMaxs", probe->maxs);
-        glBindTextureUnit(4, probe->id);
-    }
-
-    m_lightRenderer->Bind(m_resolveShader);
-
-    glClear(GL_COLOR_BUFFER_BIT);
-    glDisable(GL_DEPTH_TEST);
-
-    glBindVertexArray(m_quadVAO);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-}
-
-void Renderer::DepthBlit(GLint targetFBO, int renderW, int renderH)
-{
-    glBlitNamedFramebuffer(m_gbuffer->GetFBO(), targetFBO, 0, 0, renderW, renderH, 0, 0, renderW, renderH, GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT, GL_NEAREST);
-}
-
-void Renderer::ForwardPass(Camera& camera, GLint targetFBO, int renderW, int renderH)
-{
-    glEnable(GL_DEPTH_TEST);
-    glDepthMask(GL_FALSE);
-
-    if (r_skybox.GetInt() > 0)
-        m_skyRenderer->Draw(camera);
-
-    if (r_particles.GetInt() > 0)
-        m_particleRenderer->Draw(camera, m_gbuffer->GetDepthTex());
-
-    if (r_sprites.GetInt() > 0)
-        m_spriteRenderer->Draw(camera, Sprites::GetActiveSprites());
-
-    m_beamRenderer->Draw(camera, Beams::GetActiveBeams());
-    m_cableRenderer->Draw(camera, Cables::GetActiveCables());
-    m_videoRenderer->Draw(camera, m_bspRenderer.get());
-    m_monitorRenderer->Draw(camera, m_bspRenderer.get());
-    m_interiorRenderer->Draw(camera, m_bspRenderer.get());
-
-    glDepthMask(GL_TRUE);
-}
-
-void Renderer::Render(Camera& camera)
-{
-    m_lightRenderer->RenderShadowMaps(camera, this);
-    m_monitorRenderer->RenderTextures(this);
-
-    int w, h;
-    SDL_GetWindowSize(m_windowRef->Get(), &w, &h);
-
-    camera.SetAspectRatio((float)w / (float)h);
-
-    if (r_water.GetInt() == 1)
-        m_waterRenderer->RenderReflection(this, camera);
-
-    m_postProcess->Begin();
-
-    RenderWorld(camera, 0);
-
-    m_glassRenderer->CaptureScreen(m_postProcess->GetActiveFBO(), w, h);
-    m_glassRenderer->Draw(camera, m_bspRenderer.get());
-
-    m_postProcess->End();
-
-    // Draw postprocessing
-    glDisable(GL_DEPTH_TEST);
-    m_postProcess->Draw(camera, m_lightRenderer.get(), m_gbuffer.get());
-    m_overlayRenderer->Draw();
-
-    if (r_debug_gbuffer.GetInt())
-    {
-        m_gbuffer->DrawDebug(w, h);
-
-        int dw = w / 8;
-        int dh = h / 8;
-
-        m_uiRenderer->DrawText("DEPTH", 10.0f, (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
-        m_uiRenderer->DrawText("WORLD N", (float)(dw + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
-        m_uiRenderer->DrawText("TANGENT N", (float)(dw * 2 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
-        m_uiRenderer->DrawText("ALBEDO", (float)(dw * 3 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
-        m_uiRenderer->DrawText("METALLIC", (float)(dw * 4 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
-        m_uiRenderer->DrawText("ROUGHNESS", (float)(dw * 5 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
-        m_uiRenderer->DrawText("AO", (float)(dw * 6 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
-        m_uiRenderer->DrawText("LM UV", (float)(dw * 7 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
-    }
-
-    glEnable(GL_DEPTH_TEST);
-
-    // Handle env_fade
-    glm::vec4 fade = Fade::GetCurrentFade();
-    if (fade.a > 0.001f)
-    {
-        int w, h;
-        SDL_GetWindowSize(m_windowRef->Get(), &w, &h);
-        m_uiRenderer->DrawRect(0, 0, (float)w, (float)h, fade);
-    }
-
-    m_uiRenderer->Render();
-    camera.UpdatePreviousState();
-    m_windowRef->Swap();
 }
 
 void Renderer::OnWindowResize(int w, int h)
 {
-    if (m_gbuffer)
-    {
-        m_gbuffer->Rescale(w, h);
-    }
+    bgfx::reset((uint32_t)w, (uint32_t)h, CVar::GetInt("r_vsync", 1) > 0 ? BGFX_RESET_VSYNC : BGFX_RESET_NONE);
+    bgfx::setViewRect(m_mainView, 0, 0, (uint16_t)w, (uint16_t)h);
     if (m_uiRenderer)
     {
         m_uiRenderer->OnWindowResize(w, h);
-    }
-    if (m_postProcess)
-    {
-        m_postProcess->Rescale(w, h);
-    }
-    if (m_glassRenderer)
-    {
-        m_glassRenderer->Rescale(w, h);
     }
 }
 
@@ -395,104 +175,11 @@ void Renderer::Shutdown()
         m_gbuffer->Shutdown();
         m_gbuffer.reset();
     }
-    if (m_quadVAO != 0)
-    {
-        glDeleteVertexArrays(1, &m_quadVAO);
-        m_quadVAO = 0;
-    }
-    if (m_quadVBO != 0)
-    {
-        glDeleteBuffers(1, &m_quadVBO);
-        m_quadVBO = 0;
-    }
-    if (m_postProcess)
-    {
-        m_postProcess->Shutdown();
-        m_postProcess.reset();
-    }
 
     if (m_bspRenderer)
     {
         m_bspRenderer->Shutdown();
         m_bspRenderer.reset();
-    }
-
-    if (m_modelRenderer)
-    {
-        m_modelRenderer->Shutdown();
-        m_modelRenderer.reset();
-    }
-
-    if (m_skyRenderer)
-    {
-        m_skyRenderer->Shutdown();
-        m_skyRenderer.reset();
-    }
-
-    if (m_particleRenderer)
-    {
-        m_particleRenderer->Shutdown();
-        m_particleRenderer.reset();
-    }
-
-    if (m_lightRenderer)
-    {
-        m_lightRenderer->Shutdown();
-        m_lightRenderer.reset();
-    }
-
-    if (m_spriteRenderer)
-    {
-        m_spriteRenderer->Shutdown();
-        m_spriteRenderer.reset();
-    }
-
-    if (m_beamRenderer)
-    {
-        m_beamRenderer->Shutdown();
-        m_beamRenderer.reset();
-    }
-
-    if (m_cableRenderer)
-    {
-        m_cableRenderer->Shutdown();
-        m_cableRenderer.reset();
-    }
-
-    if (m_videoRenderer)
-    {
-        m_videoRenderer->Shutdown();
-        m_videoRenderer.reset();
-    }
-
-    if (m_monitorRenderer)
-    {
-        m_monitorRenderer->Shutdown();
-        m_monitorRenderer.reset();
-    }
-
-    if (m_overlayRenderer)
-    {
-        m_overlayRenderer->Shutdown();
-        m_overlayRenderer.reset();
-    }
-
-    if (m_glassRenderer)
-    {
-        m_glassRenderer->Shutdown();
-        m_glassRenderer.reset();
-    }
-
-    if (m_interiorRenderer)
-    {
-        m_interiorRenderer->Shutdown();
-        m_interiorRenderer.reset();
-    }
-
-    if (m_waterRenderer)
-    {
-        m_waterRenderer->Shutdown();
-        m_waterRenderer.reset();
     }
 
     if (m_uiRenderer)
@@ -501,9 +188,13 @@ void Renderer::Shutdown()
         m_uiRenderer.reset();
     }
 
-    if (m_decalRenderer)
-    {
-        m_decalRenderer->Shutdown();
-        m_decalRenderer.reset();
-    }
+    bgfx::shutdown();
+}
+
+void Renderer::LightingPass(Camera& camera, uint32_t cubemapToExclude, int targetFBO, int renderW, int renderH, int w, int h)
+{
+}
+
+void Renderer::ForwardPass(Camera& camera, int targetFBO, int renderW, int renderH)
+{
 }

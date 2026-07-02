@@ -26,11 +26,10 @@
 #include <cstdint>
 
 class Renderer;
-class Camera;
 
 namespace R_Cubemap
 {
-    uint32_t CreateFromFiles(const std::string& basePath);
-    void BuildProbes(const std::string& mapName, Renderer* renderer);
-    void Release(uint32_t id);
+    inline uint32_t CreateFromFiles(const std::string& basePath) { return 0; }
+    inline void BuildProbes(const std::string& mapName, Renderer* renderer) {}
+    inline void Release(uint32_t id) {}
 }

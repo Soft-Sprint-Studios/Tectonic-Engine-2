@@ -41,6 +41,8 @@
 #include "decals.h"
 #include "resources.h"
 #include "ambient_zone.h"
+#include "sprite.h"
+#include "cables.h"
 
 namespace Maps
 {

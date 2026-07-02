@@ -23,28 +23,13 @@
  */
 #pragma once
 #include "window.h"
-#include "r_shader.h"
 #include "camera.h"
-#include "r_postprocess.h"
-#include "r_bsp.h"
-#include "r_models.h"
-#include "r_sky.h"
-#include "r_particles.h"
-#include "r_lights.h"
-#include "r_sprites.h"
-#include "r_water.h"
+#include "r_shader.h"
+#include "r_texture.h"
 #include "r_ui.h"
-#include "r_beams.h"
-#include "r_cables.h"
-#include "r_video.h"
-#include "r_monitors.h"
-#include "r_glass.h"
-#include "r_overlay.h"
-#include "r_interior_parallax.h"
-#include "r_decals.h"
 #include "r_gbuffer.h"
-#include "cubemap.h"
-#include "video.h"
+#include "r_bsp.h"
+#include <bgfx/bgfx.h>
 #include <memory>
 
 class Renderer
@@ -57,45 +42,24 @@ public:
     bool LoadMap(const std::string& path);
     void Shutdown();
     void Render(Camera& camera);
-    void RenderWorld(Camera& camera, GLuint cubemapToExclude = 0, bool drawWater = true);
-    void DrawSceneDepth(R_Shader& shader, const Frustum& frustum);
+    void RenderWorld(Camera& camera, uint32_t cubemapToExclude = 0, bool drawWater = true);
+    void DrawSceneDepth(R_Shader& shader, const struct Frustum& frustum);
     void OnWindowResize(int w, int h);
 
-    R_UI* GetUI() const 
-    { 
-        return m_uiRenderer.get(); 
+    R_UI* GetUI() const
+    {
+        return m_uiRenderer.get();
     }
 
 private:
     void GeometryPass(Camera& camera, int renderW, int renderH, bool drawWater);
-    void LightingPass(Camera& camera, GLuint cubemapToExclude, GLint targetFBO, int renderW, int renderH, int w, int h);
-    void DepthBlit(GLint targetFBO, int renderW, int renderH);
-    void ForwardPass(Camera& camera, GLint targetFBO, int renderW, int renderH);
+    void LightingPass(Camera& camera, uint32_t cubemapToExclude, int targetFBO, int renderW, int renderH, int w, int h);
+    void ForwardPass(Camera& camera, int targetFBO, int renderW, int renderH);
 
     Window* m_windowRef;
     R_Shader m_gbufferShader;
-    R_Shader m_resolveShader;
-
-    std::unique_ptr<R_GBuffer> m_gbuffer;
-    GLuint m_quadVAO = 0;
-    GLuint m_quadVBO = 0;
-
-    // Sub-renderers
-    std::unique_ptr<R_PostProcess> m_postProcess;
-    std::unique_ptr<R_BSP> m_bspRenderer;
-    std::unique_ptr<R_Models> m_modelRenderer;
-    std::unique_ptr<R_Sky> m_skyRenderer;
-    std::unique_ptr<R_Particles> m_particleRenderer;
-    std::unique_ptr<R_Lights> m_lightRenderer;
-    std::unique_ptr<R_Sprites> m_spriteRenderer;
-    std::unique_ptr<R_Beams> m_beamRenderer;
-    std::unique_ptr<R_Cables> m_cableRenderer;
-    std::unique_ptr<R_Video> m_videoRenderer;
-    std::unique_ptr<R_Monitors> m_monitorRenderer;
-    std::unique_ptr<R_Overlay> m_overlayRenderer;
-    std::unique_ptr<R_Glass> m_glassRenderer;
-    std::unique_ptr<R_Decals> m_decalRenderer;
-    std::unique_ptr<R_InteriorParallax> m_interiorRenderer;
-    std::unique_ptr<R_Water> m_waterRenderer;
+    bgfx::ViewId m_mainView = 0;
     std::unique_ptr<R_UI> m_uiRenderer;
+    std::unique_ptr<R_GBuffer> m_gbuffer;
+    std::unique_ptr<R_BSP> m_bspRenderer;
 };

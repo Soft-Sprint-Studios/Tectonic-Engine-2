@@ -22,8 +22,7 @@
  * SOFTWARE.
  */
 #pragma once
-#include "dds.h"
-#include <glad/glad.h>
+#include <bgfx/bgfx.h>
 #include <string>
 
 class R_Texture
@@ -32,25 +31,26 @@ public:
     R_Texture();
     ~R_Texture();
 
-    bool Load(const std::string& path, bool srgb = true);
-    void CreateFromInfo(const DDS::ImageInfo& info);
     void Create(int width, int height, unsigned char* data, bool srgb = true);
-    void Bind(unsigned int unit = 0) const;
-    void Release();
+    bool Load(const std::string& path, bool srgb = true);
 
-    int GetWidth() const
-    {
+    int GetWidth() const 
+    { 
         return m_width;
     }
 
-    int GetHeight() const
+    int GetHeight() const 
+    { 
+        return m_height; 
+    }
+
+    bgfx::TextureHandle GetHandle() const
     {
-        return m_height;
+        return m_handle;
     }
 
 private:
-    GLuint m_id;
-    int m_width;
-    int m_height;
-    int m_channels;
+    bgfx::TextureHandle m_handle = BGFX_INVALID_HANDLE;
+    int m_width = 0;
+    int m_height = 0;
 };

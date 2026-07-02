@@ -25,13 +25,12 @@
 #include "r_bsp.h"
 #include "materials.h"
 #include "entities.h"
-#include <glad/glad.h>
+#include "console.h"
+#include "cvar.h"
+#include <glm/gtc/type_ptr.hpp>
 
 R_BSP::R_BSP()
 {
-    m_vao = 0;
-    m_vbo = 0;
-    m_lightmapTexture = 0;
 }
 
 R_BSP::~R_BSP()
@@ -47,50 +46,36 @@ bool R_BSP::Init(const BSP::MapData& map)
         return false;
     }
 
-    glCreateVertexArrays(1, &m_vao);
-    glCreateBuffers(1, &m_vbo);
-    glNamedBufferData(m_vbo, map.renderVertices.size() * sizeof(BSP::Vertex), map.renderVertices.data(), GL_STATIC_DRAW);
+    m_layout.begin()
+        .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::Normal, 3, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::Tangent, 4, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Half) // Packed UV
+        .add(bgfx::Attrib::TexCoord1, 2, bgfx::AttribType::Float) // lm_uv
+        .add(bgfx::Attrib::TexCoord2, 2, bgfx::AttribType::Float) // lm_size
+        .add(bgfx::Attrib::TexCoord3, 1, bgfx::AttribType::Float) // alpha
+        .end();
 
-    glVertexArrayVertexBuffer(m_vao, 0, m_vbo, 0, sizeof(BSP::Vertex));
-
-    glEnableVertexArrayAttrib(m_vao, 0);
-    glVertexArrayAttribFormat(m_vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
-    glVertexArrayAttribBinding(m_vao, 0, 0);
-
-    glEnableVertexArrayAttrib(m_vao, 1);
-    glVertexArrayAttribFormat(m_vao, 1, 2, GL_HALF_FLOAT, GL_FALSE, offsetof(BSP::Vertex, uv));
-    glVertexArrayAttribBinding(m_vao, 1, 0);
-
-    glEnableVertexArrayAttrib(m_vao, 2);
-    glVertexArrayAttribFormat(m_vao, 2, 2, GL_FLOAT, GL_FALSE, offsetof(BSP::Vertex, lm_uv));
-    glVertexArrayAttribBinding(m_vao, 2, 0);
-
-    glEnableVertexArrayAttrib(m_vao, 3);
-    glVertexArrayAttribFormat(m_vao, 3, 2, GL_FLOAT, GL_FALSE, offsetof(BSP::Vertex, lm_size));
-    glVertexArrayAttribBinding(m_vao, 3, 0);
-
-    glEnableVertexArrayAttrib(m_vao, 4);
-    glVertexArrayAttribFormat(m_vao, 4, 1, GL_FLOAT, GL_FALSE, offsetof(BSP::Vertex, alpha));
-    glVertexArrayAttribBinding(m_vao, 4, 0);
-
-    glEnableVertexArrayAttrib(m_vao, 5);
-    glVertexArrayAttribFormat(m_vao, 5, 3, GL_FLOAT, GL_FALSE, offsetof(BSP::Vertex, normal));
-    glVertexArrayAttribBinding(m_vao, 5, 0);
-
-    glEnableVertexArrayAttrib(m_vao, 6);
-    glVertexArrayAttribFormat(m_vao, 6, 4, GL_FLOAT, GL_FALSE, offsetof(BSP::Vertex, tangent));
-    glVertexArrayAttribBinding(m_vao, 6, 0);
+    const bgfx::Memory* vboMem = bgfx::copy(map.renderVertices.data(), (uint32_t)(map.renderVertices.size() * sizeof(BSP::Vertex)));
+    m_vbo = bgfx::createVertexBuffer(vboMem, m_layout);
 
     if (!map.lightmapAtlas.empty())
     {
-        glCreateTextures(GL_TEXTURE_2D, 1, &m_lightmapTexture);
-        glTextureStorage2D(m_lightmapTexture, 1, GL_RGBA16F, map.lightmapAtlasWidth, map.lightmapAtlasHeight);
-        glTextureSubImage2D(m_lightmapTexture, 0, 0, 0, map.lightmapAtlasWidth, map.lightmapAtlasHeight, GL_RGBA, GL_FLOAT, map.lightmapAtlas.data());
-        glTextureParameteri(m_lightmapTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTextureParameteri(m_lightmapTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTextureParameteri(m_lightmapTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTextureParameteri(m_lightmapTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        const bgfx::Memory* lmMem = bgfx::copy(map.lightmapAtlas.data(), (uint32_t)(map.lightmapAtlas.size() * sizeof(float)));
+        m_lightmapTexture = bgfx::createTexture2D((uint16_t)map.lightmapAtlasWidth, (uint16_t)map.lightmapAtlasHeight, false, 1, bgfx::TextureFormat::RGBA32F, BGFX_TEXTURE_NONE | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT, lmMem);
     }
+
+    m_sDiffuse = bgfx::createUniform("s_diffuse", bgfx::UniformType::Sampler);
+    m_sNormal = bgfx::createUniform("s_normal", bgfx::UniformType::Sampler);
+    m_sMRAO = bgfx::createUniform("s_mraohMap", bgfx::UniformType::Sampler);
+    m_sDiffuse2 = bgfx::createUniform("s_diffuse2", bgfx::UniformType::Sampler);
+    m_sNormal2 = bgfx::createUniform("s_normal2", bgfx::UniformType::Sampler);
+    m_sMRAO2 = bgfx::createUniform("s_mraohMap2", bgfx::UniformType::Sampler);
+    m_sLightmap = bgfx::createUniform("s_lightmap", bgfx::UniformType::Sampler);
+    m_uBumpAndHeights = bgfx::createUniform("u_bumpAndHeights", bgfx::UniformType::Vec4);
+    m_uParallaxParams = bgfx::createUniform("u_parallaxParams", bgfx::UniformType::Vec4);
+    m_uViewPos = bgfx::createUniform("u_viewPos", bgfx::UniformType::Vec4);
+    m_uLightmapParams = bgfx::createUniform("u_lightmapParams", bgfx::UniformType::Vec4);
 
     m_drawCalls.clear();
     for (auto& dc : map.drawCalls)
@@ -112,52 +97,24 @@ bool R_BSP::Init(const BSP::MapData& map)
         m_drawCalls.push_back(draw);
     }
 
-    m_totalVertexCount = (uint32_t)map.renderVertices.size();
     m_opaqueVertexCount = map.opaqueVertexCount;
 
     m_subModels.clear();
     for (const auto& ent : map.entities)
     {
-        if (ent.modelIndex < 0 || ent.renderVertices.empty()) 
+        if (ent.modelIndex < 0 || ent.renderVertices.empty())
+        {
             continue;
+        }
 
         if (m_subModels.count(ent.modelIndex))
+        {
             continue;
+        }
 
         BrushModel bm;
-        glCreateVertexArrays(1, &bm.vao);
-        glCreateBuffers(1, &bm.vbo);
-        glNamedBufferData(bm.vbo, ent.renderVertices.size() * sizeof(BSP::Vertex), ent.renderVertices.data(), GL_STATIC_DRAW);
-
-        glVertexArrayVertexBuffer(bm.vao, 0, bm.vbo, 0, sizeof(BSP::Vertex));
-
-        glEnableVertexArrayAttrib(bm.vao, 0);
-        glVertexArrayAttribFormat(bm.vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
-        glVertexArrayAttribBinding(bm.vao, 0, 0);
-
-        glEnableVertexArrayAttrib(bm.vao, 1);
-        glVertexArrayAttribFormat(bm.vao, 1, 2, GL_HALF_FLOAT, GL_FALSE, offsetof(BSP::Vertex, uv));
-        glVertexArrayAttribBinding(bm.vao, 1, 0);
-
-        glEnableVertexArrayAttrib(bm.vao, 2);
-        glVertexArrayAttribFormat(bm.vao, 2, 2, GL_FLOAT, GL_FALSE, offsetof(BSP::Vertex, lm_uv));
-        glVertexArrayAttribBinding(bm.vao, 2, 0);
-
-        glEnableVertexArrayAttrib(bm.vao, 3);
-        glVertexArrayAttribFormat(bm.vao, 3, 2, GL_FLOAT, GL_FALSE, offsetof(BSP::Vertex, lm_size));
-        glVertexArrayAttribBinding(bm.vao, 3, 0);
-
-        glEnableVertexArrayAttrib(bm.vao, 4);
-        glVertexArrayAttribFormat(bm.vao, 4, 1, GL_FLOAT, GL_FALSE, offsetof(BSP::Vertex, alpha));
-        glVertexArrayAttribBinding(bm.vao, 4, 0);
-
-        glEnableVertexArrayAttrib(bm.vao, 5);
-        glVertexArrayAttribFormat(bm.vao, 5, 3, GL_FLOAT, GL_FALSE, offsetof(BSP::Vertex, normal));
-        glVertexArrayAttribBinding(bm.vao, 5, 0);
-
-        glEnableVertexArrayAttrib(bm.vao, 6);
-        glVertexArrayAttribFormat(bm.vao, 6, 4, GL_FLOAT, GL_FALSE, offsetof(BSP::Vertex, tangent));
-        glVertexArrayAttribBinding(bm.vao, 6, 0);
+        const bgfx::Memory* subMem = bgfx::copy(ent.renderVertices.data(), (uint32_t)(ent.renderVertices.size() * sizeof(BSP::Vertex)));
+        bm.vbo = bgfx::createVertexBuffer(subMem, m_layout);
 
         for (auto& dc : ent.drawCalls)
         {
@@ -181,25 +138,15 @@ bool R_BSP::Init(const BSP::MapData& map)
     return true;
 }
 
-void R_BSP::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOnly)
+void R_BSP::Draw(const R_Shader& shader, bgfx::ViewId viewId, const Frustum& frustum, const glm::vec3& viewPos, bool depthOnly)
 {
-    if (m_vao == 0)
+    if (!bgfx::isValid(m_vbo) || !bgfx::isValid(shader.GetProgram()))
     {
         return;
     }
 
-    glBindVertexArray(m_vao);
-
-    if (depthOnly)
-    {
-        glDrawArrays(GL_TRIANGLES, 0, m_opaqueVertexCount);
-        return;
-    }
-
-    if (m_lightmapTexture != 0)
-    {
-        glBindTextureUnit(1, m_lightmapTexture);
-    }
+    glm::mat4 identity(1.0f);
+    uint64_t state = BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LESS | BGFX_STATE_CULL_CW;
 
     for (auto& dc : m_drawCalls)
     {
@@ -208,23 +155,46 @@ void R_BSP::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOnly)
             continue;
         }
 
+        bgfx::setTransform(glm::value_ptr(identity));
+        bgfx::setVertexBuffer(0, m_vbo, dc.start, dc.count);
+
         if (!depthOnly)
         {
-            shader.SetInt("u_useBump", dc.isBumped ? 1 : 0);
-            (dc.texture ? dc.texture : Materials::GetTexture(""))->Bind(0);
-            (dc.normalMap ? dc.normalMap : Materials::GetNormalMap(""))->Bind(1);
-            (dc.mraohMap ? dc.mraohMap : Materials::GetMRAOMap(""))->Bind(2);
-            (dc.texture2 ? dc.texture2 : Materials::GetTexture(""))->Bind(3);
-            (dc.normalMap2 ? dc.normalMap2 : Materials::GetNormalMap2(""))->Bind(4);
-            (dc.mraohMap2 ? dc.mraohMap2 : Materials::GetMRAOMap2(""))->Bind(5);
-            shader.SetFloat("u_heightScale1", dc.heightScale1);
-            shader.SetFloat("u_heightScale2", dc.heightScale2);
+            float bumpHeights[4] = { dc.isBumped ? 1.0f : 0.0f, dc.heightScale1, dc.heightScale2, 0.0f };
+            bgfx::setUniform(m_uBumpAndHeights, bumpHeights);
+
+            float vp[4] = { viewPos.x, viewPos.y, viewPos.z, 0.0f };
+            bgfx::setUniform(m_uViewPos, vp);
+
+            float par[4] = 
+            {
+                (float)CVar::GetFloat("mat_parallax_min_steps", 8.0f),
+                (float)CVar::GetFloat("mat_parallax_max_steps", 32.0f),
+                (float)CVar::GetInt("mat_parallax_refine", 8),
+                (float)CVar::GetInt("mat_parallax", 1)
+            };
+            bgfx::setUniform(m_uParallaxParams, par);
+
+            float lm[4] = { (float)CVar::GetInt("r_lightmap_bicubic", 1), 0.0f, 0.0f, 0.0f };
+            bgfx::setUniform(m_uLightmapParams, lm);
+
+            if (bgfx::isValid(m_lightmapTexture))
+            {
+                bgfx::setTexture(6, m_sLightmap, m_lightmapTexture);
+            }
+
+            bgfx::setTexture(0, m_sDiffuse, (dc.texture ? dc.texture : Materials::GetTexture(""))->GetHandle());
+            bgfx::setTexture(1, m_sNormal, (dc.normalMap ? dc.normalMap : Materials::GetNormalMap(""))->GetHandle());
+            bgfx::setTexture(2, m_sMRAO, (dc.mraohMap ? dc.mraohMap : Materials::GetMRAOMap(""))->GetHandle());
+            bgfx::setTexture(3, m_sDiffuse2, (dc.texture2 ? dc.texture2 : Materials::GetTexture(""))->GetHandle());
+            bgfx::setTexture(4, m_sNormal2, (dc.normalMap2 ? dc.normalMap2 : Materials::GetNormalMap2(""))->GetHandle());
+            bgfx::setTexture(5, m_sMRAO2, (dc.mraohMap2 ? dc.mraohMap2 : Materials::GetMRAOMap2(""))->GetHandle());
         }
 
-        glDrawArrays(GL_TRIANGLES, dc.start, dc.count);
+        bgfx::setState(state);
+        bgfx::submit(viewId, shader.GetProgram());
     }
 
-    // Render Brush Entities
     for (auto& ent : EntityManager::GetEntities())
     {
         if (ent->IsRenderable() && ent->GetBModelIndex() >= 0)
@@ -234,72 +204,108 @@ void R_BSP::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOnly)
             model = glm::rotate(model, glm::radians(ang.y), glm::vec3(0, 1, 0));
             model = glm::rotate(model, glm::radians(ang.x), glm::vec3(1, 0, 0));
             model = glm::rotate(model, glm::radians(ang.z), glm::vec3(0, 0, 1));
-            DrawBModel(ent->GetBModelIndex(), shader, model, depthOnly);
+            DrawBModel(ent->GetBModelIndex(), shader, viewId, model, viewPos, depthOnly);
         }
     }
 }
 
-void R_BSP::DrawBModel(int index, const R_Shader& shader, const glm::mat4& transform, bool depthOnly)
+void R_BSP::DrawBModel(int index, const R_Shader& shader, bgfx::ViewId viewId, const glm::mat4& transform, const glm::vec3& viewPos, bool depthOnly)
 {
-    if (m_subModels.find(index) == m_subModels.end()) 
+    if (m_subModels.find(index) == m_subModels.end())
+    {
         return;
+    }
 
     const auto& bm = m_subModels[index];
-
-    if (bm.vao == 0)
+    if (!bgfx::isValid(bm.vbo))
     {
         return;
     }
 
-    shader.SetMat4("u_model", transform);
-    shader.SetInt("u_isInstanced", 0);
+    uint64_t state = BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LESS | BGFX_STATE_CULL_CW;
 
-    if (!depthOnly)
-    {
-        if (m_lightmapTexture != 0)
-        {
-            glBindTextureUnit(1, m_lightmapTexture);
-        }
-    }
-
-    glBindVertexArray(bm.vao);
     for (const auto& dc : bm.drawCalls)
     {
+        bgfx::setTransform(glm::value_ptr(transform));
+        bgfx::setVertexBuffer(0, bm.vbo, dc.start, dc.count);
+
         if (!depthOnly)
         {
-            shader.SetInt("u_useBump", dc.isBumped ? 1 : 0);
-            (dc.texture ? dc.texture : Materials::GetTexture(""))->Bind(0);
-            (dc.normalMap ? dc.normalMap : Materials::GetNormalMap(""))->Bind(1);
-            (dc.mraohMap ? dc.mraohMap : Materials::GetMRAOMap(""))->Bind(2);
-            (dc.texture2 ? dc.texture2 : Materials::GetTexture(""))->Bind(3);
-            (dc.normalMap2 ? dc.normalMap2 : Materials::GetNormalMap(""))->Bind(4);
-            (dc.mraohMap2 ? dc.mraohMap2 : Materials::GetMRAOMap2(""))->Bind(5);
-            shader.SetFloat("u_heightScale1", dc.heightScale1);
-            shader.SetFloat("u_heightScale2", dc.heightScale2);
+            float bumpHeights[4] = { dc.isBumped ? 1.0f : 0.0f, dc.heightScale1, dc.heightScale2, 0.0f };
+            bgfx::setUniform(m_uBumpAndHeights, bumpHeights);
+
+            float vp[4] = { viewPos.x, viewPos.y, viewPos.z, 0.0f };
+            bgfx::setUniform(m_uViewPos, vp);
+
+            float par[4] = 
+            {
+                (float)CVar::GetFloat("mat_parallax_min_steps", 8.0f),
+                (float)CVar::GetFloat("mat_parallax_max_steps", 32.0f),
+                (float)CVar::GetInt("mat_parallax_refine", 8),
+                (float)CVar::GetInt("mat_parallax", 1)
+            };
+            bgfx::setUniform(m_uParallaxParams, par);
+
+            float lm[4] = { (float)CVar::GetInt("r_lightmap_bicubic", 1), 0.0f, 0.0f, 0.0f };
+            bgfx::setUniform(m_uLightmapParams, lm);
+
+            if (bgfx::isValid(m_lightmapTexture))
+            {
+                bgfx::setTexture(6, m_sLightmap, m_lightmapTexture);
+            }
+
+            bgfx::setTexture(0, m_sDiffuse, (dc.texture ? dc.texture : Materials::GetTexture(""))->GetHandle());
+            bgfx::setTexture(1, m_sNormal, (dc.normalMap ? dc.normalMap : Materials::GetNormalMap(""))->GetHandle());
+            bgfx::setTexture(2, m_sMRAO, (dc.mraohMap ? dc.mraohMap : Materials::GetMRAOMap(""))->GetHandle());
+            bgfx::setTexture(3, m_sDiffuse2, (dc.texture2 ? dc.texture2 : Materials::GetTexture(""))->GetHandle());
+            bgfx::setTexture(4, m_sNormal2, (dc.normalMap2 ? dc.normalMap2 : Materials::GetNormalMap2(""))->GetHandle());
+            bgfx::setTexture(5, m_sMRAO2, (dc.mraohMap2 ? dc.mraohMap2 : Materials::GetMRAOMap2(""))->GetHandle());
         }
 
-        glDrawArrays(GL_TRIANGLES, dc.start, dc.count);
+        bgfx::setState(state);
+        bgfx::submit(viewId, shader.GetProgram());
     }
 }
 
 void R_BSP::Shutdown()
 {
-    if (m_vao != 0) 
-        glDeleteVertexArrays(1, &m_vao);
-    if (m_vbo != 0) 
-        glDeleteBuffers(1, &m_vbo);
-    if (m_lightmapTexture != 0) 
-        glDeleteTextures(1, &m_lightmapTexture);
-    m_vao = 0; 
-    m_vbo = 0; 
-    m_lightmapTexture = 0;
-    m_drawCalls.clear();
+    if (bgfx::isValid(m_vbo))
+    {
+        bgfx::destroy(m_vbo);
+        m_vbo = BGFX_INVALID_HANDLE;
+    }
+
+    if (bgfx::isValid(m_lightmapTexture))
+    {
+        bgfx::destroy(m_lightmapTexture);
+        m_lightmapTexture = BGFX_INVALID_HANDLE;
+    }
+
+    if (bgfx::isValid(m_sDiffuse))
+    {
+        bgfx::destroy(m_sDiffuse);
+        bgfx::destroy(m_sNormal);
+        bgfx::destroy(m_sMRAO);
+        bgfx::destroy(m_sDiffuse2);
+        bgfx::destroy(m_sNormal2);
+        bgfx::destroy(m_sMRAO2);
+        bgfx::destroy(m_sLightmap);
+        bgfx::destroy(m_uBumpAndHeights);
+        bgfx::destroy(m_uParallaxParams);
+        bgfx::destroy(m_uViewPos);
+        bgfx::destroy(m_uLightmapParams);
+
+        m_sDiffuse = BGFX_INVALID_HANDLE;
+    }
+
     for (auto& [idx, bm] : m_subModels)
     {
-        if (bm.vao) 
-            glDeleteVertexArrays(1, &bm.vao);
-        if (bm.vbo) 
-            glDeleteBuffers(1, &bm.vbo);
+        if (bgfx::isValid(bm.vbo))
+        {
+            bgfx::destroy(bm.vbo);
+        }
     }
+
     m_subModels.clear();
+    m_drawCalls.clear();
 }

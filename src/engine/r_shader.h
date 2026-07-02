@@ -22,11 +22,8 @@
  * SOFTWARE.
  */
 #pragma once
-#include <glad/glad.h>
-#include <glm/glm.hpp>
+#include <bgfx/bgfx.h>
 #include <string>
-#include <unordered_map>
-#include <set>
 
 class R_Shader
 {
@@ -35,29 +32,13 @@ public:
     ~R_Shader();
 
     bool Load(const std::string& vertPath, const std::string& fragPath, const std::string& geomPath = "");
-    bool LoadCompute(const std::string& path);
 
-    static void ReloadAll();
-    static std::set<R_Shader*>& GetRegistry();
-
-    void Bind() const;
-
-    void SetMat4(const std::string& name, const glm::mat4& mat) const;
-    void SetVec4(const std::string& name, const glm::vec4& vec) const;
-    void SetVec3(const std::string& name, const glm::vec3& vec) const;
-    void SetVec2(const std::string& name, const glm::vec2& vec) const;
-    void SetInt(const std::string& name, int value) const;
-    void SetFloat(const std::string& name, float value) const;
+    bgfx::ProgramHandle GetProgram() const
+    {
+        return m_program;
+    }
 
 private:
-    GLint GetUniformLocation(const std::string& name) const;
-
-    GLuint m_program;
-    mutable std::unordered_map<std::string, GLint> m_uniformLocationCache;
-    std::string m_vertPath, m_fragPath, m_geomPath;
-    std::string m_computePath;
-    GLuint CompileShader(GLenum type, const std::string& source, const std::string& path);
-    std::string PreprocessShader(const std::string& path, int depth = 0);
-
-    bool Reload();
+    bgfx::ShaderHandle LoadShaderBinary(const std::string& path);
+    bgfx::ProgramHandle m_program = BGFX_INVALID_HANDLE;
 };
