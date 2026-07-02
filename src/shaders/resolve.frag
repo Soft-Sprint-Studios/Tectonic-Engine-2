@@ -13,10 +13,10 @@ SAMPLERCUBE(s_cubemap, 4);
 SAMPLER2D(s_lightmap, 5);
 SAMPLER2D(s_gLightmapUV, 6);
 
-// #include "lights.sh"
+#include "lights.sh"
 
 uniform vec4 u_viewPos;
-uniform vec4 u_cubemapParams; // x = u_useCubemap
+uniform vec4 u_cubemapParams;
 uniform vec4 u_cubemapOrigin;
 uniform vec4 u_cubemapMins;
 uniform vec4 u_cubemapMaxs;
@@ -142,7 +142,6 @@ void main()
 
     vec3 dynDiffuse = vec3_splat(0.0);
 
-    /*
     // Dynamic Spots
     for (int i = 0; i < u_numSpotLights; ++i)
     {
@@ -223,7 +222,6 @@ void main()
         kD *= 1.0 - metallic;
         dynDiffuse += (kD * albedo / PI + specular) * sunEnergy * max(dot(N, sunL), 0.0);
     }
-    */
 
     vec3 finalColor = ambient + dynDiffuse;
     gl_FragColor = vec4(finalColor, 1.0);

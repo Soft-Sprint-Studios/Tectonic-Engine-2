@@ -16,7 +16,7 @@ struct LightData
 
 // Sampler bindings
 SAMPLER2DARRAY(u_spotShadowMaps, 14);
-SAMPLERCUBEARRAY(u_pointShadowMaps, 15);
+SAMPLERCUBE(u_pointShadowMaps, 15);
 SAMPLER2DARRAY(u_csmArray, 13);
 
 // Uniform arrays for parameters
@@ -33,11 +33,8 @@ uniform vec4 u_csmSplit4_volSteps;
 #define u_csmSplit4   u_csmSplit4_volSteps.x
 #define u_sunVolSteps u_csmSplit4_volSteps.y
 
-// Declare read-only structures for dynamic light bindings
-#if BGFX_SHADER_LANGUAGE_GLSL >= 130 || BGFX_SHADER_LANGUAGE_HLSL >= 40
-BUFFER_RO(u_pointLights, LightData, 10);
-BUFFER_RO(u_spotLights, LightData, 11);
-#endif
+StructuredBuffer<LightData> u_pointLights : register(t10);
+StructuredBuffer<LightData> u_spotLights : register(t11);
 
 const float EVSM_EXP = 10.0;
 
@@ -90,8 +87,8 @@ float PointShadowCalc(vec3 worldPos, vec3 lightPos, float far_plane, float layer
 
     vec3 fragToLight = worldPos - lightPos;
     float depth = (length(fragToLight) / far_plane) - 0.001;
-    
-    vec2 moments = textureCubeArray(u_pointShadowMaps, vec4(fragToLight, layer)).rg;
+
+    vec2 moments = textureCube(u_pointShadowMaps, fragToLight).rg;
     float warpedDepth = exp(EVSM_EXP * depth);
     return 1.0 - ChebyshevUpperBound(moments, warpedDepth);
 }

@@ -92,6 +92,8 @@ bool Renderer::Init(Window& window)
     m_bspRenderer = std::make_unique<R_BSP>();
     m_decalRenderer = std::make_unique<R_Decals>();
     m_decalRenderer->Init();
+    m_lightRenderer = std::make_unique<R_Lights>();
+    m_lightRenderer->Init();
 
     if (!m_gbufferShader.Load("shaders/gbuffer.vert", "shaders/gbuffer.frag"))
     {
@@ -110,6 +112,9 @@ bool Renderer::Init(Window& window)
     m_uCubemapOrigin = bgfx::createUniform("u_cubemapOrigin", bgfx::UniformType::Vec4);
     m_uCubemapMins = bgfx::createUniform("u_cubemapMins", bgfx::UniformType::Vec4);
     m_uCubemapMaxs = bgfx::createUniform("u_cubemapMaxs", bgfx::UniformType::Vec4);
+    m_sCsmArray = bgfx::createUniform("u_csmArray", bgfx::UniformType::Sampler);
+    m_sSpotShadowMaps = bgfx::createUniform("u_spotShadowMaps", bgfx::UniformType::Sampler);
+    m_sPointShadowMaps = bgfx::createUniform("u_pointShadowMaps", bgfx::UniformType::Sampler);
 
     uint8_t whitePixel[] = { 255, 255, 255, 255 };
     m_whiteTexture = bgfx::createTexture2D(1, 1, false, 1, bgfx::TextureFormat::RGBA8, BGFX_TEXTURE_NONE, bgfx::copy(whitePixel, 4));
@@ -151,6 +156,8 @@ void Renderer::Render(Camera& camera)
 {
     bgfx::touch(m_mainView);
 
+    m_lightRenderer->RenderShadowMaps(camera, this);
+
     RenderWorld(camera);
 
     m_uiRenderer->Render();
@@ -185,8 +192,9 @@ void Renderer::GeometryPass(Camera& camera, int renderW, int renderH, bool drawW
     m_decalRenderer->Draw(geoView, camera, frustum, Decals::GetActiveDecals());
 }
 
-void Renderer::DrawSceneDepth(R_Shader& shader, const struct Frustum& frustum)
+void Renderer::DrawSceneDepth(bgfx::ViewId viewId, R_Shader& shader, const struct Frustum& frustum)
 {
+    m_bspRenderer->Draw(shader, viewId, frustum, glm::vec3(0.0f), true);
 }
 
 void Renderer::OnWindowResize(int w, int h)
@@ -223,6 +231,12 @@ void Renderer::Shutdown()
         m_decalRenderer.reset();
     }
 
+    if (m_lightRenderer)
+    {
+        m_lightRenderer->Shutdown();
+        m_lightRenderer.reset();
+    }
+
     if (bgfx::isValid(m_sDepth))
     {
         bgfx::destroy(m_sDepth);
@@ -239,6 +253,9 @@ void Renderer::Shutdown()
         bgfx::destroy(m_uCubemapMaxs);
         bgfx::destroy(m_dummyCubemap);
         bgfx::destroy(m_whiteTexture);
+        bgfx::destroy(m_sCsmArray);
+        bgfx::destroy(m_sSpotShadowMaps);
+        bgfx::destroy(m_sPointShadowMaps);
 
         m_sDepth = BGFX_INVALID_HANDLE;
     }
@@ -293,6 +310,12 @@ void Renderer::LightingPass(Camera& camera, uint32_t cubemapToExclude, int targe
 
     float vp[4] = { camera.position.x, camera.position.y, camera.position.z, 0.0f };
     bgfx::setUniform(m_uViewPosLocal, vp);
+    
+    // todo fix crash
+    //m_lightRenderer->Bind(m_resolveShader);
+    bgfx::setTexture(13, m_sCsmArray, m_lightRenderer->GetCascadeShadowTexture());
+    bgfx::setTexture(14, m_sSpotShadowMaps, m_lightRenderer->GetSpotShadowTexture());
+    bgfx::setTexture(15, m_sPointShadowMaps, m_lightRenderer->GetPointShadowTexture());
 
     bgfx::setTexture(0, m_sDepth, m_gbuffer->GetDepthTex());
     bgfx::setTexture(1, m_sNormal, m_gbuffer->GetNormalTex());

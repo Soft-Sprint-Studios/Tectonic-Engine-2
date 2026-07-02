@@ -30,6 +30,7 @@
 #include "r_gbuffer.h"
 #include "r_bsp.h"
 #include "r_decals.h"
+#include "r_lights.h"
 #include <bgfx/bgfx.h>
 #include <memory>
 
@@ -44,7 +45,7 @@ public:
     void Shutdown();
     void Render(Camera& camera);
     void RenderWorld(Camera& camera, uint32_t cubemapToExclude = 0, bool drawWater = true);
-    void DrawSceneDepth(R_Shader& shader, const struct Frustum& frustum);
+    void DrawSceneDepth(bgfx::ViewId viewId, R_Shader& shader, const struct Frustum& frustum);
     void OnWindowResize(int w, int h);
 
     R_UI* GetUI() const
@@ -66,6 +67,7 @@ private:
     std::unique_ptr<R_GBuffer> m_gbuffer;
     std::unique_ptr<R_BSP> m_bspRenderer;
     std::unique_ptr<R_Decals> m_decalRenderer;
+    std::unique_ptr<R_Lights> m_lightRenderer;
 
     bgfx::UniformHandle m_sDepth = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle m_sNormal = BGFX_INVALID_HANDLE;
@@ -81,5 +83,8 @@ private:
     bgfx::UniformHandle m_uCubemapMaxs = BGFX_INVALID_HANDLE;
     bgfx::TextureHandle m_dummyCubemap = BGFX_INVALID_HANDLE;
     bgfx::TextureHandle m_whiteTexture = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sCsmArray = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sSpotShadowMaps = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sPointShadowMaps = BGFX_INVALID_HANDLE;
     bgfx::VertexLayout m_quadLayout;
 };
