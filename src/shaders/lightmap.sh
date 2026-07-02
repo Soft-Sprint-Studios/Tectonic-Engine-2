@@ -43,13 +43,25 @@ vec4 texture_bicubic(sampler2D tex, vec2 uv)
 
 vec2 PackLightmapUV(vec2 lmCoord, vec2 lmSize)
 {
-    return lmCoord;
+    uint w_pixels = uint(round(clamp(lmSize.x * 4096.0, 0.0, 255.0)));
+    uint h_pixels = uint(round(clamp(lmSize.y * 4096.0, 0.0, 255.0)));
+
+    uint u_val = uint(clamp(lmCoord.x, 0.0, 1.0) * 16777215.0);
+    uint v_val = uint(clamp(lmCoord.y, 0.0, 1.0) * 16777215.0);
+
+    uint packed_u = (u_val & 0x00FFFFFFu) | (w_pixels << 24);
+    uint packed_v = (v_val & 0x00FFFFFFu) | (h_pixels << 24);
+
+    return vec2(asfloat(packed_u), asfloat(packed_v));
 }
 
 void UnpackLightmapUV(vec2 packedFloat, out vec2 lmCoord, out vec2 lmSize)
 {
-    lmCoord = packedFloat;
-    lmSize = vec2_splat(1.0);
+    uint packed_u = asuint(packedFloat.x);
+    uint packed_v = asuint(packedFloat.y);
+
+    lmCoord = vec2(float(packed_u & 0x00FFFFFFu), float(packed_v & 0x00FFFFFFu)) / 16777215.0;
+    lmSize = vec2(float(packed_u >> 24), float(packed_v >> 24)) / 4096.0;
 }
 
 vec4 SampleLightmap(sampler2D tex, vec2 uv)

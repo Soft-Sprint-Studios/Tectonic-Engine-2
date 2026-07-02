@@ -27,6 +27,7 @@
 #include "platform.h"
 #include "physics.h"
 #include "entities.h"
+#include "cubemap.h"
 #include <SDL3/SDL.h>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -87,6 +88,7 @@ bool Renderer::Init(Window& window)
     m_uiRenderer = std::make_unique<R_UI>();
     m_uiRenderer->Init(m_windowRef);
     m_gbuffer = std::make_unique<R_GBuffer>();
+    m_gbuffer->Init(w, h);
     m_bspRenderer = std::make_unique<R_BSP>();
     m_decalRenderer = std::make_unique<R_Decals>();
     m_decalRenderer->Init();
@@ -95,6 +97,32 @@ bool Renderer::Init(Window& window)
     {
         Console::Error("BGFX: Failed to load G-Buffer Shader binaries!");
     }
+
+    m_sDepth = bgfx::createUniform("s_gDepth", bgfx::UniformType::Sampler);
+    m_sNormal = bgfx::createUniform("s_gNormal", bgfx::UniformType::Sampler);
+    m_sAlbedo = bgfx::createUniform("s_gAlbedo", bgfx::UniformType::Sampler);
+    m_sMRAO = bgfx::createUniform("s_gMRAO", bgfx::UniformType::Sampler);
+    m_sCubemap = bgfx::createUniform("s_cubemap", bgfx::UniformType::Sampler);
+    m_sLightmap = bgfx::createUniform("s_lightmap", bgfx::UniformType::Sampler);
+    m_sGLightmapUV = bgfx::createUniform("s_gLightmapUV", bgfx::UniformType::Sampler);
+    m_uViewPosLocal = bgfx::createUniform("u_viewPos", bgfx::UniformType::Vec4);
+    m_uCubemapParams = bgfx::createUniform("u_cubemapParams", bgfx::UniformType::Vec4);
+    m_uCubemapOrigin = bgfx::createUniform("u_cubemapOrigin", bgfx::UniformType::Vec4);
+    m_uCubemapMins = bgfx::createUniform("u_cubemapMins", bgfx::UniformType::Vec4);
+    m_uCubemapMaxs = bgfx::createUniform("u_cubemapMaxs", bgfx::UniformType::Vec4);
+
+    uint8_t whitePixel[] = { 255, 255, 255, 255 };
+    m_whiteTexture = bgfx::createTexture2D(1, 1, false, 1, bgfx::TextureFormat::RGBA8, BGFX_TEXTURE_NONE, bgfx::copy(whitePixel, 4));
+
+    uint8_t dummyCubeData[6 * 4] = { 0 };
+    m_dummyCubemap = bgfx::createTextureCube(1, false, 1, bgfx::TextureFormat::RGBA8, BGFX_TEXTURE_NONE, bgfx::copy(dummyCubeData, sizeof(dummyCubeData)));
+
+    m_quadLayout.begin()
+        .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
+        .end();
+
+    m_resolveShader.Load("shaders/resolve.vert", "shaders/resolve.frag");
 
     return true;
 }
@@ -136,6 +164,7 @@ void Renderer::RenderWorld(Camera& camera, uint32_t cubemapToExclude, bool drawW
     SDL_GetWindowSize(m_windowRef->Get(), &w, &h);
 
     GeometryPass(camera, w, h, drawWater);
+    LightingPass(camera, cubemapToExclude, 0, w, h, w, h);
 }
 
 void Renderer::GeometryPass(Camera& camera, int renderW, int renderH, bool drawWater)
@@ -164,6 +193,10 @@ void Renderer::OnWindowResize(int w, int h)
 {
     bgfx::reset((uint32_t)w, (uint32_t)h, CVar::GetInt("r_vsync", 1) > 0 ? BGFX_RESET_VSYNC : BGFX_RESET_NONE);
     bgfx::setViewRect(m_mainView, 0, 0, (uint16_t)w, (uint16_t)h);
+    if (m_gbuffer)
+    {
+        m_gbuffer->Rescale(w, h);
+    }
     if (m_uiRenderer)
     {
         m_uiRenderer->OnWindowResize(w, h);
@@ -190,6 +223,26 @@ void Renderer::Shutdown()
         m_decalRenderer.reset();
     }
 
+    if (bgfx::isValid(m_sDepth))
+    {
+        bgfx::destroy(m_sDepth);
+        bgfx::destroy(m_sNormal);
+        bgfx::destroy(m_sAlbedo);
+        bgfx::destroy(m_sMRAO);
+        bgfx::destroy(m_sCubemap);
+        bgfx::destroy(m_sLightmap);
+        bgfx::destroy(m_sGLightmapUV);
+        bgfx::destroy(m_uViewPosLocal);
+        bgfx::destroy(m_uCubemapParams);
+        bgfx::destroy(m_uCubemapOrigin);
+        bgfx::destroy(m_uCubemapMins);
+        bgfx::destroy(m_uCubemapMaxs);
+        bgfx::destroy(m_dummyCubemap);
+        bgfx::destroy(m_whiteTexture);
+
+        m_sDepth = BGFX_INVALID_HANDLE;
+    }
+
     if (m_uiRenderer)
     {
         m_uiRenderer->Shutdown();
@@ -201,6 +254,75 @@ void Renderer::Shutdown()
 
 void Renderer::LightingPass(Camera& camera, uint32_t cubemapToExclude, int targetFBO, int renderW, int renderH, int w, int h)
 {
+    bgfx::ViewId lightingView = 1;
+
+    bgfx::setViewClear(lightingView, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x000000FF, 1.0f, 0);
+    bgfx::setViewRect(lightingView, 0, 0, (uint16_t)w, (uint16_t)h);
+    bgfx::setViewFrameBuffer(lightingView, BGFX_INVALID_HANDLE);
+
+    glm::mat4 view = camera.GetViewMatrix();
+    glm::mat4 proj = camera.GetProjectionMatrix();
+    bgfx::setViewTransform(lightingView, glm::value_ptr(view), glm::value_ptr(proj));
+
+    const Cubemap::Probe* closest = Cubemap::FindClosest(camera.position);
+    bool useCubemap = (closest != nullptr);
+
+    float cParams[4] = { useCubemap ? 1.0f : 0.0f, 0.0f, 0.0f, 0.0f };
+    float cOrigin[4] = { 0.0f };
+    float cMins[4] = { 0.0f };
+    float cMaxs[4] = { 0.0f };
+
+    if (useCubemap)
+    {
+        cOrigin[0] = closest->origin.x; cOrigin[1] = closest->origin.y; cOrigin[2] = closest->origin.z;
+        cMins[0] = closest->mins.x; cMins[1] = closest->mins.y; cMins[2] = closest->mins.z;
+        cMaxs[0] = closest->maxs.x; cMaxs[1] = closest->maxs.y; cMaxs[2] = closest->maxs.z;
+
+        bgfx::TextureHandle cubemapTex = { (uint16_t)closest->id };
+        bgfx::setTexture(4, m_sCubemap, bgfx::isValid(cubemapTex) ? cubemapTex : m_dummyCubemap);
+    }
+    else
+    {
+        bgfx::setTexture(4, m_sCubemap, m_dummyCubemap);
+    }
+
+    bgfx::setUniform(m_uCubemapParams, cParams);
+    bgfx::setUniform(m_uCubemapOrigin, cOrigin);
+    bgfx::setUniform(m_uCubemapMins, cMins);
+    bgfx::setUniform(m_uCubemapMaxs, cMaxs);
+
+    float vp[4] = { camera.position.x, camera.position.y, camera.position.z, 0.0f };
+    bgfx::setUniform(m_uViewPosLocal, vp);
+
+    bgfx::setTexture(0, m_sDepth, m_gbuffer->GetDepthTex());
+    bgfx::setTexture(1, m_sNormal, m_gbuffer->GetNormalTex());
+    bgfx::setTexture(2, m_sAlbedo, m_gbuffer->GetAlbedoTex());
+    bgfx::setTexture(3, m_sMRAO, m_gbuffer->GetMRAOTex());
+
+    bgfx::TextureHandle lmTex = m_bspRenderer->GetLightmapTexture();
+    bgfx::setTexture(5, m_sLightmap, bgfx::isValid(lmTex) ? lmTex : m_whiteTexture);
+    bgfx::setTexture(6, m_sGLightmapUV, m_gbuffer->GetLightmapUVTex());
+
+    bgfx::TransientVertexBuffer tvb;
+    bgfx::allocTransientVertexBuffer(&tvb, 6, m_quadLayout);
+
+    struct QuadVertex
+    {
+        float x, y, z;
+        float u, v;
+    };
+
+    QuadVertex* v = (QuadVertex*)tvb.data;
+    v[0] = { -1.0f,  1.0f, 0.0f, 0.0f, 0.0f };
+    v[1] = { -1.0f, -1.0f, 0.0f, 0.0f, 1.0f };
+    v[2] = { 1.0f, -1.0f, 0.0f, 1.0f, 1.0f };
+    v[3] = { -1.0f,  1.0f, 0.0f, 0.0f, 0.0f };
+    v[4] = { 1.0f, -1.0f, 0.0f, 1.0f, 1.0f };
+    v[5] = { 1.0f,  1.0f, 0.0f, 1.0f, 0.0f };
+
+    bgfx::setVertexBuffer(0, &tvb);
+    bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A);
+    bgfx::submit(lightingView, m_resolveShader.GetProgram());
 }
 
 void Renderer::ForwardPass(Camera& camera, int targetFBO, int renderW, int renderH)

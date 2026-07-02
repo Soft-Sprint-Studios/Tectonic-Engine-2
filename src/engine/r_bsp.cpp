@@ -62,7 +62,7 @@ bool R_BSP::Init(const BSP::MapData& map)
     if (!map.lightmapAtlas.empty())
     {
         const bgfx::Memory* lmMem = bgfx::copy(map.lightmapAtlas.data(), (uint32_t)(map.lightmapAtlas.size() * sizeof(float)));
-        m_lightmapTexture = bgfx::createTexture2D((uint16_t)map.lightmapAtlasWidth, (uint16_t)map.lightmapAtlasHeight, false, 1, bgfx::TextureFormat::RGBA32F, BGFX_TEXTURE_NONE | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT, lmMem);
+        m_lightmapTexture = bgfx::createTexture2D((uint16_t)map.lightmapAtlasWidth, (uint16_t)map.lightmapAtlasHeight, false, 1, bgfx::TextureFormat::RGBA32F, BGFX_TEXTURE_NONE, lmMem);
     }
 
     m_sDiffuse = bgfx::createUniform("s_diffuse", bgfx::UniformType::Sampler);

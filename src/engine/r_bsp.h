@@ -64,6 +64,11 @@ public:
     void DrawBModel(int index, const R_Shader& shader, bgfx::ViewId viewId, const glm::mat4& transform, const glm::vec3& viewPos, bool depthOnly = false);
     void Shutdown();
 
+    bgfx::TextureHandle GetLightmapTexture() const
+    {
+        return m_lightmapTexture;
+    }
+
 private:
     bgfx::VertexLayout m_layout;
     bgfx::VertexBufferHandle m_vbo = BGFX_INVALID_HANDLE;

@@ -59,9 +59,27 @@ private:
 
     Window* m_windowRef;
     R_Shader m_gbufferShader;
+    R_Shader m_resolveShader;
     bgfx::ViewId m_mainView = 0;
+
     std::unique_ptr<R_UI> m_uiRenderer;
     std::unique_ptr<R_GBuffer> m_gbuffer;
     std::unique_ptr<R_BSP> m_bspRenderer;
     std::unique_ptr<R_Decals> m_decalRenderer;
+
+    bgfx::UniformHandle m_sDepth = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sNormal = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sAlbedo = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sMRAO = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sCubemap = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sLightmap = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sGLightmapUV = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uViewPosLocal = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uCubemapParams = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uCubemapOrigin = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uCubemapMins = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uCubemapMaxs = BGFX_INVALID_HANDLE;
+    bgfx::TextureHandle m_dummyCubemap = BGFX_INVALID_HANDLE;
+    bgfx::TextureHandle m_whiteTexture = BGFX_INVALID_HANDLE;
+    bgfx::VertexLayout m_quadLayout;
 };
