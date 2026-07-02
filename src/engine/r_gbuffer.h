@@ -37,6 +37,9 @@ public:
     bgfx::FrameBufferHandle GetFBO() const;
     bgfx::TextureHandle GetDepthTex() const;
     bgfx::TextureHandle GetAlbedoTex() const;
+    bgfx::TextureHandle GetNormalTex() const;
+    bgfx::TextureHandle GetMRAOTex() const;
+    bgfx::TextureHandle GetLightmapUVTex() const;
 
 private:
     bgfx::FrameBufferHandle m_fbo = BGFX_INVALID_HANDLE;

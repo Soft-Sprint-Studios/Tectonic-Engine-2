@@ -97,3 +97,18 @@ bgfx::TextureHandle R_GBuffer::GetAlbedoTex() const
 {
     return m_albedoTex;
 }
+
+bgfx::TextureHandle R_GBuffer::GetNormalTex() const
+{
+    return m_normalTex;
+}
+
+bgfx::TextureHandle R_GBuffer::GetMRAOTex() const
+{
+    return m_mraoTex;
+}
+
+bgfx::TextureHandle R_GBuffer::GetLightmapUVTex() const
+{
+    return m_lightmapUVTex;
+}

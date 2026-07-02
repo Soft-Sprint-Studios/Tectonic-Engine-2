@@ -87,8 +87,9 @@ bool Renderer::Init(Window& window)
     m_uiRenderer = std::make_unique<R_UI>();
     m_uiRenderer->Init(m_windowRef);
     m_gbuffer = std::make_unique<R_GBuffer>();
-    m_gbuffer->Init(w, h);
     m_bspRenderer = std::make_unique<R_BSP>();
+    m_decalRenderer = std::make_unique<R_Decals>();
+    m_decalRenderer->Init();
 
     if (!m_gbufferShader.Load("shaders/gbuffer.vert", "shaders/gbuffer.frag"))
     {
@@ -143,7 +144,7 @@ void Renderer::GeometryPass(Camera& camera, int renderW, int renderH, bool drawW
 
     bgfx::setViewClear(geoView, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH | BGFX_CLEAR_STENCIL, 0x1A1A1AFF, 1.0f, 0);
     bgfx::setViewRect(geoView, 0, 0, (uint16_t)renderW, (uint16_t)renderH);
-    bgfx::setViewFrameBuffer(geoView, BGFX_INVALID_HANDLE);
+    bgfx::setViewFrameBuffer(geoView, m_gbuffer->GetFBO());
 
     glm::mat4 view = camera.GetViewMatrix();
     glm::mat4 proj = camera.GetProjectionMatrix();
@@ -152,6 +153,7 @@ void Renderer::GeometryPass(Camera& camera, int renderW, int renderH, bool drawW
     Frustum frustum = camera.GetFrustum();
 
     m_bspRenderer->Draw(m_gbufferShader, geoView, frustum, camera.position);
+    m_decalRenderer->Draw(geoView, camera, frustum, Decals::GetActiveDecals());
 }
 
 void Renderer::DrawSceneDepth(R_Shader& shader, const struct Frustum& frustum)
@@ -180,6 +182,12 @@ void Renderer::Shutdown()
     {
         m_bspRenderer->Shutdown();
         m_bspRenderer.reset();
+    }
+
+    if (m_decalRenderer)
+    {
+        m_decalRenderer->Shutdown();
+        m_decalRenderer.reset();
     }
 
     if (m_uiRenderer)
