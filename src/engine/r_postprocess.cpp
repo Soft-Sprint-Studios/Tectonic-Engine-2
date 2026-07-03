@@ -60,6 +60,9 @@ bool R_PostProcess::Init(int width, int height, bgfx::TextureHandle depthTexture
         .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
         .end();
 
+    m_autoExposure = std::make_unique<R_AutoExposure>();
+    m_autoExposure->Init();
+
     SetupBuffers(depthTexture);
     return true;
 }
@@ -99,6 +102,8 @@ void R_PostProcess::Begin()
 
 void R_PostProcess::Draw(const Camera& camera, bgfx::TextureHandle depthTexture)
 {
+    m_autoExposure->Render(RenderView::AutoExposure, m_texture, m_width, m_height);
+
     bgfx::ViewId viewId = RenderView::PostProcess;
 
     bgfx::setViewClear(viewId, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x000000FF, 1.0f, 0);
@@ -122,6 +127,8 @@ void R_PostProcess::Draw(const Camera& camera, bgfx::TextureHandle depthTexture)
 
     float fogParams[4] = { ppSettings.fogEnabled ? 1.0f : 0.0f, ppSettings.fogStart, ppSettings.fogEnd, ppSettings.fogAffectsSky ? 1.0f : 0.0f };
     bgfx::setUniform(m_uFogParams, fogParams);
+
+    m_autoExposure->Bind();
 
     bgfx::setTexture(0, m_sSceneTexture, m_texture);
     bgfx::setTexture(1, m_sDepthTexture, depthTexture);
@@ -179,6 +186,12 @@ void R_PostProcess::Shutdown()
         bgfx::destroy(m_uFogColor);
     if (bgfx::isValid(m_uFogParams)) 
         bgfx::destroy(m_uFogParams);
+
+    if (m_autoExposure)
+    {
+        m_autoExposure->Shutdown();
+        m_autoExposure.reset();
+    }
 
     m_sSceneTexture = m_sDepthTexture = m_uParams = m_uColorParams = m_uFogColor = m_uFogParams = BGFX_INVALID_HANDLE;
 }

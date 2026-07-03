@@ -63,3 +63,17 @@ bool R_Shader::Load(const std::string& vertPath, const std::string& fragPath, co
     m_program = bgfx::createProgram(vsh, fsh, true);
     return bgfx::isValid(m_program);
 }
+
+bool R_Shader::LoadCompute(const std::string& path)
+{
+    bgfx::ShaderHandle csh = LoadShaderBinary(path + ".bin");
+
+    if (!bgfx::isValid(csh))
+    {
+        Console::Error("Failed to load compute shader binary for " + path);
+        return false;
+    }
+
+    m_program = bgfx::createProgram(csh, true);
+    return bgfx::isValid(m_program);
+}

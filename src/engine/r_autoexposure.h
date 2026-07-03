@@ -22,24 +22,31 @@
  * SOFTWARE.
  */
 #pragma once
+#include "r_shader.h"
 #include <bgfx/bgfx.h>
-#include <string>
 
-class R_Shader
+class R_AutoExposure
 {
 public:
-    R_Shader();
-    ~R_Shader();
+    R_AutoExposure();
+    ~R_AutoExposure();
 
-    bool Load(const std::string& vertPath, const std::string& fragPath, const std::string& geomPath = "");
-    bool LoadCompute(const std::string& path);
-
-    bgfx::ProgramHandle GetProgram() const
-    {
-        return m_program;
-    }
+    void Init();
+    void Render(bgfx::ViewId viewId, bgfx::TextureHandle screenTexture, int width, int height);
+    void Bind();
+    void Shutdown();
 
 private:
-    bgfx::ShaderHandle LoadShaderBinary(const std::string& path);
-    bgfx::ProgramHandle m_program = BGFX_INVALID_HANDLE;
+    R_Shader m_clearShader;
+    R_Shader m_histogramShader;
+    R_Shader m_averageShader;
+
+    bgfx::DynamicVertexBufferHandle m_histogramBuffer = BGFX_INVALID_HANDLE;
+    bgfx::DynamicVertexBufferHandle m_lumBuffer = BGFX_INVALID_HANDLE;
+
+    bgfx::UniformHandle m_uExposureParams1 = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uExposureParams2 = BGFX_INVALID_HANDLE;
+
+    bgfx::VertexLayout m_uintLayout;
+    bgfx::VertexLayout m_vec4Layout;
 };

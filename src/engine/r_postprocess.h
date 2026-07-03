@@ -23,6 +23,7 @@
  */
 #pragma once
 #include "r_shader.h"
+#include "r_autoexposure.h"
 #include "camera.h"
 #include <bgfx/bgfx.h>
 #include <memory>
@@ -67,4 +68,7 @@ private:
 
     int m_width = 0;
     int m_height = 0;
+
+    // Postprocess subrenderers
+    std::unique_ptr<R_AutoExposure> m_autoExposure;
 };

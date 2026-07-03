@@ -34,6 +34,8 @@ uniform vec4 u_fogParams;
 #define u_fogEnd        u_fogParams.z
 #define u_fogAffectsSky (u_fogParams.w > 0.5)
 
+StructuredBuffer<vec4> u_exposureData : register(t2);
+
 float random(vec2 st) 
 {
     return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
@@ -127,8 +129,8 @@ void main()
 
     vec3 hdrColor = sampledColor;
 
-    // Fallback exposure scale
-    hdrColor *= 1.0;
+    float exposure = u_exposureData[0].x;
+    hdrColor *= exposure;
     
     // Keep SSAO, SSR, Bloom, Volumetrics commented out for now
     /*

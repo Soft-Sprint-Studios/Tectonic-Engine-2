@@ -47,13 +47,14 @@ namespace RenderView
         GBuffer = 2,
         Resolve = 3,
         Forward = 4,
-        PostProcess = 5,
-        UI = 6,
-        CSM_0 = 7,
-        CSM_1 = 8,
-        CSM_2 = 9,
-        CSM_3 = 10,
-        ShadowBase = 11
+        AutoExposure = 5,
+        PostProcess = 6,
+        UI = 7,
+        CSM_0 = 8,
+        CSM_1 = 9,
+        CSM_2 = 10,
+        CSM_3 = 11,
+        ShadowBase = 12
     };
 }
 
