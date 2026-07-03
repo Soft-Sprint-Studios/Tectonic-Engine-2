@@ -99,6 +99,8 @@ bool Renderer::Init(Window& window)
     m_waterRenderer = std::make_unique<R_Water>();
     m_waterRenderer->Init(w, h);
     m_skyRenderer = std::make_unique<R_Sky>();
+    m_glassRenderer = std::make_unique<R_Glass>();
+    m_glassRenderer->Init(w, h);
     m_postProcess = std::make_unique<R_PostProcess>();
     m_postProcess->Init(w, h, m_gbuffer->GetDepthTex());
 
@@ -251,6 +253,10 @@ void Renderer::OnWindowResize(int w, int h)
     {
         m_waterRenderer->Rescale(w, h);
     }
+    if (m_glassRenderer)
+    {
+        m_glassRenderer->Rescale(w, h);
+    }
     if (m_postProcess)
     {
         m_postProcess->Rescale(w, h, m_gbuffer->GetDepthTex());
@@ -309,6 +315,12 @@ void Renderer::Shutdown()
     {
         m_waterRenderer->Shutdown();
         m_waterRenderer.reset();
+    }
+
+    if (m_glassRenderer)
+    {
+        m_glassRenderer->Shutdown();
+        m_glassRenderer.reset();
     }
 
     if (bgfx::isValid(m_sDepth))
@@ -428,4 +440,12 @@ void Renderer::ForwardPass(Camera& camera, bgfx::ViewId viewId, int renderW, int
     {
         m_skyRenderer->Draw(viewId, camera);
     }
+
+    m_glassRenderer->CaptureScreen(RenderView::GlassBlit, m_postProcess->GetTexture());
+
+    bgfx::setViewRect(RenderView::GlassDraw, 0, 0, (uint16_t)renderW, (uint16_t)renderH);
+    bgfx::setViewFrameBuffer(RenderView::GlassDraw, m_postProcess->GetFBO());
+    bgfx::setViewTransform(RenderView::GlassDraw, glm::value_ptr(camera.GetViewMatrix()), glm::value_ptr(camera.GetProjectionMatrix()));
+
+    m_glassRenderer->Draw(RenderView::GlassDraw, camera, m_bspRenderer.get());
 }

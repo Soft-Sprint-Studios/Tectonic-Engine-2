@@ -22,3 +22,4 @@ vec3 v_tbn0      : TEXCOORD5;
 vec3 v_tbn1      : TEXCOORD6;
 vec3 v_tbn2      : TEXCOORD7;
 vec3 v_dir       : TEXCOORD8;
+vec4 v_screenPos : TEXCOORD9;
