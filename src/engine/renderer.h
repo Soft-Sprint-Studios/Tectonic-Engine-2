@@ -33,6 +33,7 @@
 #include "r_decals.h"
 #include "r_lights.h"
 #include "r_postprocess.h"
+#include "r_water.h"
 #include <bgfx/bgfx.h>
 #include <memory>
 
@@ -40,16 +41,18 @@ namespace RenderView
 {
     enum Enum : bgfx::ViewId
     {
-        GBuffer = 0,
-        Resolve = 1,
-        Forward = 2,
-        PostProcess = 3,
-        UI = 4,
-        CSM_0 = 5,
-        CSM_1 = 6,
-        CSM_2 = 7,
-        CSM_3 = 8,
-        ShadowBase = 9
+        ReflectionGBuffer = 0,
+        WaterReflection = 1,
+        GBuffer = 2,
+        Resolve = 3,
+        Forward = 4,
+        PostProcess = 5,
+        UI = 6,
+        CSM_0 = 7,
+        CSM_1 = 8,
+        CSM_2 = 9,
+        CSM_3 = 10,
+        ShadowBase = 11
     };
 }
 
@@ -63,7 +66,7 @@ public:
     bool LoadMap(const std::string& path);
     void Shutdown();
     void Render(Camera& camera);
-    void RenderWorld(Camera& camera, uint32_t cubemapToExclude = 0, bool drawWater = true);
+    void RenderWorld(Camera& camera, uint32_t cubemapToExclude = 0, bool drawWater = true, bgfx::ViewId geoView = RenderView::GBuffer, bgfx::ViewId lightingView = RenderView::Resolve, bgfx::FrameBufferHandle targetFB = BGFX_INVALID_HANDLE);
     void DrawSceneDepth(bgfx::ViewId viewId, R_Shader& shader, const struct Frustum& frustum);
     void OnWindowResize(int w, int h);
 
@@ -73,8 +76,8 @@ public:
     }
 
 private:
-    void GeometryPass(Camera& camera, int renderW, int renderH, bool drawWater);
-    void LightingPass(Camera& camera, uint32_t cubemapToExclude, int targetFBO, int renderW, int renderH, int w, int h);
+    void GeometryPass(Camera& camera, int renderW, int renderH, bool drawWater, bgfx::ViewId geoView = RenderView::GBuffer);
+    void LightingPass(Camera& camera, uint32_t cubemapToExclude, int targetFBO, int renderW, int renderH, int w, int h, bgfx::ViewId lightingView = RenderView::Resolve, bgfx::FrameBufferHandle targetFB = BGFX_INVALID_HANDLE);
     void ForwardPass(Camera& camera, int targetFBO, int renderW, int renderH);
 
     Window* m_windowRef;
@@ -88,6 +91,7 @@ private:
     std::unique_ptr<R_Models> m_modelRenderer;
     std::unique_ptr<R_Decals> m_decalRenderer;
     std::unique_ptr<R_Lights> m_lightRenderer;
+    std::unique_ptr<R_Water> m_waterRenderer;
     std::unique_ptr<R_PostProcess> m_postProcess;
 
     bgfx::UniformHandle m_sDepth = BGFX_INVALID_HANDLE;

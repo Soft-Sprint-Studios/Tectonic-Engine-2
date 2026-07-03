@@ -82,6 +82,7 @@ bool Renderer::Init(Window& window)
         return false;
     }
 
+    m_mainView = RenderView::PostProcess;
     bgfx::setViewClear(m_mainView, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x0000FFFF, 1.0f, 0);
     bgfx::setViewRect(m_mainView, 0, 0, (uint16_t)w, (uint16_t)h);
 
@@ -95,6 +96,8 @@ bool Renderer::Init(Window& window)
     m_decalRenderer->Init();
     m_lightRenderer = std::make_unique<R_Lights>();
     m_lightRenderer->Init();
+    m_waterRenderer = std::make_unique<R_Water>();
+    m_waterRenderer->Init(w, h);
     m_postProcess = std::make_unique<R_PostProcess>();
     m_postProcess->Init(w, h, m_gbuffer->GetDepthTex());
 
@@ -148,6 +151,12 @@ bool Renderer::LoadMap(const std::string& path)
 
     Physics::AddBSPCollision(map.collision.vertices, map.collision.indices);
 
+    m_waterRenderer->ClearSurfaces();
+    for (const auto& ws : map.waterSurfaces)
+    {
+        m_waterRenderer->AddSurface({ ws.start, ws.count, ws.height, ws.textureName });
+    }
+
     for (const auto& entData : map.entities)
     {
         EntityManager::SpawnEntity(entData.className, entData);
@@ -160,6 +169,11 @@ void Renderer::Render(Camera& camera)
 {
     bgfx::touch(m_mainView);
 
+    if (CVar::GetInt("r_water", 1) > 0)
+    {
+        m_waterRenderer->RenderReflection(this, camera);
+    }
+
     m_lightRenderer->RenderShadowMaps(camera, this);
 
     RenderWorld(camera);
@@ -169,23 +183,29 @@ void Renderer::Render(Camera& camera)
     bgfx::frame();
 }
 
-void Renderer::RenderWorld(Camera& camera, uint32_t cubemapToExclude, bool drawWater)
+void Renderer::RenderWorld(Camera& camera, uint32_t cubemapToExclude, bool drawWater, bgfx::ViewId geoView, bgfx::ViewId lightingView, bgfx::FrameBufferHandle targetFB)
 {
     int w, h;
     SDL_GetWindowSize(m_windowRef->Get(), &w, &h);
 
-    GeometryPass(camera, w, h, drawWater);
+    GeometryPass(camera, w, h, drawWater, geoView);
 
-    m_postProcess->Begin();
-    LightingPass(camera, cubemapToExclude, 0, w, h, w, h);
+    if (lightingView == RenderView::Resolve)
+    {
+        m_postProcess->Begin();
+    }
 
-    m_postProcess->Draw(camera, m_gbuffer->GetDepthTex());
+    int ds = (lightingView == RenderView::WaterReflection) ? std::max(1, CVar::GetInt("r_water_downsample", 2)) : 1;
+    LightingPass(camera, cubemapToExclude, 0, w / ds, h / ds, w / ds, h / ds, lightingView, targetFB);
+
+    if (lightingView == RenderView::Resolve)
+    {
+        m_postProcess->Draw(camera, m_gbuffer->GetDepthTex());
+    }
 }
 
-void Renderer::GeometryPass(Camera& camera, int renderW, int renderH, bool drawWater)
+void Renderer::GeometryPass(Camera& camera, int renderW, int renderH, bool drawWater, bgfx::ViewId geoView)
 {
-    bgfx::ViewId geoView = RenderView::GBuffer;
-
     bgfx::setViewClear(geoView, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH | BGFX_CLEAR_STENCIL, 0x1A1A1AFF, 1.0f, 0);
     bgfx::setViewRect(geoView, 0, 0, (uint16_t)renderW, (uint16_t)renderH);
     bgfx::setViewFrameBuffer(geoView, m_gbuffer->GetFBO());
@@ -199,6 +219,10 @@ void Renderer::GeometryPass(Camera& camera, int renderW, int renderH, bool drawW
     m_bspRenderer->Draw(m_gbufferShader, geoView, frustum, camera.position);
     m_modelRenderer->Draw(geoView, m_gbufferShader, frustum, false);
     m_decalRenderer->Draw(geoView, camera, frustum, Decals::GetActiveDecals());
+    if (drawWater && r_water.GetInt() > 0)
+    {
+        m_waterRenderer->Draw(geoView, camera, m_bspRenderer->GetVBO(), m_bspRenderer->GetLightmapTexture());
+    }
 }
 
 void Renderer::DrawSceneDepth(bgfx::ViewId viewId, R_Shader& shader, const struct Frustum& frustum)
@@ -214,6 +238,10 @@ void Renderer::OnWindowResize(int w, int h)
     if (m_gbuffer)
     {
         m_gbuffer->Rescale(w, h);
+    }
+    if (m_waterRenderer)
+    {
+        m_waterRenderer->Rescale(w, h);
     }
     if (m_postProcess)
     {
@@ -263,6 +291,12 @@ void Renderer::Shutdown()
         m_postProcess.reset();
     }
 
+    if (m_waterRenderer)
+    {
+        m_waterRenderer->Shutdown();
+        m_waterRenderer.reset();
+    }
+
     if (bgfx::isValid(m_sDepth))
     {
         bgfx::destroy(m_sDepth);
@@ -295,13 +329,11 @@ void Renderer::Shutdown()
     bgfx::shutdown();
 }
 
-void Renderer::LightingPass(Camera& camera, uint32_t cubemapToExclude, int targetFBO, int renderW, int renderH, int w, int h)
+void Renderer::LightingPass(Camera& camera, uint32_t cubemapToExclude, int targetFBO, int renderW, int renderH, int w, int h, bgfx::ViewId lightingView, bgfx::FrameBufferHandle targetFB)
 {
-    bgfx::ViewId lightingView = RenderView::Resolve;
-
     bgfx::setViewClear(lightingView, BGFX_CLEAR_COLOR, 0x000000FF, 1.0f, 0);
     bgfx::setViewRect(lightingView, 0, 0, (uint16_t)w, (uint16_t)h);
-    bgfx::setViewFrameBuffer(lightingView, m_postProcess->GetFBO());
+    bgfx::setViewFrameBuffer(lightingView, bgfx::isValid(targetFB) ? targetFB : m_postProcess->GetFBO());
 
     glm::mat4 view = camera.GetViewMatrix();
     glm::mat4 proj = camera.GetProjectionMatrix();

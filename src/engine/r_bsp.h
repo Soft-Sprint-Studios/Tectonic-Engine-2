@@ -69,6 +69,11 @@ public:
         return m_lightmapTexture;
     }
 
+    bgfx::VertexBufferHandle GetVBO() const
+    {
+        return m_vbo;
+    }
+
 private:
     bgfx::VertexLayout m_layout;
     bgfx::VertexBufferHandle m_vbo = BGFX_INVALID_HANDLE;
