@@ -310,8 +310,7 @@ void Renderer::LightingPass(Camera& camera, uint32_t cubemapToExclude, int targe
 
     float vp[4] = { camera.position.x, camera.position.y, camera.position.z, 0.0f };
     bgfx::setUniform(m_uViewPosLocal, vp);
-    
-    // todo fix crash
+
     m_lightRenderer->Bind(m_resolveShader);
     bgfx::setTexture(13, m_sCsmArray, m_lightRenderer->GetCascadeShadowTexture());
     bgfx::setTexture(14, m_sSpotShadowMaps, m_lightRenderer->GetSpotShadowTexture());
