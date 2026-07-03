@@ -237,7 +237,7 @@ void R_Models::LoadModel(const std::string& path)
     m_propGroups[path] = group;
 }
 
-void R_Models::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOnly)
+void R_Models::Draw(bgfx::ViewId viewId, const R_Shader& shader, const Frustum& frustum, bool depthOnly)
 {
     // 1. Render static props (Instanced)
     for (auto& [path, group] : m_propGroups)
@@ -302,7 +302,7 @@ void R_Models::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOn
                 bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LESS | BGFX_STATE_CULL_CW);
             }
 
-            bgfx::submit(RenderView::GBuffer, shader.GetProgram());
+            bgfx::submit(viewId, shader.GetProgram());
         }
     }
 
@@ -377,11 +377,11 @@ void R_Models::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOn
         {
             std::vector<glm::mat4> bones;
             Animation::GetSkinMatrices(*data, p->m_nodeStates, bones);
-            DrawSkinned(shader, p->m_modelPath, mat, bones, depthOnly);
+            DrawSkinned(viewId, shader, p->m_modelPath, mat, bones, depthOnly);
         }
         else
         {
-            DrawSkinned(shader, p->m_modelPath, mat * p->m_nodeStates[0].globalMatrix, {}, depthOnly);
+            DrawSkinned(viewId, shader, p->m_modelPath, mat * p->m_nodeStates[0].globalMatrix, {}, depthOnly);
         }
     }
 
@@ -401,13 +401,13 @@ void R_Models::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOn
                 mat = glm::rotate(mat, glm::radians(a.y), { 0, 1, 0 });
                 mat = glm::scale(mat, glm::vec3(0.025f));
 
-                DrawSkinned(shader, modelPath, mat, {}, depthOnly);
+                DrawSkinned(viewId, shader, modelPath, mat, {}, depthOnly);
             }
         }
     }
 }
 
-void R_Models::DrawSkinned(const R_Shader& shader, const std::string& modelPath, const glm::mat4& transform, const std::vector<glm::mat4>& boneMatrices, bool depthOnly)
+void R_Models::DrawSkinned(bgfx::ViewId viewId, const R_Shader& shader, const std::string& modelPath, const glm::mat4& transform, const std::vector<glm::mat4>& boneMatrices, bool depthOnly)
 {
     if (m_propGroups.find(modelPath) == m_propGroups.end())
     {
@@ -450,7 +450,7 @@ void R_Models::DrawSkinned(const R_Shader& shader, const std::string& modelPath,
             bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LESS | BGFX_STATE_CULL_CW);
         }
 
-        bgfx::submit(RenderView::GBuffer, shader.GetProgram());
+        bgfx::submit(viewId, shader.GetProgram());
     }
 }
 

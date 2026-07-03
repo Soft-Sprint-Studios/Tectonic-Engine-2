@@ -32,6 +32,7 @@
 #include "r_models.h"
 #include "r_decals.h"
 #include "r_lights.h"
+#include "r_postprocess.h"
 #include <bgfx/bgfx.h>
 #include <memory>
 
@@ -41,12 +42,14 @@ namespace RenderView
     {
         GBuffer = 0,
         Resolve = 1,
-        UI = 2,
-        CSM_0 = 3,
-        CSM_1 = 4,
-        CSM_2 = 5,
-        CSM_3 = 6,
-        ShadowBase = 7
+        Forward = 2,
+        PostProcess = 3,
+        UI = 4,
+        CSM_0 = 5,
+        CSM_1 = 6,
+        CSM_2 = 7,
+        CSM_3 = 8,
+        ShadowBase = 9
     };
 }
 
@@ -85,6 +88,7 @@ private:
     std::unique_ptr<R_Models> m_modelRenderer;
     std::unique_ptr<R_Decals> m_decalRenderer;
     std::unique_ptr<R_Lights> m_lightRenderer;
+    std::unique_ptr<R_PostProcess> m_postProcess;
 
     bgfx::UniformHandle m_sDepth = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle m_sNormal = BGFX_INVALID_HANDLE;

@@ -76,8 +76,7 @@ void R_Decals::Draw(bgfx::ViewId viewId, const Camera& camera, const Frustum& fr
 
     uint64_t state = BGFX_STATE_WRITE_RGB 
                    | BGFX_STATE_WRITE_A 
-                   | BGFX_STATE_DEPTH_TEST_LESS 
-                   | BGFX_STATE_BLEND_ALPHA;
+                   | BGFX_STATE_DEPTH_TEST_LESS;
 
     for (auto& [texName, matrices] : groups)
     {

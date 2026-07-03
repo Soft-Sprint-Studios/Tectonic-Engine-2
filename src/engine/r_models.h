@@ -65,8 +65,8 @@ public:
 
     bool Init(const BSP::MapData& mapData);
     void LoadModel(const std::string& path);
-    void Draw(const R_Shader& shader, const Frustum& frustum, bool depthOnly = false);
-    void DrawSkinned(const R_Shader& shader, const std::string& modelPath, const glm::mat4& transform, const std::vector<glm::mat4>& boneMatrices, bool depthOnly = false);
+    void Draw(bgfx::ViewId viewId, const R_Shader& shader, const Frustum& frustum, bool depthOnly = false);
+    void DrawSkinned(bgfx::ViewId viewId, const R_Shader& shader, const std::string& modelPath, const glm::mat4& transform, const std::vector<glm::mat4>& boneMatrices, bool depthOnly = false);
 
     GLTF::ModelData* GetModelData(const std::string& path);
     btCollisionShape* GetPhysicsShape(const std::string& path);
