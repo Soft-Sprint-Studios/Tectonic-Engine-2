@@ -50,7 +50,9 @@ bool R_PostProcess::Init(int width, int height, bgfx::TextureHandle depthTexture
 
     m_sSceneTexture = bgfx::createUniform("u_screenTexture", bgfx::UniformType::Sampler);
     m_sDepthTexture = bgfx::createUniform("u_depthTexture", bgfx::UniformType::Sampler);
+    m_sBloomTexture = bgfx::createUniform("u_bloomTexture", bgfx::UniformType::Sampler);
     m_uParams = bgfx::createUniform("u_params", bgfx::UniformType::Vec4);
+    m_uBloomParams = bgfx::createUniform("u_bloomParams", bgfx::UniformType::Vec4);
     m_uColorParams = bgfx::createUniform("u_colorParams", bgfx::UniformType::Vec4, 2);
     m_uFogColor = bgfx::createUniform("u_fogColor", bgfx::UniformType::Vec4);
     m_uFogParams = bgfx::createUniform("u_fogParams", bgfx::UniformType::Vec4);
@@ -62,6 +64,9 @@ bool R_PostProcess::Init(int width, int height, bgfx::TextureHandle depthTexture
 
     m_autoExposure = std::make_unique<R_AutoExposure>();
     m_autoExposure->Init();
+
+    m_bloom = std::make_unique<R_Bloom>();
+    m_bloom->Init(m_width, m_height);
 
     SetupBuffers(depthTexture);
     return true;
@@ -103,6 +108,7 @@ void R_PostProcess::Begin()
 void R_PostProcess::Draw(const Camera& camera, bgfx::TextureHandle depthTexture)
 {
     m_autoExposure->Render(RenderView::AutoExposure, m_texture, m_width, m_height);
+    m_bloom->Render(RenderView::Bloom, m_texture, m_width, m_height);
 
     bgfx::ViewId viewId = RenderView::PostProcess;
 
@@ -129,6 +135,10 @@ void R_PostProcess::Draw(const Camera& camera, bgfx::TextureHandle depthTexture)
     bgfx::setUniform(m_uFogParams, fogParams);
 
     m_autoExposure->Bind();
+    m_bloom->Bind(m_sBloomTexture);
+
+    float bloomParams[4] = { CVar::GetInt("r_bloom", 1) > 0 ? 1.0f : 0.0f, CVar::GetFloat("r_bloom_intensity", 2.0f), 0.0f, 0.0f };
+    bgfx::setUniform(m_uBloomParams, bloomParams);
 
     bgfx::setTexture(0, m_sSceneTexture, m_texture);
     bgfx::setTexture(1, m_sDepthTexture, depthTexture);
@@ -159,6 +169,7 @@ void R_PostProcess::Rescale(int width, int height, bgfx::TextureHandle depthText
 {
     m_width = width;
     m_height = height;
+    m_bloom->Rescale(width, height);
     SetupBuffers(depthTexture);
 }
 
@@ -178,8 +189,12 @@ void R_PostProcess::Shutdown()
         bgfx::destroy(m_sSceneTexture);
     if (bgfx::isValid(m_sDepthTexture))
         bgfx::destroy(m_sDepthTexture);
+    if (bgfx::isValid(m_sBloomTexture))
+        bgfx::destroy(m_sBloomTexture);
     if (bgfx::isValid(m_uParams))
         bgfx::destroy(m_uParams);
+    if (bgfx::isValid(m_uBloomParams))
+        bgfx::destroy(m_uBloomParams);
     if (bgfx::isValid(m_uColorParams)) 
         bgfx::destroy(m_uColorParams);
     if (bgfx::isValid(m_uFogColor))
@@ -193,5 +208,11 @@ void R_PostProcess::Shutdown()
         m_autoExposure.reset();
     }
 
-    m_sSceneTexture = m_sDepthTexture = m_uParams = m_uColorParams = m_uFogColor = m_uFogParams = BGFX_INVALID_HANDLE;
+    if (m_bloom)
+    {
+        m_bloom->Shutdown();
+        m_bloom.reset();
+    }
+
+    m_sSceneTexture = m_sDepthTexture = m_sBloomTexture = m_uParams = m_uBloomParams = m_uColorParams = m_uFogColor = m_uFogParams = BGFX_INVALID_HANDLE;
 }

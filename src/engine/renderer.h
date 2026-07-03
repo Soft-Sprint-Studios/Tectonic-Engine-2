@@ -56,16 +56,17 @@ namespace RenderView
         Resolve = 3,
         Forward = 4,
         AutoExposure = 5,
-        GlassBlit = 6,
-        GlassDraw = 7,
-        TransparentDraw = 8,
-        PostProcess = 9,
-        UI = 10,
-        CSM_0 = 11,
-        CSM_1 = 12,
-        CSM_2 = 13,
-        CSM_3 = 14,
-        ShadowBase = 15
+        Bloom = 6,
+        GlassBlit = 7,
+        GlassDraw = 8,
+        TransparentDraw = 9,
+        PostProcess = 10,
+        UI = 11,
+        CSM_0 = 12,
+        CSM_1 = 13,
+        CSM_2 = 14,
+        CSM_3 = 15,
+        ShadowBase = 16
     };
 }
 

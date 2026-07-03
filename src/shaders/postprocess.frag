@@ -5,7 +5,7 @@ $input v_texcoord0
 SAMPLER2D(u_screenTexture, 0);
 SAMPLER2D(u_depthTexture, 1);
 
-// SAMPLER2D(u_bloomTexture, 2);
+SAMPLER2D(u_bloomTexture, 2);
 // SAMPLER2D(u_volumetricTexture, 3);
 // SAMPLER2D(u_ssaoTexture, 4);
 // SAMPLER2D(u_ssrTexture, 5);
@@ -34,7 +34,11 @@ uniform vec4 u_fogParams;
 #define u_fogEnd        u_fogParams.z
 #define u_fogAffectsSky (u_fogParams.w > 0.5)
 
-StructuredBuffer<vec4> u_exposureData : register(t2);
+uniform vec4 u_bloomParams;
+#define u_bloom_enabled int(u_bloomParams.x)
+#define u_bloom_intensity u_bloomParams.y
+
+StructuredBuffer<vec4> u_exposureData : register(t3);
 
 float random(vec2 st) 
 {
@@ -131,8 +135,14 @@ void main()
 
     float exposure = u_exposureData[0].x;
     hdrColor *= exposure;
+
+    if (u_bloom_enabled == 1)
+    {
+        vec3 bloom = texture2D(u_bloomTexture, v_texcoord0).rgb * u_bloom_intensity;
+        hdrColor += bloom;
+    }
     
-    // Keep SSAO, SSR, Bloom, Volumetrics commented out for now
+    // Keep SSAO, SSR, Volumetrics commented out for now
     /*
     if (u_ssao_enabled == 1)
     {
@@ -142,11 +152,6 @@ void main()
     {
         vec4 ssr = texture2D(u_ssrTexture, v_texcoord0);
         hdrColor += ssr.rgb * ssr.a;
-    }
-    if (u_bloom_enabled == 1)
-    {
-        vec3 bloom = texture2D(u_bloomTexture, v_texcoord0).rgb * u_bloom_intensity;
-        hdrColor += bloom;
     }
     if (u_volumetrics_enabled == 1)
     {

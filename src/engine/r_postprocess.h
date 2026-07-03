@@ -24,6 +24,7 @@
 #pragma once
 #include "r_shader.h"
 #include "r_autoexposure.h"
+#include "r_bloom.h"
 #include "camera.h"
 #include <bgfx/bgfx.h>
 #include <memory>
@@ -61,7 +62,9 @@ private:
 
     bgfx::UniformHandle m_sSceneTexture = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle m_sDepthTexture = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sBloomTexture = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle m_uParams = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uBloomParams = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle m_uColorParams = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle m_uFogColor = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle m_uFogParams = BGFX_INVALID_HANDLE;
@@ -71,4 +74,5 @@ private:
 
     // Postprocess subrenderers
     std::unique_ptr<R_AutoExposure> m_autoExposure;
+    std::unique_ptr<R_Bloom> m_bloom;
 };
