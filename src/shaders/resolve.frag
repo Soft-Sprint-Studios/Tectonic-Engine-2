@@ -135,7 +135,7 @@ void main()
         vec3 prefilteredColor = textureCubeLod(s_cubemap, lookup, roughness * 5.0).rgb; 
         vec2 envBRDF = vec2(1.0 - roughness, roughness); 
         
-        //ambientSpecular = prefilteredColor * (F_ambient * envBRDF.x + envBRDF.y) * lightmapLuminance;
+        ambientSpecular = prefilteredColor * (F_ambient * envBRDF.x + envBRDF.y) * lightmapLuminance;
     }
     
     vec3 ambient = (ambientDiffuse + ambientSpecular + specularBaked) * ao;
