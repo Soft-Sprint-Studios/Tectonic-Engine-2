@@ -87,8 +87,7 @@ void R_Particles::Draw(bgfx::ViewId viewId, const Camera& camera)
         uint32_t numVerts = (uint32_t)pts.size() * 4;
         uint32_t numIndices = (uint32_t)pts.size() * 6;
 
-        if (numVerts == bgfx::getAvailTransientVertexBuffer(numVerts, m_layout) &&
-            numIndices == bgfx::getAvailTransientIndexBuffer(numIndices))
+        if (numVerts == bgfx::getAvailTransientVertexBuffer(numVerts, m_layout) && numIndices == bgfx::getAvailTransientIndexBuffer(numIndices))
         {
             bgfx::TransientVertexBuffer tvb;
             bgfx::TransientIndexBuffer tib;
