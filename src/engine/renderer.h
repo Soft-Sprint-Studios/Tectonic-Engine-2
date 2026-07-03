@@ -36,6 +36,8 @@
 #include "r_water.h"
 #include "r_sky.h"
 #include "r_glass.h"
+#include "r_sprites.h"
+#include "r_beams.h"
 #include <bgfx/bgfx.h>
 #include <memory>
 
@@ -51,13 +53,14 @@ namespace RenderView
         AutoExposure = 5,
         GlassBlit = 6,
         GlassDraw = 7,
-        PostProcess = 8,
-        UI = 9,
-        CSM_0 = 10,
-        CSM_1 = 11,
-        CSM_2 = 12,
-        CSM_3 = 13,
-        ShadowBase = 14
+        TransparentDraw = 8,
+        PostProcess = 9,
+        UI = 10,
+        CSM_0 = 11,
+        CSM_1 = 12,
+        CSM_2 = 13,
+        CSM_3 = 14,
+        ShadowBase = 15
     };
 }
 
@@ -99,6 +102,8 @@ private:
     std::unique_ptr<R_Water> m_waterRenderer;
     std::unique_ptr<R_Sky> m_skyRenderer;
     std::unique_ptr<R_Glass> m_glassRenderer;
+    std::unique_ptr<R_Sprites> m_spriteRenderer;
+    std::unique_ptr<R_Beams> m_beamRenderer;
     std::unique_ptr<R_PostProcess> m_postProcess;
 
     bgfx::UniformHandle m_sDepth = BGFX_INVALID_HANDLE;

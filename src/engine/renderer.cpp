@@ -101,6 +101,10 @@ bool Renderer::Init(Window& window)
     m_skyRenderer = std::make_unique<R_Sky>();
     m_glassRenderer = std::make_unique<R_Glass>();
     m_glassRenderer->Init(w, h);
+    m_spriteRenderer = std::make_unique<R_Sprites>();
+    m_spriteRenderer->Init();
+    m_beamRenderer = std::make_unique<R_Beams>();
+    m_beamRenderer->Init();
     m_postProcess = std::make_unique<R_PostProcess>();
     m_postProcess->Init(w, h, m_gbuffer->GetDepthTex());
 
@@ -323,6 +327,18 @@ void Renderer::Shutdown()
         m_glassRenderer.reset();
     }
 
+    if (m_spriteRenderer)
+    {
+        m_spriteRenderer->Shutdown();
+        m_spriteRenderer.reset();
+    }
+
+    if (m_beamRenderer)
+    {
+        m_beamRenderer->Shutdown();
+        m_beamRenderer.reset();
+    }
+
     if (bgfx::isValid(m_sDepth))
     {
         bgfx::destroy(m_sDepth);
@@ -440,12 +456,19 @@ void Renderer::ForwardPass(Camera& camera, bgfx::ViewId viewId, int renderW, int
     {
         m_skyRenderer->Draw(viewId, camera);
     }
-
+   
     m_glassRenderer->CaptureScreen(RenderView::GlassBlit, m_postProcess->GetTexture());
 
-    bgfx::setViewRect(RenderView::GlassDraw, 0, 0, (uint16_t)renderW, (uint16_t)renderH);
-    bgfx::setViewFrameBuffer(RenderView::GlassDraw, m_postProcess->GetFBO());
-    bgfx::setViewTransform(RenderView::GlassDraw, glm::value_ptr(camera.GetViewMatrix()), glm::value_ptr(camera.GetProjectionMatrix()));
+    bgfx::setViewRect(RenderView::TransparentDraw, 0, 0, (uint16_t)renderW, (uint16_t)renderH);
+    bgfx::setViewFrameBuffer(RenderView::TransparentDraw, m_postProcess->GetFBO());
+    bgfx::setViewTransform(RenderView::TransparentDraw, glm::value_ptr(camera.GetViewMatrix()), glm::value_ptr(camera.GetProjectionMatrix()));
 
-    m_glassRenderer->Draw(RenderView::GlassDraw, camera, m_bspRenderer.get());
+    m_glassRenderer->Draw(RenderView::TransparentDraw, camera, m_bspRenderer.get());
+
+    if (CVar::GetInt("r_sprites", 1) > 0)
+    {
+        m_spriteRenderer->Draw(RenderView::TransparentDraw, camera, Sprites::GetActiveSprites());
+    }
+
+    m_beamRenderer->Draw(RenderView::TransparentDraw, camera, Beams::GetActiveBeams());
 }
