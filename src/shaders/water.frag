@@ -67,23 +67,14 @@ void main()
     vec3 worldNormal = N;
     vec3 albedo = reflection * F_reflect;
 
-    // dithering to eliminate 8-bit gbuffer color banding
-	const float bayer[16] = float[]
-    (
-         0.0/16.0,  8.0/16.0,  2.0/16.0, 10.0/16.0,
-        12.0/16.0,  4.0/16.0, 14.0/16.0,  6.0/16.0,
-         3.0/16.0, 11.0/16.0,  1.0/16.0,  9.0/16.0,
-        15.0/16.0,  7.0/16.0, 13.0/16.0,  5.0/16.0
-    );
-    int ditherX = int(gl_FragCoord.x) % 4;
-    int ditherY = int(gl_FragCoord.y) % 4;
-    float ditherValue = bayer[ditherY * 4 + ditherX];
-    albedo.rgb += (ditherValue - 0.5) / 255.0;
+    // Dithering pattern to minimize G-Buffer banding artifacts
+    float ditherValue = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
+    albedo += (ditherValue - 0.5) / 255.0;
 
     vec3 mraoh = vec3(0.0, 0.1, 1.0);
 
     float packed_tx = normalSample.x * 0.5 + 0.5;
-    float packed_ty = u_useBump ? (normalSample.y * 0.5 + 0.5) : 0.0;
+    float packed_ty = normalSample.y * 0.5 + 0.5;
 
     gl_FragData[0] = vec4(EncodeNormal(worldNormal), 0.0, 0.0);
     gl_FragData[1] = vec4(albedo.rgb, packed_tx);
