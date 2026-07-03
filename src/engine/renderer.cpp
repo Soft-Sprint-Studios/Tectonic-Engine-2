@@ -98,6 +98,7 @@ bool Renderer::Init(Window& window)
     m_lightRenderer->Init();
     m_waterRenderer = std::make_unique<R_Water>();
     m_waterRenderer->Init(w, h);
+    m_skyRenderer = std::make_unique<R_Sky>();
     m_postProcess = std::make_unique<R_PostProcess>();
     m_postProcess->Init(w, h, m_gbuffer->GetDepthTex());
 
@@ -148,6 +149,7 @@ bool Renderer::LoadMap(const std::string& path)
 
     m_bspRenderer->Init(map);
     m_modelRenderer->Init(map);
+    m_skyRenderer->Init(map.skyName);
 
     Physics::AddBSPCollision(map.collision.vertices, map.collision.indices);
 
@@ -197,6 +199,11 @@ void Renderer::RenderWorld(Camera& camera, uint32_t cubemapToExclude, bool drawW
 
     int ds = (lightingView == RenderView::WaterReflection) ? std::max(1, CVar::GetInt("r_water_downsample", 2)) : 1;
     LightingPass(camera, cubemapToExclude, 0, w / ds, h / ds, w / ds, h / ds, lightingView, targetFB);
+
+    if (lightingView == RenderView::Resolve)
+    {
+        ForwardPass(camera, RenderView::Forward, w, h);
+    }
 
     if (lightingView == RenderView::Resolve)
     {
@@ -265,6 +272,12 @@ void Renderer::Shutdown()
     {
         m_bspRenderer->Shutdown();
         m_bspRenderer.reset();
+    }
+
+    if (m_skyRenderer)
+    {
+        m_skyRenderer->Shutdown();
+        m_skyRenderer.reset();
     }
 
     if (m_modelRenderer)
@@ -405,6 +418,13 @@ void Renderer::LightingPass(Camera& camera, uint32_t cubemapToExclude, int targe
     bgfx::submit(lightingView, m_resolveShader.GetProgram());
 }
 
-void Renderer::ForwardPass(Camera& camera, int targetFBO, int renderW, int renderH)
+void Renderer::ForwardPass(Camera& camera, bgfx::ViewId viewId, int renderW, int renderH)
 {
+    bgfx::setViewRect(viewId, 0, 0, (uint16_t)renderW, (uint16_t)renderH);
+    bgfx::setViewFrameBuffer(viewId, m_postProcess->GetFBO());
+
+    if (CVar::GetInt("r_skybox") > 0)
+    {
+        m_skyRenderer->Draw(viewId, camera);
+    }
 }

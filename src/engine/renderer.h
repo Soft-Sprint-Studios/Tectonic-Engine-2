@@ -34,6 +34,7 @@
 #include "r_lights.h"
 #include "r_postprocess.h"
 #include "r_water.h"
+#include "r_sky.h"
 #include <bgfx/bgfx.h>
 #include <memory>
 
@@ -78,7 +79,7 @@ public:
 private:
     void GeometryPass(Camera& camera, int renderW, int renderH, bool drawWater, bgfx::ViewId geoView = RenderView::GBuffer);
     void LightingPass(Camera& camera, uint32_t cubemapToExclude, int targetFBO, int renderW, int renderH, int w, int h, bgfx::ViewId lightingView = RenderView::Resolve, bgfx::FrameBufferHandle targetFB = BGFX_INVALID_HANDLE);
-    void ForwardPass(Camera& camera, int targetFBO, int renderW, int renderH);
+    void ForwardPass(Camera& camera, bgfx::ViewId viewId, int renderW, int renderH);
 
     Window* m_windowRef;
     R_Shader m_gbufferShader;
@@ -92,6 +93,7 @@ private:
     std::unique_ptr<R_Decals> m_decalRenderer;
     std::unique_ptr<R_Lights> m_lightRenderer;
     std::unique_ptr<R_Water> m_waterRenderer;
+    std::unique_ptr<R_Sky> m_skyRenderer;
     std::unique_ptr<R_PostProcess> m_postProcess;
 
     bgfx::UniformHandle m_sDepth = BGFX_INVALID_HANDLE;
