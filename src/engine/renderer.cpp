@@ -176,7 +176,7 @@ void Renderer::RenderWorld(Camera& camera, uint32_t cubemapToExclude, bool drawW
 
 void Renderer::GeometryPass(Camera& camera, int renderW, int renderH, bool drawWater)
 {
-    bgfx::ViewId geoView = 0;
+    bgfx::ViewId geoView = RenderView::GBuffer;
 
     bgfx::setViewClear(geoView, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH | BGFX_CLEAR_STENCIL, 0x1A1A1AFF, 1.0f, 0);
     bgfx::setViewRect(geoView, 0, 0, (uint16_t)renderW, (uint16_t)renderH);
@@ -271,7 +271,7 @@ void Renderer::Shutdown()
 
 void Renderer::LightingPass(Camera& camera, uint32_t cubemapToExclude, int targetFBO, int renderW, int renderH, int w, int h)
 {
-    bgfx::ViewId lightingView = 1;
+    bgfx::ViewId lightingView = RenderView::Resolve;
 
     bgfx::setViewClear(lightingView, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x000000FF, 1.0f, 0);
     bgfx::setViewRect(lightingView, 0, 0, (uint16_t)w, (uint16_t)h);
@@ -312,7 +312,7 @@ void Renderer::LightingPass(Camera& camera, uint32_t cubemapToExclude, int targe
     bgfx::setUniform(m_uViewPosLocal, vp);
     
     // todo fix crash
-    //m_lightRenderer->Bind(m_resolveShader);
+    m_lightRenderer->Bind(m_resolveShader);
     bgfx::setTexture(13, m_sCsmArray, m_lightRenderer->GetCascadeShadowTexture());
     bgfx::setTexture(14, m_sSpotShadowMaps, m_lightRenderer->GetSpotShadowTexture());
     bgfx::setTexture(15, m_sPointShadowMaps, m_lightRenderer->GetPointShadowTexture());

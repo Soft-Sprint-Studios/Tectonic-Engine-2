@@ -143,7 +143,7 @@ void R_Cascade::Render(const Camera& camera, R_Shader& shadowShader, Renderer* r
 
     for (uint16_t i = 0; i < 4; i++)
     {
-        bgfx::ViewId shadowView = 2 + i; // 2-5
+        bgfx::ViewId shadowView = RenderView::CSM_0 + i;
         bgfx::setViewClear(shadowView, BGFX_CLEAR_DEPTH, 0, 1.0f, 0);
         bgfx::setViewRect(shadowView, 0, 0, (uint16_t)m_resolution, (uint16_t)m_resolution);
         bgfx::setViewFrameBuffer(shadowView, m_fbo[i]);

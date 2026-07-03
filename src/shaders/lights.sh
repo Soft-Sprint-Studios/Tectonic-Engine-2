@@ -14,17 +14,14 @@ struct LightData
     float pad3;
 };
 
-// Sampler bindings
 SAMPLER2DARRAY(u_spotShadowMaps, 14);
 SAMPLERCUBE(u_pointShadowMaps, 15);
 SAMPLER2DARRAY(u_csmArray, 13);
 
-// Uniform arrays for parameters
 uniform vec4 u_lightParams; // x = u_numPointLights, y = u_numSpotLights
 #define u_numPointLights int(u_lightParams.x)
 #define u_numSpotLights  int(u_lightParams.y)
 
-// Sun/CSM parameters packed into uniforms
 uniform mat4 u_csmMatrices[4];
 uniform vec4 u_csmSplitsLow;
 uniform vec4 u_sunDirVol;

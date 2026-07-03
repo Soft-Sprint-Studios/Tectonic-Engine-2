@@ -21,6 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#include "renderer.h"
 #include "r_ui.h"
 #include "filesystem.h"
 #include "console.h"
@@ -69,6 +70,8 @@ void R_UI::Init(Window* window)
     int w, h;
     SDL_GetWindowSize(window->Get(), &w, &h);
     OnWindowResize(w, h);
+
+    m_viewId = RenderView::UI;
 }
 
 void R_UI::Shutdown()

@@ -76,7 +76,7 @@ private:
         float u, v;
     };
 
-    bgfx::ViewId m_viewId = 10;
+    bgfx::ViewId m_viewId = 2;
     bgfx::VertexLayout m_uiLayout;
     bgfx::TextureHandle m_whiteTexture = BGFX_INVALID_HANDLE;
 

@@ -36,7 +36,8 @@ CVar r_csm_res("r_csm_res", "4096", "Resolution of the CSM shadow map array.", C
 
 R_Lights::R_Lights()
 {
-    m_lightSSBO = BGFX_INVALID_HANDLE;
+    m_pointLightSSBO = BGFX_INVALID_HANDLE;
+    m_spotLightSSBO = BGFX_INVALID_HANDLE;
     m_SpotShadow = BGFX_INVALID_HANDLE;
     m_PointShadow = BGFX_INVALID_HANDLE;
     m_shadowDepthTex = BGFX_INVALID_HANDLE;
@@ -47,7 +48,7 @@ R_Lights::R_Lights()
     m_uLightParams = BGFX_INVALID_HANDLE;
     m_uShadowParams = BGFX_INVALID_HANDLE;
 
-    for (int i = 0; i < 32; i++)
+    for (int i = 0; i < 8; i++)
     {
         m_spotFB[i] = BGFX_INVALID_HANDLE;
         for (int j = 0; j < 6; j++)
@@ -79,12 +80,14 @@ bool R_Lights::Init()
     uint64_t colorRtFlags = BGFX_TEXTURE_RT | BGFX_SAMPLER_U_BORDER | BGFX_SAMPLER_V_BORDER;
 
     m_shadowDepthTex = bgfx::createTexture2D(256, 256, false, 1, bgfx::TextureFormat::D32F, depthRtFlags);
-    m_PointDepth = bgfx::createTextureCube(256, false, 32, bgfx::TextureFormat::D32F, depthRtFlags);
 
-    m_SpotShadow = bgfx::createTexture2D(256, 256, false, 32, bgfx::TextureFormat::RG16F, colorRtFlags);
-    m_PointShadow = bgfx::createTextureCube(256, false, 32, bgfx::TextureFormat::RG16F, colorRtFlags);
+    m_SpotShadow = bgfx::createTexture2D(256, 256, false, 8, bgfx::TextureFormat::RG16F, colorRtFlags);
+    m_PointDepth = bgfx::createTextureCube(256, false, 8, bgfx::TextureFormat::D32F, depthRtFlags);
 
-    for (int i = 0; i < 32; i++)
+    m_SpotShadow = bgfx::createTexture2D(256, 256, false, 8, bgfx::TextureFormat::RG16F, colorRtFlags);
+    m_PointShadow = bgfx::createTextureCube(256, false, 8, bgfx::TextureFormat::RG16F, colorRtFlags);
+
+    for (int i = 0; i < 8; i++)
     {
         bgfx::Attachment at[2];
         at[0].init(m_SpotShadow, bgfx::Access::Write, (uint16_t)i);
@@ -92,7 +95,7 @@ bool R_Lights::Init()
         m_spotFB[i] = bgfx::createFrameBuffer(2, at);
     }
 
-    for (int i = 0; i < 32; i++)
+    for (int i = 0; i < 8; i++)
     {
         for (int face = 0; face < 6; face++)
         {
@@ -110,9 +113,18 @@ bool R_Lights::Init()
 
     m_lightLayout.begin()
         .add(bgfx::Attrib::Position, 4, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::Normal, 4, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::Tangent, 4, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::TexCoord0, 4, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::TexCoord1, 4, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::TexCoord2, 4, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::TexCoord3, 4, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::TexCoord4, 4, bgfx::AttribType::Float)
         .end();
 
-    m_lightSSBO = bgfx::createDynamicVertexBuffer(576, m_lightLayout, BGFX_BUFFER_COMPUTE_READ);
+    m_pointLightSSBO = bgfx::createDynamicVertexBuffer(8, m_lightLayout, BGFX_BUFFER_COMPUTE_READ);
+    m_spotLightSSBO = bgfx::createDynamicVertexBuffer(8, m_lightLayout, BGFX_BUFFER_COMPUTE_READ);
 
     return true;
 }
@@ -123,9 +135,9 @@ void R_Lights::SetupShadowMap(std::shared_ptr<DynamicLight> light)
     if (def.shadowLayer != -1) 
         return;
 
-    if (def.type == LightType::Spot && m_nextSpotLayer < 32)
+    if (def.type == LightType::Spot && m_nextSpotLayer < 8)
         def.shadowLayer = m_nextSpotLayer++;
-    else if (def.type == LightType::Point && m_nextPointLayer < 32)
+    else if (def.type == LightType::Point && m_nextPointLayer < 8)
         def.shadowLayer = m_nextPointLayer++;
 }
 
@@ -138,7 +150,7 @@ void R_Lights::RenderShadowMaps(Camera& camera, Renderer* renderer)
     }
 
     const auto& lights = DynamicLights::GetActiveLights();
-    bgfx::ViewId shadowViewBase = 10; // 10-210
+    bgfx::ViewId shadowViewBase = RenderView::ShadowBase;
 
     for (auto& light : lights)
     {
@@ -277,14 +289,14 @@ void R_Lights::Bind(const R_Shader& shader)
             spots.push_back(gpu);
     }
 
-    std::vector<GPULight> allLights(64);
-    for (size_t i = 0; i < points.size() && i < 32; ++i)
-        allLights[i] = points[i];
-    for (size_t i = 0; i < spots.size() && i < 32; ++i)
-        allLights[32 + i] = spots[i];
+    points.resize(8);
+    spots.resize(8);
 
-    bgfx::update(m_lightSSBO, 0, bgfx::copy(allLights.data(), (uint32_t)(allLights.size() * sizeof(GPULight))));
-    bgfx::setBuffer(10, m_lightSSBO, bgfx::Access::Read);
+    bgfx::update(m_pointLightSSBO, 0, bgfx::copy(points.data(), (uint32_t)(8 * sizeof(GPULight))));
+    bgfx::update(m_spotLightSSBO, 0, bgfx::copy(spots.data(), (uint32_t)(8 * sizeof(GPULight))));
+
+    bgfx::setBuffer(10, m_pointLightSSBO, bgfx::Access::Read);
+    bgfx::setBuffer(11, m_spotLightSSBO, bgfx::Access::Read);
 
     float lightParams[4] = { (float)points.size(), (float)spots.size(), 0.0f, 0.0f };
     bgfx::setUniform(m_uLightParams, lightParams);
@@ -298,7 +310,7 @@ void R_Lights::Shutdown()
         m_cascade.reset();
     }
 
-    for (int i = 0; i < 32; i++)
+    for (int i = 0; i < 8; i++)
     {
         if (bgfx::isValid(m_spotFB[i]))
         {
@@ -317,16 +329,18 @@ void R_Lights::Shutdown()
 
     if (bgfx::isValid(m_SpotShadow))
         bgfx::destroy(m_SpotShadow);
-    if (bgfx::isValid(m_PointShadow)) 
+    if (bgfx::isValid(m_PointShadow))
         bgfx::destroy(m_PointShadow);
     if (bgfx::isValid(m_shadowDepthTex))
         bgfx::destroy(m_shadowDepthTex);
     if (bgfx::isValid(m_PointDepth))
         bgfx::destroy(m_PointDepth);
-    if (bgfx::isValid(m_lightSSBO)) 
-        bgfx::destroy(m_lightSSBO);
+    if (bgfx::isValid(m_pointLightSSBO))
+        bgfx::destroy(m_pointLightSSBO);
+    if (bgfx::isValid(m_spotLightSSBO))
+        bgfx::destroy(m_spotLightSSBO);
 
     m_SpotShadow = m_PointShadow = m_shadowDepthTex = m_PointDepth = BGFX_INVALID_HANDLE;
-    m_lightSSBO = BGFX_INVALID_HANDLE;
+    m_pointLightSSBO = m_spotLightSSBO = BGFX_INVALID_HANDLE;
     m_nextSpotLayer = m_nextPointLayer = 0;
 }

@@ -72,7 +72,8 @@ private:
         float pad[3];
     };
 
-    bgfx::DynamicVertexBufferHandle m_lightSSBO = BGFX_INVALID_HANDLE;
+    bgfx::DynamicVertexBufferHandle m_pointLightSSBO = BGFX_INVALID_HANDLE;
+    bgfx::DynamicVertexBufferHandle m_spotLightSSBO = BGFX_INVALID_HANDLE;
     bgfx::VertexLayout m_lightLayout;
 
     int m_nextSpotLayer = 0;
@@ -87,8 +88,8 @@ private:
     bgfx::TextureHandle m_shadowDepthTex = BGFX_INVALID_HANDLE;
     bgfx::TextureHandle m_PointDepth = BGFX_INVALID_HANDLE;
 
-    bgfx::FrameBufferHandle m_spotFB[32];
-    bgfx::FrameBufferHandle m_pointFB[32][6];
+    bgfx::FrameBufferHandle m_spotFB[8];
+    bgfx::FrameBufferHandle m_pointFB[8][6];
 
     bgfx::UniformHandle m_sSpotShadowMaps = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle m_sPointShadowMaps = BGFX_INVALID_HANDLE;

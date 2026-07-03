@@ -34,6 +34,21 @@
 #include <bgfx/bgfx.h>
 #include <memory>
 
+namespace RenderView
+{
+    enum Enum : bgfx::ViewId
+    {
+        GBuffer = 0,
+        Resolve = 1,
+        UI = 2,
+        CSM_0 = 3,
+        CSM_1 = 4,
+        CSM_2 = 5,
+        CSM_3 = 6,
+        ShadowBase = 7
+    };
+}
+
 class Renderer
 {
 public:
