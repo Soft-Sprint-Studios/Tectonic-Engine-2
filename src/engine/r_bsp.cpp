@@ -161,7 +161,7 @@ void R_BSP::Draw(const R_Shader& shader, bgfx::ViewId viewId, const Frustum& fru
 
         if (!depthOnly)
         {
-            float modelParams[4] = { 0.0f, 0.0f, 1.0f, 0.0f };
+            float modelParams[4] = { 0.0f, 0.0f, 1.0f, 1.0f };
             bgfx::setUniform(m_uModelParams, modelParams);
 
             float bumpHeights[4] = { dc.isBumped ? 1.0f : 0.0f, dc.heightScale1, dc.heightScale2, 0.0f };
@@ -235,7 +235,7 @@ void R_BSP::DrawBModel(int index, const R_Shader& shader, bgfx::ViewId viewId, c
 
         if (!depthOnly)
         {
-            float modelParams[4] = { 0.0f, 0.0f, 1.0f, 0.0f };
+            float modelParams[4] = { 0.0f, 0.0f, 1.0f, 1.0f };
             bgfx::setUniform(m_uModelParams, modelParams);
 
             float bumpHeights[4] = { dc.isBumped ? 1.0f : 0.0f, dc.heightScale1, dc.heightScale2, 0.0f };

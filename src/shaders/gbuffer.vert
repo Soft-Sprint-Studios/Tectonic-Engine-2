@@ -6,7 +6,8 @@ $output v_texcoord0, v_lmCoord, v_lmSize, v_alpha, v_fragPos, v_tbn0, v_tbn1, v_
 uniform vec4 u_modelParams;
 #define u_isInstanced (u_modelParams.x > 0.5)
 #define u_isAnimated  (u_modelParams.y > 0.5)
-#define u_hasLM        (u_modelParams.z > 0.5)
+#define u_hasLM       (u_modelParams.z > 0.5)
+#define u_hasBlending (u_modelParams.w > 0.5)
 
 uniform mat4 u_bones[128];
 
@@ -73,5 +74,5 @@ void main()
         }
     }
 
-    v_alpha = a_texcoord3;
+    v_alpha = u_hasBlending ? a_texcoord3 : 0.0;
 }
