@@ -79,18 +79,18 @@ private:
     bgfx::VertexBufferHandle m_vbo = BGFX_INVALID_HANDLE;
     bgfx::TextureHandle m_lightmapTexture = BGFX_INVALID_HANDLE;
 
-    bgfx::UniformHandle m_sDiffuse;
-    bgfx::UniformHandle m_sNormal;
-    bgfx::UniformHandle m_sMRAO;
-    bgfx::UniformHandle m_sDiffuse2;
-    bgfx::UniformHandle m_sNormal2;
-    bgfx::UniformHandle m_sMRAO2;
-    bgfx::UniformHandle m_sLightmap;
-    bgfx::UniformHandle m_uBumpAndHeights;
-    bgfx::UniformHandle m_uParallaxParams;
-    bgfx::UniformHandle m_uViewPos;
-    bgfx::UniformHandle m_uLightmapParams;
-    bgfx::UniformHandle m_uModelParams;
+    bgfx::UniformHandle m_sDiffuse = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sNormal = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sMRAO = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sDiffuse2 = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sNormal2 = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sMRAO2 = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sLightmap = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uBumpAndHeights = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uParallaxParams = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uViewPos = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uLightmapParams = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uModelParams = BGFX_INVALID_HANDLE;
 
     std::vector<BSPDrawCall> m_drawCalls;
     std::unordered_map<int, BrushModel> m_subModels;

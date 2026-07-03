@@ -107,6 +107,8 @@ bool Renderer::Init(Window& window)
     m_beamRenderer->Init();
     m_cableRenderer = std::make_unique<R_Cables>();
     m_cableRenderer->Init();
+    m_particleRenderer = std::make_unique<R_Particles>();
+    m_particleRenderer->Init();
     m_postProcess = std::make_unique<R_PostProcess>();
     m_postProcess->Init(w, h, m_gbuffer->GetDepthTex());
 
@@ -347,6 +349,12 @@ void Renderer::Shutdown()
         m_cableRenderer.reset();
     }
 
+    if (m_particleRenderer)
+    {
+        m_particleRenderer->Shutdown();
+        m_particleRenderer.reset();
+    }
+
     if (bgfx::isValid(m_sDepth))
     {
         bgfx::destroy(m_sDepth);
@@ -480,4 +488,9 @@ void Renderer::ForwardPass(Camera& camera, bgfx::ViewId viewId, int renderW, int
 
     m_beamRenderer->Draw(RenderView::TransparentDraw, camera, Beams::GetActiveBeams());
     m_cableRenderer->Draw(RenderView::TransparentDraw, camera, Cables::GetActiveCables());
+
+    if (CVar::GetInt("r_particles", 1) > 0)
+    {
+        m_particleRenderer->Draw(RenderView::TransparentDraw, camera);
+    }
 }
