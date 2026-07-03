@@ -15,6 +15,7 @@ StructuredBuffer<vec4> u_lmTransforms : register(t7);
 void main()
 {
     mat4 modelMat = u_model[0];
+
     if (u_isInstanced)
     {
         modelMat = mtxFromCols(i_data0, i_data1, i_data2, i_data3);
@@ -22,10 +23,10 @@ void main()
 
     if (u_isAnimated)
     {
-        mat4 skinMat = a_weight.x * u_bones[a_indices.x] 
-                     + a_weight.y * u_bones[a_indices.y] 
-                     + a_weight.z * u_bones[a_indices.z] 
-                     + a_weight.w * u_bones[a_indices.w];
+        mat4 skinMat = a_weight.x * u_bones[int(a_indices.x)] 
+                     + a_weight.y * u_bones[int(a_indices.y)] 
+                     + a_weight.z * u_bones[int(a_indices.z)] 
+                     + a_weight.w * u_bones[int(a_indices.w)];
         modelMat = mul(modelMat, skinMat);
     }
 
@@ -33,13 +34,12 @@ void main()
     v_fragPos = worldPos.xyz;
     gl_Position = mul(u_viewProj, worldPos);
 
-    mat3 normalMatrix = mat3(modelMat[0].xyz, modelMat[1].xyz, modelMat[2].xyz);
-    vec3 N = normalize(mul(normalMatrix, a_normal));
+    vec3 N = normalize(mul(modelMat, vec4(a_normal, 0.0)).xyz);
     vec3 T = vec3_splat(0.0);
 
     if (length(a_tangent.xyz) > 0.0001)
     {
-        T = normalize(mul(normalMatrix, a_tangent.xyz));
+        T = normalize(mul(modelMat, vec4(a_tangent.xyz, 0.0)).xyz);
         T = normalize(T - dot(T, N) * N);
     }
     else

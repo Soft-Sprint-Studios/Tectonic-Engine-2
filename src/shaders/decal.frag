@@ -13,12 +13,12 @@ uniform vec4 u_params;
 
 void main()
 {
-    mat3 TBN = mat3(v_tbn0, v_tbn1, v_tbn2);
     vec2 finalUV = v_texcoord0;
 
     if (u_parallaxParams.w > 0.5 && u_params.x > 0.0)
     {
-        vec3 tsViewDir = normalize(mul(transpose(TBN), (u_viewPos.xyz - v_fragPos)));
+        vec3 V = u_viewPos.xyz - v_fragPos;
+        vec3 tsViewDir = normalize(vec3(dot(v_tbn0, V), dot(v_tbn1, V), dot(v_tbn2, V)));
         finalUV = ParallaxMapping(s_mraohMap, v_texcoord0, u_params.x, tsViewDir);
     }
 
@@ -33,7 +33,7 @@ void main()
     vec3 tsSample = normalSample.xyz * 2.0 - 1.0;
     vec3 tangentNormal = normalize(tsSample);
 		
-    vec3 worldNormal = normalize(mul(TBN, tangentNormal));
+    vec3 worldNormal = normalize(v_tbn0 * tangentNormal.x + v_tbn1 * tangentNormal.y + v_tbn2 * tangentNormal.z);
     vec4 mraoh = texture2D(s_mraohMap, finalUV);
 
     float packed_tx = tangentNormal.x * 0.5 + 0.5;

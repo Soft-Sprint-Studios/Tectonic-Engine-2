@@ -9,9 +9,8 @@ void main()
     v_fragPos = worldPos.xyz;
     v_texcoord0 = a_texcoord0;
 
-    mat3 normalMatrix = mat3(u_model[0][0].xyz, u_model[0][1].xyz, u_model[0][2].xyz);
-    vec3 N = normalize(mul(normalMatrix, a_normal));
-    vec3 T = normalize(mul(normalMatrix, a_tangent.xyz));
+    vec3 N = normalize(mul(u_model[0], vec4(a_normal, 0.0)).xyz);
+    vec3 T = normalize(mul(u_model[0], vec4(a_tangent.xyz, 0.0)).xyz);
     vec3 B = cross(N, T) * a_tangent.w;
     v_tbn0 = T;
     v_tbn1 = B;

@@ -58,7 +58,7 @@ bool R_Models::Init(const BSP::MapData& mapData)
         .add(bgfx::Attrib::Normal, 3, bgfx::AttribType::Float)
         .add(bgfx::Attrib::Tangent, 4, bgfx::AttribType::Float)
         .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
-        .add(bgfx::Attrib::Indices, 4, bgfx::AttribType::Int16)
+        .add(bgfx::Attrib::Indices, 4, bgfx::AttribType::Int16, false, false)
         .add(bgfx::Attrib::Weight, 4, bgfx::AttribType::Float)
         .end();
 

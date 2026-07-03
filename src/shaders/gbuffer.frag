@@ -20,11 +20,10 @@ void main()
     float blend = v_alpha;
     vec2 finalUV = v_texcoord0;
 
-    mat3 TBN = mat3(v_tbn0, v_tbn1, v_tbn2);
-
     if (u_parallaxParams.w > 0.5) 
     {
-        vec3 tsViewDir = normalize(mul(transpose(TBN), (u_viewPos.xyz - v_fragPos)));
+        vec3 V = u_viewPos.xyz - v_fragPos;
+        vec3 tsViewDir = normalize(vec3(dot(v_tbn0, V), dot(v_tbn1, V), dot(v_tbn2, V)));
         
         if (blend > 0.01 && u_bumpAndHeights.z > 0.0)
         {
@@ -59,7 +58,7 @@ void main()
         vec3 n2 = norm2.xyz * 2.0 - 1.0;
 
         tangentNormal = normalize(mix(n1, n2, blend));
-        worldNormal = normalize(mul(TBN, tangentNormal));
+        worldNormal = normalize(v_tbn0 * tangentNormal.x + v_tbn1 * tangentNormal.y + v_tbn2 * tangentNormal.z);
     }
 
     vec4 mraoh1 = texture2D(s_mraohMap, finalUV);

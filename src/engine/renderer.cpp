@@ -216,6 +216,7 @@ void Renderer::GeometryPass(Camera& camera, int renderW, int renderH, bool drawW
     bgfx::setViewClear(geoView, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH | BGFX_CLEAR_STENCIL, 0x1A1A1AFF, 1.0f, 0);
     bgfx::setViewRect(geoView, 0, 0, (uint16_t)renderW, (uint16_t)renderH);
     bgfx::setViewFrameBuffer(geoView, m_gbuffer->GetFBO());
+    bgfx::setViewMode(geoView, bgfx::ViewMode::Sequential);
 
     glm::mat4 view = camera.GetViewMatrix();
     glm::mat4 proj = camera.GetProjectionMatrix();

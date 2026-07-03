@@ -55,10 +55,7 @@ void main()
     vec2 scroll = worldUV * normalTiling + vec2_splat(u_time.x * normalSpeed);
     vec3 normalSample = texture2D(s_normalMap, scroll + distortion).rgb * 2.0 - 1.0;
     
-    mat3 TBN = mat3(v_tbn0, v_tbn1, v_tbn2);
-    vec3 N = normalize(TBN[2]);
-
-    N = normalize(mul(TBN, normalSample));
+    vec3 N = normalize(v_tbn0 * normalSample.x + v_tbn1 * normalSample.y + v_tbn2 * normalSample.z);
 
     vec3 V = normalize(u_viewPos.xyz - v_fragPos);
     vec3 F0 = vec3_splat(0.04);
