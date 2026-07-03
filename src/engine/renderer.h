@@ -38,6 +38,7 @@
 #include "r_glass.h"
 #include "r_sprites.h"
 #include "r_beams.h"
+#include "r_cables.h"
 #include <bgfx/bgfx.h>
 #include <memory>
 
@@ -104,6 +105,7 @@ private:
     std::unique_ptr<R_Glass> m_glassRenderer;
     std::unique_ptr<R_Sprites> m_spriteRenderer;
     std::unique_ptr<R_Beams> m_beamRenderer;
+    std::unique_ptr<R_Cables> m_cableRenderer;
     std::unique_ptr<R_PostProcess> m_postProcess;
 
     bgfx::UniformHandle m_sDepth = BGFX_INVALID_HANDLE;

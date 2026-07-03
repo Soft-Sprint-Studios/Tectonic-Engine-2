@@ -105,6 +105,8 @@ bool Renderer::Init(Window& window)
     m_spriteRenderer->Init();
     m_beamRenderer = std::make_unique<R_Beams>();
     m_beamRenderer->Init();
+    m_cableRenderer = std::make_unique<R_Cables>();
+    m_cableRenderer->Init();
     m_postProcess = std::make_unique<R_PostProcess>();
     m_postProcess->Init(w, h, m_gbuffer->GetDepthTex());
 
@@ -339,6 +341,12 @@ void Renderer::Shutdown()
         m_beamRenderer.reset();
     }
 
+    if (m_cableRenderer)
+    {
+        m_cableRenderer->Shutdown();
+        m_cableRenderer.reset();
+    }
+
     if (bgfx::isValid(m_sDepth))
     {
         bgfx::destroy(m_sDepth);
@@ -471,4 +479,5 @@ void Renderer::ForwardPass(Camera& camera, bgfx::ViewId viewId, int renderW, int
     }
 
     m_beamRenderer->Draw(RenderView::TransparentDraw, camera, Beams::GetActiveBeams());
+    m_cableRenderer->Draw(RenderView::TransparentDraw, camera, Cables::GetActiveCables());
 }
