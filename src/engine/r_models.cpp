@@ -252,20 +252,6 @@ void R_Models::Draw(bgfx::ViewId viewId, const R_Shader& shader, const Frustum& 
             continue;
         }
 
-        uint16_t numInstances = (uint16_t)group.instanceCount;
-        uint16_t instanceStride = 64; // 16 floats (mat4)
-
-        bgfx::InstanceDataBuffer idb;
-        if (numInstances == bgfx::getAvailInstanceDataBuffer(numInstances, instanceStride))
-        {
-            bgfx::allocInstanceDataBuffer(&idb, numInstances, instanceStride);
-            std::memcpy(idb.data, group.transforms.data(), numInstances * instanceStride);
-        }
-        else
-        {
-            continue;
-        }
-
         for (auto& mesh : group.meshes)
         {
             if (mesh.indexCount == 0)
@@ -273,7 +259,20 @@ void R_Models::Draw(bgfx::ViewId viewId, const R_Shader& shader, const Frustum& 
                 continue;
             }
 
-            bgfx::setInstanceDataBuffer(&idb, 0, numInstances);
+            uint16_t numInstances = (uint16_t)group.instanceCount;
+            uint16_t instanceStride = 64;
+
+            bgfx::InstanceDataBuffer idb;
+            if (numInstances == bgfx::getAvailInstanceDataBuffer(numInstances, instanceStride))
+            {
+                bgfx::allocInstanceDataBuffer(&idb, numInstances, instanceStride);
+                std::memcpy(idb.data, group.transforms.data(), numInstances * instanceStride);
+                bgfx::setInstanceDataBuffer(&idb, 0, numInstances);
+            }
+            else
+            {
+                continue;
+            }
 
             if (!depthOnly)
             {
@@ -416,21 +415,21 @@ void R_Models::DrawSkinned(bgfx::ViewId viewId, const R_Shader& shader, const st
 
     auto& group = m_propGroups[modelPath];
 
-    bgfx::setTransform(glm::value_ptr(transform));
-
-    if (!depthOnly)
-    {
-        float modelParams[4] = { 0.0f, boneMatrices.empty() ? 0.0f : 1.0f, 0.0f, 0.0f };
-        bgfx::setUniform(m_uModelParams, modelParams);
-
-        if (!boneMatrices.empty())
-        {
-            bgfx::setUniform(m_uBones, glm::value_ptr(boneMatrices[0]), (uint16_t)std::min(boneMatrices.size(), (size_t)128));
-        }
-    }
-
     for (auto& mesh : group.meshes)
     {
+        bgfx::setTransform(glm::value_ptr(transform));
+
+        if (!depthOnly)
+        {
+            float modelParams[4] = { 0.0f, boneMatrices.empty() ? 0.0f : 1.0f, 0.0f, 0.0f };
+            bgfx::setUniform(m_uModelParams, modelParams);
+
+            if (!boneMatrices.empty())
+            {
+                bgfx::setUniform(m_uBones, glm::value_ptr(boneMatrices[0]), (uint16_t)std::min(boneMatrices.size(), (size_t)128));
+            }
+        }
+
         bgfx::setVertexBuffer(0, mesh.vbo);
         bgfx::setIndexBuffer(mesh.ebo);
 

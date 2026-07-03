@@ -114,19 +114,19 @@ void R_Water::Draw(bgfx::ViewId viewId, const Camera& camera, bgfx::VertexBuffer
 
     glm::mat4 identity(1.0f);
 
-    float vp[4] = { camera.position.x, camera.position.y, camera.position.z, 0.0f };
-    bgfx::setUniform(m_uViewPos, vp);
-
-    float timeParam[4] = { (float)Time::TotalTime(), 0.0f, 0.0f, 0.0f };
-    bgfx::setUniform(m_uTime, timeParam);
-
-    float mats[32];
-    std::memcpy(&mats[0], glm::value_ptr(m_reflectView), 16 * sizeof(float));
-    std::memcpy(&mats[16], glm::value_ptr(m_reflectProj), 16 * sizeof(float));
-    bgfx::setUniform(m_uReflectViewProj, mats, 2);
-
     for (const auto& s : m_surfaces)
     {
+        float vp[4] = { camera.position.x, camera.position.y, camera.position.z, 0.0f };
+        bgfx::setUniform(m_uViewPos, vp);
+
+        float timeParam[4] = { (float)Time::TotalTime(), 0.0f, 0.0f, 0.0f };
+        bgfx::setUniform(m_uTime, timeParam);
+
+        float mats[32];
+        std::memcpy(&mats[0], glm::value_ptr(m_reflectView), 16 * sizeof(float));
+        std::memcpy(&mats[16], glm::value_ptr(m_reflectProj), 16 * sizeof(float));
+        bgfx::setUniform(m_uReflectViewProj, mats, 2);
+
         WaterDef* def = Waters::GetDefinition(s.textureName);
 
         float flowParams[4] = { def->flowSpeed, def->flowMap ? 1.0f : 0.0f, 0.0f, 0.0f };
