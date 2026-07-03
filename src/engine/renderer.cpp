@@ -109,6 +109,12 @@ bool Renderer::Init(Window& window)
     m_cableRenderer->Init();
     m_particleRenderer = std::make_unique<R_Particles>();
     m_particleRenderer->Init();
+    m_overlayRenderer = std::make_unique<R_Overlay>();
+    m_overlayRenderer->Init();
+    m_interiorRenderer = std::make_unique<R_InteriorParallax>();
+    m_interiorRenderer->Init();
+    m_videoRenderer = std::make_unique<R_Video>();
+    m_videoRenderer->Init();
     m_postProcess = std::make_unique<R_PostProcess>();
     m_postProcess->Init(w, h, m_gbuffer->GetDepthTex());
 
@@ -180,6 +186,8 @@ bool Renderer::LoadMap(const std::string& path)
 void Renderer::Render(Camera& camera)
 {
     bgfx::touch(m_mainView);
+
+    m_overlayRenderer->Draw(RenderView::UI);
 
     if (CVar::GetInt("r_water", 1) > 0)
     {
@@ -349,10 +357,28 @@ void Renderer::Shutdown()
         m_cableRenderer.reset();
     }
 
+    if (m_videoRenderer)
+    {
+        m_videoRenderer->Shutdown();
+        m_videoRenderer.reset();
+    }
+
     if (m_particleRenderer)
     {
         m_particleRenderer->Shutdown();
         m_particleRenderer.reset();
+    }
+
+    if (m_overlayRenderer)
+    {
+        m_overlayRenderer->Shutdown();
+        m_overlayRenderer.reset();
+    }
+
+    if (m_interiorRenderer)
+    {
+        m_interiorRenderer->Shutdown();
+        m_interiorRenderer.reset();
     }
 
     if (bgfx::isValid(m_sDepth))
@@ -488,6 +514,8 @@ void Renderer::ForwardPass(Camera& camera, bgfx::ViewId viewId, int renderW, int
 
     m_beamRenderer->Draw(RenderView::TransparentDraw, camera, Beams::GetActiveBeams());
     m_cableRenderer->Draw(RenderView::TransparentDraw, camera, Cables::GetActiveCables());
+    m_interiorRenderer->Draw(RenderView::TransparentDraw, camera, m_bspRenderer.get());
+    m_videoRenderer->Draw(RenderView::TransparentDraw, camera, m_bspRenderer.get());
 
     if (CVar::GetInt("r_particles", 1) > 0)
     {
