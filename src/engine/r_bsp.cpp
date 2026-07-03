@@ -76,6 +76,7 @@ bool R_BSP::Init(const BSP::MapData& map)
     m_uParallaxParams = bgfx::createUniform("u_parallaxParams", bgfx::UniformType::Vec4);
     m_uViewPos = bgfx::createUniform("u_viewPos", bgfx::UniformType::Vec4);
     m_uLightmapParams = bgfx::createUniform("u_lightmapParams", bgfx::UniformType::Vec4);
+    m_uModelParams = bgfx::createUniform("u_modelParams", bgfx::UniformType::Vec4);
 
     m_drawCalls.clear();
     for (auto& dc : map.drawCalls)
@@ -160,6 +161,9 @@ void R_BSP::Draw(const R_Shader& shader, bgfx::ViewId viewId, const Frustum& fru
 
         if (!depthOnly)
         {
+            float modelParams[4] = { 0.0f, 0.0f, 1.0f, 0.0f };
+            bgfx::setUniform(m_uModelParams, modelParams);
+
             float bumpHeights[4] = { dc.isBumped ? 1.0f : 0.0f, dc.heightScale1, dc.heightScale2, 0.0f };
             bgfx::setUniform(m_uBumpAndHeights, bumpHeights);
 
@@ -231,6 +235,9 @@ void R_BSP::DrawBModel(int index, const R_Shader& shader, bgfx::ViewId viewId, c
 
         if (!depthOnly)
         {
+            float modelParams[4] = { 0.0f, 0.0f, 1.0f, 0.0f };
+            bgfx::setUniform(m_uModelParams, modelParams);
+
             float bumpHeights[4] = { dc.isBumped ? 1.0f : 0.0f, dc.heightScale1, dc.heightScale2, 0.0f };
             bgfx::setUniform(m_uBumpAndHeights, bumpHeights);
 
@@ -294,6 +301,7 @@ void R_BSP::Shutdown()
         bgfx::destroy(m_uParallaxParams);
         bgfx::destroy(m_uViewPos);
         bgfx::destroy(m_uLightmapParams);
+        bgfx::destroy(m_uModelParams);
 
         m_sDiffuse = BGFX_INVALID_HANDLE;
     }

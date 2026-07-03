@@ -29,6 +29,7 @@
 #include "r_ui.h"
 #include "r_gbuffer.h"
 #include "r_bsp.h"
+#include "r_models.h"
 #include "r_decals.h"
 #include "r_lights.h"
 #include <bgfx/bgfx.h>
@@ -81,6 +82,7 @@ private:
     std::unique_ptr<R_UI> m_uiRenderer;
     std::unique_ptr<R_GBuffer> m_gbuffer;
     std::unique_ptr<R_BSP> m_bspRenderer;
+    std::unique_ptr<R_Models> m_modelRenderer;
     std::unique_ptr<R_Decals> m_decalRenderer;
     std::unique_ptr<R_Lights> m_lightRenderer;
 

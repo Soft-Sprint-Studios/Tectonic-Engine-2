@@ -85,6 +85,7 @@ private:
     bgfx::UniformHandle m_uParallaxParams;
     bgfx::UniformHandle m_uViewPos;
     bgfx::UniformHandle m_uLightmapParams;
+    bgfx::UniformHandle m_uModelParams;
 
     std::vector<BSPDrawCall> m_drawCalls;
     std::unordered_map<int, BrushModel> m_subModels;

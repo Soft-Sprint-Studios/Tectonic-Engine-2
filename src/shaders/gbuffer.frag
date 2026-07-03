@@ -13,7 +13,7 @@ SAMPLER2D(s_normal2, 4);
 SAMPLER2D(s_mraohMap2, 5);
 
 uniform vec4 u_viewPos; 
-uniform vec4 u_bumpAndHeights; // x = useBump, y = heightScale1, z = heightScale2
+uniform vec4 u_bumpAndHeights;
 
 void main()
 {

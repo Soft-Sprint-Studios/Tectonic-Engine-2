@@ -90,6 +90,7 @@ bool Renderer::Init(Window& window)
     m_gbuffer = std::make_unique<R_GBuffer>();
     m_gbuffer->Init(w, h);
     m_bspRenderer = std::make_unique<R_BSP>();
+    m_modelRenderer = std::make_unique<R_Models>();
     m_decalRenderer = std::make_unique<R_Decals>();
     m_decalRenderer->Init();
     m_lightRenderer = std::make_unique<R_Lights>();
@@ -141,6 +142,7 @@ bool Renderer::LoadMap(const std::string& path)
     }
 
     m_bspRenderer->Init(map);
+    m_modelRenderer->Init(map);
 
     Physics::AddBSPCollision(map.collision.vertices, map.collision.indices);
 
@@ -189,12 +191,14 @@ void Renderer::GeometryPass(Camera& camera, int renderW, int renderH, bool drawW
     Frustum frustum = camera.GetFrustum();
 
     m_bspRenderer->Draw(m_gbufferShader, geoView, frustum, camera.position);
+    m_modelRenderer->Draw(m_gbufferShader, frustum, false);
     m_decalRenderer->Draw(geoView, camera, frustum, Decals::GetActiveDecals());
 }
 
 void Renderer::DrawSceneDepth(bgfx::ViewId viewId, R_Shader& shader, const struct Frustum& frustum)
 {
     m_bspRenderer->Draw(shader, viewId, frustum, glm::vec3(0.0f), true);
+    m_modelRenderer->Draw(shader, frustum, true);
 }
 
 void Renderer::OnWindowResize(int w, int h)
@@ -223,6 +227,12 @@ void Renderer::Shutdown()
     {
         m_bspRenderer->Shutdown();
         m_bspRenderer.reset();
+    }
+
+    if (m_modelRenderer)
+    {
+        m_modelRenderer->Shutdown();
+        m_modelRenderer.reset();
     }
 
     if (m_decalRenderer)
