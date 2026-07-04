@@ -67,7 +67,7 @@ target_include_directories(Game PRIVATE
     ${GLM_PATH}/include
     ${BULLET_PATH}/include
     ${OPENAL_PATH}/include
-    ${CMAKE_SOURCE_DIR}/Game_Template/shaders
+    ${CMAKE_SOURCE_DIR}/src/shaders
     src/engine
     src/game
 )
@@ -97,7 +97,7 @@ target_include_directories(Engine PRIVATE
     ${PLMPEG_PATH}/include
     ${MINISPEC_PATH}/include
     ${MINIZ_PATH}/include
-    ${CMAKE_SOURCE_DIR}/Game_Template/shaders
+    ${CMAKE_SOURCE_DIR}/src/shaders
     src/engine
     src/game
 )

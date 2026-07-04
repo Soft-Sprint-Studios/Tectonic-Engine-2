@@ -127,18 +127,9 @@ void main()
     
     vec3 sampledColor;
 
-    if (u_motionblur_enabled == 1)
-    {
-        sampledColor.r = (u_fxaa == 1) ? ApplyFXAA(u_motionBlurTexture, v_texcoord0 - caDir).r : texture2D(u_motionBlurTexture, v_texcoord0 - caDir).r;
-        sampledColor.g = (u_fxaa == 1) ? ApplyFXAA(u_motionBlurTexture, v_texcoord0 - caDir * 0.5).g : texture2D(u_motionBlurTexture, v_texcoord0 - caDir * 0.5).g;
-        sampledColor.b = (u_fxaa == 1) ? ApplyFXAA(u_motionBlurTexture, v_texcoord0).b : texture2D(u_motionBlurTexture, v_texcoord0).b;
-    }
-    else
-    {
-        sampledColor.r = (u_fxaa == 1) ? ApplyFXAA(u_screenTexture, v_texcoord0 - caDir).r : texture2D(u_screenTexture, v_texcoord0 - caDir).r;
-        sampledColor.g = (u_fxaa == 1) ? ApplyFXAA(u_screenTexture, v_texcoord0 - caDir * 0.5).g : texture2D(u_screenTexture, v_texcoord0 - caDir * 0.5).g;
-        sampledColor.b = (u_fxaa == 1) ? ApplyFXAA(u_screenTexture, v_texcoord0).b : texture2D(u_screenTexture, v_texcoord0).b;
-    }
+    sampledColor.r = (u_fxaa == 1) ? ApplyFXAA(u_screenTexture, v_texcoord0 - caDir).r : texture2D(u_screenTexture, v_texcoord0 - caDir).r;
+    sampledColor.g = (u_fxaa == 1) ? ApplyFXAA(u_screenTexture, v_texcoord0 - caDir * 0.5).g : texture2D(u_screenTexture, v_texcoord0 - caDir * 0.5).g;
+    sampledColor.b = (u_fxaa == 1) ? ApplyFXAA(u_screenTexture, v_texcoord0).b : texture2D(u_screenTexture, v_texcoord0).b;
 
     vec3 hdrColor = sampledColor;
 

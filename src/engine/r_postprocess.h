@@ -29,6 +29,7 @@
 #include "r_ssr.h"
 #include "r_motionblur.h"
 #include "r_volumetrics.h"
+#include "r_cas.h"
 #include "camera.h"
 #include <bgfx/bgfx.h>
 #include <memory>
@@ -91,4 +92,5 @@ private:
     std::unique_ptr<R_SSR> m_ssr;
     std::unique_ptr<R_MotionBlur> m_motionBlur;
     std::unique_ptr<R_Volumetrics> m_volumetrics;
+    std::unique_ptr<R_CAS> m_cas;
 };

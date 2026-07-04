@@ -67,13 +67,14 @@ namespace RenderView
         SSR = 79,
         SSR_Blur = 80,
         MotionBlur = 81,
-        Volumetrics = 82,
-        Volumetrics_Blur = 83,
-        GlassBlit = 84,
-        GlassDraw = 85,
-        TransparentDraw = 86,
-        PostProcess = 87,
-        UI = 88
+        CAS = 82,
+        Volumetrics = 83,
+        Volumetrics_Blur = 84,
+        GlassBlit = 85,
+        GlassDraw = 86,
+        TransparentDraw = 87,
+        PostProcess = 88,
+        UI = 89
     };
 }
 

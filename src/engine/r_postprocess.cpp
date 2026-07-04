@@ -88,6 +88,9 @@ bool R_PostProcess::Init(int width, int height, bgfx::TextureHandle depthTexture
     m_volumetrics = std::make_unique<R_Volumetrics>();
     m_volumetrics->Init(m_width, m_height);
 
+    m_cas = std::make_unique<R_CAS>();
+    m_cas->Init(m_width, m_height);
+
     SetupBuffers(depthTexture);
     return true;
 }
@@ -131,7 +134,21 @@ void R_PostProcess::Draw(const Camera& camera, R_Lights* lights, R_GBuffer* gbuf
     m_bloom->Render(RenderView::Bloom, m_texture, m_width, m_height);
     m_ssao->Render(RenderView::SSAO, gbuffer->GetDepthTex(), camera, m_width, m_height);
     m_ssr->Render(RenderView::SSR, gbuffer->GetDepthTex(), gbuffer->GetNormalTex(), gbuffer->GetMRAOTex(), m_texture, camera);
-    m_motionBlur->Render(RenderView::MotionBlur, m_texture, gbuffer->GetDepthTex(), camera);
+
+    bgfx::TextureHandle finalScene = m_texture;
+
+    if (CVar::GetInt("r_motionblur", 1) > 0)
+    {
+        m_motionBlur->Render(RenderView::MotionBlur, finalScene, gbuffer->GetDepthTex(), camera);
+        finalScene = m_motionBlur->GetTexture();
+    }
+
+    if (CVar::GetInt("r_cas", 1) > 0)
+    {
+        m_cas->Render(RenderView::CAS, finalScene);
+        finalScene = m_cas->GetTexture();
+    }
+
     m_volumetrics->Render(RenderView::Volumetrics, gbuffer->GetDepthTex(), camera, lights, m_width, m_height);
 
     bgfx::ViewId viewId = RenderView::PostProcess;
@@ -180,7 +197,7 @@ void R_PostProcess::Draw(const Camera& camera, R_Lights* lights, R_GBuffer* gbuf
     float mbParams[4] = { CVar::GetInt("r_motionblur", 1) > 0 ? 1.0f : 0.0f, 0.0f, 0.0f, 0.0f };
     bgfx::setUniform(m_uMotionBlurParams, mbParams);
 
-    bgfx::setTexture(0, m_sSceneTexture, m_texture);
+    bgfx::setTexture(0, m_sSceneTexture, finalScene);
     bgfx::setTexture(1, m_sDepthTexture, gbuffer->GetDepthTex());
 
     bgfx::TransientVertexBuffer tvb;
@@ -214,6 +231,7 @@ void R_PostProcess::Rescale(int width, int height, bgfx::TextureHandle depthText
     m_ssr->Rescale(width, height);
     m_motionBlur->Rescale(width, height);
     m_volumetrics->Rescale(width, height);
+    m_cas->Rescale(width, height);
     SetupBuffers(depthTexture);
 }
 
@@ -296,6 +314,12 @@ void R_PostProcess::Shutdown()
     {
         m_volumetrics->Shutdown();
         m_volumetrics.reset();
+    }
+
+    if (m_cas)
+    {
+        m_cas->Shutdown();
+        m_cas.reset();
     }
 
     m_sSceneTexture = m_sDepthTexture = m_sBloomTexture = m_sSsaoTexture = m_sSsrTexture = m_sMotionBlurTexture = m_sVolumetricTexture = m_uParams = m_uBloomParams = m_uSsaoParams = m_uSsrParams = m_uMotionBlurParams = m_uVolumetricParams = m_uColorParams = m_uFogColor = m_uFogParams = BGFX_INVALID_HANDLE;
