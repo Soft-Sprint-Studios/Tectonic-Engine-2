@@ -76,11 +76,7 @@ bool Renderer::Init(Window& window)
 #endif
     init.platformData = pd;
 
-    if (!bgfx::init(init))
-    {
-        Console::Error("BGFX: Failed to initialize Vulkan backend.");
-        return false;
-    }
+    bgfx::init(init);
 
     m_mainView = RenderView::PostProcess;
     bgfx::setViewClear(m_mainView, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x0000FFFF, 1.0f, 0);

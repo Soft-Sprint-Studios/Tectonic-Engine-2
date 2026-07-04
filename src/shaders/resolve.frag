@@ -85,34 +85,38 @@ void main()
     vec2 LmCoord3 = lmCoord + vec2(0.0, lmSize.y);
     vec2 LmCoord4 = lmCoord + lmSize;
 
-    vec4 baseLM = SampleLightmap(s_lightmap, lmCoord);
+    vec4 lm0 = SampleLightmap(s_lightmap, lmCoord);
+    vec4 lm1 = SampleLightmap(s_lightmap, LmCoord2);
+    vec4 lm2 = SampleLightmap(s_lightmap, LmCoord3);
+    vec4 lm3 = SampleLightmap(s_lightmap, LmCoord4);
+
     vec3 tsN = vec3(packed_tx * 2.0 - 1.0, packed_ty * 2.0 - 1.0, 0.0);
     tsN.z = sqrt(max(0.0, 1.0 - dot(tsN.xy, tsN.xy)));
 
     vec3 w = max(vec3_splat(0.0), vec3(dot(tsN, basis0), dot(tsN, basis1), dot(tsN, basis2)));
     w /= max(w.x + w.y + w.z, 0.0001);
 
-    vec3 bumped = SampleLightmap(s_lightmap, LmCoord2).rgb * w.x + SampleLightmap(s_lightmap, LmCoord3).rgb * w.y + SampleLightmap(s_lightmap, LmCoord4).rgb * w.z;
+    vec3 bumped = lm1.rgb * w.x + lm2.rgb * w.y + lm3.rgb * w.z;
 
-    vec4 lightmapData = vec4(mix(baseLM.rgb, bumped, step(0.02, packed_ty)), baseLM.a);
+    vec4 lightmapData = vec4(mix(lm0.rgb, bumped, step(0.02, packed_ty)), lm0.a);
 
     vec3 viewDir = normalize(u_viewPos.xyz - fragPos);
-    vec3 F0 = vec3_splat(0.04); 
+    vec3 F0 = vec3_splat(0.04);
     F0 = mix(F0, albedo, metallic);
 
     vec3 irradiance = lightmapData.rgb * 2.0;
     vec3 F_ambient = FresnelSchlickRoughness(max(dot(N, viewDir), 0.0), F0, roughness);
     vec3 kS_ambient = F_ambient;
     vec3 kD_ambient = vec3_splat(1.0) - kS_ambient;
-    kD_ambient *= 1.0 - metallic;	
-    
+    kD_ambient *= 1.0 - metallic;
+
     vec3 ambientDiffuse = irradiance * albedo * kD_ambient;
     vec3 ambientSpecular = vec3_splat(0.0);
 
     // Unpack custom directional data (if map has it)
-    float dirX = texture2D(s_lightmap, lmCoord).a * 2.0 - 1.0;
-    float dirY = texture2D(s_lightmap, LmCoord2).a * 2.0 - 1.0;
-    float dirZ = texture2D(s_lightmap, LmCoord3).a * 2.0 - 1.0;
+    float dirX = lm0.a * 2.0 - 1.0;
+    float dirY = lm1.a * 2.0 - 1.0;
+    float dirZ = lm2.a * 2.0 - 1.0;
 
     vec3 worldLightDir = normalize(vec3(dirX, dirZ, -dirY));
     float lightmapLuminance = dot(irradiance, vec3_splat(0.333));

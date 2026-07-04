@@ -59,12 +59,6 @@ bool R_GBuffer::Init(int width, int height)
 
     m_fbo = bgfx::createFrameBuffer(5, attachments, true);
 
-    if (!bgfx::isValid(m_fbo))
-    {
-        Console::Error("BGFX: Failed to create G-Buffer FrameBuffer.");
-        return false;
-    }
-
     return true;
 }
 
