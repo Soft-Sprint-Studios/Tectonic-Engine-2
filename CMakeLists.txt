@@ -160,7 +160,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
         BulletCollision
         LinearMath
         openal
-        OpenGL::GL
+        bgfx
         pthread
     )
 elseif(UNIX)
@@ -175,7 +175,7 @@ elseif(UNIX)
         "${DISCORDRPC_PATH}/lib/linux/libdiscord-rpc.a"
         "${SENTRY_PATH}/lib/linux/libsentry.so"
         "${OPENAL_PATH}/lib/Linux/libopenal.a"
-        OpenGL::GL
+        bgfx
         ${CMAKE_DL_LIBS}
         pthread
     )
