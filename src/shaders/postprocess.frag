@@ -7,7 +7,7 @@ SAMPLER2D(u_depthTexture, 1);
 
 SAMPLER2D(u_bloomTexture, 2);
 // SAMPLER2D(u_volumetricTexture, 3);
-// SAMPLER2D(u_ssaoTexture, 4);
+SAMPLER2D(u_ssaoTexture, 4);
 // SAMPLER2D(u_ssrTexture, 5);
 // SAMPLER2D(u_motionBlurTexture, 7);
 
@@ -37,6 +37,9 @@ uniform vec4 u_fogParams;
 uniform vec4 u_bloomParams;
 #define u_bloom_enabled int(u_bloomParams.x)
 #define u_bloom_intensity u_bloomParams.y
+
+uniform vec4 u_ssaoParams;
+#define u_ssao_enabled int(u_ssaoParams.x)
 
 StructuredBuffer<vec4> u_exposureData : register(t3);
 
@@ -136,18 +139,21 @@ void main()
     float exposure = u_exposureData[0].x;
     hdrColor *= exposure;
 
+    // Bloom
     if (u_bloom_enabled == 1)
     {
         vec3 bloom = texture2D(u_bloomTexture, v_texcoord0).rgb * u_bloom_intensity;
         hdrColor += bloom;
     }
-    
-    // Keep SSAO, SSR, Volumetrics commented out for now
-    /*
+	
+    // SSAO
     if (u_ssao_enabled == 1)
     {
         hdrColor *= texture2D(u_ssaoTexture, v_texcoord0).r;
     }
+    
+    // Keep SSR, Volumetrics commented out for now
+    /*
     if (u_ssr_enabled == 1)
     {
         vec4 ssr = texture2D(u_ssrTexture, v_texcoord0);

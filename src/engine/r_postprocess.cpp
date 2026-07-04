@@ -51,8 +51,10 @@ bool R_PostProcess::Init(int width, int height, bgfx::TextureHandle depthTexture
     m_sSceneTexture = bgfx::createUniform("u_screenTexture", bgfx::UniformType::Sampler);
     m_sDepthTexture = bgfx::createUniform("u_depthTexture", bgfx::UniformType::Sampler);
     m_sBloomTexture = bgfx::createUniform("u_bloomTexture", bgfx::UniformType::Sampler);
+    m_sSsaoTexture = bgfx::createUniform("u_ssaoTexture", bgfx::UniformType::Sampler);
     m_uParams = bgfx::createUniform("u_params", bgfx::UniformType::Vec4);
     m_uBloomParams = bgfx::createUniform("u_bloomParams", bgfx::UniformType::Vec4);
+    m_uSsaoParams = bgfx::createUniform("u_ssaoParams", bgfx::UniformType::Vec4);
     m_uColorParams = bgfx::createUniform("u_colorParams", bgfx::UniformType::Vec4, 2);
     m_uFogColor = bgfx::createUniform("u_fogColor", bgfx::UniformType::Vec4);
     m_uFogParams = bgfx::createUniform("u_fogParams", bgfx::UniformType::Vec4);
@@ -67,6 +69,9 @@ bool R_PostProcess::Init(int width, int height, bgfx::TextureHandle depthTexture
 
     m_bloom = std::make_unique<R_Bloom>();
     m_bloom->Init(m_width, m_height);
+
+    m_ssao = std::make_unique<R_SSAO>();
+    m_ssao->Init(m_width, m_height);
 
     SetupBuffers(depthTexture);
     return true;
@@ -109,6 +114,7 @@ void R_PostProcess::Draw(const Camera& camera, bgfx::TextureHandle depthTexture)
 {
     m_autoExposure->Render(RenderView::AutoExposure, m_texture, m_width, m_height);
     m_bloom->Render(RenderView::Bloom, m_texture, m_width, m_height);
+    m_ssao->Render(RenderView::SSAO, depthTexture, camera, m_width, m_height);
 
     bgfx::ViewId viewId = RenderView::PostProcess;
 
@@ -136,9 +142,13 @@ void R_PostProcess::Draw(const Camera& camera, bgfx::TextureHandle depthTexture)
 
     m_autoExposure->Bind();
     m_bloom->Bind(m_sBloomTexture);
+    m_ssao->Bind(m_sSsaoTexture);
 
     float bloomParams[4] = { CVar::GetInt("r_bloom", 1) > 0 ? 1.0f : 0.0f, CVar::GetFloat("r_bloom_intensity", 2.0f), 0.0f, 0.0f };
     bgfx::setUniform(m_uBloomParams, bloomParams);
+
+    float ssaoParams[4] = { CVar::GetInt("r_ssao", 1) > 0 ? 1.0f : 0.0f, 0.0f, 0.0f, 0.0f };
+    bgfx::setUniform(m_uSsaoParams, ssaoParams);
 
     bgfx::setTexture(0, m_sSceneTexture, m_texture);
     bgfx::setTexture(1, m_sDepthTexture, depthTexture);
@@ -170,6 +180,7 @@ void R_PostProcess::Rescale(int width, int height, bgfx::TextureHandle depthText
     m_width = width;
     m_height = height;
     m_bloom->Rescale(width, height);
+    m_ssao->Rescale(width, height);
     SetupBuffers(depthTexture);
 }
 
@@ -191,10 +202,14 @@ void R_PostProcess::Shutdown()
         bgfx::destroy(m_sDepthTexture);
     if (bgfx::isValid(m_sBloomTexture))
         bgfx::destroy(m_sBloomTexture);
+    if (bgfx::isValid(m_sSsaoTexture))
+        bgfx::destroy(m_sSsaoTexture);
     if (bgfx::isValid(m_uParams))
         bgfx::destroy(m_uParams);
     if (bgfx::isValid(m_uBloomParams))
         bgfx::destroy(m_uBloomParams);
+    if (bgfx::isValid(m_uSsaoParams))
+        bgfx::destroy(m_uSsaoParams);
     if (bgfx::isValid(m_uColorParams)) 
         bgfx::destroy(m_uColorParams);
     if (bgfx::isValid(m_uFogColor))
@@ -212,6 +227,12 @@ void R_PostProcess::Shutdown()
     {
         m_bloom->Shutdown();
         m_bloom.reset();
+    }
+
+    if (m_ssao)
+    {
+        m_ssao->Shutdown();
+        m_ssao.reset();
     }
 
     m_sSceneTexture = m_sDepthTexture = m_sBloomTexture = m_uParams = m_uBloomParams = m_uColorParams = m_uFogColor = m_uFogParams = BGFX_INVALID_HANDLE;

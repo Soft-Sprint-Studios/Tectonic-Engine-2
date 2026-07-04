@@ -57,16 +57,18 @@ namespace RenderView
         Forward = 4,
         AutoExposure = 5,
         Bloom = 6,
-        GlassBlit = 7,
-        GlassDraw = 8,
-        TransparentDraw = 9,
-        PostProcess = 10,
-        UI = 11,
-        CSM_0 = 12,
-        CSM_1 = 13,
-        CSM_2 = 14,
-        CSM_3 = 15,
-        ShadowBase = 16
+        SSAO = 7,
+        SSAO_Blur = 8,
+        GlassBlit = 9,
+        GlassDraw = 10,
+        TransparentDraw = 11,
+        PostProcess = 12,
+        UI = 13,
+        CSM_0 = 14,
+        CSM_1 = 15,
+        CSM_2 = 16,
+        CSM_3 = 17,
+        ShadowBase = 18
     };
 }
 

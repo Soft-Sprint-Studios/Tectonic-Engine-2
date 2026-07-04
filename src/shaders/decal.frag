@@ -32,6 +32,12 @@ void main()
     vec4 normalSample = texture2D(s_normal, finalUV);
     vec3 tsSample = normalSample.xyz * 2.0 - 1.0;
     vec3 tangentNormal = normalize(tsSample);
+
+    vec3 viewDir = normalize(u_viewPos.xyz - v_fragPos);
+    if (dot(v_tbn2, viewDir) < 0.0)
+    {
+        tangentNormal = -tangentNormal;
+    }
 		
     vec3 worldNormal = normalize(v_tbn0 * tangentNormal.x + v_tbn1 * tangentNormal.y + v_tbn2 * tangentNormal.z);
     vec4 mraoh = texture2D(s_mraohMap, finalUV);
