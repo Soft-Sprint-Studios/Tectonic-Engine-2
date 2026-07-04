@@ -8,8 +8,8 @@ SAMPLER2D(u_depthTexture, 1);
 SAMPLER2D(u_bloomTexture, 2);
 // SAMPLER2D(u_volumetricTexture, 3);
 SAMPLER2D(u_ssaoTexture, 4);
-// SAMPLER2D(u_ssrTexture, 5);
-// SAMPLER2D(u_motionBlurTexture, 7);
+SAMPLER2D(u_ssrTexture, 5);
+SAMPLER2D(u_motionBlurTexture, 7);
 
 uniform vec4 u_params;
 #define u_time             u_params.x
@@ -40,6 +40,12 @@ uniform vec4 u_bloomParams;
 
 uniform vec4 u_ssaoParams;
 #define u_ssao_enabled int(u_ssaoParams.x)
+
+uniform vec4 u_ssrParams;
+#define u_ssr_enabled int(u_ssrParams.x)
+
+uniform vec4 u_motionBlurParams;
+#define u_motionblur_enabled int(u_motionBlurParams.x)
 
 StructuredBuffer<vec4> u_exposureData : register(t3);
 
@@ -118,8 +124,6 @@ void main()
     
     vec3 sampledColor;
 
-    // Keep motion blur commented out for now
-    /*
     if (u_motionblur_enabled == 1)
     {
         sampledColor.r = (u_fxaa == 1) ? ApplyFXAA(u_motionBlurTexture, v_texcoord0 - caDir).r : texture2D(u_motionBlurTexture, v_texcoord0 - caDir).r;
@@ -127,7 +131,6 @@ void main()
         sampledColor.b = (u_fxaa == 1) ? ApplyFXAA(u_motionBlurTexture, v_texcoord0).b : texture2D(u_motionBlurTexture, v_texcoord0).b;
     }
     else
-    */
     {
         sampledColor.r = (u_fxaa == 1) ? ApplyFXAA(u_screenTexture, v_texcoord0 - caDir).r : texture2D(u_screenTexture, v_texcoord0 - caDir).r;
         sampledColor.g = (u_fxaa == 1) ? ApplyFXAA(u_screenTexture, v_texcoord0 - caDir * 0.5).g : texture2D(u_screenTexture, v_texcoord0 - caDir * 0.5).g;
@@ -151,14 +154,16 @@ void main()
     {
         hdrColor *= texture2D(u_ssaoTexture, v_texcoord0).r;
     }
-    
-    // Keep SSR, Volumetrics commented out for now
-    /*
+	
+    // SSR
     if (u_ssr_enabled == 1)
     {
         vec4 ssr = texture2D(u_ssrTexture, v_texcoord0);
         hdrColor += ssr.rgb * ssr.a;
     }
+    
+    // Keep Volumetrics commented out for now
+    /*
     if (u_volumetrics_enabled == 1)
     {
         hdrColor += texture2D(u_volumetricTexture, v_texcoord0).rgb;

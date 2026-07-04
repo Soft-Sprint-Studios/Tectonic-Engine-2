@@ -52,9 +52,13 @@ bool R_PostProcess::Init(int width, int height, bgfx::TextureHandle depthTexture
     m_sDepthTexture = bgfx::createUniform("u_depthTexture", bgfx::UniformType::Sampler);
     m_sBloomTexture = bgfx::createUniform("u_bloomTexture", bgfx::UniformType::Sampler);
     m_sSsaoTexture = bgfx::createUniform("u_ssaoTexture", bgfx::UniformType::Sampler);
+    m_sSsrTexture = bgfx::createUniform("u_ssrTexture", bgfx::UniformType::Sampler);
+    m_sMotionBlurTexture = bgfx::createUniform("u_motionBlurTexture", bgfx::UniformType::Sampler);
     m_uParams = bgfx::createUniform("u_params", bgfx::UniformType::Vec4);
     m_uBloomParams = bgfx::createUniform("u_bloomParams", bgfx::UniformType::Vec4);
     m_uSsaoParams = bgfx::createUniform("u_ssaoParams", bgfx::UniformType::Vec4);
+    m_uSsrParams = bgfx::createUniform("u_ssrParams", bgfx::UniformType::Vec4);
+    m_uMotionBlurParams = bgfx::createUniform("u_motionBlurParams", bgfx::UniformType::Vec4);
     m_uColorParams = bgfx::createUniform("u_colorParams", bgfx::UniformType::Vec4, 2);
     m_uFogColor = bgfx::createUniform("u_fogColor", bgfx::UniformType::Vec4);
     m_uFogParams = bgfx::createUniform("u_fogParams", bgfx::UniformType::Vec4);
@@ -72,6 +76,12 @@ bool R_PostProcess::Init(int width, int height, bgfx::TextureHandle depthTexture
 
     m_ssao = std::make_unique<R_SSAO>();
     m_ssao->Init(m_width, m_height);
+
+    m_ssr = std::make_unique<R_SSR>();
+    m_ssr->Init(m_width, m_height);
+
+    m_motionBlur = std::make_unique<R_MotionBlur>();
+    m_motionBlur->Init(m_width, m_height);
 
     SetupBuffers(depthTexture);
     return true;
@@ -110,11 +120,13 @@ void R_PostProcess::Begin()
     bgfx::setViewFrameBuffer(resolveView, m_fbo);
 }
 
-void R_PostProcess::Draw(const Camera& camera, bgfx::TextureHandle depthTexture)
+void R_PostProcess::Draw(const Camera& camera, bgfx::TextureHandle depthTexture, bgfx::TextureHandle normalTexture, bgfx::TextureHandle mraoTexture)
 {
     m_autoExposure->Render(RenderView::AutoExposure, m_texture, m_width, m_height);
     m_bloom->Render(RenderView::Bloom, m_texture, m_width, m_height);
     m_ssao->Render(RenderView::SSAO, depthTexture, camera, m_width, m_height);
+    m_ssr->Render(RenderView::SSR, depthTexture, normalTexture, mraoTexture, m_texture, camera);
+    m_motionBlur->Render(RenderView::MotionBlur, m_texture, depthTexture, camera);
 
     bgfx::ViewId viewId = RenderView::PostProcess;
 
@@ -143,12 +155,20 @@ void R_PostProcess::Draw(const Camera& camera, bgfx::TextureHandle depthTexture)
     m_autoExposure->Bind();
     m_bloom->Bind(m_sBloomTexture);
     m_ssao->Bind(m_sSsaoTexture);
+    m_ssr->Bind(m_sSsrTexture);
+    m_motionBlur->Bind(m_sMotionBlurTexture);
 
     float bloomParams[4] = { CVar::GetInt("r_bloom", 1) > 0 ? 1.0f : 0.0f, CVar::GetFloat("r_bloom_intensity", 2.0f), 0.0f, 0.0f };
     bgfx::setUniform(m_uBloomParams, bloomParams);
 
     float ssaoParams[4] = { CVar::GetInt("r_ssao", 1) > 0 ? 1.0f : 0.0f, 0.0f, 0.0f, 0.0f };
     bgfx::setUniform(m_uSsaoParams, ssaoParams);
+
+    float ssrParams[4] = { CVar::GetInt("r_ssr", 1) > 0 ? 1.0f : 0.0f, 0.0f, 0.0f, 0.0f };
+    bgfx::setUniform(m_uSsrParams, ssaoParams);
+
+    float mbParams[4] = { CVar::GetInt("r_motionblur", 1) > 0 ? 1.0f : 0.0f, 0.0f, 0.0f, 0.0f };
+    bgfx::setUniform(m_uMotionBlurParams, mbParams);
 
     bgfx::setTexture(0, m_sSceneTexture, m_texture);
     bgfx::setTexture(1, m_sDepthTexture, depthTexture);
@@ -181,6 +201,8 @@ void R_PostProcess::Rescale(int width, int height, bgfx::TextureHandle depthText
     m_height = height;
     m_bloom->Rescale(width, height);
     m_ssao->Rescale(width, height);
+    m_ssr->Rescale(width, height);
+    m_motionBlur->Rescale(width, height);
     SetupBuffers(depthTexture);
 }
 
@@ -204,12 +226,20 @@ void R_PostProcess::Shutdown()
         bgfx::destroy(m_sBloomTexture);
     if (bgfx::isValid(m_sSsaoTexture))
         bgfx::destroy(m_sSsaoTexture);
+    if (bgfx::isValid(m_sSsaoTexture))
+        bgfx::destroy(m_sSsaoTexture);
+    if (bgfx::isValid(m_sMotionBlurTexture))
+        bgfx::destroy(m_sMotionBlurTexture);
     if (bgfx::isValid(m_uParams))
         bgfx::destroy(m_uParams);
     if (bgfx::isValid(m_uBloomParams))
         bgfx::destroy(m_uBloomParams);
     if (bgfx::isValid(m_uSsaoParams))
         bgfx::destroy(m_uSsaoParams);
+    if (bgfx::isValid(m_uSsaoParams))
+        bgfx::destroy(m_uSsaoParams);
+    if (bgfx::isValid(m_uMotionBlurParams))
+        bgfx::destroy(m_uMotionBlurParams);
     if (bgfx::isValid(m_uColorParams)) 
         bgfx::destroy(m_uColorParams);
     if (bgfx::isValid(m_uFogColor))
@@ -235,5 +265,17 @@ void R_PostProcess::Shutdown()
         m_ssao.reset();
     }
 
-    m_sSceneTexture = m_sDepthTexture = m_sBloomTexture = m_uParams = m_uBloomParams = m_uColorParams = m_uFogColor = m_uFogParams = BGFX_INVALID_HANDLE;
+    if (m_ssr)
+    {
+        m_ssr->Shutdown();
+        m_ssr.reset();
+    }
+
+    if (m_motionBlur)
+    {
+        m_motionBlur->Shutdown();
+        m_motionBlur.reset();
+    }
+
+    m_sSceneTexture = m_sDepthTexture = m_sBloomTexture = m_sSsaoTexture = m_sSsrTexture = m_sMotionBlurTexture = m_uParams = m_uBloomParams = m_uSsaoParams = m_uSsrParams = m_uMotionBlurParams = m_uColorParams = m_uFogColor = m_uFogParams = BGFX_INVALID_HANDLE;
 }

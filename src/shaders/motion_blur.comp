@@ -1,0 +1,53 @@
+#include <bgfx_compute.sh>
+
+SAMPLER2D(s_scene, 0);
+SAMPLER2D(s_depth, 1);
+IMAGE2D_WO(s_destination, rgba16f, 2);
+
+uniform mat4 u_currentInvViewProj;
+uniform mat4 u_prevViewProj;
+uniform vec4 u_blurParams;
+
+#define u_samples   int(u_blurParams.x)
+#define u_blurScale u_blurParams.y
+
+NUM_THREADS(16, 16, 1)
+void main()
+{
+    ivec2 pos = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 size = imageSize(s_destination);
+    if (pos.x >= size.x || pos.y >= size.y)
+        return;
+
+    vec2 uv = (vec2(pos) + 0.5) / vec2(size);
+    float depth = texture2DLod(s_depth, uv, 0.0).r;
+
+    vec4 ndc = vec4(uv.x * 2.0 - 1.0, (1.0 - uv.y) * 2.0 - 1.0, depth, 1.0);
+
+    vec4 worldPos = mul(u_currentInvViewProj, ndc);
+    worldPos /= worldPos.w;
+
+    vec4 prevNdc = mul(u_prevViewProj, worldPos);
+    prevNdc /= prevNdc.w;
+
+    vec2 prevUV = prevNdc.xy * 0.5 + 0.5;
+    prevUV.y = 1.0 - prevUV.y;
+
+    vec2 velocity = (uv - prevUV) * u_blurScale;
+
+    if (length(velocity) < 0.0001)
+    {
+        vec4 sceneColor = texture2DLod(s_scene, uv, 0.0);
+        imageStore(s_destination, pos, sceneColor);
+        return;
+    }
+
+    vec4 color = texture2DLod(s_scene, uv, 0.0);
+    for(int i = 1; i < u_samples; ++i)
+    {
+        vec2 offset = velocity * (float(i) / float(u_samples - 1) - 0.5);
+        color += texture2DLod(s_scene, uv + offset, 0.0);
+    }
+
+    imageStore(s_destination, pos, color / float(u_samples));
+}

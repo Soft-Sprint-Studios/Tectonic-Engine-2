@@ -200,6 +200,8 @@ void Renderer::Render(Camera& camera)
 
     m_uiRenderer->Render();
 
+    camera.UpdatePreviousState();
+
     bgfx::frame();
 }
 
@@ -225,7 +227,7 @@ void Renderer::RenderWorld(Camera& camera, uint32_t cubemapToExclude, bool drawW
 
     if (lightingView == RenderView::Resolve)
     {
-        m_postProcess->Draw(camera, m_gbuffer->GetDepthTex());
+        m_postProcess->Draw(camera, m_gbuffer->GetDepthTex(), m_gbuffer->GetNormalTex(), m_gbuffer->GetMRAOTex());
     }
 }
 

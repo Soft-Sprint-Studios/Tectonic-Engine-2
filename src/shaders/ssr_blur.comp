@@ -1,0 +1,27 @@
+#include <bgfx_compute.sh>
+
+SAMPLER2D(s_ssrTex, 0);
+IMAGE2D_WO(s_destination, rgba16f, 1);
+
+NUM_THREADS(16, 16, 1)
+void main()
+{
+    ivec2 pos = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 size = imageSize(s_destination);
+    if (pos.x >= size.x || pos.y >= size.y)
+        return;
+
+    vec2 uv = (vec2(pos) + 0.5) / vec2(size);
+    vec2 texelSize = vec2_splat(1.0) / vec2(textureSize(s_ssrTex, 0));
+    vec4 result = vec4_splat(0.0);
+
+    for (int x = -1; x <= 1; ++x)
+    {
+        for (int y = -1; y <= 1; ++y)
+        {
+            result += texture2DLod(s_ssrTex, uv + vec2(float(x), float(y)) * texelSize, 0.0);
+        }
+    }
+
+    imageStore(s_destination, pos, result / 9.0);
+}

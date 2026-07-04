@@ -50,10 +50,10 @@ bool R_BSP::Init(const BSP::MapData& map)
         .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
         .add(bgfx::Attrib::Normal, 3, bgfx::AttribType::Float)
         .add(bgfx::Attrib::Tangent, 4, bgfx::AttribType::Float)
-        .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Half) // Packed UV
-        .add(bgfx::Attrib::TexCoord1, 2, bgfx::AttribType::Float) // lm_uv
-        .add(bgfx::Attrib::TexCoord2, 2, bgfx::AttribType::Float) // lm_size
-        .add(bgfx::Attrib::TexCoord3, 1, bgfx::AttribType::Float) // alpha
+        .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Half)
+        .add(bgfx::Attrib::TexCoord1, 2, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::TexCoord2, 2, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::TexCoord3, 1, bgfx::AttribType::Float)
         .end();
 
     const bgfx::Memory* vboMem = bgfx::copy(map.renderVertices.data(), (uint32_t)(map.renderVertices.size() * sizeof(BSP::Vertex)));
