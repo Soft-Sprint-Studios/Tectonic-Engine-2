@@ -6,7 +6,7 @@ SAMPLER2D(u_screenTexture, 0);
 SAMPLER2D(u_depthTexture, 1);
 
 SAMPLER2D(u_bloomTexture, 2);
-// SAMPLER2D(u_volumetricTexture, 3);
+SAMPLER2D(u_volumetricTexture, 3);
 SAMPLER2D(u_ssaoTexture, 4);
 SAMPLER2D(u_ssrTexture, 5);
 SAMPLER2D(u_motionBlurTexture, 7);
@@ -47,7 +47,10 @@ uniform vec4 u_ssrParams;
 uniform vec4 u_motionBlurParams;
 #define u_motionblur_enabled int(u_motionBlurParams.x)
 
-StructuredBuffer<vec4> u_exposureData : register(t3);
+uniform vec4 u_volumetricParams;
+#define u_volumetrics_enabled int(u_volumetricParams.x)
+
+StructuredBuffer<vec4> u_exposureData : register(t6);
 
 float random(vec2 st) 
 {
@@ -161,14 +164,12 @@ void main()
         vec4 ssr = texture2D(u_ssrTexture, v_texcoord0);
         hdrColor += ssr.rgb * ssr.a;
     }
-    
-    // Keep Volumetrics commented out for now
-    /*
+
+    // Volumetrics
     if (u_volumetrics_enabled == 1)
     {
         hdrColor += texture2D(u_volumetricTexture, v_texcoord0).rgb;
     }
-    */
 
     // Fog
     float depth = texture2D(u_depthTexture, v_texcoord0).r;

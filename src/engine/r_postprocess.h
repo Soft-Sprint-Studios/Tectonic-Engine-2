@@ -28,6 +28,7 @@
 #include "r_ssao.h"
 #include "r_ssr.h"
 #include "r_motionblur.h"
+#include "r_volumetrics.h"
 #include "camera.h"
 #include <bgfx/bgfx.h>
 #include <memory>
@@ -40,7 +41,7 @@ public:
 
     bool Init(int width, int height, bgfx::TextureHandle depthTexture);
     void Begin();
-    void Draw(const Camera& camera, bgfx::TextureHandle depthTexture, bgfx::TextureHandle normalTexture, bgfx::TextureHandle mraoTexture);
+    void Draw(const Camera& camera, class R_Lights* lights, class R_GBuffer* gbuffer);
     void Rescale(int width, int height, bgfx::TextureHandle depthTexture);
     void Shutdown();
 
@@ -69,11 +70,13 @@ private:
     bgfx::UniformHandle m_sSsaoTexture = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle m_sSsrTexture = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle m_sMotionBlurTexture = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sVolumetricTexture = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle m_uParams = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle m_uBloomParams = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle m_uSsaoParams = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle m_uSsrParams = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle m_uMotionBlurParams = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uVolumetricParams = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle m_uColorParams = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle m_uFogColor = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle m_uFogParams = BGFX_INVALID_HANDLE;
@@ -87,4 +90,5 @@ private:
     std::unique_ptr<R_SSAO> m_ssao;
     std::unique_ptr<R_SSR> m_ssr;
     std::unique_ptr<R_MotionBlur> m_motionBlur;
+    std::unique_ptr<R_Volumetrics> m_volumetrics;
 };

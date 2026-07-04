@@ -24,47 +24,40 @@
 #pragma once
 #include "r_shader.h"
 #include "camera.h"
+#include "r_lights.h"
 #include <bgfx/bgfx.h>
 
-class R_SSR
+class R_Volumetrics 
 {
 public:
-    R_SSR();
-    ~R_SSR();
+    R_Volumetrics();
+    ~R_Volumetrics();
 
     bool Init(int width, int height);
     void Shutdown();
     void Rescale(int width, int height);
+    void Render(bgfx::ViewId viewId, bgfx::TextureHandle depthTexture, const Camera& camera, R_Lights* lights, int screenW, int screenH);
+    void Bind(bgfx::UniformHandle s_volumetricTex);
 
-    void Render(bgfx::ViewId viewId, bgfx::TextureHandle depthTex, bgfx::TextureHandle normalTex, bgfx::TextureHandle mraoTex, bgfx::TextureHandle sceneTex, const Camera& camera);
-    void Bind(bgfx::UniformHandle s_ssrTex);
-
-    bgfx::TextureHandle GetTexture() const 
-    { 
-        return m_blurTexture; 
-    }
+    bgfx::TextureHandle GetTexture() const { return m_blurTexture[0]; }
 
 private:
     void CreateBuffers(int width, int height);
     void DeleteBuffers();
 
     bgfx::TextureHandle m_texture = BGFX_INVALID_HANDLE;
-    bgfx::TextureHandle m_blurTexture = BGFX_INVALID_HANDLE;
+    bgfx::TextureHandle m_blurTexture[2] = { BGFX_INVALID_HANDLE, BGFX_INVALID_HANDLE };
 
-    R_Shader m_ssrShader;
+    R_Shader m_volShader;
     R_Shader m_blurShader;
-
+    
     bgfx::UniformHandle m_sDepth = BGFX_INVALID_HANDLE;
-    bgfx::UniformHandle m_sNormal = BGFX_INVALID_HANDLE;
-    bgfx::UniformHandle m_sMRAO = BGFX_INVALID_HANDLE;
-    bgfx::UniformHandle m_sScene = BGFX_INVALID_HANDLE;
-    bgfx::UniformHandle m_sSSR = BGFX_INVALID_HANDLE;
-
-    bgfx::UniformHandle m_uProj = BGFX_INVALID_HANDLE;
-    bgfx::UniformHandle m_uInvProj = BGFX_INVALID_HANDLE;
-    bgfx::UniformHandle m_uView = BGFX_INVALID_HANDLE;
-    bgfx::UniformHandle m_uParams1 = BGFX_INVALID_HANDLE;
-    bgfx::UniformHandle m_uParams2 = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sImage = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uCurrentInvProj = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uCurrentInvView = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uCurrentView = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uCurrentViewPos = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uBlurParams = BGFX_INVALID_HANDLE;
 
     int m_width = 0, m_height = 0;
 };

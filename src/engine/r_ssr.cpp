@@ -54,8 +54,11 @@ bool R_SSR::Init(int width, int height)
     m_sScene  = bgfx::createUniform("s_scene",  bgfx::UniformType::Sampler);
     m_sSSR    = bgfx::createUniform("s_ssrTex", bgfx::UniformType::Sampler);
 
-    m_uParams1 = bgfx::createUniform("u_ssrParams1", bgfx::UniformType::Vec4);
-    m_uParams2 = bgfx::createUniform("u_ssrParams2", bgfx::UniformType::Vec4);
+    m_uProj = bgfx::createUniform("u_currentProj", bgfx::UniformType::Mat4);
+    m_uInvProj = bgfx::createUniform("u_currentInvProj", bgfx::UniformType::Mat4);
+    m_uView = bgfx::createUniform("u_currentView", bgfx::UniformType::Mat4);
+    m_uParams1 = bgfx::createUniform("u_params", bgfx::UniformType::Vec4);
+    m_uParams2 = bgfx::createUniform("u_params2", bgfx::UniformType::Vec4);
 
     CreateBuffers(width, height);
     return true;
@@ -91,6 +94,10 @@ void R_SSR::Render(bgfx::ViewId viewId, bgfx::TextureHandle depthTex, bgfx::Text
     bgfx::setTexture(2, m_sMRAO,   mraoTex);
     bgfx::setTexture(3, m_sScene,  sceneTex);
     bgfx::setImage(4, m_texture, 0, bgfx::Access::Write, bgfx::TextureFormat::RGBA16F);
+
+    bgfx::setUniform(m_uProj, glm::value_ptr(camera.GetProjectionMatrix()));
+    bgfx::setUniform(m_uInvProj, glm::value_ptr(glm::inverse(camera.GetProjectionMatrix())));
+    bgfx::setUniform(m_uView, glm::value_ptr(camera.GetViewMatrix()));
 
     float params1[4] = { r_ssr_max_dist.GetFloat(), r_ssr_resolution.GetFloat(), r_ssr_thickness.GetFloat(), (float)r_ssr_steps.GetInt() };
     bgfx::setUniform(m_uParams1, params1);
@@ -139,6 +146,9 @@ void R_SSR::Shutdown()
         bgfx::destroy(m_sMRAO);
         bgfx::destroy(m_sScene);
         bgfx::destroy(m_sSSR);
+        bgfx::destroy(m_uProj);
+        bgfx::destroy(m_uInvProj);
+        bgfx::destroy(m_uView);
         bgfx::destroy(m_uParams1);
         bgfx::destroy(m_uParams2);
         m_sDepth = m_sNormal = m_sMRAO = m_sScene = m_sSSR = BGFX_INVALID_HANDLE;

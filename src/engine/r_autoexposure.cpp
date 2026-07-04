@@ -86,7 +86,7 @@ void R_AutoExposure::Render(bgfx::ViewId viewId, bgfx::TextureHandle screenTextu
 
 void R_AutoExposure::Bind()
 {
-    bgfx::setBuffer(3, m_lumBuffer, bgfx::Access::Read);
+    bgfx::setBuffer(6, m_lumBuffer, bgfx::Access::Read);
 }
 
 void R_AutoExposure::Shutdown()

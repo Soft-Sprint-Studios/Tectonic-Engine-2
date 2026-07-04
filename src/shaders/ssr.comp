@@ -7,6 +7,10 @@ SAMPLER2D(s_mrao, 2);
 SAMPLER2D(s_sceneTex, 3);
 IMAGE2D_WO(s_destination, rgba16f, 4);
 
+uniform mat4 u_currentProj;
+uniform mat4 u_currentInvProj;
+uniform mat4 u_currentView;
+
 uniform vec4 u_params;
 uniform vec4 u_params2;
 
@@ -20,7 +24,7 @@ vec3 GetViewPos(vec2 uv)
 {
     float depth = texture2DLod(s_depth, uv, 0.0).r;
     vec4 clipSpace = vec4(uv.x * 2.0 - 1.0, (1.0 - uv.y) * 2.0 - 1.0, depth, 1.0);
-    vec4 viewSpace = mul(u_invProj, clipSpace);
+    vec4 viewSpace = mul(u_currentInvProj, clipSpace);
     return viewSpace.xyz / viewSpace.w;
 }
 
@@ -45,7 +49,7 @@ void main()
 
     vec3 viewPos = GetViewPos(uv);
     vec3 worldNormal = DecodeNormal(texture2DLod(s_normal, uv, 0.0).rg);
-    vec3 viewNormal = normalize(mul(u_view, vec4(worldNormal, 0.0)).xyz);
+    vec3 viewNormal = normalize(mul(u_currentView, vec4(worldNormal, 0.0)).xyz);
 
     vec3 rayDir = normalize(reflect(normalize(viewPos), viewNormal));
     vec3 currentPos = viewPos;
@@ -59,7 +63,7 @@ void main()
     {
         currentPos += stepVec;
         
-        vec4 projectedPos = mul(u_proj, vec4(currentPos, 1.0));
+        vec4 projectedPos = mul(u_currentProj, vec4(currentPos, 1.0));
         vec2 sampleUV = (projectedPos.xy / projectedPos.w) * 0.5 + 0.5;
         sampleUV.y = 1.0 - sampleUV.y;
 
@@ -78,7 +82,7 @@ void main()
             for(int j = 0; j < u_binarySteps; j++)
             {
                 midStep = mix(minStep, maxStep, 0.5);
-                vec4 pMid = mul(u_proj, vec4(midStep, 1.0));
+                vec4 pMid = mul(u_currentProj, vec4(midStep, 1.0));
                 vec2 uvMid = (pMid.xy / pMid.w) * 0.5 + 0.5;
                 uvMid.y = 1.0 - uvMid.y;
                 float zMid = GetViewPos(uvMid).z;

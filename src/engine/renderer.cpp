@@ -227,7 +227,7 @@ void Renderer::RenderWorld(Camera& camera, uint32_t cubemapToExclude, bool drawW
 
     if (lightingView == RenderView::Resolve)
     {
-        m_postProcess->Draw(camera, m_gbuffer->GetDepthTex(), m_gbuffer->GetNormalTex(), m_gbuffer->GetMRAOTex());
+        m_postProcess->Draw(camera, m_lightRenderer.get(), m_gbuffer.get());
     }
 }
 

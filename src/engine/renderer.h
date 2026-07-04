@@ -62,16 +62,18 @@ namespace RenderView
         SSR = 9,
         SSR_Blur = 10,
         MotionBlur = 11,
-        GlassBlit = 12,
-        GlassDraw = 13,
-        TransparentDraw = 14,
-        PostProcess = 15,
-        UI = 16,
-        CSM_0 = 17,
-        CSM_1 = 18,
-        CSM_2 = 19,
-        CSM_3 = 20,
-        ShadowBase = 21
+        Volumetrics = 12,
+        Volumetrics_Blur = 13,
+        GlassBlit = 14,
+        GlassDraw = 15,
+        TransparentDraw = 16,
+        PostProcess = 17,
+        UI = 18,
+        CSM_0 = 19,
+        CSM_1 = 20,
+        CSM_2 = 21,
+        CSM_3 = 22,
+        ShadowBase = 23
     };
 }
 
