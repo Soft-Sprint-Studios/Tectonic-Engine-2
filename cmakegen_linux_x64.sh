@@ -11,9 +11,8 @@ sudo apt-get install -y \
     libx11-dev \
     libxext-dev \
     libxinerama-dev \
-    libxft-dev \
-    libxrender-dev \
-    libxfixes-dev \
+    libxrandr-dev \
+    libxi-dev \
     libxcursor-dev \
     libfontconfig1-dev \
     libopenal-dev \
