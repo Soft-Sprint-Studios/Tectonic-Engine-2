@@ -30,8 +30,14 @@ CVar r_motionblur("r_motionblur", "1", "Enable Motion Blur.", CVAR_SAVE);
 CVar r_motionblur_samples("r_motionblur_samples", "16", "Number of samples for motion blur.", CVAR_SAVE);
 CVar r_motionblur_scale("r_motionblur_scale", "1.0", "Intensity of the motion blur effect.", CVAR_SAVE);
 
-R_MotionBlur::R_MotionBlur() {}
-R_MotionBlur::~R_MotionBlur() { Shutdown(); }
+R_MotionBlur::R_MotionBlur() 
+{
+}
+
+R_MotionBlur::~R_MotionBlur() 
+{ 
+    Shutdown(); 
+}
 
 bool R_MotionBlur::Init(int width, int height)
 {
