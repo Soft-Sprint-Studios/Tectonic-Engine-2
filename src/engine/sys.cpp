@@ -315,6 +315,11 @@ namespace Sys
         return !s_running;
     }
 
+    Window* GetWindow()
+    {
+        return &s_window;
+    }
+
     void Quit()
     {
         s_running = false;

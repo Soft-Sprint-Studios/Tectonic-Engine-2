@@ -32,6 +32,7 @@
 #include "r_ui.h"
 #include "timing.h"
 #include "filesystem.h"
+#include "sys.h"
 #include <cmath>
 #include <vector>
 #include <string>
@@ -115,11 +116,11 @@ namespace Console
         s_historyIndex = -1;
         if (s_opened)
         {
-            SDL_StartTextInput(SDL_GL_GetCurrentWindow());
+            SDL_StartTextInput(Sys::GetWindow()->Get());
         }
         else
         {
-            SDL_StopTextInput(SDL_GL_GetCurrentWindow());
+            SDL_StopTextInput(Sys::GetWindow()->Get());
         }
     }
 
@@ -260,7 +261,7 @@ namespace Console
 
         auto ui = renderer->GetUI();
         int w, h;
-        SDL_GetWindowSize(SDL_GL_GetCurrentWindow(), &w, &h);
+        SDL_GetWindowSize(Sys::GetWindow()->Get(), &w, &h);
 
         float conH = (float)h * 0.45f;
         float yOffset = (s_animPos - 1.0f) * conH;

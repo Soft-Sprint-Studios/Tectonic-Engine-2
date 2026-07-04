@@ -30,6 +30,7 @@
 #include "concmd.h"
 #include "cvar.h"
 #include "localization.h"
+#include "sys.h"
 #include <algorithm>
 
 namespace MainMenu
@@ -50,7 +51,7 @@ namespace MainMenu
     void Init() 
     {
         // Unlock mouse initially for the menu
-        SDL_SetWindowRelativeMouseMode(SDL_GL_GetCurrentWindow(), false);
+        SDL_SetWindowRelativeMouseMode(Sys::GetWindow()->Get(), false);
     }
 
     bool Button(Renderer* renderer, const std::string& label, float x, float y, float w, float h) 
@@ -127,7 +128,7 @@ namespace MainMenu
             s_mousePressedLast = false;
 
         int w, h;
-        SDL_GetWindowSize(SDL_GL_GetCurrentWindow(), &w, &h);
+        SDL_GetWindowSize(Sys::GetWindow()->Get(), &w, &h);
         auto ui = renderer->GetUI();
 
         // Black Background
@@ -213,7 +214,7 @@ namespace MainMenu
         s_active = active;
         if (!s_active) 
             s_currentPage = MenuPage::Main;
-        SDL_SetWindowRelativeMouseMode(SDL_GL_GetCurrentWindow(), !s_active);
+        SDL_SetWindowRelativeMouseMode(Sys::GetWindow()->Get(), !s_active);
     }
 
     bool IsActive() 

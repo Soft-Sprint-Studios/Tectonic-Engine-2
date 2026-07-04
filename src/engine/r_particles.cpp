@@ -25,6 +25,8 @@
 #include "particles.h"
 #include "materials.h"
 #include "console.h"
+#include "sys.h"
+#include "window.h"
 #include <SDL3/SDL.h>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -64,7 +66,7 @@ void R_Particles::Draw(bgfx::ViewId viewId, const Camera& camera)
                        | BGFX_STATE_DEPTH_TEST_LESS;
 
     int w, h;
-    SDL_GetWindowSize(SDL_GL_GetCurrentWindow(), &w, &h);
+    SDL_GetWindowSize(Sys::GetWindow()->Get(), &w, &h);
     float particleParams[4] = { (float)w, (float)h, 0.0f, 0.0f };
     bgfx::setUniform(m_uParticleParams, particleParams);
 
