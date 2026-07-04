@@ -15,7 +15,7 @@ void main()
     uvScale *= 0.0625;
 
     vec2 finalUV = fract(v_texcoord0 * uvScale);
-    vec4 texColor = texture2D(s_texture, vec2(finalUV.x, finalUV.y));
+    vec4 texColor = texture2D(s_texture, vec2(finalUV.x, 1.0 - finalUV.y));
 
     if (u_grayscale > 0.5)
     {
