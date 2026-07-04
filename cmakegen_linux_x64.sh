@@ -7,6 +7,7 @@ sudo apt-get update
 sudo apt-get install -y \
     build-essential \
     cmake \
+    libgl1-mesa-dev \
     libx11-dev \
     libxext-dev \
     libxinerama-dev \
@@ -15,7 +16,8 @@ sudo apt-get install -y \
     libxfixes-dev \
     libxcursor-dev \
     libfontconfig1-dev \
-    libopenal-dev
+    libopenal-dev \
+    libvulkan-dev
 
 if [ ! -d "build_linux_x64" ]; then
     mkdir build_linux_x64
