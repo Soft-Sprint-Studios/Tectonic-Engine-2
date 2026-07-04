@@ -61,12 +61,6 @@ void R_Glass::CaptureScreen(bgfx::ViewId viewId, bgfx::TextureHandle sceneTex)
 
 void R_Glass::Draw(bgfx::ViewId viewId, const Camera& camera, R_BSP* bsp)
 {
-    uint64_t state = BGFX_STATE_WRITE_RGB 
-                   | BGFX_STATE_WRITE_A 
-                   | BGFX_STATE_DEPTH_TEST_LESS 
-                   | BGFX_STATE_BLEND_ALPHA 
-                   | BGFX_STATE_CULL_CW;
-
     for (auto& ent : EntityManager::GetEntities())
     {
         if (ent->GetClassName() == "func_glass" && ent->IsEnabled())

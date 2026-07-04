@@ -115,13 +115,12 @@ bool Renderer::Init(Window& window)
     m_interiorRenderer->Init();
     m_videoRenderer = std::make_unique<R_Video>();
     m_videoRenderer->Init();
+    m_monitorRenderer = std::make_unique<R_Monitors>();
+    m_monitorRenderer->Init();
     m_postProcess = std::make_unique<R_PostProcess>();
     m_postProcess->Init(w, h, m_gbuffer->GetDepthTex());
 
-    if (!m_gbufferShader.Load("shaders/gbuffer.vert", "shaders/gbuffer.frag"))
-    {
-        Console::Error("BGFX: Failed to load G-Buffer Shader binaries!");
-    }
+    m_gbufferShader.Load("shaders/gbuffer.vert", "shaders/gbuffer.frag");
 
     m_sDepth = bgfx::createUniform("s_gDepth", bgfx::UniformType::Sampler);
     m_sNormal = bgfx::createUniform("s_gNormal", bgfx::UniformType::Sampler);
@@ -193,6 +192,8 @@ void Renderer::Render(Camera& camera)
     {
         m_waterRenderer->RenderReflection(this, camera);
     }
+
+    m_monitorRenderer->RenderTextures(this);
 
     m_lightRenderer->RenderShadowMaps(camera, this);
 
@@ -365,6 +366,12 @@ void Renderer::Shutdown()
         m_videoRenderer.reset();
     }
 
+    if (m_monitorRenderer)
+    {
+        m_monitorRenderer->Shutdown();
+        m_monitorRenderer.reset();
+    }
+
     if (m_particleRenderer)
     {
         m_particleRenderer->Shutdown();
@@ -516,6 +523,7 @@ void Renderer::ForwardPass(Camera& camera, bgfx::ViewId viewId, int renderW, int
 
     m_beamRenderer->Draw(RenderView::TransparentDraw, camera, Beams::GetActiveBeams());
     m_cableRenderer->Draw(RenderView::TransparentDraw, camera, Cables::GetActiveCables());
+    m_monitorRenderer->Draw(RenderView::TransparentDraw, camera, m_bspRenderer.get());
     m_interiorRenderer->Draw(RenderView::TransparentDraw, camera, m_bspRenderer.get());
     m_videoRenderer->Draw(RenderView::TransparentDraw, camera, m_bspRenderer.get());
 

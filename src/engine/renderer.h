@@ -43,6 +43,7 @@
 #include "r_overlay.h"
 #include "r_interior_parallax.h"
 #include "r_video.h"
+#include "r_monitors.h"
 #include <bgfx/bgfx.h>
 #include <memory>
 
@@ -54,27 +55,28 @@ namespace RenderView
         CSM_1 = 1,
         CSM_2 = 2,
         CSM_3 = 3,
-        ShadowBase = 4,
+        ShadowBase = 4, // Reserves views up to 69 for shadow maps
         ReflectionGBuffer = 70,
         WaterReflection = 71,
-        GBuffer = 72,
-        Resolve = 73,
-        Forward = 74,
-        AutoExposure = 75,
-        Bloom = 76,
-        SSAO = 77,
-        SSAO_Blur = 78,
-        SSR = 79,
-        SSR_Blur = 80,
-        MotionBlur = 81,
-        CAS = 82,
-        Volumetrics = 83,
-        Volumetrics_Blur = 84,
-        GlassBlit = 85,
-        GlassDraw = 86,
-        TransparentDraw = 87,
-        PostProcess = 88,
-        UI = 89
+        MonitorGBuffer = 72,
+        MonitorResolve = 73,
+        GBuffer = 74,
+        Resolve = 75,
+        Forward = 76,         // Renders skybox
+        GlassBlit = 77,       // Captures skybox + opaque scene
+        TransparentDraw = 78, // Renders monitors, videos, glass, sprites, beams, cables (writes depth first!)
+        AutoExposure = 79,
+        Bloom = 80,
+        SSAO = 81,            // Reads depth (monitors are now present!)
+        SSAO_Blur = 82,
+        SSR = 83,             // Reads depth and color (monitors are reflected correctly!)
+        SSR_Blur = 84,
+        Volumetrics = 85,     // Reads depth (correctly occluded by monitors/videos!)
+        Volumetrics_Blur = 86,
+        MotionBlur = 87,      // Compute-pass motion blur
+        CAS = 88,             // Compute-pass sharpening
+        PostProcess = 89,     // Renders to screen backbuffer
+        UI = 90               // Renders UI over backbuffer
     };
 }
 
@@ -123,6 +125,7 @@ private:
     std::unique_ptr<R_Overlay> m_overlayRenderer;
     std::unique_ptr<R_InteriorParallax> m_interiorRenderer;
     std::unique_ptr<R_Video> m_videoRenderer;
+    std::unique_ptr<R_Monitors> m_monitorRenderer;
     std::unique_ptr<R_PostProcess> m_postProcess;
 
     bgfx::UniformHandle m_sDepth = BGFX_INVALID_HANDLE;
