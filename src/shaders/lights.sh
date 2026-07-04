@@ -68,6 +68,7 @@ float SpotShadowCalc(vec3 worldPos, vec3 lightPos, float radius, mat4 lightSpace
 	
     vec4 fragPosLightSpace = mul(lightSpaceMatrix, vec4(worldPos, 1.0));
     vec3 projCoords = (fragPosLightSpace.xyz / fragPosLightSpace.w) * 0.5 + 0.5;
+    projCoords.y = 1.0 - projCoords.y;
     if (projCoords.z > 1.0) 
         return 0.0;
 
@@ -120,6 +121,7 @@ float CalculateSunShadow(vec3 worldPos, mat4 viewMat, sampler2DArray shadowArray
     vec4 fragPosLightSpace = mul(u_csmMatrices[layer], vec4(worldPos, 1.0));
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     projCoords = projCoords * 0.5 + 0.5;
+    projCoords.y = 1.0 - projCoords.y;
 
     if (projCoords.z > 1.0) 
     {

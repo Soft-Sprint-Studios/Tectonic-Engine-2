@@ -29,7 +29,7 @@ class Renderer;
 
 namespace R_Cubemap
 {
-    inline uint32_t CreateFromFiles(const std::string& basePath) { return 0; }
-    inline void BuildProbes(const std::string& mapName, Renderer* renderer) {}
-    inline void Release(uint32_t id) {}
+    uint32_t CreateFromFiles(const std::string& basePath);
+    void BuildProbes(const std::string& mapName, Renderer* renderer);
+    void Release(uint32_t id);
 }

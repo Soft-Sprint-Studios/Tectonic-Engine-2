@@ -57,7 +57,7 @@ void R_Cascade::Init(int res)
     m_matrices.assign(4, glm::mat4(1.0f));
 
     uint64_t rtFlags = BGFX_TEXTURE_RT | BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP | BGFX_SAMPLER_COMPARE_LESS;
-    m_texArray = bgfx::createTexture2D((uint16_t)res, (uint16_t)res, false, 4, bgfx::TextureFormat::D32F, rtFlags);
+    m_texArray = bgfx::createTexture2D((uint16_t)res, (uint16_t)res, false, 4, bgfx::TextureFormat::D16, rtFlags);
 
     for (int i = 0; i < 4; i++)
     {
@@ -66,8 +66,8 @@ void R_Cascade::Init(int res)
         m_fbo[i] = bgfx::createFrameBuffer(1, &at);
     }
 
-    uint8_t dummyData[4] = { 0 };
-    m_dummyTex = bgfx::createTexture2D(1, 1, false, 1, bgfx::TextureFormat::D32F, BGFX_TEXTURE_RT, bgfx::copy(dummyData, 4));
+    uint16_t dummyData[1] = { 0 };
+    m_dummyTex = bgfx::createTexture2D(1, 1, false, 1, bgfx::TextureFormat::D16, BGFX_TEXTURE_RT, bgfx::copy(dummyData, 2));
 
     m_uSunMatrices = bgfx::createUniform("u_csmMatrices", bgfx::UniformType::Mat4, 4);
     m_uSunSplitsLow = bgfx::createUniform("u_csmSplitsLow", bgfx::UniformType::Vec4);
@@ -97,6 +97,8 @@ std::vector<glm::vec4> R_Cascade::GetFrustumCornersWorldSpace(const glm::mat4& p
 void R_Cascade::UpdateMatrices(const Camera& cam, const glm::vec3& sunDir)
 {
     m_matrices.clear();
+    m_viewMatrices.clear();
+    m_projMatrices.clear();
     for (size_t i = 0; i < 4; ++i)
     {
         glm::mat4 proj = glm::perspective(glm::radians(cam.GetFOV()), cam.GetAspectRatio(), m_splits[i], m_splits[i + 1]);
@@ -129,6 +131,8 @@ void R_Cascade::UpdateMatrices(const Camera& cam, const glm::vec3& sunDir)
 
         lightProj[3] += roundOffset;
         m_matrices.push_back(lightProj * lightView);
+        m_viewMatrices.push_back(lightView);
+        m_projMatrices.push_back(lightProj);
     }
 }
 
@@ -147,7 +151,7 @@ void R_Cascade::Render(const Camera& camera, R_Shader& shadowShader, Renderer* r
         bgfx::setViewClear(shadowView, BGFX_CLEAR_DEPTH, 0, 1.0f, 0);
         bgfx::setViewRect(shadowView, 0, 0, (uint16_t)m_resolution, (uint16_t)m_resolution);
         bgfx::setViewFrameBuffer(shadowView, m_fbo[i]);
-        bgfx::setViewTransform(shadowView, nullptr, glm::value_ptr(m_matrices[i]));
+        bgfx::setViewTransform(shadowView, glm::value_ptr(m_viewMatrices[i]), glm::value_ptr(m_projMatrices[i]));
 
         bgfx::setTransform(glm::value_ptr(identity));
 

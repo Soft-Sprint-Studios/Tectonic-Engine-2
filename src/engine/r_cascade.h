@@ -60,5 +60,7 @@ private:
 
     int m_resolution;
     std::vector<glm::mat4> m_matrices;
+    std::vector<glm::mat4> m_viewMatrices;
+    std::vector<glm::mat4> m_projMatrices;
     std::vector<float> m_splits;
 };

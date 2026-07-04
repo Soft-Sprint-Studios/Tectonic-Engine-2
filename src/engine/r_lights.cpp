@@ -76,11 +76,11 @@ bool R_Lights::Init()
     m_cascade = std::make_unique<R_Cascade>();
     m_cascade->Init();
 
-    uint64_t depthRtFlags = BGFX_TEXTURE_RT | BGFX_SAMPLER_U_BORDER | BGFX_SAMPLER_V_BORDER | BGFX_SAMPLER_COMPARE_LESS;
+    uint64_t depthRtFlags = BGFX_TEXTURE_RT | BGFX_SAMPLER_U_BORDER | BGFX_SAMPLER_V_BORDER;
     uint64_t colorRtFlags = BGFX_TEXTURE_RT | BGFX_SAMPLER_U_BORDER | BGFX_SAMPLER_V_BORDER;
 
-    m_shadowDepthTex = bgfx::createTexture2D(256, 256, false, 8, bgfx::TextureFormat::D32F, depthRtFlags);
-    m_PointDepth = bgfx::createTextureCube(256, false, 8, bgfx::TextureFormat::D32F, depthRtFlags);
+    m_shadowDepthTex = bgfx::createTexture2D(256, 256, false, 8, bgfx::TextureFormat::D16, depthRtFlags);
+    m_PointDepth = bgfx::createTextureCube(256, false, 8, bgfx::TextureFormat::D16, depthRtFlags);
 
     m_SpotShadow = bgfx::createTexture2D(256, 256, false, 8, bgfx::TextureFormat::RG16F, colorRtFlags);
     m_PointShadow = bgfx::createTextureCube(256, false, 8, bgfx::TextureFormat::RG16F, colorRtFlags);
