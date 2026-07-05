@@ -80,16 +80,16 @@ bool R_Lights::Init()
     uint64_t colorRtFlags = BGFX_TEXTURE_RT | BGFX_SAMPLER_U_BORDER | BGFX_SAMPLER_V_BORDER;
 
     m_shadowDepthTex = bgfx::createTexture2D(256, 256, false, 8, bgfx::TextureFormat::D16, depthRtFlags);
-    m_PointDepth = bgfx::createTextureCube(256, false, 8, bgfx::TextureFormat::D16, depthRtFlags);
+    m_PointDepth = bgfx::createTexture2D(256, 256, false, 48, bgfx::TextureFormat::D16, depthRtFlags);
 
     m_SpotShadow = bgfx::createTexture2D(256, 256, false, 8, bgfx::TextureFormat::RG16F, colorRtFlags);
-    m_PointShadow = bgfx::createTextureCube(256, false, 8, bgfx::TextureFormat::RG16F, colorRtFlags);
+    m_PointShadow = bgfx::createTexture2D(256, 256, false, 48, bgfx::TextureFormat::RG16F, colorRtFlags);
 
     for (int i = 0; i < 8; i++)
     {
         bgfx::Attachment at[2];
         at[0].init(m_SpotShadow, bgfx::Access::Write, (uint16_t)i);
-        at[1].init(m_shadowDepthTex, bgfx::Access::Write, (uint16_t)i);
+        at[1].init(m_shadowDepthTex, bgfx::Access::Write, (uint16_t)i, 1, 0, BGFX_RESOLVE_NONE);
         m_spotFB[i] = bgfx::createFrameBuffer(2, at);
     }
 
@@ -99,7 +99,7 @@ bool R_Lights::Init()
         {
             bgfx::Attachment at[2];
             at[0].init(m_PointShadow, bgfx::Access::Write, (uint16_t)(i * 6 + face));
-            at[1].init(m_PointDepth, bgfx::Access::Write, (uint16_t)(i * 6 + face));
+            at[1].init(m_PointDepth, bgfx::Access::Write, (uint16_t)(i * 6 + face), 1, 0, BGFX_RESOLVE_NONE);
             m_pointFB[i][face] = bgfx::createFrameBuffer(2, at);
         }
     }

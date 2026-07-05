@@ -15,10 +15,10 @@ struct LightData
 };
 
 SAMPLER2DARRAY(u_spotShadowMaps, 14);
-SAMPLERCUBE(u_pointShadowMaps, 15);
+SAMPLER2DARRAY(u_pointShadowMaps, 15);
 SAMPLER2DARRAY(u_csmArray, 13);
 
-uniform vec4 u_lightParams; // x = u_numPointLights, y = u_numSpotLights
+uniform vec4 u_lightParams;
 #define u_numPointLights int(u_lightParams.x)
 #define u_numSpotLights  int(u_lightParams.y)
 
@@ -86,7 +86,28 @@ float PointShadowCalc(vec3 worldPos, vec3 lightPos, float far_plane, float layer
     vec3 fragToLight = worldPos - lightPos;
     float depth = (length(fragToLight) / far_plane) - 0.001;
 
-    vec2 moments = textureCube(u_pointShadowMaps, fragToLight).rg;
+    vec3 vAbs = abs(fragToLight);
+    float faceIndex;
+    vec2 uv;
+
+    if (vAbs.z >= vAbs.x && vAbs.z >= vAbs.y) 
+    {
+        faceIndex = fragToLight.z < 0.0 ? 5.0 : 4.0;
+        uv = vec2(fragToLight.z < 0.0 ? -fragToLight.x : fragToLight.x, fragToLight.y);
+    } 
+    else if (vAbs.y >= vAbs.x)
+    {
+        faceIndex = fragToLight.y < 0.0 ? 3.0 : 2.0;
+        uv = vec2(fragToLight.x, fragToLight.y < 0.0 ? fragToLight.z : -fragToLight.z);
+    } 
+    else 
+    {
+        faceIndex = fragToLight.x < 0.0 ? 1.0 : 0.0;
+        uv = vec2(fragToLight.x < 0.0 ? fragToLight.z : -fragToLight.z, fragToLight.y);
+    }
+    
+    uv = uv * (0.5 / max(vAbs.x, max(vAbs.y, vAbs.z))) + 0.5;
+    vec2 moments = texture2DArray(u_pointShadowMaps, vec3(uv, layer * 6.0 + faceIndex)).rg;
     float warpedDepth = exp(EVSM_EXP * depth);
     return 1.0 - ChebyshevUpperBound(moments, warpedDepth);
 }

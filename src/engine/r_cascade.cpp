@@ -62,7 +62,7 @@ void R_Cascade::Init(int res)
     for (int i = 0; i < 4; i++)
     {
         bgfx::Attachment at;
-        at.init(m_texArray, bgfx::Access::Write, (uint16_t)i);
+        at.init(m_texArray, bgfx::Access::Write, (uint16_t)i, 1, 0, BGFX_RESOLVE_NONE);
         m_fbo[i] = bgfx::createFrameBuffer(1, &at);
     }
 
@@ -125,7 +125,7 @@ void R_Cascade::UpdateMatrices(const Camera& cam, const glm::vec3& sunDir)
 
         glm::vec4 roundedOrigin = glm::round(shadowOrigin);
         glm::vec4 roundOffset = roundedOrigin - shadowOrigin;
-        roundOffset = roundOffset * 2.0f / (float)m_resolution;
+        roundOffset = roundOffset * (2.0f * radius) / (float)m_resolution;
         roundOffset.z = 0.0f;
         roundOffset.w = 0.0f;
 
