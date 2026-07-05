@@ -74,9 +74,9 @@ bool Renderer::Init(Window& window)
     pd.ndt = nullptr;
     pd.nwh = nullptr;
 
-#if defined(PLATFORM_WINDOWS)
+#ifdef PLATFORM_WINDOWS
     pd.nwh = (void*)SDL_GetPointerProperty(SDL_GetWindowProperties(m_windowRef->Get()), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
-#elif defined(PLATFORM_LINUX) || defined(PLATFORM_FREEBSD)
+#else
     if (SDL_strcmp(SDL_GetCurrentVideoDriver(), "x11") == 0)
     {
         pd.ndt = (void*)SDL_GetPointerProperty(SDL_GetWindowProperties(m_windowRef->Get()), SDL_PROP_WINDOW_X11_DISPLAY_POINTER, NULL);
