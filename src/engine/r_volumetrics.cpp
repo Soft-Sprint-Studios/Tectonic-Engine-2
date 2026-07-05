@@ -30,8 +30,14 @@ CVar r_volumetrics("r_volumetrics", "1", "Enable volumetric lighting (God rays).
 CVar r_volumetrics_downsample("r_volumetrics_downsample", "8", "Downscaling factor for volumetric buffer (higher = faster).", CVAR_SAVE);
 CVar r_volumetrics_blur_passes("r_volumetrics_blur_passes", "6", "Number of blur passes for volumetrics.", CVAR_SAVE);
 
-R_Volumetrics::R_Volumetrics() {}
-R_Volumetrics::~R_Volumetrics() { Shutdown(); }
+R_Volumetrics::R_Volumetrics() 
+{
+}
+
+R_Volumetrics::~R_Volumetrics() 
+{ 
+    Shutdown();
+}
 
 bool R_Volumetrics::Init(int width, int height) 
 {
