@@ -37,6 +37,14 @@ void main()
         return;
 
     vec2 uv = (vec2(pos) + 0.5) / vec2(size);
+    float depth = texture2DLod(s_depth, uv, 0.0).r;
+
+    if (depth >= 0.9999)
+    {
+        imageStore(s_destination, pos, vec4_splat(1.0));
+        return;
+    }
+
     vec3 fragPos = GetViewPos(uv);
 
     vec3 worldNormal = DecodeNormal(texture2DLod(s_normal, uv, 0.0).rg);

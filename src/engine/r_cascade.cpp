@@ -56,7 +56,7 @@ void R_Cascade::Init(int res)
     m_splits = { 0.1f, 20.0f, 60.0f, 150.0f, 500.0f };
     m_matrices.assign(4, glm::mat4(1.0f));
 
-    uint64_t rtFlags = BGFX_TEXTURE_RT | BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP | BGFX_SAMPLER_COMPARE_LESS;
+    uint64_t rtFlags = BGFX_TEXTURE_RT | BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP;
     m_texArray = bgfx::createTexture2D((uint16_t)res, (uint16_t)res, false, 4, bgfx::TextureFormat::D16, rtFlags);
 
     for (int i = 0; i < 4; i++)
