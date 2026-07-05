@@ -151,11 +151,9 @@ void R_UI::Render()
         return;
     }
 
-    uint64_t state = BGFX_STATE_WRITE_RGB
-        | BGFX_STATE_WRITE_A
-        | BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_SRC_ALPHA, BGFX_STATE_BLEND_INV_SRC_ALPHA);
+    uint64_t state = BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_SRC_ALPHA, BGFX_STATE_BLEND_INV_SRC_ALPHA);
 
-    // Draw Rectangles and Circles first
+    // Draw Rectangles and Circles
     if (!m_rectCommands.empty() && bgfx::isValid(m_whiteTexture))
     {
         for (const auto& rect : m_rectCommands)
@@ -207,14 +205,7 @@ void R_UI::Render()
             newCache.height = converted->h;
 
             const bgfx::Memory* mem = bgfx::copy(converted->pixels, converted->w * converted->h * 4);
-            newCache.texture = bgfx::createTexture2D(
-                (uint16_t)converted->w,
-                (uint16_t)converted->h,
-                false, 1,
-                bgfx::TextureFormat::RGBA8,
-                BGFX_TEXTURE_NONE,
-                mem
-            );
+            newCache.texture = bgfx::createTexture2D((uint16_t)converted->w, (uint16_t)converted->h, false, 1, bgfx::TextureFormat::RGBA8, BGFX_TEXTURE_NONE, mem);
 
             m_textCache[cmd.text] = newCache;
             SDL_DestroySurface(converted);

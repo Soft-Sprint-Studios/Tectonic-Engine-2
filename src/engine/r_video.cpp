@@ -74,7 +74,8 @@ bool R_VideoInstance::Load(const std::string& path, bool loop)
 
 void R_VideoInstance::Update(float dt)
 {
-    if (!m_plm) return;
+    if (!m_plm) 
+        return;
 
     m_time += (double)dt;
 

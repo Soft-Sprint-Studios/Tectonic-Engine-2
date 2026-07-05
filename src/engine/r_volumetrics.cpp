@@ -117,10 +117,7 @@ void R_Volumetrics::Render(bgfx::ViewId viewId, bgfx::TextureHandle depthTexture
     float vp[4] = { camera.position.x, camera.position.y, camera.position.z, 0.0f };
     bgfx::setUniform(m_uCurrentViewPos, vp);
 
-    if (lights) 
-    {
-        lights->Bind(m_volShader);
-    }
+    lights->Bind(m_volShader);
 
     bgfx::dispatch(viewId, m_volShader.GetProgram(), (vW + 15) / 16, (vH + 15) / 16, 1);
 

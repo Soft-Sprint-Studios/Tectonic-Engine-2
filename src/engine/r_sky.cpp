@@ -136,10 +136,7 @@ void R_Sky::Draw(bgfx::ViewId viewId, const Camera& camera)
     glm::mat4 view = glm::mat4(glm::mat3(camera.GetViewMatrix()));
     bgfx::setViewTransform(viewId, glm::value_ptr(view), glm::value_ptr(camera.GetProjectionMatrix()));
 
-    uint64_t state = BGFX_STATE_WRITE_RGB 
-                   | BGFX_STATE_WRITE_A 
-                   | BGFX_STATE_DEPTH_TEST_LEQUAL 
-                   | BGFX_STATE_CULL_CW;
+    uint64_t state = BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_DEPTH_TEST_LEQUAL | BGFX_STATE_CULL_CW;
 
     bgfx::setState(state);
     bgfx::submit(viewId, m_shader.GetProgram());

@@ -172,7 +172,6 @@ void R_SSAO::Render(bgfx::ViewId viewId, bgfx::TextureHandle depthTexture, const
     int vW = screenW / ds;
     int vH = screenH / ds;
 
-    // SSAO Compute Pass
     bgfx::setTexture(0, m_sDepthTexture, depthTexture);
     bgfx::setTexture(1, m_sNoiseTexture, m_noiseTexture);
     bgfx::setImage(2, m_texture, 0, bgfx::Access::Write, bgfx::TextureFormat::R8);
@@ -187,7 +186,6 @@ void R_SSAO::Render(bgfx::ViewId viewId, bgfx::TextureHandle depthTexture, const
 
     bgfx::dispatch(viewId, m_ssaoShader.GetProgram(), (vW + 15) / 16, (vH + 15) / 16, 1);
 
-    // Dynamic Compute Blur Passes
     bool horizontal = true;
     bgfx::TextureHandle currentInput = m_texture;
     int blurPasses = r_ssao_blur_passes.GetInt();

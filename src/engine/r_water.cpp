@@ -141,11 +141,7 @@ void R_Water::Draw(bgfx::ViewId viewId, const Camera& camera, bgfx::VertexBuffer
         bgfx::setTransform(glm::value_ptr(identity));
         bgfx::setVertexBuffer(0, bspVbo, s.start, s.count);
 
-        uint64_t state = BGFX_STATE_WRITE_RGB 
-                       | BGFX_STATE_WRITE_A 
-                       | BGFX_STATE_WRITE_Z 
-                       | BGFX_STATE_DEPTH_TEST_LESS 
-                       | BGFX_STATE_CULL_CW;
+        uint64_t state = BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LESS | BGFX_STATE_CULL_CW;
 
         bgfx::setState(state);
         bgfx::submit(viewId, m_shader.GetProgram());

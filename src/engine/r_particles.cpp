@@ -61,9 +61,7 @@ void R_Particles::Draw(bgfx::ViewId viewId, const Camera& camera)
     if (systems.empty()) 
         return;
 
-    uint64_t baseState = BGFX_STATE_WRITE_RGB 
-                       | BGFX_STATE_WRITE_A 
-                       | BGFX_STATE_DEPTH_TEST_LESS;
+    uint64_t baseState = BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_DEPTH_TEST_LESS;
 
     int w, h;
     SDL_GetWindowSize(Sys::GetWindow()->Get(), &w, &h);
@@ -82,9 +80,7 @@ void R_Particles::Draw(bgfx::ViewId viewId, const Camera& camera)
         if (pts.empty()) 
             continue;
 
-        uint64_t blendState = s->GetDef().additive
-            ? BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_SRC_ALPHA, BGFX_STATE_BLEND_ONE)
-            : BGFX_STATE_BLEND_ALPHA;
+        uint64_t blendState = s->GetDef().additive ? BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_SRC_ALPHA, BGFX_STATE_BLEND_ONE) : BGFX_STATE_BLEND_ALPHA;
 
         uint32_t numVerts = (uint32_t)pts.size() * 4;
         uint32_t numIndices = (uint32_t)pts.size() * 6;

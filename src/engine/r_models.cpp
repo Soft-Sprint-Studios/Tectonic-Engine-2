@@ -239,7 +239,7 @@ void R_Models::LoadModel(const std::string& path)
 
 void R_Models::Draw(bgfx::ViewId viewId, const R_Shader& shader, const Frustum& frustum, bool depthOnly)
 {
-    // 1. Render static props (Instanced)
+    // Render static props
     for (auto& [path, group] : m_propGroups)
     {
         if (group.instanceCount == 0)
@@ -297,7 +297,7 @@ void R_Models::Draw(bgfx::ViewId viewId, const R_Shader& shader, const Frustum& 
         }
     }
 
-    // 2. Render Animated Props
+    // Render Animated Props
     for (auto& ent : EntityManager::GetEntities())
     {
         if (ent->GetClassName() != "prop_animation" || !ent->IsRenderable())
@@ -376,7 +376,7 @@ void R_Models::Draw(bgfx::ViewId viewId, const R_Shader& shader, const Frustum& 
         }
     }
 
-    // 3. Render Player Model
+    // Render Player Model
     for (auto& ent : EntityManager::GetEntities())
     {
         if (ent->IsPlayer() && ent->IsRenderable())
