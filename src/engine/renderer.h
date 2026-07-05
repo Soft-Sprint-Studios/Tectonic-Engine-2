@@ -76,7 +76,15 @@ namespace RenderView
         MotionBlur = 87,
         CAS = 88,
         PostProcess = 89,
-        UI = 90
+        GBufferDebug0 = 90,
+        GBufferDebug1 = 91,
+        GBufferDebug2 = 92,
+        GBufferDebug3 = 93,
+        GBufferDebug4 = 94,
+        GBufferDebug5 = 95,
+        GBufferDebug6 = 96,
+        GBufferDebug7 = 97,
+        UI = 98
     };
 }
 

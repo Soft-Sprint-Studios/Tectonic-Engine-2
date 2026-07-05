@@ -28,6 +28,7 @@
 #include "physics.h"
 #include "entities.h"
 #include "cubemap.h"
+#include "fade.h"
 #include <SDL3/SDL.h>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -88,6 +89,8 @@ bool Renderer::Init(Window& window)
         pd.nwh = (void*)SDL_GetPointerProperty(SDL_GetWindowProperties(m_windowRef->Get()), SDL_PROP_WINDOW_WAYLAND_SURFACE_POINTER, NULL);
     }
 #endif
+
+    init.platformData = pd;
 
     bgfx::init(init);
 
@@ -171,17 +174,19 @@ bool Renderer::LoadMap(const std::string& path)
         return false;
     }
 
+    Cubemap::LoadForMap(path.substr(5, path.find_last_of('.') - 5));
+
     m_bspRenderer->Init(map);
     m_modelRenderer->Init(map);
     m_skyRenderer->Init(map.skyName);
-
-    Physics::AddBSPCollision(map.collision.vertices, map.collision.indices);
 
     m_waterRenderer->ClearSurfaces();
     for (const auto& ws : map.waterSurfaces)
     {
         m_waterRenderer->AddSurface({ ws.start, ws.count, ws.height, ws.textureName });
     }
+
+    Physics::AddBSPCollision(map.collision.vertices, map.collision.indices);
 
     for (const auto& entData : map.entities)
     {
@@ -203,10 +208,36 @@ void Renderer::Render(Camera& camera)
     }
 
     m_monitorRenderer->RenderTextures(this);
-
     m_lightRenderer->RenderShadowMaps(camera, this);
 
+    int w, h;
+    SDL_GetWindowSize(m_windowRef->Get(), &w, &h);
+
     RenderWorld(camera);
+
+    // Handle env_fade
+    glm::vec4 fade = Fade::GetCurrentFade();
+    if (fade.a > 0.001f)
+    {
+        m_uiRenderer->DrawRect(0, 0, (float)w, (float)h, fade);
+    }
+
+    if (CVar::Find("r_debug_gbuffer")->GetInt() > 0)
+    {
+        m_gbuffer->DrawDebug(w, h);
+
+        int dw = w / 8;
+        int dh = h / 8;
+
+        m_uiRenderer->DrawText("DEPTH", 10.0f, (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+        m_uiRenderer->DrawText("WORLD N", (float)(dw + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+        m_uiRenderer->DrawText("TANGENT N", (float)(dw * 2 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+        m_uiRenderer->DrawText("ALBEDO", (float)(dw * 3 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+        m_uiRenderer->DrawText("METALLIC", (float)(dw * 4 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+        m_uiRenderer->DrawText("ROUGHNESS", (float)(dw * 5 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+        m_uiRenderer->DrawText("AO", (float)(dw * 6 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+        m_uiRenderer->DrawText("LM UV", (float)(dw * 7 + 10), (float)(dh + 20), { 0.0f, 1.0f, 0.0f, 1.0f });
+    }
 
     m_uiRenderer->Render();
 

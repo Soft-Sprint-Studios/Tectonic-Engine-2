@@ -41,7 +41,14 @@ public:
     bgfx::TextureHandle GetMRAOTex() const;
     bgfx::TextureHandle GetLightmapUVTex() const;
 
+    void DrawDebug(int w, int h);
+
 private:
+    R_Shader m_debugShader;
+    bgfx::UniformHandle m_sTex0 = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sTex1 = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uMode = BGFX_INVALID_HANDLE;
+
     bgfx::FrameBufferHandle m_fbo = BGFX_INVALID_HANDLE;
     bgfx::TextureHandle m_normalTex = BGFX_INVALID_HANDLE;
     bgfx::TextureHandle m_albedoTex = BGFX_INVALID_HANDLE;
