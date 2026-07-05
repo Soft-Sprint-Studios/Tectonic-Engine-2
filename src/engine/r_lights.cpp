@@ -109,20 +109,8 @@ bool R_Lights::Init()
     m_uLightParams = bgfx::createUniform("u_lightParams", bgfx::UniformType::Vec4);
     m_uShadowParams = bgfx::createUniform("u_shadowParams", bgfx::UniformType::Vec4);
 
-    m_lightLayout.begin()
-        .add(bgfx::Attrib::Position, 4, bgfx::AttribType::Float)
-        .add(bgfx::Attrib::Normal, 4, bgfx::AttribType::Float)
-        .add(bgfx::Attrib::Tangent, 4, bgfx::AttribType::Float)
-        .add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Float)
-        .add(bgfx::Attrib::TexCoord0, 4, bgfx::AttribType::Float)
-        .add(bgfx::Attrib::TexCoord1, 4, bgfx::AttribType::Float)
-        .add(bgfx::Attrib::TexCoord2, 4, bgfx::AttribType::Float)
-        .add(bgfx::Attrib::TexCoord3, 4, bgfx::AttribType::Float)
-        .add(bgfx::Attrib::TexCoord4, 4, bgfx::AttribType::Float)
-        .end();
-
-    m_pointLightSSBO = bgfx::createDynamicVertexBuffer(8, m_lightLayout, BGFX_BUFFER_COMPUTE_READ);
-    m_spotLightSSBO = bgfx::createDynamicVertexBuffer(8, m_lightLayout, BGFX_BUFFER_COMPUTE_READ);
+    m_pointLightSSBO = bgfx::createDynamicIndexBuffer(288, BGFX_BUFFER_COMPUTE_READ | BGFX_BUFFER_INDEX32);
+    m_spotLightSSBO = bgfx::createDynamicIndexBuffer(288, BGFX_BUFFER_COMPUTE_READ | BGFX_BUFFER_INDEX32);
 
     return true;
 }

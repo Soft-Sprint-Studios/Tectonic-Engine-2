@@ -72,9 +72,8 @@ private:
         float pad[3];
     };
 
-    bgfx::DynamicVertexBufferHandle m_pointLightSSBO = BGFX_INVALID_HANDLE;
-    bgfx::DynamicVertexBufferHandle m_spotLightSSBO = BGFX_INVALID_HANDLE;
-    bgfx::VertexLayout m_lightLayout;
+    bgfx::DynamicIndexBufferHandle m_pointLightSSBO = BGFX_INVALID_HANDLE;
+    bgfx::DynamicIndexBufferHandle m_spotLightSSBO = BGFX_INVALID_HANDLE;
 
     int m_nextSpotLayer = 0;
     int m_nextPointLayer = 0;
@@ -97,4 +96,4 @@ private:
     bgfx::UniformHandle m_uShadowParams = BGFX_INVALID_HANDLE;
 
     std::unique_ptr<R_Cascade> m_cascade;
-};
+};  
