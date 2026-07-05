@@ -274,11 +274,11 @@ void R_Models::Draw(bgfx::ViewId viewId, const R_Shader& shader, const Frustum& 
                 continue;
             }
 
+            float modelParams[4] = { 1.0f, 0.0f, group.hasLightmap ? 1.0f : 0.0f, 0.0f };
+            bgfx::setUniform(m_uModelParams, modelParams);
+
             if (!depthOnly)
             {
-                float modelParams[4] = { 1.0f, 0.0f, group.hasLightmap ? 1.0f : 0.0f, 0.0f };
-                bgfx::setUniform(m_uModelParams, modelParams);
-
                 if (group.hasLightmap && bgfx::isValid(group.lmUVSSBO))
                 {
                     bgfx::setBuffer(7, group.lmUVSSBO, bgfx::Access::Read);
@@ -411,11 +411,11 @@ void R_Models::DrawSkinned(bgfx::ViewId viewId, const R_Shader& shader, const st
     {
         bgfx::setTransform(glm::value_ptr(transform));
 
+        float modelParams[4] = { 0.0f, boneMatrices.empty() ? 0.0f : 1.0f, 0.0f, 0.0f };
+        bgfx::setUniform(m_uModelParams, modelParams);
+
         if (!depthOnly)
         {
-            float modelParams[4] = { 0.0f, boneMatrices.empty() ? 0.0f : 1.0f, 0.0f, 0.0f };
-            bgfx::setUniform(m_uModelParams, modelParams);
-
             if (!boneMatrices.empty())
             {
                 bgfx::setUniform(m_uBones, glm::value_ptr(boneMatrices[0]), (uint16_t)std::min(boneMatrices.size(), (size_t)128));

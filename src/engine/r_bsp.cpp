@@ -167,11 +167,11 @@ void R_BSP::Draw(const R_Shader& shader, bgfx::ViewId viewId, const Frustum& fru
         bgfx::setTransform(glm::value_ptr(identity));
         bgfx::setVertexBuffer(0, m_vbo, dc.start, dc.count);
 
+        float modelParams[4] = { 0.0f, 0.0f, 1.0f, 1.0f };
+        bgfx::setUniform(m_uModelParams, modelParams);
+
         if (!depthOnly)
         {
-            float modelParams[4] = { 0.0f, 0.0f, 1.0f, 1.0f };
-            bgfx::setUniform(m_uModelParams, modelParams);
-
             float bumpHeights[4] = { dc.isBumped ? 1.0f : 0.0f, dc.heightScale1, dc.heightScale2, 0.0f };
             bgfx::setUniform(m_uBumpAndHeights, bumpHeights);
 
@@ -241,11 +241,11 @@ void R_BSP::DrawBModel(int index, const R_Shader& shader, bgfx::ViewId viewId, c
         bgfx::setTransform(glm::value_ptr(transform));
         bgfx::setVertexBuffer(0, bm.vbo, dc.start, dc.count);
 
+        float modelParams[4] = { 0.0f, 0.0f, 1.0f, 1.0f };
+        bgfx::setUniform(m_uModelParams, modelParams);
+
         if (!depthOnly)
         {
-            float modelParams[4] = { 0.0f, 0.0f, 1.0f, 1.0f };
-            bgfx::setUniform(m_uModelParams, modelParams);
-
             float bumpHeights[4] = { dc.isBumped ? 1.0f : 0.0f, dc.heightScale1, dc.heightScale2, 0.0f };
             bgfx::setUniform(m_uBumpAndHeights, bumpHeights);
 
