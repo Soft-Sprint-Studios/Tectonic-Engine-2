@@ -55,28 +55,28 @@ namespace RenderView
         CSM_1 = 1,
         CSM_2 = 2,
         CSM_3 = 3,
-        ShadowBase = 4, // Reserves views up to 69 for shadow maps
+        ShadowBase = 4,
         ReflectionGBuffer = 70,
         WaterReflection = 71,
         MonitorGBuffer = 72,
         MonitorResolve = 73,
         GBuffer = 74,
         Resolve = 75,
-        Forward = 76,         // Renders skybox
-        GlassBlit = 77,       // Captures skybox + opaque scene
-        TransparentDraw = 78, // Renders monitors, videos, glass, sprites, beams, cables (writes depth first!)
+        Forward = 76,
+        GlassBlit = 77,
+        TransparentDraw = 78,
         AutoExposure = 79,
         Bloom = 80,
-        SSAO = 81,            // Reads depth (monitors are now present!)
+        SSAO = 81,
         SSAO_Blur = 82,
-        SSR = 83,             // Reads depth and color (monitors are reflected correctly!)
+        SSR = 83,
         SSR_Blur = 84,
-        Volumetrics = 85,     // Reads depth (correctly occluded by monitors/videos!)
+        Volumetrics = 85,
         Volumetrics_Blur = 86,
-        MotionBlur = 87,      // Compute-pass motion blur
-        CAS = 88,             // Compute-pass sharpening
-        PostProcess = 89,     // Renders to screen backbuffer
-        UI = 90               // Renders UI over backbuffer
+        MotionBlur = 87,
+        CAS = 88,
+        PostProcess = 89,
+        UI = 90
     };
 }
 

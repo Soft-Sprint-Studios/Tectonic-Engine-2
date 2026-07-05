@@ -54,10 +54,7 @@ void R_Beams::Draw(bgfx::ViewId viewId, const Camera& camera, const std::vector<
     if (beams.empty()) 
         return;
 
-    uint64_t state = BGFX_STATE_WRITE_RGB 
-                   | BGFX_STATE_WRITE_A 
-                   | BGFX_STATE_DEPTH_TEST_LESS 
-                   | BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_SRC_ALPHA, BGFX_STATE_BLEND_ONE);
+    uint64_t state = BGFX_STATE_WRITE_RGB  | BGFX_STATE_WRITE_A | BGFX_STATE_DEPTH_TEST_LESS | BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_SRC_ALPHA, BGFX_STATE_BLEND_ONE);
 
     float viewPos[4] = { camera.position.x, camera.position.y, camera.position.z, 0.0f };
     bgfx::setUniform(m_uViewPosLocal, viewPos);

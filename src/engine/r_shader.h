@@ -31,7 +31,7 @@ public:
     R_Shader();
     ~R_Shader();
 
-    bool Load(const std::string& vertPath, const std::string& fragPath, const std::string& geomPath = "");
+    bool Load(const std::string& vertPath, const std::string& fragPath);
     bool LoadCompute(const std::string& path);
 
     bgfx::ProgramHandle GetProgram() const

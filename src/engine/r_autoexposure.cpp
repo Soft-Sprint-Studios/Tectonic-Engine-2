@@ -48,8 +48,13 @@ void R_AutoExposure::Init()
     m_histogramShader.LoadCompute("shaders/lum_histogram.comp");
     m_averageShader.LoadCompute("shaders/lum_average.comp");
 
-    m_uintLayout.begin().add(bgfx::Attrib::TexCoord0, 1, bgfx::AttribType::Float).end();
-    m_vec4Layout.begin().add(bgfx::Attrib::TexCoord0, 4, bgfx::AttribType::Float).end();
+    m_uintLayout.begin()
+        .add(bgfx::Attrib::TexCoord0, 1, bgfx::AttribType::Float)
+        .end();
+
+    m_vec4Layout.begin()
+        .add(bgfx::Attrib::TexCoord0, 4, bgfx::AttribType::Float)
+        .end();
 
     m_histogramBuffer = bgfx::createDynamicVertexBuffer(256, m_uintLayout, BGFX_BUFFER_COMPUTE_READ_WRITE);
 

@@ -49,11 +49,7 @@ void R_Cables::Draw(bgfx::ViewId viewId, const Camera& camera, const std::vector
     if (cables.empty()) 
         return;
 
-    uint64_t state = BGFX_STATE_WRITE_RGB 
-                   | BGFX_STATE_WRITE_A 
-                   | BGFX_STATE_DEPTH_TEST_LESS 
-                   | BGFX_STATE_CULL_CW 
-                   | BGFX_STATE_PT_TRISTRIP;
+    uint64_t state = BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_DEPTH_TEST_LESS | BGFX_STATE_CULL_CW | BGFX_STATE_PT_TRISTRIP;
 
     glm::mat4 identity(1.0f);
 

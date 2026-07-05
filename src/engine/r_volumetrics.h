@@ -39,7 +39,10 @@ public:
     void Render(bgfx::ViewId viewId, bgfx::TextureHandle depthTexture, const Camera& camera, R_Lights* lights, int screenW, int screenH);
     void Bind(bgfx::UniformHandle s_volumetricTex);
 
-    bgfx::TextureHandle GetTexture() const { return m_blurTexture[0]; }
+    bgfx::TextureHandle GetTexture() const 
+    { 
+        return m_blurTexture[0]; 
+    }
 
 private:
     void CreateBuffers(int width, int height);

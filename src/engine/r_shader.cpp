@@ -49,7 +49,7 @@ bgfx::ShaderHandle R_Shader::LoadShaderBinary(const std::string& path)
     return bgfx::createShader(mem);
 }
 
-bool R_Shader::Load(const std::string& vertPath, const std::string& fragPath, const std::string& geomPath)
+bool R_Shader::Load(const std::string& vertPath, const std::string& fragPath)
 {
     bgfx::ShaderHandle vsh = LoadShaderBinary(vertPath + ".bin");
     bgfx::ShaderHandle fsh = LoadShaderBinary(fragPath + ".bin");

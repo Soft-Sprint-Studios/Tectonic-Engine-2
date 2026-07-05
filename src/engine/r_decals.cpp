@@ -74,9 +74,7 @@ void R_Decals::Draw(bgfx::ViewId viewId, const Camera& camera, const Frustum& fr
     };
     bgfx::setUniform(m_uParallaxParams, par);
 
-    uint64_t state = BGFX_STATE_WRITE_RGB 
-                   | BGFX_STATE_WRITE_A 
-                   | BGFX_STATE_DEPTH_TEST_LESS;
+    uint64_t state = BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_DEPTH_TEST_LESS;
 
     for (auto& [texName, matrices] : groups)
     {
