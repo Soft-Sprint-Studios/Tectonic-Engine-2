@@ -86,7 +86,9 @@ jobs:
             libxcursor-dev \
             libfontconfig1-dev \
             libopenal-dev \
-            libvulkan-dev
+            libvulkan-dev \
+            libwayland-dev \
+            libegl1-mesa-dev
 
       - name: Configure CMake
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
@@ -189,6 +191,7 @@ jobs:
           cp -r artifacts/windows-x64/* release/windows-x64/
           cp -r artifacts/windows-x86/* release/windows-x86/
           cp -r artifacts/windows-arm64/* release/windows-arm64/
+          cp -r artifacts/windows-x64/shaders release/windows-arm64/
           cp -r artifacts/linux-x64/* release/linux-x64/
           cp -r artifacts/freebsd-x64/* release/freebsd-x64/
 

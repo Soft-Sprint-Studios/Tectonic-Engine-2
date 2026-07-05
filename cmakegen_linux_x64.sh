@@ -16,7 +16,9 @@ sudo apt-get install -y \
     libxcursor-dev \
     libfontconfig1-dev \
     libopenal-dev \
-    libvulkan-dev
+    libvulkan-dev \
+    libwayland-dev \
+    libegl1-mesa-dev
 
 if [ ! -d "build_linux_x64" ]; then
     mkdir build_linux_x64

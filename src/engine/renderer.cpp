@@ -71,10 +71,23 @@ bool Renderer::Init(Window& window)
     init.resolution.reset = CVar::GetInt("r_vsync", 1) > 0 ? BGFX_RESET_VSYNC : BGFX_RESET_NONE;
 
     bgfx::PlatformData pd;
+    pd.ndt = nullptr;
+    pd.nwh = nullptr;
+
 #if defined(PLATFORM_WINDOWS)
     pd.nwh = (void*)SDL_GetPointerProperty(SDL_GetWindowProperties(m_windowRef->Get()), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+#elif defined(PLATFORM_LINUX) || defined(PLATFORM_FREEBSD)
+    if (SDL_strcmp(SDL_GetCurrentVideoDriver(), "x11") == 0)
+    {
+        pd.ndt = (void*)SDL_GetPointerProperty(SDL_GetWindowProperties(m_windowRef->Get()), SDL_PROP_WINDOW_X11_DISPLAY_POINTER, NULL);
+        pd.nwh = (void*)(uintptr_t)SDL_GetNumberProperty(SDL_GetWindowProperties(m_windowRef->Get()), SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0);
+    }
+    else if (SDL_strcmp(SDL_GetCurrentVideoDriver(), "wayland") == 0)
+    {
+        pd.ndt = (void*)SDL_GetPointerProperty(SDL_GetWindowProperties(m_windowRef->Get()), SDL_PROP_WINDOW_WAYLAND_DISPLAY_POINTER, NULL);
+        pd.nwh = (void*)SDL_GetPointerProperty(SDL_GetWindowProperties(m_windowRef->Get()), SDL_PROP_WINDOW_WAYLAND_SURFACE_POINTER, NULL);
+    }
 #endif
-    init.platformData = pd;
 
     bgfx::init(init);
 

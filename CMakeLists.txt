@@ -28,6 +28,7 @@ set(MINIZ_PATH ${CMAKE_SOURCE_DIR}/libs/miniz)
 if(WIN32)
     if(CMAKE_GENERATOR_PLATFORM STREQUAL "ARM64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "(ARM64|arm64)")
         set(ARCH_FOLDER "x64arm")
+        set(IS_ARM64_CROSS TRUE)
     elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
         set(ARCH_FOLDER "x64")
     else()
@@ -103,30 +104,32 @@ target_include_directories(Engine PRIVATE
 )
 
 # ---- SHADER COMPILATION ----
-set(SHADER_SRC_DIR "${CMAKE_SOURCE_DIR}/src/shaders")
-set(SHADER_OUT_DIR "$<TARGET_FILE_DIR:Engine>/shaders")
+if(NOT IS_ARM64_CROSS)
+    set(SHADER_SRC_DIR "${CMAKE_SOURCE_DIR}/src/shaders")
+    set(SHADER_OUT_DIR "$<TARGET_FILE_DIR:Engine>/shaders")
 
-file(GLOB SHADER_FILES "${SHADER_SRC_DIR}/*.vert" "${SHADER_SRC_DIR}/*.frag" "${SHADER_SRC_DIR}/*.comp")
+    file(GLOB SHADER_FILES "${SHADER_SRC_DIR}/*.vert" "${SHADER_SRC_DIR}/*.frag" "${SHADER_SRC_DIR}/*.comp")
 
-foreach(SHADER_FILE ${SHADER_FILES})
-    get_filename_component(SHADER_NAME ${SHADER_FILE} NAME)
-    get_filename_component(SHADER_EXT ${SHADER_FILE} EXT)
+    foreach(SHADER_FILE ${SHADER_FILES})
+        get_filename_component(SHADER_NAME ${SHADER_FILE} NAME)
+        get_filename_component(SHADER_EXT ${SHADER_FILE} EXT)
 
-    if(SHADER_EXT STREQUAL ".vert")
-        set(SHADER_TYPE "vertex")
-    elseif(SHADER_EXT STREQUAL ".frag")
-        set(SHADER_TYPE "fragment")
-    elseif(SHADER_EXT STREQUAL ".comp")
-        set(SHADER_TYPE "compute")
-    endif()
+        if(SHADER_EXT STREQUAL ".vert")
+            set(SHADER_TYPE "vertex")
+        elseif(SHADER_EXT STREQUAL ".frag")
+            set(SHADER_TYPE "fragment")
+        elseif(SHADER_EXT STREQUAL ".comp")
+            set(SHADER_TYPE "compute")
+        endif()
 
-    add_custom_command(
-        TARGET Engine PRE_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${SHADER_OUT_DIR}"
-        COMMAND $<TARGET_FILE:shaderc> -f "${SHADER_FILE}" -i "${bgfx_SOURCE_DIR}/bgfx/src" -i "${bgfx_SOURCE_DIR}/src" -i "${SHADER_SRC_DIR}" --varyingdef "${SHADER_SRC_DIR}/varying.def.sc" -o "${SHADER_OUT_DIR}/${SHADER_NAME}.bin" --type ${SHADER_TYPE} --platform vulkan -p spirv
-        COMMENT "Compiling shader ${SHADER_NAME} to Vulkan SPIR-V"
-    )
-endforeach()
+        add_custom_command(
+            TARGET Engine PRE_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${SHADER_OUT_DIR}"
+            COMMAND $<TARGET_FILE:shaderc> -f "${SHADER_FILE}" -i "${bgfx_SOURCE_DIR}/bgfx/src" -i "${bgfx_SOURCE_DIR}/src" -i "${SHADER_SRC_DIR}" --varyingdef "${SHADER_SRC_DIR}/varying.def.sc" -o "${SHADER_OUT_DIR}/${SHADER_NAME}.bin" --type ${SHADER_TYPE} --platform vulkan -p spirv
+            COMMENT "Compiling shader ${SHADER_NAME} to Vulkan SPIR-V"
+        )
+    endforeach()
+endif()
 
 # ---- LINKING ----
 if(WIN32)
