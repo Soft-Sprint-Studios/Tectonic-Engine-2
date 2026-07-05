@@ -27,9 +27,7 @@
 #include "concmd.h"
 #include "console.h"
 #include "build_date.h"
-#ifndef PLATFORM_FREEBSD
 #include <sentry.h>
-#endif
 
 namespace Sentry
 {
@@ -38,7 +36,6 @@ namespace Sentry
 
     void Init()
     {
-#ifndef PLATFORM_FREEBSD
         if (sentry_enabled.GetInt() == 0)
         {
             return;
@@ -63,16 +60,13 @@ namespace Sentry
         #endif
 
         sentry_init(options);
-#endif
     }
 
     void Shutdown()
     {
-#ifndef PLATFORM_FREEBSD
         if (sentry_enabled.GetInt() == 1)
         {
             sentry_close();
         }
-#endif
     }
 }

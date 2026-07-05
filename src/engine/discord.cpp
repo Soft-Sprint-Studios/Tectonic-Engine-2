@@ -27,10 +27,7 @@
 #include "timing.h"
 #include "platform.h"
 #include <cstring>
-
-#ifndef PLATFORM_FREEBSD
 #include <discord_rpc.h>
-#endif
 
 namespace Discord
 {
@@ -42,7 +39,6 @@ namespace Discord
 
     void Init()
     {
-#ifndef PLATFORM_FREEBSD
         if (discord_enabled.GetInt() == 0)
             return;
 
@@ -56,33 +52,27 @@ namespace Discord
 
         // Initial state
         UpdatePresence("Loading Engine...", "");
-#endif
     }
 
     void Update()
     {
-#ifndef PLATFORM_FREEBSD
         if (!s_initialized || discord_enabled.GetInt() == 0)
             return;
 
         Discord_RunCallbacks();
-#endif
     }
 
     void Shutdown()
     {
-#ifndef PLATFORM_FREEBSD
         if (!s_initialized)
             return;
 
         Discord_Shutdown();
         s_initialized = false;
-#endif
     }
 
     void UpdatePresence(const std::string& details, const std::string& state)
     {
-#ifndef PLATFORM_FREEBSD
         if (!s_initialized || discord_enabled.GetInt() == 0)
             return;
 
@@ -95,6 +85,5 @@ namespace Discord
         discordPresence.largeImageText = "Tectonic Engine 2";
 
         Discord_UpdatePresence(&discordPresence);
-#endif
     }
 }

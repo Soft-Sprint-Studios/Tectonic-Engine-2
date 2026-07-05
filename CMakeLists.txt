@@ -150,22 +150,6 @@ if(WIN32)
         bgfx
         ws2_32
     )
-elseif(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
-    target_include_directories(Engine PRIVATE /usr/local/include)
-    target_include_directories(Game PRIVATE /usr/local/include)
-    target_link_directories(Engine PRIVATE /usr/local/lib)
-
-    target_link_libraries(Engine PRIVATE -Wl,--whole-archive Game -Wl,--no-whole-archive)
-    target_link_libraries(Engine PRIVATE
-        SDL3
-        SDL3_ttf
-        BulletDynamics
-        BulletCollision
-        LinearMath
-        openal
-        bgfx
-        pthread
-    )
 elseif(UNIX)
     target_link_libraries(Engine PRIVATE -Wl,--whole-archive Game -Wl,--no-whole-archive)
 
