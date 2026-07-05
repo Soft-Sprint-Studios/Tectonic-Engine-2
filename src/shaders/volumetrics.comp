@@ -11,7 +11,7 @@ uniform vec4 u_currentViewPos;
 
 #define u_viewPos u_currentViewPos.xyz
 
-float dither[16] = 
+static const float dither[16] = 
 {
      0.0/16.0,  8.0/16.0,  2.0/16.0, 10.0/16.0,
     12.0/16.0,  4.0/16.0, 14.0/16.0,  6.0/16.0,
