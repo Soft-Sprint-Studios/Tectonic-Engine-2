@@ -50,11 +50,15 @@ bool R_SSAO::Init(int width, int height)
 
     m_sDepthTexture = bgfx::createUniform("s_depth", bgfx::UniformType::Sampler);
     m_sNoiseTexture = bgfx::createUniform("s_noise", bgfx::UniformType::Sampler);
+    m_sNormalTexture = bgfx::createUniform("s_normal", bgfx::UniformType::Sampler);
     m_sAOTexture = bgfx::createUniform("s_aoTex", bgfx::UniformType::Sampler);
     m_uKernel = bgfx::createUniform("u_kernel", bgfx::UniformType::Vec4, 32);
     m_uParams = bgfx::createUniform("u_params", bgfx::UniformType::Vec4);
     m_uNoiseScale = bgfx::createUniform("u_noiseScale", bgfx::UniformType::Vec4);
     m_uBlurParams = bgfx::createUniform("u_blurParams", bgfx::UniformType::Vec4);
+    m_uCurrentProj = bgfx::createUniform("u_currentProj", bgfx::UniformType::Mat4);
+    m_uCurrentInvProj = bgfx::createUniform("u_currentInvProj", bgfx::UniformType::Mat4);
+    m_uCurrentView = bgfx::createUniform("u_currentView", bgfx::UniformType::Mat4);
 
     GenerateSampleKernel();
     CreateBuffers(width, height);
@@ -147,23 +151,27 @@ void R_SSAO::Rescale(int width, int height)
     CreateBuffers(width, height);
 }
 
-void R_SSAO::Shutdown() 
+void R_SSAO::Shutdown()
 {
     DeleteBuffers();
     if (bgfx::isValid(m_sDepthTexture))
     {
         bgfx::destroy(m_sDepthTexture);
+        bgfx::destroy(m_sNormalTexture);
         bgfx::destroy(m_sNoiseTexture);
         bgfx::destroy(m_sAOTexture);
         bgfx::destroy(m_uKernel);
         bgfx::destroy(m_uParams);
         bgfx::destroy(m_uNoiseScale);
         bgfx::destroy(m_uBlurParams);
-        m_sDepthTexture = m_sNoiseTexture = m_sAOTexture = m_uKernel = m_uParams = m_uNoiseScale = m_uBlurParams = BGFX_INVALID_HANDLE;
+        bgfx::destroy(m_uCurrentProj);
+        bgfx::destroy(m_uCurrentInvProj);
+        bgfx::destroy(m_uCurrentView);
+        m_sDepthTexture = m_sNormalTexture = m_sNoiseTexture = m_sAOTexture = m_uKernel = m_uParams = m_uNoiseScale = m_uBlurParams = m_uCurrentProj = m_uCurrentInvProj = m_uCurrentView = BGFX_INVALID_HANDLE;
     }
 }
 
-void R_SSAO::Render(bgfx::ViewId viewId, bgfx::TextureHandle depthTexture, const Camera& camera, int screenW, int screenH)
+void R_SSAO::Render(bgfx::ViewId viewId, bgfx::TextureHandle depthTexture, bgfx::TextureHandle normalTexture, const Camera& camera, int screenW, int screenH)
 {
     if (r_ssao.GetInt() == 0)
         return;
@@ -174,7 +182,8 @@ void R_SSAO::Render(bgfx::ViewId viewId, bgfx::TextureHandle depthTexture, const
 
     bgfx::setTexture(0, m_sDepthTexture, depthTexture);
     bgfx::setTexture(1, m_sNoiseTexture, m_noiseTexture);
-    bgfx::setImage(2, m_texture, 0, bgfx::Access::Write, bgfx::TextureFormat::R8);
+    bgfx::setTexture(2, m_sNormalTexture, normalTexture);
+    bgfx::setImage(3, m_texture, 0, bgfx::Access::Write, bgfx::TextureFormat::R8);
 
     bgfx::setUniform(m_uKernel, glm::value_ptr(m_ssaoKernel[0]), (uint16_t)m_ssaoKernel.size());
 
@@ -183,6 +192,13 @@ void R_SSAO::Render(bgfx::ViewId viewId, bgfx::TextureHandle depthTexture, const
 
     float noiseScale[4] = { (float)vW / 4.0f, (float)vH / 4.0f, 0.0f, 0.0f };
     bgfx::setUniform(m_uNoiseScale, noiseScale);
+
+    glm::mat4 proj = camera.GetProjectionMatrix();
+    glm::mat4 invProj = glm::inverse(proj);
+    glm::mat4 view = camera.GetViewMatrix();
+    bgfx::setUniform(m_uCurrentProj, glm::value_ptr(proj));
+    bgfx::setUniform(m_uCurrentInvProj, glm::value_ptr(invProj));
+    bgfx::setUniform(m_uCurrentView, glm::value_ptr(view));
 
     bgfx::dispatch(viewId, m_ssaoShader.GetProgram(), (vW + 15) / 16, (vH + 15) / 16, 1);
 

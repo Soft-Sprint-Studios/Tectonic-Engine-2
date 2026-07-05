@@ -37,7 +37,7 @@ public:
     bool Init(int width, int height);
     void Shutdown();
     void Rescale(int width, int height);
-    void Render(bgfx::ViewId viewId, bgfx::TextureHandle depthTexture, const Camera& camera, int screenW, int screenH);
+    void Render(bgfx::ViewId viewId, bgfx::TextureHandle depthTexture, bgfx::TextureHandle normalTexture, const Camera& camera, int screenW, int screenH);
     void Bind(bgfx::UniformHandle s_ssaoTex);
 
 private:
@@ -57,11 +57,15 @@ private:
 
     bgfx::UniformHandle m_sDepthTexture = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle m_sNoiseTexture = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sNormalTexture = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle m_sAOTexture = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle m_uKernel = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle m_uParams = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle m_uNoiseScale = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle m_uBlurParams = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uCurrentProj = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uCurrentInvProj = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uCurrentView = BGFX_INVALID_HANDLE;
 
     int m_width = 0, m_height = 0;
 };

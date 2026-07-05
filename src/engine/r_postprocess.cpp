@@ -132,7 +132,7 @@ void R_PostProcess::Draw(const Camera& camera, R_Lights* lights, R_GBuffer* gbuf
 {
     m_autoExposure->Render(RenderView::AutoExposure, m_texture, m_width, m_height);
     m_bloom->Render(RenderView::Bloom, m_texture, m_width, m_height);
-    m_ssao->Render(RenderView::SSAO, gbuffer->GetDepthTex(), camera, m_width, m_height);
+    m_ssao->Render(RenderView::SSAO, gbuffer->GetDepthTex(), gbuffer->GetNormalTex(), camera, m_width, m_height);
     m_ssr->Render(RenderView::SSR, gbuffer->GetDepthTex(), gbuffer->GetNormalTex(), gbuffer->GetMRAOTex(), m_texture, camera);
 
     bgfx::TextureHandle finalScene = m_texture;
