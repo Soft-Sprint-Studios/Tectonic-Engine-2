@@ -146,9 +146,6 @@ bool Renderer::Init(Window& window)
     m_uCubemapOrigin = bgfx::createUniform("u_cubemapOrigin", bgfx::UniformType::Vec4);
     m_uCubemapMins = bgfx::createUniform("u_cubemapMins", bgfx::UniformType::Vec4);
     m_uCubemapMaxs = bgfx::createUniform("u_cubemapMaxs", bgfx::UniformType::Vec4);
-    m_sCsmArray = bgfx::createUniform("u_csmArray", bgfx::UniformType::Sampler);
-    m_sSpotShadowMaps = bgfx::createUniform("u_spotShadowMaps", bgfx::UniformType::Sampler);
-    m_sPointShadowMaps = bgfx::createUniform("u_pointShadowMaps", bgfx::UniformType::Sampler);
 
     uint8_t whitePixel[] = { 255, 255, 255, 255 };
     m_whiteTexture = bgfx::createTexture2D(1, 1, false, 1, bgfx::TextureFormat::RGBA8, BGFX_TEXTURE_NONE, bgfx::copy(whitePixel, 4));
@@ -446,9 +443,6 @@ void Renderer::Shutdown()
         bgfx::destroy(m_uCubemapMaxs);
         bgfx::destroy(m_dummyCubemap);
         bgfx::destroy(m_whiteTexture);
-        bgfx::destroy(m_sCsmArray);
-        bgfx::destroy(m_sSpotShadowMaps);
-        bgfx::destroy(m_sPointShadowMaps);
 
         m_sDepth = BGFX_INVALID_HANDLE;
     }
@@ -503,9 +497,6 @@ void Renderer::LightingPass(Camera& camera, uint32_t cubemapToExclude, int targe
     bgfx::setUniform(m_uViewPosLocal, vp);
 
     m_lightRenderer->Bind(m_resolveShader);
-    bgfx::setTexture(13, m_sCsmArray, m_lightRenderer->GetCascadeShadowTexture());
-    bgfx::setTexture(14, m_sSpotShadowMaps, m_lightRenderer->GetSpotShadowTexture());
-    bgfx::setTexture(15, m_sPointShadowMaps, m_lightRenderer->GetPointShadowTexture());
 
     bgfx::setTexture(0, m_sDepth, m_gbuffer->GetDepthTex());
     bgfx::setTexture(1, m_sNormal, m_gbuffer->GetNormalTex());

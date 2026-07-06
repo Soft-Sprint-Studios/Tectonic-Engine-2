@@ -150,8 +150,5 @@ private:
     bgfx::UniformHandle m_uCubemapMaxs = BGFX_INVALID_HANDLE;
     bgfx::TextureHandle m_dummyCubemap = BGFX_INVALID_HANDLE;
     bgfx::TextureHandle m_whiteTexture = BGFX_INVALID_HANDLE;
-    bgfx::UniformHandle m_sCsmArray = BGFX_INVALID_HANDLE;
-    bgfx::UniformHandle m_sSpotShadowMaps = BGFX_INVALID_HANDLE;
-    bgfx::UniformHandle m_sPointShadowMaps = BGFX_INVALID_HANDLE;
     bgfx::VertexLayout m_quadLayout;
 };
