@@ -252,6 +252,10 @@ void R_Models::Draw(bgfx::ViewId viewId, const R_Shader& shader, const Frustum& 
             continue;
         }
 
+        uint16_t numInstances = (uint16_t)group.instanceCount;
+        uint16_t instanceStride = 64;
+        float modelParams[4] = { 1.0f, 0.0f, group.hasLightmap ? 1.0f : 0.0f, 0.0f };
+
         for (auto& mesh : group.meshes)
         {
             if (mesh.indexCount == 0)
@@ -259,22 +263,11 @@ void R_Models::Draw(bgfx::ViewId viewId, const R_Shader& shader, const Frustum& 
                 continue;
             }
 
-            uint16_t numInstances = (uint16_t)group.instanceCount;
-            uint16_t instanceStride = 64;
-
             bgfx::InstanceDataBuffer idb;
-            if (numInstances == bgfx::getAvailInstanceDataBuffer(numInstances, instanceStride))
-            {
-                bgfx::allocInstanceDataBuffer(&idb, numInstances, instanceStride);
-                std::memcpy(idb.data, group.transforms.data(), numInstances * instanceStride);
-                bgfx::setInstanceDataBuffer(&idb, 0, numInstances);
-            }
-            else
-            {
-                continue;
-            }
+            bgfx::allocInstanceDataBuffer(&idb, numInstances, instanceStride);
+            std::memcpy(idb.data, group.transforms.data(), numInstances * instanceStride);
+            bgfx::setInstanceDataBuffer(&idb, 0, numInstances);
 
-            float modelParams[4] = { 1.0f, 0.0f, group.hasLightmap ? 1.0f : 0.0f, 0.0f };
             bgfx::setUniform(m_uModelParams, modelParams);
 
             if (!depthOnly)
@@ -417,12 +410,9 @@ void R_Models::DrawSkinned(bgfx::ViewId viewId, const R_Shader& shader, const st
         float modelParams[4] = { 0.0f, boneMatrices.empty() ? 0.0f : 1.0f, 0.0f, 0.0f };
         bgfx::setUniform(m_uModelParams, modelParams);
 
-        if (!depthOnly)
+        if (!boneMatrices.empty())
         {
-            if (!boneMatrices.empty())
-            {
-                bgfx::setUniform(m_uBones, glm::value_ptr(boneMatrices[0]), (uint16_t)std::min(boneMatrices.size(), (size_t)128));
-            }
+            bgfx::setUniform(m_uBones, glm::value_ptr(boneMatrices[0]), (uint16_t)std::min(boneMatrices.size(), (size_t)128));
         }
 
         bgfx::setVertexBuffer(0, mesh.vbo);

@@ -159,6 +159,18 @@ void R_BSP::Draw(const R_Shader& shader, bgfx::ViewId viewId, const Frustum& fru
     uint64_t state = BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LESS; 
     state |= depthOnly ? 0 : BGFX_STATE_CULL_CW;
 
+    if (depthOnly)
+    {
+        float modelParams[4] = { 0.0f, 0.0f, 1.0f, 1.0f };
+        bgfx::setUniform(m_uModelParams, modelParams);
+
+        bgfx::setTransform(glm::value_ptr(identity));
+        bgfx::setVertexBuffer(0, m_vbo, 0, m_opaqueVertexCount);
+        bgfx::setState(state);
+        bgfx::submit(viewId, shader.GetProgram());
+        return;
+    }
+
     for (auto& dc : m_drawCalls)
     {
         if (frustum.valid && !frustum.IsBoxVisible(dc.mins, dc.maxs))
@@ -238,6 +250,18 @@ void R_BSP::DrawBModel(int index, const R_Shader& shader, bgfx::ViewId viewId, c
 
     uint64_t state = BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LESS;
     state |= depthOnly ? 0 : BGFX_STATE_CULL_CW;
+
+    if (depthOnly)
+    {
+        float modelParams[4] = { 0.0f, 0.0f, 1.0f, 1.0f };
+        bgfx::setUniform(m_uModelParams, modelParams);
+
+        bgfx::setTransform(glm::value_ptr(transform));
+        bgfx::setVertexBuffer(0, bm.vbo);
+        bgfx::setState(state);
+        bgfx::submit(viewId, shader.GetProgram());
+        return;
+    }
 
     for (const auto& dc : bm.drawCalls)
     {
