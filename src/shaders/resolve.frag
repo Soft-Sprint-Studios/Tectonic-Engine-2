@@ -134,7 +134,7 @@ void main()
     if (u_cubemapParams.x > 0.5) 
     {
         vec3 R = reflect(-viewDir, N);
-        vec3 lookup = ParallaxCorrect(R, fragPos, u_cubemapMaxs.xyz, u_cubemapMaxs.xyz, u_cubemapOrigin.xyz);
+        vec3 lookup = ParallaxCorrect(R, fragPos, u_cubemapMins.xyz, u_cubemapMaxs.xyz, u_cubemapOrigin.xyz);
 
         vec3 prefilteredColor = textureCubeLod(s_cubemap, lookup, roughness * 5.0).rgb; 
         vec2 envBRDF = vec2(1.0 - roughness, roughness); 
