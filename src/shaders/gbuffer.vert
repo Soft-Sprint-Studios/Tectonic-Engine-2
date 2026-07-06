@@ -60,8 +60,14 @@ void main()
     v_tbn2 = N;
 
     v_texcoord0 = a_texcoord0;
-    v_lmCoord = a_texcoord1;
-    v_lmSize = a_texcoord2;
+    v_lmCoord = vec2_splat(0.0);
+    v_lmSize = vec2_splat(0.0);
+
+    if (u_hasLM)
+    {
+        v_lmCoord = a_texcoord1;
+        v_lmSize = a_texcoord2;
+    }
 
     if (u_isInstanced) 
     {
