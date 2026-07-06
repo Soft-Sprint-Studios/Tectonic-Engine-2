@@ -155,7 +155,9 @@ void R_BSP::Draw(const R_Shader& shader, bgfx::ViewId viewId, const Frustum& fru
     }
 
     glm::mat4 identity(1.0f);
-    uint64_t state = BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LESS | BGFX_STATE_CULL_CW;
+
+    uint64_t state = BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LESS; 
+    state |= depthOnly ? 0 : BGFX_STATE_CULL_CW;
 
     for (auto& dc : m_drawCalls)
     {
@@ -234,7 +236,8 @@ void R_BSP::DrawBModel(int index, const R_Shader& shader, bgfx::ViewId viewId, c
         return;
     }
 
-    uint64_t state = BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LESS | BGFX_STATE_CULL_CW;
+    uint64_t state = BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LESS;
+    state |= depthOnly ? 0 : BGFX_STATE_CULL_CW;
 
     for (const auto& dc : bm.drawCalls)
     {

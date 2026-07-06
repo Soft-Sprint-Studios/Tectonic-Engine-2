@@ -292,7 +292,10 @@ void R_Models::Draw(bgfx::ViewId viewId, const R_Shader& shader, const Frustum& 
             bgfx::setVertexBuffer(0, mesh.vbo);
             bgfx::setIndexBuffer(mesh.ebo);
 
-            bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LESS | BGFX_STATE_CULL_CW);
+            uint64_t state = BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LESS;
+            state |= depthOnly ? 0 : BGFX_STATE_CULL_CW;
+
+            bgfx::setState(state);
             bgfx::submit(viewId, shader.GetProgram());
         }
     }
@@ -432,7 +435,10 @@ void R_Models::DrawSkinned(bgfx::ViewId viewId, const R_Shader& shader, const st
             bgfx::setTexture(2, m_sMRAO, (mesh.mraohMap ? mesh.mraohMap : Materials::GetMRAOMap(""))->GetHandle());
         }
 
-        bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LESS | BGFX_STATE_CULL_CW);
+        uint64_t state = BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LESS;
+        state |= depthOnly ? 0 : BGFX_STATE_CULL_CW;
+
+        bgfx::setState(state);
         bgfx::submit(viewId, shader.GetProgram());
     }
 }
