@@ -559,6 +559,7 @@
 //
 //==============================================================================================================================
 #if defined(A_GLSL) && defined(A_GPU)
+/*
  #ifndef A_SKIP_EXT
   #ifdef A_HALF
    #extension GL_EXT_shader_16bit_storage:require
@@ -578,6 +579,7 @@
    #extension GL_KHR_shader_subgroup_shuffle:require
   #endif
  #endif
+ */
 //==============================================================================================================================
  #define AP1 bool
  #define AP2 bvec2

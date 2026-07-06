@@ -179,10 +179,10 @@ void main()
     }
 
     // Dynamic Points
-    for (int i = 0; i < u_numPointLights; ++i)
+    for (int j = 0; j < u_numPointLights; ++j)
     {
-        vec3 lPos = u_pointLights[i].posRadius.xyz;
-        float lRad = u_pointLights[i].posRadius.w;
+        vec3 lPos = u_pointLights[j].posRadius.xyz;
+        float lRad = u_pointLights[j].posRadius.w;
         vec3 L = normalize(lPos - fragPos);
         float dist = length(lPos - fragPos);
 
@@ -190,8 +190,8 @@ void main()
             continue;
 
         float attenuation = 1.0 - (dist / lRad);
-        float shadow = PointShadowCalc(fragPos, lPos, lRad, u_pointLights[i].shadowLayer);
-        vec3 lightEnergy = u_pointLights[i].colorVol.rgb * attenuation * (1.0 - shadow);
+        float shadow = PointShadowCalc(fragPos, lPos, lRad, u_pointLights[j].shadowLayer);
+        vec3 lightEnergy = u_pointLights[j].colorVol.rgb * attenuation * (1.0 - shadow);
 
         vec3 H = normalize(L + viewDir);
         float NDF = DistributionGGX(N, H, roughness);

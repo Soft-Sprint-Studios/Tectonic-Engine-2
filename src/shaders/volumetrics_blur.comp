@@ -18,7 +18,7 @@ void main()
 
     vec2 uv = (vec2(pos) + 0.5) / vec2(size);
     vec2 tex_offset = vec2_splat(1.0) / vec2(textureSize(image, 0)); 
-    vec3 result = texture2D(image, uv).rgb * weight[0]; 
+    vec3 result = texture2DLod(image, uv, 0.0).rgb * weight[0]; 
 
     if (u_horizontal)
     {

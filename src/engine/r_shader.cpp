@@ -37,9 +37,31 @@ R_Shader::~R_Shader()
     }
 }
 
+static std::string GetShaderPlatformPath()
+{
+    switch (bgfx::getRendererType())
+    {
+    case bgfx::RendererType::Noop:
+        return "noop";
+    case bgfx::RendererType::Vulkan:
+        return "vulkan";
+    default:
+        return "vulkan";
+    }
+}
+
 bgfx::ShaderHandle R_Shader::LoadShaderBinary(const std::string& path)
 {
-    auto data = Filesystem::ReadBinary(path);
+    std::string fileName = path;
+    size_t lastSlash = path.find_last_of("/\\");
+    if (lastSlash != std::string::npos)
+    {
+        std::string dir = path.substr(0, lastSlash);
+        std::string file = path.substr(lastSlash + 1);
+        fileName = dir + "/" + GetShaderPlatformPath() + "/" + file;
+    }
+
+    auto data = Filesystem::ReadBinary(fileName);
     if (data.empty())
     {
         return BGFX_INVALID_HANDLE;

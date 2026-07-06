@@ -18,19 +18,19 @@ void main()
     vec2 uv = (vec2(destCoord) + 0.5) / vec2(destSize);
     vec2 texelSize = vec2_splat(1.0) / vec2(destSize * 2);
 
-    vec3 a = texture2D(s_source, uv + vec2(-2.0, -2.0) * texelSize).rgb;
-    vec3 b = texture2D(s_source, uv + vec2( 0.0, -2.0) * texelSize).rgb;
-    vec3 c = texture2D(s_source, uv + vec2( 2.0, -2.0) * texelSize).rgb;
-    vec3 d = texture2D(s_source, uv + vec2(-1.0, -1.0) * texelSize).rgb;
-    vec3 e = texture2D(s_source, uv + vec2( 1.0, -1.0) * texelSize).rgb;
-    vec3 f = texture2D(s_source, uv + vec2(-2.0,  0.0) * texelSize).rgb;
-    vec3 g = texture2D(s_source, uv).rgb;
-    vec3 h = texture2D(s_source, uv + vec2( 2.0,  0.0) * texelSize).rgb;
-    vec3 i = texture2D(s_source, uv + vec2(-1.0,  1.0) * texelSize).rgb;
-    vec3 j = texture2D(s_source, uv + vec2( 1.0,  1.0) * texelSize).rgb;
-    vec3 k = texture2D(s_source, uv + vec2(-2.0,  2.0) * texelSize).rgb;
-    vec3 l = texture2D(s_source, uv + vec2( 0.0,  2.0) * texelSize).rgb;
-    vec3 m = texture2D(s_source, uv + vec2( 2.0,  2.0) * texelSize).rgb;
+    vec3 a = texture2DLod(s_source, uv + vec2(-2.0, -2.0) * texelSize, 0.0).rgb;
+    vec3 b = texture2DLod(s_source, uv + vec2( 0.0, -2.0) * texelSize, 0.0).rgb;
+    vec3 c = texture2DLod(s_source, uv + vec2( 2.0, -2.0) * texelSize, 0.0).rgb;
+    vec3 d = texture2DLod(s_source, uv + vec2(-1.0, -1.0) * texelSize, 0.0).rgb;
+    vec3 e = texture2DLod(s_source, uv + vec2( 1.0, -1.0) * texelSize, 0.0).rgb;
+    vec3 f = texture2DLod(s_source, uv + vec2(-2.0,  0.0) * texelSize, 0.0).rgb;
+    vec3 g = texture2DLod(s_source, uv, 0.0).rgb;
+    vec3 h = texture2DLod(s_source, uv + vec2( 2.0,  0.0) * texelSize, 0.0).rgb;
+    vec3 i = texture2DLod(s_source, uv + vec2(-1.0,  1.0) * texelSize, 0.0).rgb;
+    vec3 j = texture2DLod(s_source, uv + vec2( 1.0,  1.0) * texelSize, 0.0).rgb;
+    vec3 k = texture2DLod(s_source, uv + vec2(-2.0,  2.0) * texelSize, 0.0).rgb;
+    vec3 l = texture2DLod(s_source, uv + vec2( 0.0,  2.0) * texelSize, 0.0).rgb;
+    vec3 m = texture2DLod(s_source, uv + vec2( 2.0,  2.0) * texelSize, 0.0).rgb;
 
     vec3 color = (a+c+k+m)*0.03125 + (b+f+h+l)*0.0625 + (d+e+i+j)*0.125 + g*0.125;
 

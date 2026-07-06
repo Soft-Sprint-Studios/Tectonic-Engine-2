@@ -128,24 +128,13 @@ if(NOT IS_ARM64_CROSS)
             set(SHADER_TYPE compute)
         endif()
 
-        set(OUTPUT_FILE "${CMAKE_BINARY_DIR}/shaders/${SHADER_NAME}.bin")
-        list(APPEND SHADER_OUTPUTS "${OUTPUT_FILE}")
-
+        set(VULKAN_OUT "${CMAKE_BINARY_DIR}/shaders/vulkan/${SHADER_NAME}.bin")
+        list(APPEND SHADER_OUTPUTS "${VULKAN_OUT}")
         add_custom_command(
-            OUTPUT "${OUTPUT_FILE}"
-            COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/shaders"
-            COMMAND $<TARGET_FILE:shaderc>
-                -f "${SHADER_FILE}"
-                -i "${bgfx_SOURCE_DIR}/bgfx/src"
-                -i "${bgfx_SOURCE_DIR}/src"
-                -i "${SHADER_SRC_DIR}"
-                --varyingdef "${SHADER_SRC_DIR}/varying.def.sc"
-                -o "${OUTPUT_FILE}"
-                --type ${SHADER_TYPE}
-                --platform vulkan
-                -p spirv
-            DEPENDS "${SHADER_FILE}"
-            VERBATIM
+            OUTPUT "${VULKAN_OUT}"
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/shaders/vulkan"
+            COMMAND $<TARGET_FILE:shaderc> -f "${SHADER_FILE}" -i "${bgfx_SOURCE_DIR}/bgfx/src" -i "${bgfx_SOURCE_DIR}/src" -i "${SHADER_SRC_DIR}" --varyingdef "${SHADER_SRC_DIR}/varying.def.sc" -o "${VULKAN_OUT}" --type ${SHADER_TYPE} --platform windows -p spirv
+            DEPENDS "${SHADER_FILE}" VERBATIM
         )
     endforeach()
 

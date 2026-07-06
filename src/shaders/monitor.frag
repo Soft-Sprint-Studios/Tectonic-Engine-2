@@ -11,7 +11,7 @@ uniform vec4 u_monitorParams;
 
 void main()
 {
-    vec2 uvScale = vec2(u_resolution) / vec2(u_monitorWidth, u_monitorHeight);
+    vec2 uvScale = vec2_splat(u_resolution) / vec2(u_monitorWidth, u_monitorHeight);
     uvScale *= 0.0625;
 
     vec2 finalUV = fract(v_texcoord0 * uvScale);

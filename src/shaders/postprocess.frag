@@ -99,7 +99,7 @@ vec3 ApplyFXAA(sampler2D tex, vec2 uv)
     float dirReduce = max((lumaNW + lumaNE + lumaSW + lumaSE) * (0.25 * FXAA_REDUCE_MUL), FXAA_REDUCE_MIN);
     float rcpDirMin = 1.0 / (min(abs(dir.x), abs(dir.y)) + dirReduce);
 
-    dir = clamp(dir * rcpDirMin, vec2(-FXAA_SPAN_MAX), vec2(FXAA_SPAN_MAX)) * texel;
+    dir = clamp(dir * rcpDirMin, vec2_splat(-FXAA_SPAN_MAX), vec2_splat(FXAA_SPAN_MAX)) * texel;
 
     vec3 rgbA = 0.5 * (texture2D(tex, uv + dir * (1.0 / 3.0 - 0.5)).xyz + texture2D(tex, uv + dir * (2.0 / 3.0 - 0.5)).xyz);
 

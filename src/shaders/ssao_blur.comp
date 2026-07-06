@@ -19,7 +19,7 @@ void main()
     vec2 uv = (vec2(pos) + 0.5) / vec2(size);
     vec2 tex_offset = vec2_splat(1.0) / vec2(textureSize(s_aoTex, 0));
 
-    float result = texture2D(s_aoTex, uv).r * weight[0];
+    float result = texture2DLod(s_aoTex, uv, 0.0).r * weight[0];
 
     if (u_horizontal)
     {

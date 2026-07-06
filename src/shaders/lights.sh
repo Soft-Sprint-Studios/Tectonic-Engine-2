@@ -74,7 +74,7 @@ float SpotShadowCalc(vec3 worldPos, vec3 lightPos, float radius, mat4 lightSpace
 
     float linearDepth = (distance(worldPos, lightPos) / radius) - 0.001;
     float warpedDepth = exp(EVSM_EXP * linearDepth);
-    vec2 moments = texture2DArray(u_spotShadowMaps, vec3(projCoords.xy, layer)).rg;
+    vec2 moments = texture2DArrayLod(u_spotShadowMaps, vec3(projCoords.xy, layer), 0.0).rg;
     return 1.0 - ChebyshevUpperBound(moments, warpedDepth);
 }
 
@@ -107,7 +107,7 @@ float PointShadowCalc(vec3 worldPos, vec3 lightPos, float far_plane, float layer
     }
     
     uv = uv * (0.5 / max(vAbs.x, max(vAbs.y, vAbs.z))) + 0.5;
-    vec2 moments = texture2DArray(u_pointShadowMaps, vec3(uv, layer * 6.0 + faceIndex)).rg;
+    vec2 moments = texture2DArrayLod(u_pointShadowMaps, vec3(uv, layer * 6.0 + faceIndex), 0.0).rg;
     float warpedDepth = exp(EVSM_EXP * depth);
     return 1.0 - ChebyshevUpperBound(moments, warpedDepth);
 }
@@ -157,7 +157,7 @@ float CalculateSunShadow(vec3 worldPos, mat4 viewMat, sampler2DArray shadowArray
     {
         for (int y = -1; y <= 1; ++y)
         {
-            float pcfDepth = texture2DArray(shadowArray, vec3(projCoords.xy + vec2(x, y) * texelSize, layer)).r;
+            float pcfDepth = texture2DArrayLod(shadowArray, vec3(projCoords.xy + vec2(x, y) * texelSize, layer), 0.0).r;
             if (projCoords.z > pcfDepth) 
             {
                 shadow += 1.0;
