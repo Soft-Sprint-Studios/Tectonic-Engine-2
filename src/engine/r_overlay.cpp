@@ -50,10 +50,11 @@ void R_Overlay::Draw(bgfx::ViewId viewId)
     if (!tex) 
         return;
 
-    bgfx::TransientVertexBuffer tvb;
-    if (6 == bgfx::getAvailTransientVertexBuffer(6, m_layout))
+    const uint32_t numVertices = 6;
+    if (bgfx::getAvailTransientVertexBuffer(numVertices, m_layout) >= numVertices)
     {
-        bgfx::allocTransientVertexBuffer(&tvb, 6, m_layout);
+        bgfx::TransientVertexBuffer tvb;
+        bgfx::allocTransientVertexBuffer(&tvb, numVertices, m_layout);
 
         struct Vertex
         { 
