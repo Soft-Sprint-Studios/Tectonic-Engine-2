@@ -73,7 +73,7 @@ vec3 ApplyFXAA(sampler2D tex, vec2 uv)
     float FXAA_REDUCE_MUL = 1.0 / 8.0;
     float FXAA_REDUCE_MIN = 1.0 / 128.0;
 
-    vec2 texel = vec2_splat(1.0 / 1920.0);
+    vec2 texel = u_viewTexel.xy;
 
     vec3 rgbNW = texture2D(tex, uv + vec2(-1.0, -1.0) * texel).xyz;
     vec3 rgbNE = texture2D(tex, uv + vec2( 1.0, -1.0) * texel).xyz;
@@ -136,13 +136,6 @@ void main()
     float exposure = u_exposureData[0].x;
     hdrColor *= exposure;
 
-    // Bloom
-    if (u_bloom_enabled == 1)
-    {
-        vec3 bloom = texture2D(u_bloomTexture, v_texcoord0).rgb * u_bloom_intensity;
-        hdrColor += bloom;
-    }
-	
     // SSAO
     if (u_ssao_enabled == 1)
     {
@@ -154,6 +147,13 @@ void main()
     {
         vec4 ssr = texture2D(u_ssrTexture, v_texcoord0);
         hdrColor += ssr.rgb * ssr.a;
+    }
+
+    // Bloom
+    if (u_bloom_enabled == 1)
+    {
+        vec3 bloom = texture2D(u_bloomTexture, v_texcoord0).rgb * u_bloom_intensity;
+        hdrColor += bloom;
     }
 
     // Volumetrics
