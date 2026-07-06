@@ -126,7 +126,7 @@ if(NOT IS_ARM64_CROSS)
             TARGET Engine PRE_BUILD
             COMMAND ${CMAKE_COMMAND} -E make_directory "${SHADER_OUT_DIR}"
             COMMAND $<TARGET_FILE:shaderc> -f "${SHADER_FILE}" -i "${bgfx_SOURCE_DIR}/bgfx/src" -i "${bgfx_SOURCE_DIR}/src" -i "${SHADER_SRC_DIR}" --varyingdef "${SHADER_SRC_DIR}/varying.def.sc" -o "${SHADER_OUT_DIR}/${SHADER_NAME}.bin" --type ${SHADER_TYPE} --platform vulkan -p spirv
-            COMMENT "Compiling shader ${SHADER_NAME} to Vulkan SPIR-V"
+            COMMENT "Compiling shaders..."
         )
     endforeach()
 endif()
