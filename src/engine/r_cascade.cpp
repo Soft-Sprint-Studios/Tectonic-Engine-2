@@ -125,7 +125,7 @@ void R_Cascade::UpdateMatrices(const Camera& cam, const glm::vec3& sunDir)
 
         glm::vec4 roundedOrigin = glm::round(shadowOrigin);
         glm::vec4 roundOffset = roundedOrigin - shadowOrigin;
-        roundOffset = roundOffset * (2.0f * radius) / (float)m_resolution;
+        roundOffset = roundOffset * 2.0f / (float)m_resolution;
         roundOffset.z = 0.0f;
         roundOffset.w = 0.0f;
 
