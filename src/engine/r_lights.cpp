@@ -104,6 +104,7 @@ bool R_Lights::Init()
         }
     }
 
+    m_sCsmArray = bgfx::createUniform("u_csmArray", bgfx::UniformType::Sampler);
     m_sSpotShadowMaps = bgfx::createUniform("u_spotShadowMaps", bgfx::UniformType::Sampler);
     m_sPointShadowMaps = bgfx::createUniform("u_pointShadowMaps", bgfx::UniformType::Sampler);
     m_uLightParams = bgfx::createUniform("u_lightParams", bgfx::UniformType::Vec4);
@@ -235,6 +236,7 @@ void R_Lights::Bind(const R_Shader& shader)
 
     std::vector<GPULight> points, spots;
 
+    bgfx::setTexture(13, m_sCsmArray, m_cascade->GetTexArray());
     bgfx::setTexture(14, m_sSpotShadowMaps, m_SpotShadow);
     bgfx::setTexture(15, m_sPointShadowMaps, m_PointShadow);
 
@@ -313,6 +315,8 @@ void R_Lights::Shutdown()
         }
     }
 
+    if (bgfx::isValid(m_sCsmArray))
+        bgfx::destroy(m_sCsmArray);
     if (bgfx::isValid(m_SpotShadow))
         bgfx::destroy(m_SpotShadow);
     if (bgfx::isValid(m_PointShadow))

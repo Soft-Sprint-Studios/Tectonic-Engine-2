@@ -90,6 +90,7 @@ private:
     bgfx::FrameBufferHandle m_spotFB[8];
     bgfx::FrameBufferHandle m_pointFB[8][6];
 
+    bgfx::UniformHandle m_sCsmArray = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle m_sSpotShadowMaps = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle m_sPointShadowMaps = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle m_uLightParams = BGFX_INVALID_HANDLE;
