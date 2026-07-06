@@ -24,7 +24,7 @@
 #pragma once
 #include "r_shader.h"
 #include "camera.h"
-#include <glad/glad.h>
+#include <bgfx/bgfx.h>
 #include <map>
 #include <string>
 
@@ -34,12 +34,16 @@ class R_InteriorParallax
 {
 public:
     void Init();
-    void Draw(const Camera& camera, R_BSP* bsp);
+    void Draw(bgfx::ViewId viewId, const Camera& camera, R_BSP* bsp);
     void Shutdown();
 
 private:
-    GLuint GetCubemap(const std::string& name);
+    bgfx::TextureHandle GetCubemap(const std::string& name);
     
     R_Shader m_shader;
-    std::map<std::string, GLuint> m_cubemapCache;
+    std::map<std::string, bgfx::TextureHandle> m_cubemapCache;
+
+    bgfx::UniformHandle m_sInteriorCube = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uRoomParams = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uViewPos = BGFX_INVALID_HANDLE;
 };

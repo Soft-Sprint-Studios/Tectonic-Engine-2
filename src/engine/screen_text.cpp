@@ -24,6 +24,7 @@
 #include "screen_text.h"
 #include "renderer.h"
 #include "r_ui.h"
+#include "sys.h"
 #include <vector>
 #include <algorithm>
 
@@ -66,7 +67,7 @@ namespace ScreenText
     {
         auto ui = renderer->GetUI();
         int screenW, screenH;
-        SDL_GetWindowSize(SDL_GL_GetCurrentWindow(), &screenW, &screenH);
+        SDL_GetWindowSize(Sys::GetWindow()->Get(), &screenW, &screenH);
 
         for (auto& msg : s_messages)
         {

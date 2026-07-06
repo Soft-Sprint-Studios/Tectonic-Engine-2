@@ -25,30 +25,37 @@
 #include "r_shader.h"
 #include "camera.h"
 #include "monitors.h"
-#include <glad/glad.h>
-#include <map>
+#include <bgfx/bgfx.h>
+#include <memory>
+#include <vector>
 
 class R_BSP;
 
 class R_Monitors
 {
 public:
+    R_Monitors();
+    ~R_Monitors();
+
     void Init();
     void RenderTextures(class Renderer* renderer);
-    void Draw(const Camera& camera, R_BSP* bsp);
+    void Draw(bgfx::ViewId viewId, const Camera& camera, R_BSP* bsp);
     void Shutdown();
 
-private:
-    struct RenderTarget
-    {
-        GLuint fbo = 0;
-        GLuint texture = 0;
-        GLuint rbo = 0;
-        int res = 0;
-    };
+    bgfx::TextureHandle GetTexture() const 
+    { 
+        return m_colorTexture; 
+    }
 
-    RenderTarget& GetTarget(Monitor* monitor);
+private:
+    void RecreateFBO(int resolution);
 
     R_Shader m_shader;
-    std::map<Monitor*, RenderTarget> m_targets;
+    bgfx::FrameBufferHandle m_fbo = BGFX_INVALID_HANDLE;
+    bgfx::TextureHandle m_colorTexture = BGFX_INVALID_HANDLE;
+    bgfx::TextureHandle m_depthTexture = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sTexture = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uMonitorParams = BGFX_INVALID_HANDLE;
+
+    int m_currentResolution = 0;
 };

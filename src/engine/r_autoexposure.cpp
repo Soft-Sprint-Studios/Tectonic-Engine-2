@@ -24,6 +24,7 @@
 #include "r_autoexposure.h"
 #include "cvar.h"
 #include "timing.h"
+#include <algorithm>
 
 CVar r_autoexposure("r_autoexposure", "1", "Enable compute-based auto exposure.", CVAR_SAVE);
 CVar r_exposure_speed("r_exposure_speed", "1.5", "Speed of exposure adjustment.", CVAR_SAVE);
@@ -32,80 +33,78 @@ CVar r_exposure_min("r_exposure_min", "0.85", "Minimum allowed exposure multipli
 CVar r_exposure_max("r_exposure_max", "1.8", "Maximum allowed exposure multiplier.", CVAR_SAVE);
 CVar r_autoexposure_res("r_autoexposure_res", "4", "Downscale factor for auto exposure (higher = faster).", CVAR_SAVE);
 
-R_AutoExposure::R_AutoExposure()
+R_AutoExposure::R_AutoExposure() 
 {
 }
 
-R_AutoExposure::~R_AutoExposure()
-{
-    Shutdown();
+R_AutoExposure::~R_AutoExposure() 
+{ 
+    Shutdown(); 
 }
 
 void R_AutoExposure::Init()
 {
+    m_clearShader.LoadCompute("shaders/lum_clear.comp");
     m_histogramShader.LoadCompute("shaders/lum_histogram.comp");
     m_averageShader.LoadCompute("shaders/lum_average.comp");
 
-    glCreateBuffers(1, &m_histogramBuffer);
-    glNamedBufferData(m_histogramBuffer, 256 * sizeof(uint32_t), NULL, GL_DYNAMIC_COPY);
+    m_uintLayout.begin()
+        .add(bgfx::Attrib::TexCoord0, 1, bgfx::AttribType::Float)
+        .end();
 
-    glCreateBuffers(1, &m_lumBuffer);
-    float initialExposure = 1.0f;
-    glNamedBufferData(m_lumBuffer, sizeof(float), &initialExposure, GL_DYNAMIC_COPY);
+    m_vec4Layout.begin()
+        .add(bgfx::Attrib::TexCoord0, 4, bgfx::AttribType::Float)
+        .end();
+
+    m_histogramBuffer = bgfx::createDynamicVertexBuffer(256, m_uintLayout, BGFX_BUFFER_COMPUTE_READ_WRITE);
+
+    float initialLum[4] = { 1.0f, 0.0f, 0.0f, 0.0f };
+    const bgfx::Memory* mem = bgfx::copy(initialLum, sizeof(initialLum));
+    m_lumBuffer = bgfx::createDynamicVertexBuffer(mem, m_vec4Layout, BGFX_BUFFER_COMPUTE_READ_WRITE);
+
+    m_uExposureParams1 = bgfx::createUniform("u_exposureParams1", bgfx::UniformType::Vec4);
+    m_uExposureParams2 = bgfx::createUniform("u_exposureParams2", bgfx::UniformType::Vec4);
 }
 
-void R_AutoExposure::Update(GLuint screenTexture, int width, int height)
+void R_AutoExposure::Render(bgfx::ViewId viewId, bgfx::TextureHandle screenTexture, int width, int height)
 {
-    // Run the autoexposure compute shader
-    if (r_autoexposure.GetInt() > 0)
-    {
-        uint32_t zeros[256] = { 0 };
-        glNamedBufferSubData(m_histogramBuffer, 0, sizeof(zeros), zeros);
+    bgfx::setBuffer(0, m_histogramBuffer, bgfx::Access::Write);
+    bgfx::dispatch(viewId, m_clearShader.GetProgram(), 256 / 64, 1, 1);
 
-        m_histogramShader.Bind();
-        glBindImageTexture(0, screenTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, m_histogramBuffer);
+    int ds = std::max(1, r_autoexposure_res.GetInt());
+    int vW = width / ds;
+    int vH = height / ds;
 
-        int ds = r_autoexposure_res.GetInt();
-        ds = std::max(1, ds);
+    bgfx::setImage(0, screenTexture, 0, bgfx::Access::Read, bgfx::TextureFormat::RGBA16F);
+    bgfx::setBuffer(1, m_histogramBuffer, bgfx::Access::ReadWrite);
+    bgfx::dispatch(viewId, m_histogramShader.GetProgram(), (vW + 15) / 16, (vH + 15) / 16, 1);
 
-        int vW = width / ds;
-        int vH = height / ds;
+    float p1[4] = { Time::DeltaTime(), r_exposure_speed.GetFloat(), r_exposure_target.GetFloat(), r_exposure_min.GetFloat() };
+    float p2[4] = { r_exposure_max.GetFloat(), r_autoexposure.GetInt() > 0 ? 1.0f : 0.0f, 0.0f, 0.0f };
 
-        glDispatchCompute((vW + 15) / 16, (vH + 15) / 16, 1);
-
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-
-        m_averageShader.Bind();
-        m_averageShader.SetFloat("u_deltaTime", Time::DeltaTime());
-        m_averageShader.SetFloat("u_speed", r_exposure_speed.GetFloat());
-        m_averageShader.SetFloat("u_targetLum", r_exposure_target.GetFloat());
-        m_averageShader.SetFloat("u_minExp", r_exposure_min.GetFloat());
-        m_averageShader.SetFloat("u_maxExp", r_exposure_max.GetFloat());
-
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, m_histogramBuffer);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, m_lumBuffer);
-        glDispatchCompute(1, 1, 1);
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-    }
-    else
-    {
-        float defaultExp = 1.0f;
-        glNamedBufferSubData(m_lumBuffer, 0, sizeof(float), &defaultExp);
-    }
+    bgfx::setUniform(m_uExposureParams1, p1);
+    bgfx::setUniform(m_uExposureParams2, p2);
+    bgfx::setBuffer(1, m_histogramBuffer, bgfx::Access::Read);
+    bgfx::setBuffer(2, m_lumBuffer, bgfx::Access::ReadWrite);
+    bgfx::dispatch(viewId, m_averageShader.GetProgram(), 1, 1, 1);
 }
 
 void R_AutoExposure::Bind()
 {
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, m_lumBuffer);
+    bgfx::setBuffer(6, m_lumBuffer, bgfx::Access::Read);
 }
 
 void R_AutoExposure::Shutdown()
 {
-    if (m_histogramBuffer) 
-        glDeleteBuffers(1, &m_histogramBuffer);
-    if (m_lumBuffer) 
-        glDeleteBuffers(1, &m_lumBuffer);
+    if (bgfx::isValid(m_histogramBuffer)) 
+        bgfx::destroy(m_histogramBuffer);
+    if (bgfx::isValid(m_lumBuffer)) 
+        bgfx::destroy(m_lumBuffer);
+    if (bgfx::isValid(m_uExposureParams1)) 
+        bgfx::destroy(m_uExposureParams1);
+    if (bgfx::isValid(m_uExposureParams2)) 
+        bgfx::destroy(m_uExposureParams2);
 
-    m_histogramBuffer = m_lumBuffer = 0;
+    m_histogramBuffer = m_lumBuffer = BGFX_INVALID_HANDLE;
+    m_uExposureParams1 = m_uExposureParams2 = BGFX_INVALID_HANDLE;
 }

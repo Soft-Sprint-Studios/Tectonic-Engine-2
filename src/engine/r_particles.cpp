@@ -25,95 +25,118 @@
 #include "particles.h"
 #include "materials.h"
 #include "console.h"
-#include <r_ui.h>
+#include "sys.h"
+#include "window.h"
+#include <SDL3/SDL.h>
+#include <glm/gtc/type_ptr.hpp>
 
-R_Particles::R_Particles() : m_vao(0), m_vbo(0) 
+R_Particles::R_Particles()
 {
 }
 
 R_Particles::~R_Particles() 
-{ 
+{
     Shutdown(); 
 }
 
 bool R_Particles::Init()
 {
-    m_shader.Load("shaders/particle.vert", "shaders/particle.frag", "shaders/particle.geom");
+    m_shader.Load("shaders/particle.vert", "shaders/particle.frag");
 
-    glCreateVertexArrays(1, &m_vao);
-    glCreateBuffers(1, &m_vbo);
-    glNamedBufferData(m_vbo, 10000 * sizeof(PVertex), NULL, GL_DYNAMIC_DRAW);
+    m_layout.begin()
+        .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
+        .end();
 
-    glVertexArrayVertexBuffer(m_vao, 0, m_vbo, 0, sizeof(PVertex));
+    m_sTexture = bgfx::createUniform("s_texture", bgfx::UniformType::Sampler);
+    m_uParticleParams = bgfx::createUniform("u_particleParams", bgfx::UniformType::Vec4);
 
-    glEnableVertexArrayAttrib(m_vao, 0);
-    glVertexArrayAttribFormat(m_vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
-    glVertexArrayAttribBinding(m_vao, 0, 0);
-
-    glEnableVertexArrayAttrib(m_vao, 1);
-    glVertexArrayAttribFormat(m_vao, 1, 4, GL_FLOAT, GL_FALSE, offsetof(PVertex, col));
-    glVertexArrayAttribBinding(m_vao, 1, 0);
-
-    glEnableVertexArrayAttrib(m_vao, 2);
-    glVertexArrayAttribFormat(m_vao, 2, 1, GL_FLOAT, GL_FALSE, offsetof(PVertex, size));
-    glVertexArrayAttribBinding(m_vao, 2, 0);
-    
     return true;
 }
 
-void R_Particles::Draw(const Camera& camera, uint32_t depthTex)
+void R_Particles::Draw(bgfx::ViewId viewId, const Camera& camera)
 {
     auto& systems = Particles::GetActiveSystems();
     if (systems.empty()) 
         return;
 
-    glEnable(GL_BLEND);
-    glDepthMask(GL_FALSE);
-    m_shader.Bind();
-    m_shader.SetMat4("u_projection", camera.GetProjectionMatrix());
-    m_shader.SetMat4("u_view", camera.GetViewMatrix());
-    m_shader.SetMat4("u_invProjection", glm::inverse(camera.GetProjectionMatrix()));
-    glBindTextureUnit(1, depthTex);
+    uint64_t baseState = BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_DEPTH_TEST_LESS;
 
     int w, h;
-    SDL_GetWindowSize(SDL_GL_GetCurrentWindow(), &w, &h);
-    m_shader.SetVec2("u_screenSize", { (float)w, (float)h });
+    SDL_GetWindowSize(Sys::GetWindow()->Get(), &w, &h);
+    float particleParams[4] = { (float)w, (float)h, 0.0f, 0.0f };
+    bgfx::setUniform(m_uParticleParams, particleParams);
 
-    glm::mat4 v = camera.GetViewMatrix();
-    m_shader.SetVec3("u_right", glm::vec3(v[0][0], v[1][0], v[2][0]));
-    m_shader.SetVec3("u_up", glm::vec3(v[0][1], v[1][1], v[2][1]));
+    glm::mat4 vMat = camera.GetViewMatrix();
+    glm::vec3 right = { vMat[0][0], vMat[1][0], vMat[2][0] };
+    glm::vec3 up = { vMat[0][1], vMat[1][1], vMat[2][1] };
 
-    glBindVertexArray(m_vao);
+    glm::mat4 identity(1.0f);
+
     for (auto& s : systems)
     {
         auto& pts = s->GetParticles();
         if (pts.empty()) 
             continue;
 
-        if (s->GetDef().additive)
+        uint64_t blendState = s->GetDef().additive ? BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_SRC_ALPHA, BGFX_STATE_BLEND_ONE) : BGFX_STATE_BLEND_ALPHA;
+
+        uint32_t numVerts = (uint32_t)pts.size() * 4;
+        uint32_t numIndices = (uint32_t)pts.size() * 6;
+
+        if (numVerts == bgfx::getAvailTransientVertexBuffer(numVerts, m_layout) && numIndices == bgfx::getAvailTransientIndexBuffer(numIndices))
         {
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+            bgfx::TransientVertexBuffer tvb;
+            bgfx::TransientIndexBuffer tib;
+            bgfx::allocTransientVertexBuffer(&tvb, numVerts, m_layout);
+            bgfx::allocTransientIndexBuffer(&tib, numIndices);
+
+            ParticleVertex* verts = (ParticleVertex*)tvb.data;
+            uint16_t* indices = (uint16_t*)tib.data;
+
+            for (size_t i = 0; i < pts.size(); ++i)
+            {
+                const auto& p = pts[i];
+                float sSize = p.size;
+                glm::vec3 corners[4] = 
+                {
+                    p.pos + (-right + up) * sSize,
+                    p.pos + (-right - up) * sSize,
+                    p.pos + (right - up) * sSize,
+                    p.pos + (right + up) * sSize
+                };
+
+                verts[i * 4 + 0] = { corners[0].x, corners[0].y, corners[0].z, p.col.r, p.col.g, p.col.b, p.col.a, 0.0f, 1.0f };
+                verts[i * 4 + 1] = { corners[1].x, corners[1].y, corners[1].z, p.col.r, p.col.g, p.col.b, p.col.a, 0.0f, 0.0f };
+                verts[i * 4 + 2] = { corners[2].x, corners[2].y, corners[2].z, p.col.r, p.col.g, p.col.b, p.col.a, 1.0f, 0.0f };
+                verts[i * 4 + 3] = { corners[3].x, corners[3].y, corners[3].z, p.col.r, p.col.g, p.col.b, p.col.a, 1.0f, 1.0f };
+
+                uint16_t base = (uint16_t)(i * 4);
+                indices[i * 6 + 0] = base + 0;
+                indices[i * 6 + 1] = base + 1;
+                indices[i * 6 + 2] = base + 2;
+                indices[i * 6 + 3] = base + 0;
+                indices[i * 6 + 4] = base + 2;
+                indices[i * 6 + 5] = base + 3;
+            }
+
+            bgfx::setTransform(glm::value_ptr(identity));
+            bgfx::setTexture(0, m_sTexture, Materials::GetTexture(s->GetDef().textureName)->GetHandle());
+            bgfx::setVertexBuffer(0, &tvb);
+            bgfx::setIndexBuffer(&tib);
+            bgfx::setState(baseState | blendState);
+            bgfx::submit(viewId, m_shader.GetProgram());
         }
-        else
-        {
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        }
-
-        Materials::GetTexture(s->GetDef().textureName)->Bind(0);
-
-        std::vector<PVertex> vts;
-        for (auto& p : pts) 
-            vts.push_back({p.pos, p.col, p.size});
-
-        glNamedBufferSubData(m_vbo, 0, vts.size() * sizeof(PVertex), vts.data());
-        glDrawArrays(GL_POINTS, 0, (GLsizei)vts.size());
     }
-    glDepthMask(GL_TRUE);
-    glDisable(GL_BLEND);
 }
 
-void R_Particles::Shutdown() 
-{ 
-    glDeleteVertexArrays(1, &m_vao); 
-    glDeleteBuffers(1, &m_vbo); 
+void R_Particles::Shutdown()
+{
+    if (bgfx::isValid(m_sTexture))
+    {
+        bgfx::destroy(m_sTexture);
+        bgfx::destroy(m_uParticleParams);
+        m_sTexture = m_uParticleParams = BGFX_INVALID_HANDLE;
+    }
 }

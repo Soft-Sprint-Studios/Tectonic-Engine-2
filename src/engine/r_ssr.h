@@ -24,7 +24,7 @@
 #pragma once
 #include "r_shader.h"
 #include "camera.h"
-#include <glad/glad.h>
+#include <bgfx/bgfx.h>
 
 class R_SSR
 {
@@ -36,20 +36,35 @@ public:
     void Shutdown();
     void Rescale(int width, int height);
 
-    void Render(GLuint depthTex, GLuint normalTex, GLuint mraoTex, GLuint sceneTex, const Camera& camera, GLuint quadVAO);
-    void Bind(const R_Shader& shader);
+    void Render(bgfx::ViewId viewId, bgfx::TextureHandle depthTex, bgfx::TextureHandle normalTex, bgfx::TextureHandle mraoTex, bgfx::TextureHandle sceneTex, const Camera& camera);
+    void Bind(bgfx::UniformHandle s_ssrTex);
+
+    bgfx::TextureHandle GetTexture() const 
+    { 
+        return m_blurTexture; 
+    }
 
 private:
     void CreateBuffers(int width, int height);
     void DeleteBuffers();
 
-    GLuint m_fbo = 0;
-    GLuint m_texture = 0;
-    GLuint m_blurFbo = 0;
-    GLuint m_blurTexture = 0;
+    bgfx::TextureHandle m_texture = BGFX_INVALID_HANDLE;
+    bgfx::TextureHandle m_blurTexture = BGFX_INVALID_HANDLE;
 
     R_Shader m_ssrShader;
     R_Shader m_blurShader;
 
-    int m_width, m_height;
+    bgfx::UniformHandle m_sDepth = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sNormal = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sMRAO = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sScene = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sSSR = BGFX_INVALID_HANDLE;
+
+    bgfx::UniformHandle m_uProj = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uInvProj = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uView = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uParams1 = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uParams2 = BGFX_INVALID_HANDLE;
+
+    int m_width = 0, m_height = 0;
 };

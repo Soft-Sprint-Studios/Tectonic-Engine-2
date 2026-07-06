@@ -25,7 +25,7 @@
 #include "r_shader.h"
 #include "camera.h"
 #include "sprite.h"
-#include <glad/glad.h>
+#include <bgfx/bgfx.h>
 #include <memory>
 #include <vector>
 
@@ -33,11 +33,18 @@ class R_Sprites
 {
 public:
     void Init();
-    void Draw(const Camera& camera, const std::vector<std::shared_ptr<Sprite>>& sprites);
+    void Draw(bgfx::ViewId viewId, const Camera& camera, const std::vector<std::shared_ptr<Sprite>>& sprites);
     void Shutdown();
 
 private:
     R_Shader m_shader;
-    GLuint m_vao = 0;
-    GLuint m_vbo = 0;
+    bgfx::VertexBufferHandle m_vbo = BGFX_INVALID_HANDLE;
+    bgfx::VertexLayout m_layout;
+
+    bgfx::UniformHandle m_sTexture = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uColor = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uSpriteParams = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uViewRightLocal = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uViewUpLocal = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uWorldPosLocal = BGFX_INVALID_HANDLE;
 };

@@ -25,6 +25,7 @@
 #include "bsploader.h"
 #include "r_shader.h"
 #include "r_texture.h"
+#include <bgfx/bgfx.h>
 #include <memory>
 #include <vector>
 
@@ -48,8 +49,7 @@ struct BSPDrawCall
 
 struct BrushModel
 {
-    GLuint vao = 0;
-    GLuint vbo = 0;
+    bgfx::VertexBufferHandle vbo = BGFX_INVALID_HANDLE;
     std::vector<BSPDrawCall> drawCalls;
 };
 
@@ -60,26 +60,39 @@ public:
     ~R_BSP();
 
     bool Init(const BSP::MapData& mapData);
-    void Draw(const R_Shader& shader, const Frustum& frustum, bool depthOnly = false);
-    void DrawBModel(int index, const R_Shader& shader, const glm::mat4& transform, bool depthOnly = false);
+    void Draw(const R_Shader& shader, bgfx::ViewId viewId, const Frustum& frustum, const glm::vec3& viewPos, bool depthOnly = false);
+    void DrawBModel(int index, const R_Shader& shader, bgfx::ViewId viewId, const glm::mat4& transform, const glm::vec3& viewPos, bool depthOnly = false);
     void Shutdown();
 
-    GLuint GetVAO() const 
-    { 
-        return m_vao; 
+    bgfx::TextureHandle GetLightmapTexture() const
+    {
+        return m_lightmapTexture;
     }
 
-    GLuint GetLightmapTexture() const 
-    { 
-        return m_lightmapTexture; 
+    bgfx::VertexBufferHandle GetVBO() const
+    {
+        return m_vbo;
     }
 
 private:
-    GLuint m_vao;
-    GLuint m_vbo;
-    GLuint m_lightmapTexture = 0;
+    bgfx::VertexLayout m_layout;
+    bgfx::VertexBufferHandle m_vbo = BGFX_INVALID_HANDLE;
+    bgfx::TextureHandle m_lightmapTexture = BGFX_INVALID_HANDLE;
+
+    bgfx::UniformHandle m_sDiffuse = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sNormal = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sMRAO = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sDiffuse2 = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sNormal2 = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sMRAO2 = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sLightmap = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uBumpAndHeights = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uParallaxParams = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uViewPos = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uLightmapParams = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uModelParams = BGFX_INVALID_HANDLE;
+
     std::vector<BSPDrawCall> m_drawCalls;
     std::unordered_map<int, BrushModel> m_subModels;
-    uint32_t m_totalVertexCount = 0;
     uint32_t m_opaqueVertexCount = 0;
 };

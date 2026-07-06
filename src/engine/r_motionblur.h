@@ -24,7 +24,7 @@
 #pragma once
 #include "camera.h"
 #include "r_shader.h"
-#include <glad/glad.h>
+#include <bgfx/bgfx.h>
 
 class R_MotionBlur
 {
@@ -35,15 +35,27 @@ public:
     bool Init(int width, int height);
     void Shutdown();
     void Rescale(int width, int height);
-    void Render(GLuint sceneTex, GLuint depthTex, const Camera& camera, GLuint quadVAO);
-    void Bind(const R_Shader& shader);
+    void Render(bgfx::ViewId viewId, bgfx::TextureHandle sceneTex, bgfx::TextureHandle depthTex, const Camera& camera);
+    void Bind(bgfx::UniformHandle s_motionBlurTex);
+
+    bgfx::TextureHandle GetTexture() const 
+    { 
+        return m_texture; 
+    }
 
 private:
     void CreateBuffers(int width, int height);
     void DeleteBuffers();
 
+    bgfx::TextureHandle m_texture = BGFX_INVALID_HANDLE;
+
     R_Shader m_shader;
-    GLuint m_fbo = 0;
-    GLuint m_texture = 0;
-    int m_width, m_height;
+
+    bgfx::UniformHandle m_sSceneTex = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sDepthTex = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uInvViewProj = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uPrevViewProj = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uBlurParams = BGFX_INVALID_HANDLE;
+
+    int m_width = 0, m_height = 0;
 };

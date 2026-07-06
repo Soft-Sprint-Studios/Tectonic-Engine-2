@@ -138,8 +138,8 @@ namespace BSP
             d_lighting = GetLump<uint8_t>(lightingType);
             m_lightingLength = m_header->lumps[lightingType].length;
 
-            m_map.lightmapAtlasWidth = LIGHTMAP_ATLAS_SIZE;
-            m_map.lightmapAtlasHeight = LIGHTMAP_ATLAS_SIZE;
+            m_map.lightmapAtlasWidth = 4096;
+            m_map.lightmapAtlasHeight = 4096;
             m_map.lightmapAtlas.assign(m_map.lightmapAtlasWidth * m_map.lightmapAtlasHeight * 4, 0.0f);
         }
 

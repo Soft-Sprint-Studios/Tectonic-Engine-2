@@ -26,7 +26,7 @@
 #include "r_shader.h"
 #include "camera.h"
 #include "r_cascade.h"
-#include <glad/glad.h>
+#include <bgfx/bgfx.h>
 #include <memory>
 
 class R_BSP;
@@ -43,24 +43,38 @@ public:
     void Bind(const R_Shader& shader);
     void Shutdown();
 
+    bgfx::TextureHandle GetSpotShadowTexture() const 
+    { 
+        return m_SpotShadow; 
+    }
+
+    bgfx::TextureHandle GetPointShadowTexture() const 
+    { 
+        return m_PointShadow; 
+    }
+
+    bgfx::TextureHandle GetCascadeShadowTexture() const 
+    { 
+        return m_cascade->GetTexArray(); 
+    }
+
 private:
     void SetupShadowMap(std::shared_ptr<DynamicLight> light);
 
     struct GPULight
     {
-        glm::vec4 posRadius;
-        glm::vec4 colorVol;
-        glm::vec4 dirInner;
-        glm::vec4 shadowData;
-        glm::mat4 lightSpace;
-        float     shadowLayer;
-        float     pad1;
-        float     pad2;
-        float     pad3;
+        float posRadius[4];
+        float colorVol[4];
+        float dirInner[4];
+        float shadowData[4];
+        float lightSpace[16];
+        float shadowLayer;
+        float pad[3];
     };
 
-    GLuint m_lightSSBO = 0;
-    GLuint m_shadowFBO = 0;
+    bgfx::DynamicIndexBufferHandle m_pointLightSSBO = BGFX_INVALID_HANDLE;
+    bgfx::DynamicIndexBufferHandle m_spotLightSSBO = BGFX_INVALID_HANDLE;
+
     int m_nextSpotLayer = 0;
     int m_nextPointLayer = 0;
 
@@ -68,12 +82,19 @@ private:
     R_Shader m_shadowCascadeShader;
     R_Shader m_shadowPointShader;
 
-    GLuint m_SpotShadow;
-    GLuint m_PointShadow;
-    GLuint m_shadowDepthTex;
-    GLuint m_PointDepth;
+    bgfx::TextureHandle m_SpotShadow = BGFX_INVALID_HANDLE;
+    bgfx::TextureHandle m_PointShadow = BGFX_INVALID_HANDLE;
+    bgfx::TextureHandle m_shadowDepthTex = BGFX_INVALID_HANDLE;
+    bgfx::TextureHandle m_PointDepth = BGFX_INVALID_HANDLE;
+
+    bgfx::FrameBufferHandle m_spotFB[8];
+    bgfx::FrameBufferHandle m_pointFB[8][6];
+
+    bgfx::UniformHandle m_sCsmArray = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sSpotShadowMaps = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sPointShadowMaps = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uLightParams = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uShadowParams = BGFX_INVALID_HANDLE;
 
     std::unique_ptr<R_Cascade> m_cascade;
-    static glm::vec3 s_sunDir;
-    static glm::vec3 s_sunColor;
-};
+};  

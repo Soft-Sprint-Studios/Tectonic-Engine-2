@@ -24,6 +24,7 @@
 #include "r_ssao.h"
 #include "cvar.h"
 #include <random>
+#include <algorithm>
 #include <glm/gtc/type_ptr.hpp>
 
 CVar r_ssao("r_ssao", "1", "Enable Screen Space Ambient Occlusion.", CVAR_SAVE);
@@ -34,29 +35,39 @@ CVar r_ssao_power("r_ssao_power", "2.0", "Contrast strength of the AO effect.", 
 CVar r_ssao_blur_passes("r_ssao_blur_passes", "4", "Number of blur passes for SSAO.", CVAR_SAVE);
 CVar r_ssao_downsample("r_ssao_downsample", "2", "Downscaling factor for SSAO buffer (higher = faster).", CVAR_SAVE);
 
-R_SSAO::R_SSAO() 
-{
+R_SSAO::R_SSAO() {
 }
 
-R_SSAO::~R_SSAO() 
+R_SSAO::~R_SSAO()
 { 
     Shutdown(); 
 }
 
-bool R_SSAO::Init(int width, int height) 
+bool R_SSAO::Init(int width, int height)
 {
-    m_ssaoShader.Load("shaders/ssao.vert", "shaders/ssao.frag");
-    m_blurShader.Load("shaders/ssao_blur.vert", "shaders/ssao_blur.frag");
-    
+    m_ssaoShader.LoadCompute("shaders/ssao.comp");
+    m_blurShader.LoadCompute("shaders/ssao_blur.comp");
+
+    m_sDepthTexture = bgfx::createUniform("s_depth", bgfx::UniformType::Sampler);
+    m_sNoiseTexture = bgfx::createUniform("s_noise", bgfx::UniformType::Sampler);
+    m_sNormalTexture = bgfx::createUniform("s_normal", bgfx::UniformType::Sampler);
+    m_sAOTexture = bgfx::createUniform("s_aoTex", bgfx::UniformType::Sampler);
+    m_uKernel = bgfx::createUniform("u_kernel", bgfx::UniformType::Vec4, 32);
+    m_uParams = bgfx::createUniform("u_params", bgfx::UniformType::Vec4);
+    m_uNoiseScale = bgfx::createUniform("u_noiseScale", bgfx::UniformType::Vec4);
+    m_uBlurParams = bgfx::createUniform("u_blurParams", bgfx::UniformType::Vec4);
+    m_uCurrentProj = bgfx::createUniform("u_currentProj", bgfx::UniformType::Mat4);
+    m_uCurrentInvProj = bgfx::createUniform("u_currentInvProj", bgfx::UniformType::Mat4);
+    m_uCurrentView = bgfx::createUniform("u_currentView", bgfx::UniformType::Mat4);
+
     GenerateSampleKernel();
-    
     CreateBuffers(width, height);
     return true;
 }
 
 void R_SSAO::GenerateSampleKernel()
 {
-    std::uniform_real_distribution<float> randomFloats(0.0, 1.0);
+    std::uniform_real_distribution<float> randomFloats(0.0f, 1.0f);
     std::default_random_engine generator;
     
     m_ssaoKernel.clear();
@@ -64,8 +75,8 @@ void R_SSAO::GenerateSampleKernel()
     for (int i = 0; i < samples; ++i)
     {
         glm::vec3 sample(
-            randomFloats(generator) * 2.0 - 1.0, 
-            randomFloats(generator) * 2.0 - 1.0, 
+            randomFloats(generator) * 2.0f - 1.0f, 
+            randomFloats(generator) * 2.0f - 1.0f, 
             randomFloats(generator)
         );
         sample = glm::normalize(sample);
@@ -75,34 +86,31 @@ void R_SSAO::GenerateSampleKernel()
         scale = glm::mix(0.1f, 1.0f, scale * scale);
         sample *= scale;
         
-        m_ssaoKernel.push_back(sample);
+        m_ssaoKernel.push_back(glm::vec4(sample, 0.0f));
     }
 }
 
 void R_SSAO::GenerateNoiseTexture()
 {
-    if (m_noiseTexture != 0) 
-        glDeleteTextures(1, &m_noiseTexture);
+    if (bgfx::isValid(m_noiseTexture)) 
+        bgfx::destroy(m_noiseTexture);
 
-    std::uniform_real_distribution<float> randomFloats(0.0, 1.0);
+    std::uniform_real_distribution<float> randomFloats(0.0f, 1.0f);
     std::default_random_engine generator;
-    std::vector<glm::vec3> ssaoNoise;
+    std::vector<glm::vec4> ssaoNoise;
     for (unsigned int i = 0; i < 16; i++)
     {
-        glm::vec3 noise(
-            randomFloats(generator) * 2.0 - 1.0, 
-            randomFloats(generator) * 2.0 - 1.0, 
-            0.0f); 
-        ssaoNoise.push_back(noise);
+        glm::vec4 noise(
+            randomFloats(generator) * 2.0f - 1.0f, 
+            randomFloats(generator) * 2.0f - 1.0f, 
+            0.0f,
+            0.0f
+        ); 
+        ssaoNoise.push_back(glm::normalize(noise));
     }
 
-    glCreateTextures(GL_TEXTURE_2D, 1, &m_noiseTexture);
-    glTextureStorage2D(m_noiseTexture, 1, GL_RGB16F, 4, 4);
-    glTextureSubImage2D(m_noiseTexture, 0, 0, 0, 4, 4, GL_RGB, GL_FLOAT, ssaoNoise.data());
-    glTextureParameteri(m_noiseTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTextureParameteri(m_noiseTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTextureParameteri(m_noiseTexture, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTextureParameteri(m_noiseTexture, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    const bgfx::Memory* mem = bgfx::copy(ssaoNoise.data(), (uint32_t)(16 * sizeof(glm::vec4)));
+    m_noiseTexture = bgfx::createTexture2D(4, 4, false, 1, bgfx::TextureFormat::RGBA32F, BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT, mem);
 }
 
 void R_SSAO::CreateBuffers(int width, int height)
@@ -111,43 +119,30 @@ void R_SSAO::CreateBuffers(int width, int height)
     m_height = height;
 
     int ds = std::max(1, r_ssao_downsample.GetInt());
-
     int vW = width / ds;
     int vH = height / ds;
 
-    glCreateFramebuffers(1, &m_fbo);
-    glCreateTextures(GL_TEXTURE_2D, 1, &m_texture);
-    glTextureStorage2D(m_texture, 1, GL_R8, vW, vH);
-    glTextureParameteri(m_texture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTextureParameteri(m_texture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glNamedFramebufferTexture(m_fbo, GL_COLOR_ATTACHMENT0, m_texture, 0);
+    uint64_t writeFlags = BGFX_TEXTURE_COMPUTE_WRITE | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT | BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP;
 
-    glCreateFramebuffers(2, m_blurFbo);
-    glCreateTextures(GL_TEXTURE_2D, 2, m_blurTexture);
-    for (int i = 0; i < 2; i++)
-    {
-        glTextureStorage2D(m_blurTexture[i], 1, GL_R8, vW, vH);
-        glTextureParameteri(m_blurTexture[i], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTextureParameteri(m_blurTexture[i], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glNamedFramebufferTexture(m_blurFbo[i], GL_COLOR_ATTACHMENT0, m_blurTexture[i], 0);
-    }
+    m_texture = bgfx::createTexture2D((uint16_t)vW, (uint16_t)vH, false, 1, bgfx::TextureFormat::R8, writeFlags);
+    m_blurTexture[0] = bgfx::createTexture2D((uint16_t)vW, (uint16_t)vH, false, 1, bgfx::TextureFormat::R8, writeFlags);
+    m_blurTexture[1] = bgfx::createTexture2D((uint16_t)vW, (uint16_t)vH, false, 1, bgfx::TextureFormat::R8, writeFlags);
 
     GenerateNoiseTexture();
 }
 
 void R_SSAO::DeleteBuffers() 
 {
-    if (m_fbo)
-        glDeleteFramebuffers(1, &m_fbo);
-    if (m_texture)
-        glDeleteTextures(1, &m_texture);
-    if (m_blurFbo[0])
-        glDeleteFramebuffers(2, m_blurFbo);
-    if (m_blurTexture[0])
-        glDeleteTextures(2, m_blurTexture);
-    if (m_noiseTexture)
-        glDeleteTextures(1, &m_noiseTexture);
-    m_fbo = m_texture = m_blurFbo[0] = m_blurFbo[1] = m_blurTexture[0] = m_blurTexture[1] = m_noiseTexture = 0;
+    if (bgfx::isValid(m_texture))
+        bgfx::destroy(m_texture);
+    if (bgfx::isValid(m_blurTexture[0]))
+        bgfx::destroy(m_blurTexture[0]);
+    if (bgfx::isValid(m_blurTexture[1]))
+        bgfx::destroy(m_blurTexture[1]);
+    if (bgfx::isValid(m_noiseTexture))
+        bgfx::destroy(m_noiseTexture);
+
+    m_texture = m_blurTexture[0] = m_blurTexture[1] = m_noiseTexture = BGFX_INVALID_HANDLE;
 }
 
 void R_SSAO::Rescale(int width, int height) 
@@ -156,76 +151,83 @@ void R_SSAO::Rescale(int width, int height)
     CreateBuffers(width, height);
 }
 
-void R_SSAO::Shutdown() 
+void R_SSAO::Shutdown()
 {
     DeleteBuffers();
+    if (bgfx::isValid(m_sDepthTexture))
+    {
+        bgfx::destroy(m_sDepthTexture);
+        bgfx::destroy(m_sNormalTexture);
+        bgfx::destroy(m_sNoiseTexture);
+        bgfx::destroy(m_sAOTexture);
+        bgfx::destroy(m_uKernel);
+        bgfx::destroy(m_uParams);
+        bgfx::destroy(m_uNoiseScale);
+        bgfx::destroy(m_uBlurParams);
+        bgfx::destroy(m_uCurrentProj);
+        bgfx::destroy(m_uCurrentInvProj);
+        bgfx::destroy(m_uCurrentView);
+        m_sDepthTexture = m_sNormalTexture = m_sNoiseTexture = m_sAOTexture = m_uKernel = m_uParams = m_uNoiseScale = m_uBlurParams = m_uCurrentProj = m_uCurrentInvProj = m_uCurrentView = BGFX_INVALID_HANDLE;
+    }
 }
 
-void R_SSAO::Render(GLuint depthTexture, const Camera& camera, GLuint quadVAO, int screenW, int screenH)
+void R_SSAO::Render(bgfx::ViewId viewId, bgfx::TextureHandle depthTexture, bgfx::TextureHandle normalTexture, const Camera& camera, int screenW, int screenH)
 {
     if (r_ssao.GetInt() == 0)
         return;
 
-    // SSAO pass
-    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-
     int ds = std::max(1, r_ssao_downsample.GetInt());
-
     int vW = screenW / ds;
     int vH = screenH / ds;
-    glViewport(0, 0, vW, vH);
 
-    glClear(GL_COLOR_BUFFER_BIT);
-    m_ssaoShader.Bind();
-    m_ssaoShader.SetMat4("u_projection", camera.GetProjectionMatrix());
-    m_ssaoShader.SetMat4("u_invProjection", glm::inverse(camera.GetProjectionMatrix()));
-    for (unsigned int i = 0; i < m_ssaoKernel.size(); ++i)
-        m_ssaoShader.SetVec3("u_samples[" + std::to_string(i) + "]", m_ssaoKernel[i]);
-    
-    m_ssaoShader.SetInt("u_kernelSize", r_ssao_samples.GetInt());
-    m_ssaoShader.SetFloat("u_radius", r_ssao_radius.GetFloat());
-    m_ssaoShader.SetFloat("u_bias", r_ssao_bias.GetFloat());
-    m_ssaoShader.SetFloat("u_power", r_ssao_power.GetFloat());
+    bgfx::setTexture(0, m_sDepthTexture, depthTexture);
+    bgfx::setTexture(1, m_sNoiseTexture, m_noiseTexture);
+    bgfx::setTexture(2, m_sNormalTexture, normalTexture);
+    bgfx::setImage(3, m_texture, 0, bgfx::Access::Write, bgfx::TextureFormat::R8);
 
-    int res = std::max(1, r_ssao_downsample.GetInt());
-    m_ssaoShader.SetVec2("u_noiseScale", glm::vec2((float)(screenW / res) / 4.0f, (float)(screenH / res) / 4.0f));
-    
-    glBindTextureUnit(0, depthTexture);
-    glBindTextureUnit(1, m_noiseTexture);
-    
-    glBindVertexArray(quadVAO);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    bgfx::setUniform(m_uKernel, glm::value_ptr(m_ssaoKernel[0]), (uint16_t)m_ssaoKernel.size());
 
-    // Blur pass
-    m_blurShader.Bind();
-    bool horizontal = true, first_iteration = true;
-    for (int i = 0; i < r_ssao_blur_passes.GetInt(); i++)
+    float params[4] = { (float)r_ssao_samples.GetInt(), r_ssao_radius.GetFloat(), r_ssao_bias.GetFloat(), r_ssao_power.GetFloat() };
+    bgfx::setUniform(m_uParams, params);
+
+    float noiseScale[4] = { (float)vW / 4.0f, (float)vH / 4.0f, 0.0f, 0.0f };
+    bgfx::setUniform(m_uNoiseScale, noiseScale);
+
+    glm::mat4 proj = camera.GetProjectionMatrix();
+    glm::mat4 invProj = glm::inverse(proj);
+    glm::mat4 view = camera.GetViewMatrix();
+    bgfx::setUniform(m_uCurrentProj, glm::value_ptr(proj));
+    bgfx::setUniform(m_uCurrentInvProj, glm::value_ptr(invProj));
+    bgfx::setUniform(m_uCurrentView, glm::value_ptr(view));
+
+    bgfx::dispatch(viewId, m_ssaoShader.GetProgram(), (vW + 15) / 16, (vH + 15) / 16, 1);
+
+    bool horizontal = true;
+    bgfx::TextureHandle currentInput = m_texture;
+    int blurPasses = r_ssao_blur_passes.GetInt();
+    
+    for (int i = 0; i < blurPasses; i++)
     {
-        glBindFramebuffer(GL_FRAMEBUFFER, m_blurFbo[horizontal]);
-        m_blurShader.SetInt("u_horizontal", horizontal ? 1 : 0);
+        bgfx::ViewId blurView = viewId + 1 + i;
+        bgfx::setTexture(0, m_sAOTexture, currentInput);
+        bgfx::setImage(1, m_blurTexture[horizontal ? 1 : 0], 0, bgfx::Access::Write, bgfx::TextureFormat::R8);
 
-        glBindTextureUnit(0, first_iteration ? m_texture : m_blurTexture[!horizontal]);
+        float blurParams[4] = { horizontal ? 1.0f : 0.0f, 0.0f, 0.0f, 0.0f };
+        bgfx::setUniform(m_uBlurParams, blurParams);
 
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        bgfx::dispatch(blurView, m_blurShader.GetProgram(), (vW + 15) / 16, (vH + 15) / 16, 1);
 
+        currentInput = m_blurTexture[horizontal ? 1 : 0];
         horizontal = !horizontal;
-        if (first_iteration)
-            first_iteration = false;
     }
-
-    glViewport(0, 0, screenW, screenH);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void R_SSAO::Bind(const R_Shader& shader)
+void R_SSAO::Bind(bgfx::UniformHandle s_ssaoTex)
 {
     if (r_ssao.GetInt() > 0)
     {
-        shader.SetInt("u_ssao_enabled", 1);
-        glBindTextureUnit(4, m_blurTexture[0]);
-    }
-    else 
-    {
-        shader.SetInt("u_ssao_enabled", 0);
+        int blurPasses = r_ssao_blur_passes.GetInt();
+        bgfx::TextureHandle finalTex = (blurPasses % 2 == 0) ? m_blurTexture[0] : m_blurTexture[1];
+        bgfx::setTexture(4, s_ssaoTex, finalTex);
     }
 }

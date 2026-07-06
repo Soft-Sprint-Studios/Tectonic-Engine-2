@@ -23,7 +23,7 @@
  */
 #pragma once
 #include "r_shader.h"
-#include <glad/glad.h>
+#include <bgfx/bgfx.h>
 #include <vector>
 #include <glm/glm.hpp>
 
@@ -36,15 +36,17 @@ public:
     bool Init(int width, int height);
     void Shutdown();
     void Rescale(int width, int height);
-    void Bind(const R_Shader& shader);
-    void Render(GLuint sourceTexture, GLuint quadVAO, int screenW, int screenH);
+    void Render(bgfx::ViewId viewId, bgfx::TextureHandle sourceTexture, int screenW, int screenH);
+    void Bind(bgfx::UniformHandle s_bloomTex);
+
+    bgfx::TextureHandle GetBloomTexture() const;
 
 private:
     struct Mip
     {
         glm::ivec2 size;
-        GLuint texture = 0;
-        GLuint fbo = 0;
+        bgfx::TextureHandle downsampleTex = BGFX_INVALID_HANDLE;
+        bgfx::TextureHandle upsampleTex = BGFX_INVALID_HANDLE; 
     };
 
     void CreateChain(int width, int height);
@@ -52,6 +54,11 @@ private:
 
     R_Shader m_downsampleShader;
     R_Shader m_upsampleShader;
-    
+
     std::vector<Mip> m_mipChain;
+
+    bgfx::UniformHandle m_sSource = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sCurrentMip = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uBloomParams = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uBloomParams2 = BGFX_INVALID_HANDLE;
 };

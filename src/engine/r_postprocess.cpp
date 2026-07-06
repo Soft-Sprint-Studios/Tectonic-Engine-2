@@ -26,8 +26,11 @@
 #include "cvar.h"
 #include "postprocess.h"
 #include "timing.h"
-#include "resources.h"
-#include "materials.h"
+#include "renderer.h"
+#include <algorithm>
+#include <cstring>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 CVar r_postprocess("r_postprocess", "1", "Enable entire post-processing stack.", CVAR_SAVE);
 CVar r_gamma("r_gamma", "1.7", "Display gamma correction value.", CVAR_SAVE);
@@ -35,32 +38,43 @@ CVar r_tonemap("r_tonemap", "1", "Enable filmic ACES tonemapping.", CVAR_SAVE);
 CVar r_fxaa("r_fxaa", "1", "Enable Fast Approximate Anti-Aliasing.", CVAR_SAVE);
 CVar r_fxaa_strength("r_fxaa_strength", "1.0", "Strength of FXAA smoothing.", CVAR_SAVE);
 
-R_PostProcess::R_PostProcess()
-    : m_fbo(0), m_texture(0), m_depthTexture(0),
-    m_quadVAO(0), m_quadVBO(0), m_width(0), m_height(0)
-{
-}
+R_PostProcess::R_PostProcess() {}
+R_PostProcess::~R_PostProcess() { Shutdown(); }
 
-R_PostProcess::~R_PostProcess()
-{
-    Shutdown();
-}
-
-bool R_PostProcess::Init(int width, int height)
+bool R_PostProcess::Init(int width, int height, bgfx::TextureHandle depthTexture)
 {
     m_width = width;
     m_height = height;
 
     m_shader.Load("shaders/postprocess.vert", "shaders/postprocess.frag");
 
-    m_bloom = std::make_unique<R_Bloom>();
-    m_bloom->Init(m_width, m_height);
+    m_sSceneTexture = bgfx::createUniform("u_screenTexture", bgfx::UniformType::Sampler);
+    m_sDepthTexture = bgfx::createUniform("u_depthTexture", bgfx::UniformType::Sampler);
+    m_sBloomTexture = bgfx::createUniform("u_bloomTexture", bgfx::UniformType::Sampler);
+    m_sSsaoTexture = bgfx::createUniform("u_ssaoTexture", bgfx::UniformType::Sampler);
+    m_sSsrTexture = bgfx::createUniform("u_ssrTexture", bgfx::UniformType::Sampler);
+    m_sMotionBlurTexture = bgfx::createUniform("u_motionBlurTexture", bgfx::UniformType::Sampler);
+    m_sVolumetricTexture = bgfx::createUniform("u_volumetricTexture", bgfx::UniformType::Sampler);
+    m_uParams = bgfx::createUniform("u_params", bgfx::UniformType::Vec4);
+    m_uBloomParams = bgfx::createUniform("u_bloomParams", bgfx::UniformType::Vec4);
+    m_uSsaoParams = bgfx::createUniform("u_ssaoParams", bgfx::UniformType::Vec4);
+    m_uSsrParams = bgfx::createUniform("u_ssrParams", bgfx::UniformType::Vec4);
+    m_uMotionBlurParams = bgfx::createUniform("u_motionBlurParams", bgfx::UniformType::Vec4);
+    m_uVolumetricParams = bgfx::createUniform("u_volumetricParams", bgfx::UniformType::Vec4);
+    m_uColorParams = bgfx::createUniform("u_colorParams", bgfx::UniformType::Vec4, 2);
+    m_uFogColor = bgfx::createUniform("u_fogColor", bgfx::UniformType::Vec4);
+    m_uFogParams = bgfx::createUniform("u_fogParams", bgfx::UniformType::Vec4);
 
-    m_volumetrics = std::make_unique<R_Volumetrics>();
-    m_volumetrics->Init(m_width, m_height);
+    m_quadLayout.begin()
+        .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
+        .end();
 
     m_autoExposure = std::make_unique<R_AutoExposure>();
     m_autoExposure->Init();
+
+    m_bloom = std::make_unique<R_Bloom>();
+    m_bloom->Init(m_width, m_height);
 
     m_ssao = std::make_unique<R_SSAO>();
     m_ssao->Init(m_width, m_height);
@@ -71,168 +85,211 @@ bool R_PostProcess::Init(int width, int height)
     m_motionBlur = std::make_unique<R_MotionBlur>();
     m_motionBlur->Init(m_width, m_height);
 
+    m_volumetrics = std::make_unique<R_Volumetrics>();
+    m_volumetrics->Init(m_width, m_height);
+
     m_cas = std::make_unique<R_CAS>();
     m_cas->Init(m_width, m_height);
 
-    SetupBuffers();
-
-    // Full-screen quad
-    float quadVertices[] = 
-    {
-        -1.0f,  1.0f,  0.0f, 1.0f,
-        -1.0f, -1.0f,  0.0f, 0.0f,
-         1.0f, -1.0f,  1.0f, 0.0f,
-
-        -1.0f,  1.0f,  0.0f, 1.0f,
-         1.0f, -1.0f,  1.0f, 0.0f,
-         1.0f,  1.0f,  1.0f, 1.0f
-    };
-
-    glCreateVertexArrays(1, &m_quadVAO);
-    glCreateBuffers(1, &m_quadVBO);
-    glNamedBufferData(m_quadVBO, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-
-    glVertexArrayVertexBuffer(m_quadVAO, 0, m_quadVBO, 0, 4 * sizeof(float));
-
-    glEnableVertexArrayAttrib(m_quadVAO, 0);
-    glVertexArrayAttribFormat(m_quadVAO, 0, 2, GL_FLOAT, GL_FALSE, 0);
-    glVertexArrayAttribBinding(m_quadVAO, 0, 0);
-
-    glEnableVertexArrayAttrib(m_quadVAO, 1);
-    glVertexArrayAttribFormat(m_quadVAO, 1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float));
-    glVertexArrayAttribBinding(m_quadVAO, 1, 0);
-
+    SetupBuffers(depthTexture);
     return true;
 }
 
-void R_PostProcess::SetupBuffers()
+void R_PostProcess::SetupBuffers(bgfx::TextureHandle depthTexture)
 {
-    if (m_fbo != 0)
+    if (bgfx::isValid(m_fbo))
     {
-        glDeleteFramebuffers(1, &m_fbo);
-        glDeleteTextures(1, &m_texture);
-        glDeleteTextures(1, &m_depthTexture);
+        bgfx::destroy(m_fbo);
+        m_fbo = BGFX_INVALID_HANDLE;
+    }
+    if (bgfx::isValid(m_texture))
+    {
+        bgfx::destroy(m_texture);
+        m_texture = BGFX_INVALID_HANDLE;
     }
 
-    // Setup resolve FBO
-    glCreateFramebuffers(1, &m_fbo);
+    uint64_t rtFlags = BGFX_TEXTURE_RT | BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP;
+    m_texture = bgfx::createTexture2D((uint16_t)m_width, (uint16_t)m_height, false, 1, bgfx::TextureFormat::RGBA16F, rtFlags);
 
-    glCreateTextures(GL_TEXTURE_2D, 1, &m_texture);
-    glTextureStorage2D(m_texture, 1, GL_RGBA16F, m_width, m_height);
-    glTextureParameteri(m_texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureParameteri(m_texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTextureParameteri(m_texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTextureParameteri(m_texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glNamedFramebufferTexture(m_fbo, GL_COLOR_ATTACHMENT0, m_texture, 0);
+    bgfx::TextureHandle attachments[] =
+    {
+        m_texture,
+        depthTexture
+    };
 
-    glCreateTextures(GL_TEXTURE_2D, 1, &m_depthTexture);
-    glTextureStorage2D(m_depthTexture, 1, GL_DEPTH_COMPONENT24, m_width, m_height);
-    glTextureParameteri(m_depthTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTextureParameteri(m_depthTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTextureParameteri(m_depthTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTextureParameteri(m_depthTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-    glTextureParameterfv(m_depthTexture, GL_TEXTURE_BORDER_COLOR, borderColor);
-    glNamedFramebufferTexture(m_fbo, GL_DEPTH_ATTACHMENT, m_depthTexture, 0);
+    m_fbo = bgfx::createFrameBuffer(2, attachments, true);
 }
 
 void R_PostProcess::Begin()
 {
-    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-}
-
-void R_PostProcess::End()
-{
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    bgfx::ViewId resolveView = RenderView::Resolve;
+    bgfx::setViewClear(resolveView, BGFX_CLEAR_COLOR, 0x000000FF, 1.0f, 0);
+    bgfx::setViewRect(resolveView, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
+    bgfx::setViewFrameBuffer(resolveView, m_fbo);
 }
 
 void R_PostProcess::Draw(const Camera& camera, R_Lights* lights, R_GBuffer* gbuffer)
 {
-    // Run the subrenderers
-    m_autoExposure->Update(m_texture, m_width, m_height);
-    m_bloom->Render(m_texture, m_quadVAO, m_width, m_height);
-    m_volumetrics->Render(gbuffer->GetDepthTex(), camera, lights, m_quadVAO, m_width, m_height);
-    m_ssao->Render(gbuffer->GetDepthTex(), camera, m_quadVAO, m_width, m_height);
-    m_ssr->Render(gbuffer->GetDepthTex(), gbuffer->GetNormalTex(), gbuffer->GetMRAOTex(), m_texture, camera, m_quadVAO);
-    m_motionBlur->Render(m_texture, gbuffer->GetDepthTex(), camera, m_quadVAO);
+    m_autoExposure->Render(RenderView::AutoExposure, m_texture, m_width, m_height);
+    m_bloom->Render(RenderView::Bloom, m_texture, m_width, m_height);
+    m_ssao->Render(RenderView::SSAO, gbuffer->GetDepthTex(), gbuffer->GetNormalTex(), camera, m_width, m_height);
+    m_ssr->Render(RenderView::SSR, gbuffer->GetDepthTex(), gbuffer->GetNormalTex(), gbuffer->GetMRAOTex(), m_texture, camera);
 
-    m_shader.Bind();
-    m_autoExposure->Bind();
-    m_bloom->Bind(m_shader);
-    m_volumetrics->Bind(m_shader);
-    m_ssao->Bind(m_shader);
-    m_ssr->Bind(m_shader);
-    m_motionBlur->Bind(m_shader);
+    bgfx::TextureHandle finalScene = m_texture;
 
-    m_shader.SetInt("u_postprocess_enabled", r_postprocess.GetInt());
+    if (CVar::GetInt("r_motionblur", 1) > 0)
+    {
+        m_motionBlur->Render(RenderView::MotionBlur, finalScene, gbuffer->GetDepthTex(), camera);
+        finalScene = m_motionBlur->GetTexture();
+    }
+
+    if (CVar::GetInt("r_cas", 1) > 0)
+    {
+        m_cas->Render(RenderView::CAS, finalScene);
+        finalScene = m_cas->GetTexture();
+    }
+
+    m_volumetrics->Render(RenderView::Volumetrics, gbuffer->GetDepthTex(), camera, lights, m_width, m_height);
+
+    bgfx::ViewId viewId = RenderView::PostProcess;
+
+    bgfx::setViewClear(viewId, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x000000FF, 1.0f, 0);
+    bgfx::setViewRect(viewId, 0, 0, (uint16_t)m_width, (uint16_t)m_height);
+    bgfx::setViewFrameBuffer(viewId, BGFX_INVALID_HANDLE);
 
     const auto& ppSettings = PostProcess::GetCurrentSettings();
-    m_shader.SetFloat("u_time", (float)Time::TotalTime());
-    m_shader.SetFloat("u_vignetteStrength", ppSettings.vignetteStrength);
-    m_shader.SetFloat("u_chromaStrength", ppSettings.chromaStrength);
-    m_shader.SetFloat("u_grainStrength", ppSettings.grainStrength);
-    m_shader.SetFloat("u_bwStrength", ppSettings.bwStrength);
-    m_shader.SetFloat("u_negativeStrength", ppSettings.negativeStrength);
-    m_shader.SetFloat("u_sepiaStrength", ppSettings.sepiaStrength);
-    m_shader.SetInt("u_fogEnabled", ppSettings.fogEnabled);
-    m_shader.SetVec3("u_fogColor", ppSettings.fogColor);
-    m_shader.SetFloat("u_fogStart", ppSettings.fogStart);
-    m_shader.SetFloat("u_fogEnd", ppSettings.fogEnd);
-    m_shader.SetInt("u_fogAffectsSky", ppSettings.fogAffectsSky ? 1 : 0);
-    m_shader.SetInt("u_tonemap_enabled", r_tonemap.GetInt());
-    m_shader.SetFloat("u_Gamma", r_gamma.GetFloat());
-    m_shader.SetInt("u_fxaa", r_fxaa.GetInt());
-    m_shader.SetFloat("u_fxaaStrength", r_fxaa_strength.GetFloat());
-    m_shader.SetMat4("u_invProjection", glm::inverse(camera.GetProjectionMatrix()));
 
-    glBindVertexArray(m_quadVAO);
-    glBindTextureUnit(0, m_texture);
-    glBindTextureUnit(1, gbuffer->GetDepthTex());
+    float params[4] = { (float)Time::TotalTime(), ppSettings.vignetteStrength, ppSettings.chromaStrength, ppSettings.grainStrength };
+    bgfx::setUniform(m_uParams, params);
 
-    bool useCas = (CVar::Find("r_cas")->GetInt() > 0);
-    GLuint targetFBO = useCas ? m_cas->GetInputFBO() : 0;
-
-    glBindFramebuffer(GL_FRAMEBUFFER, targetFBO);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-
-    if (useCas)
+    float colorParams[8] = 
     {
-        m_cas->Render(m_quadVAO, m_width, m_height);
-    }
+        ppSettings.bwStrength, ppSettings.negativeStrength, ppSettings.sepiaStrength, r_gamma.GetFloat(),
+        r_postprocess.GetInt() > 0 ? 1.0f : 0.0f, r_tonemap.GetInt() > 0 ? 1.0f : 0.0f, r_fxaa.GetInt() > 0 ? 1.0f : 0.0f, r_fxaa_strength.GetFloat()
+    };
+    bgfx::setUniform(m_uColorParams, colorParams, 2);
+
+    float fogColor[4] = { ppSettings.fogColor.x, ppSettings.fogColor.y, ppSettings.fogColor.z, 0.0f };
+    bgfx::setUniform(m_uFogColor, fogColor);
+
+    float fogParams[4] = { ppSettings.fogEnabled ? 1.0f : 0.0f, ppSettings.fogStart, ppSettings.fogEnd, ppSettings.fogAffectsSky ? 1.0f : 0.0f };
+    bgfx::setUniform(m_uFogParams, fogParams);
+
+    m_autoExposure->Bind();
+    m_bloom->Bind(m_sBloomTexture);
+    m_ssao->Bind(m_sSsaoTexture);
+    m_ssr->Bind(m_sSsrTexture);
+    m_motionBlur->Bind(m_sMotionBlurTexture);
+    m_volumetrics->Bind(m_sVolumetricTexture);
+
+    float bloomParams[4] = { CVar::GetInt("r_bloom", 1) > 0 ? 1.0f : 0.0f, CVar::GetFloat("r_bloom_intensity", 2.0f), 0.0f, 0.0f };
+    bgfx::setUniform(m_uBloomParams, bloomParams);
+
+    float ssaoParams[4] = { CVar::GetInt("r_ssao", 1) > 0 ? 1.0f : 0.0f, 0.0f, 0.0f, 0.0f };
+    bgfx::setUniform(m_uSsaoParams, ssaoParams);
+
+    float ssrParams[4] = { CVar::GetInt("r_ssr", 1) > 0 ? 1.0f : 0.0f, 0.0f, 0.0f, 0.0f };
+    bgfx::setUniform(m_uSsrParams, ssaoParams);
+
+    float volParams[4] = { CVar::GetInt("r_volumetrics", 1) > 0 ? 1.0f : 0.0f, 0.0f, 0.0f, 0.0f };
+    bgfx::setUniform(m_uVolumetricParams, volParams);
+
+    float mbParams[4] = { CVar::GetInt("r_motionblur", 1) > 0 ? 1.0f : 0.0f, 0.0f, 0.0f, 0.0f };
+    bgfx::setUniform(m_uMotionBlurParams, mbParams);
+
+    bgfx::setTexture(0, m_sSceneTexture, finalScene);
+    bgfx::setTexture(1, m_sDepthTexture, gbuffer->GetDepthTex());
+
+    bgfx::TransientVertexBuffer tvb;
+    bgfx::allocTransientVertexBuffer(&tvb, 6, m_quadLayout);
+
+    struct QuadVertex
+    {
+        float x, y, z;
+        float u, v;
+    };
+
+    QuadVertex* v = (QuadVertex*)tvb.data;
+    v[0] = { -1.0f,  1.0f, 0.0f, 0.0f, 0.0f };
+    v[1] = { -1.0f, -1.0f, 0.0f, 0.0f, 1.0f };
+    v[2] = {  1.0f, -1.0f, 0.0f, 1.0f, 1.0f };
+    v[3] = { -1.0f,  1.0f, 0.0f, 0.0f, 0.0f };
+    v[4] = {  1.0f, -1.0f, 0.0f, 1.0f, 1.0f };
+    v[5] = {  1.0f,  1.0f, 0.0f, 1.0f, 0.0f };
+
+    bgfx::setVertexBuffer(0, &tvb);
+    bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A);
+    bgfx::submit(viewId, m_shader.GetProgram());
 }
 
-void R_PostProcess::Rescale(int width, int height)
+void R_PostProcess::Rescale(int width, int height, bgfx::TextureHandle depthTexture)
 {
     m_width = width;
     m_height = height;
     m_bloom->Rescale(width, height);
-    m_volumetrics->Rescale(width, height);
     m_ssao->Rescale(width, height);
     m_ssr->Rescale(width, height);
     m_motionBlur->Rescale(width, height);
+    m_volumetrics->Rescale(width, height);
     m_cas->Rescale(width, height);
-    SetupBuffers();
+    SetupBuffers(depthTexture);
 }
 
 void R_PostProcess::Shutdown()
 {
-    if (m_bloom)
+    if (bgfx::isValid(m_fbo))
     {
-        m_bloom->Shutdown();
-        m_bloom.reset();
+        bgfx::destroy(m_fbo);
+        m_fbo = BGFX_INVALID_HANDLE;
     }
-
-    if (m_volumetrics)
+    if (bgfx::isValid(m_texture))
     {
-        m_volumetrics->Shutdown();
-        m_volumetrics.reset();
+        bgfx::destroy(m_texture);
+        m_texture = BGFX_INVALID_HANDLE;
     }
+    if (bgfx::isValid(m_sSceneTexture)) 
+        bgfx::destroy(m_sSceneTexture);
+    if (bgfx::isValid(m_sDepthTexture))
+        bgfx::destroy(m_sDepthTexture);
+    if (bgfx::isValid(m_sBloomTexture))
+        bgfx::destroy(m_sBloomTexture);
+    if (bgfx::isValid(m_sSsaoTexture))
+        bgfx::destroy(m_sSsaoTexture);
+    if (bgfx::isValid(m_sSsaoTexture))
+        bgfx::destroy(m_sSsaoTexture);
+    if (bgfx::isValid(m_sMotionBlurTexture))
+        bgfx::destroy(m_sMotionBlurTexture);
+    if (bgfx::isValid(m_sVolumetricTexture))
+        bgfx::destroy(m_sVolumetricTexture);
+    if (bgfx::isValid(m_uParams))
+        bgfx::destroy(m_uParams);
+    if (bgfx::isValid(m_uBloomParams))
+        bgfx::destroy(m_uBloomParams);
+    if (bgfx::isValid(m_uSsaoParams))
+        bgfx::destroy(m_uSsaoParams);
+    if (bgfx::isValid(m_uSsaoParams))
+        bgfx::destroy(m_uSsaoParams);
+    if (bgfx::isValid(m_uMotionBlurParams))
+        bgfx::destroy(m_uMotionBlurParams);
+    if (bgfx::isValid(m_uVolumetricParams))
+        bgfx::destroy(m_uVolumetricParams);
+    if (bgfx::isValid(m_uColorParams)) 
+        bgfx::destroy(m_uColorParams);
+    if (bgfx::isValid(m_uFogColor))
+        bgfx::destroy(m_uFogColor);
+    if (bgfx::isValid(m_uFogParams)) 
+        bgfx::destroy(m_uFogParams);
 
     if (m_autoExposure)
     {
         m_autoExposure->Shutdown();
         m_autoExposure.reset();
+    }
+
+    if (m_bloom)
+    {
+        m_bloom->Shutdown();
+        m_bloom.reset();
     }
 
     if (m_ssao)
@@ -253,29 +310,17 @@ void R_PostProcess::Shutdown()
         m_motionBlur.reset();
     }
 
+    if (m_volumetrics)
+    {
+        m_volumetrics->Shutdown();
+        m_volumetrics.reset();
+    }
+
     if (m_cas)
     {
         m_cas->Shutdown();
         m_cas.reset();
     }
 
-    if (m_fbo != 0) 
-        glDeleteFramebuffers(1, &m_fbo);
-    if (m_texture != 0) 
-        glDeleteTextures(1, &m_texture);
-    if (m_depthTexture != 0)
-        glDeleteTextures(1, &m_depthTexture);
-
-    if (m_quadVAO != 0) 
-        glDeleteVertexArrays(1, &m_quadVAO);
-    if (m_quadVBO != 0) 
-        glDeleteBuffers(1, &m_quadVBO);
-
-    m_fbo = 0;
-}
-
-// Used for r_glass
-GLuint R_PostProcess::GetActiveFBO()
-{
-    return m_fbo;
+    m_sSceneTexture = m_sDepthTexture = m_sBloomTexture = m_sSsaoTexture = m_sSsrTexture = m_sMotionBlurTexture = m_sVolumetricTexture = m_uParams = m_uBloomParams = m_uSsaoParams = m_uSsrParams = m_uMotionBlurParams = m_uVolumetricParams = m_uColorParams = m_uFogColor = m_uFogParams = BGFX_INVALID_HANDLE;
 }

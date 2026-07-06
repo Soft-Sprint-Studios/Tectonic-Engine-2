@@ -23,6 +23,8 @@
  */
 #include "r_ssr.h"
 #include "cvar.h"
+#include <algorithm>
+#include <glm/gtc/type_ptr.hpp>
 
 CVar r_ssr("r_ssr", "0", "Enable Screen Space Reflections.", CVAR_SAVE);
 CVar r_ssr_max_dist("r_ssr_max_dist", "20.0", "Maximum ray distance for SSR.", CVAR_SAVE);
@@ -38,13 +40,26 @@ R_SSR::R_SSR()
 
 R_SSR::~R_SSR() 
 { 
-    Shutdown(); 
+    Shutdown();
 }
 
 bool R_SSR::Init(int width, int height)
 {
-    m_ssrShader.Load("shaders/ssr.vert", "shaders/ssr.frag");
-    m_blurShader.Load("shaders/ssr.vert", "shaders/ssr_blur.frag");
+    m_ssrShader.LoadCompute("shaders/ssr.comp");
+    m_blurShader.LoadCompute("shaders/ssr_blur.comp");
+
+    m_sDepth  = bgfx::createUniform("s_depth",  bgfx::UniformType::Sampler);
+    m_sNormal = bgfx::createUniform("s_normal", bgfx::UniformType::Sampler);
+    m_sMRAO   = bgfx::createUniform("s_mrao",   bgfx::UniformType::Sampler);
+    m_sScene  = bgfx::createUniform("s_scene",  bgfx::UniformType::Sampler);
+    m_sSSR    = bgfx::createUniform("s_ssrTex", bgfx::UniformType::Sampler);
+
+    m_uProj = bgfx::createUniform("u_currentProj", bgfx::UniformType::Mat4);
+    m_uInvProj = bgfx::createUniform("u_currentInvProj", bgfx::UniformType::Mat4);
+    m_uView = bgfx::createUniform("u_currentView", bgfx::UniformType::Mat4);
+    m_uParams1 = bgfx::createUniform("u_params", bgfx::UniformType::Vec4);
+    m_uParams2 = bgfx::createUniform("u_params2", bgfx::UniformType::Vec4);
+
     CreateBuffers(width, height);
     return true;
 }
@@ -58,28 +73,14 @@ void R_SSR::CreateBuffers(int width, int height)
     int ssrW = width / ds;
     int ssrH = height / ds;
 
-    glCreateFramebuffers(1, &m_fbo);
-    glCreateTextures(GL_TEXTURE_2D, 1, &m_texture);
-    glTextureStorage2D(m_texture, 1, GL_RGB16F, ssrW, ssrH);
-    glTextureParameteri(m_texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureParameteri(m_texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTextureParameteri(m_texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTextureParameteri(m_texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glNamedFramebufferTexture(m_fbo, GL_COLOR_ATTACHMENT0, m_texture, 0);
-
-    glCreateFramebuffers(1, &m_blurFbo);
-    glCreateTextures(GL_TEXTURE_2D, 1, &m_blurTexture);
-    glTextureStorage2D(m_blurTexture, 1, GL_RGB16F, ssrW, ssrH);
-    glTextureParameteri(m_blurTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureParameteri(m_blurTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTextureParameteri(m_blurTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTextureParameteri(m_blurTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glNamedFramebufferTexture(m_blurFbo, GL_COLOR_ATTACHMENT0, m_blurTexture, 0);
+    uint64_t writeFlags = BGFX_TEXTURE_COMPUTE_WRITE | BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP;
+    m_texture = bgfx::createTexture2D((uint16_t)ssrW, (uint16_t)ssrH, false, 1, bgfx::TextureFormat::RGBA16F, writeFlags);
+    m_blurTexture = bgfx::createTexture2D((uint16_t)ssrW, (uint16_t)ssrH, false, 1, bgfx::TextureFormat::RGBA16F, writeFlags);
 }
 
-void R_SSR::Render(GLuint depthTex, GLuint normalTex, GLuint mraoTex, GLuint sceneTex, const Camera& camera, GLuint quadVAO)
+void R_SSR::Render(bgfx::ViewId viewId, bgfx::TextureHandle depthTex, bgfx::TextureHandle normalTex, bgfx::TextureHandle mraoTex, bgfx::TextureHandle sceneTex, const Camera& camera)
 {
-    if (r_ssr.GetInt() == 0) 
+    if (r_ssr.GetInt() == 0)
     {
         return;
     }
@@ -88,71 +89,68 @@ void R_SSR::Render(GLuint depthTex, GLuint normalTex, GLuint mraoTex, GLuint sce
     int ssrW = m_width / ds;
     int ssrH = m_height / ds;
 
-    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-    glViewport(0, 0, ssrW, ssrH);
-    glClear(GL_COLOR_BUFFER_BIT);
+    bgfx::setTexture(0, m_sDepth,  depthTex);
+    bgfx::setTexture(1, m_sNormal, normalTex);
+    bgfx::setTexture(2, m_sMRAO,   mraoTex);
+    bgfx::setTexture(3, m_sScene,  sceneTex);
+    bgfx::setImage(4, m_texture, 0, bgfx::Access::Write, bgfx::TextureFormat::RGBA16F);
 
-    m_ssrShader.Bind();
-    m_ssrShader.SetMat4("u_projection", camera.GetProjectionMatrix());
-    m_ssrShader.SetMat4("u_invProjection", glm::inverse(camera.GetProjectionMatrix()));
-    m_ssrShader.SetMat4("u_view", camera.GetViewMatrix());
-    
-    m_ssrShader.SetFloat("u_maxDist", r_ssr_max_dist.GetFloat());
-    m_ssrShader.SetFloat("u_resolution", r_ssr_resolution.GetFloat());
-    m_ssrShader.SetFloat("u_thickness", r_ssr_thickness.GetFloat());
-    m_ssrShader.SetInt("u_maxSteps", r_ssr_steps.GetInt());
-    m_ssrShader.SetInt("u_binarySteps", r_ssr_binary_steps.GetInt());
+    bgfx::setUniform(m_uProj, glm::value_ptr(camera.GetProjectionMatrix()));
+    bgfx::setUniform(m_uInvProj, glm::value_ptr(glm::inverse(camera.GetProjectionMatrix())));
+    bgfx::setUniform(m_uView, glm::value_ptr(camera.GetViewMatrix()));
 
-    glBindTextureUnit(0, depthTex);
-    glBindTextureUnit(1, normalTex);
-    glBindTextureUnit(2, mraoTex);
-    glBindTextureUnit(3, sceneTex);
+    float params1[4] = { r_ssr_max_dist.GetFloat(), r_ssr_resolution.GetFloat(), r_ssr_thickness.GetFloat(), (float)r_ssr_steps.GetInt() };
+    bgfx::setUniform(m_uParams1, params1);
 
-    glBindVertexArray(quadVAO);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    float params2[4] = { (float)r_ssr_binary_steps.GetInt(), 0.0f, 0.0f, 0.0f };
+    bgfx::setUniform(m_uParams2, params2);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, m_blurFbo);
-    m_blurShader.Bind();
-    glBindTextureUnit(0, m_texture);
-    m_blurShader.SetInt("u_ssrTex", 0);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    bgfx::dispatch(viewId, m_ssrShader.GetProgram(), (ssrW + 15) / 16, (ssrH + 15) / 16, 1);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, m_width, m_height);
+    bgfx::setTexture(0, m_sSSR, m_texture);
+    bgfx::setImage(1, m_blurTexture, 0, bgfx::Access::Write, bgfx::TextureFormat::RGBA16F);
+
+    bgfx::dispatch(viewId + 1, m_blurShader.GetProgram(), (ssrW + 15) / 16, (ssrH + 15) / 16, 1);
 }
 
-void R_SSR::Bind(const R_Shader& shader)
+void R_SSR::Bind(bgfx::UniformHandle s_ssrTex)
 {
     if (r_ssr.GetInt() > 0)
     {
-        shader.SetInt("u_ssr_enabled", 1);
-        glBindTextureUnit(5, m_blurTexture);
-    }
-    else
-    {
-        shader.SetInt("u_ssr_enabled", 0);
+        bgfx::setTexture(5, s_ssrTex, m_blurTexture);
     }
 }
 
 void R_SSR::DeleteBuffers()
 {
-    if (m_fbo) 
-        glDeleteFramebuffers(1, &m_fbo);
-    if (m_texture)
-        glDeleteTextures(1, &m_texture);
-    if (m_blurFbo) 
-        glDeleteFramebuffers(1, &m_blurFbo);
-    if (m_blurTexture)
-        glDeleteTextures(1, &m_blurTexture);
+    if (bgfx::isValid(m_texture))
+        bgfx::destroy(m_texture);
+    if (bgfx::isValid(m_blurTexture))
+        bgfx::destroy(m_blurTexture);
+    m_texture = m_blurTexture = BGFX_INVALID_HANDLE;
 }
 
-void R_SSR::Rescale(int width, int height) 
-{ 
-    DeleteBuffers(); 
-    CreateBuffers(width, height); 
+void R_SSR::Rescale(int width, int height)
+{
+    DeleteBuffers();
+    CreateBuffers(width, height);
 }
 
-void R_SSR::Shutdown() 
-{ 
-    DeleteBuffers(); 
+void R_SSR::Shutdown()
+{
+    DeleteBuffers();
+    if (bgfx::isValid(m_sDepth))
+    {
+        bgfx::destroy(m_sDepth);
+        bgfx::destroy(m_sNormal);
+        bgfx::destroy(m_sMRAO);
+        bgfx::destroy(m_sScene);
+        bgfx::destroy(m_sSSR);
+        bgfx::destroy(m_uProj);
+        bgfx::destroy(m_uInvProj);
+        bgfx::destroy(m_uView);
+        bgfx::destroy(m_uParams1);
+        bgfx::destroy(m_uParams2);
+        m_sDepth = m_sNormal = m_sMRAO = m_sScene = m_sSSR = BGFX_INVALID_HANDLE;
+    }
 }

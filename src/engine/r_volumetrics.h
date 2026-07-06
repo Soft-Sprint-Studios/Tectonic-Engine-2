@@ -25,7 +25,7 @@
 #include "r_shader.h"
 #include "camera.h"
 #include "r_lights.h"
-#include <glad/glad.h>
+#include <bgfx/bgfx.h>
 
 class R_Volumetrics 
 {
@@ -36,20 +36,31 @@ public:
     bool Init(int width, int height);
     void Shutdown();
     void Rescale(int width, int height);
-    void Render(GLuint depthTexture, const Camera& camera, R_Lights* lights, GLuint quadVAO, int screenW, int screenH);
-    void Bind(const R_Shader& shader);
+    void Render(bgfx::ViewId viewId, bgfx::TextureHandle depthTexture, const Camera& camera, R_Lights* lights, int screenW, int screenH);
+    void Bind(bgfx::UniformHandle s_volumetricTex);
+
+    bgfx::TextureHandle GetTexture() const 
+    { 
+        return m_blurTexture[0]; 
+    }
 
 private:
     void CreateBuffers(int width, int height);
     void DeleteBuffers();
 
-    GLuint m_fbo = 0;
-    GLuint m_texture = 0;
-    GLuint m_blurFbo[2] = {0, 0};
-    GLuint m_blurTexture[2] = {0, 0};
+    bgfx::TextureHandle m_texture = BGFX_INVALID_HANDLE;
+    bgfx::TextureHandle m_blurTexture[2] = { BGFX_INVALID_HANDLE, BGFX_INVALID_HANDLE };
 
     R_Shader m_volShader;
     R_Shader m_blurShader;
     
-    int m_width, m_height;
+    bgfx::UniformHandle m_sDepth = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sImage = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uCurrentInvProj = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uCurrentInvView = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uCurrentView = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uCurrentViewPos = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uBlurParams = BGFX_INVALID_HANDLE;
+
+    int m_width = 0, m_height = 0;
 };

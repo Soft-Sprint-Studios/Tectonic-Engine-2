@@ -23,7 +23,7 @@
  */
 #pragma once
 #include "r_shader.h"
-#include <glad/glad.h>
+#include <bgfx/bgfx.h>
 
 class R_AutoExposure
 {
@@ -32,13 +32,21 @@ public:
     ~R_AutoExposure();
 
     void Init();
-    void Update(GLuint screenTexture, int width, int height);
+    void Render(bgfx::ViewId viewId, bgfx::TextureHandle screenTexture, int width, int height);
     void Bind();
     void Shutdown();
 
 private:
+    R_Shader m_clearShader;
     R_Shader m_histogramShader;
     R_Shader m_averageShader;
-    GLuint m_histogramBuffer = 0;
-    GLuint m_lumBuffer = 0;
+
+    bgfx::DynamicVertexBufferHandle m_histogramBuffer = BGFX_INVALID_HANDLE;
+    bgfx::DynamicVertexBufferHandle m_lumBuffer = BGFX_INVALID_HANDLE;
+
+    bgfx::UniformHandle m_uExposureParams1 = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uExposureParams2 = BGFX_INVALID_HANDLE;
+
+    bgfx::VertexLayout m_uintLayout;
+    bgfx::VertexLayout m_vec4Layout;
 };

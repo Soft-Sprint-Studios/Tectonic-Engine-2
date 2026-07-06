@@ -21,8 +21,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#include <cstdio>
-#include "pl_mpeg.h"
 #include "r_video.h"
 #include "video.h"
 #include "filesystem.h"
@@ -32,13 +30,14 @@
 #include "func_video.h"
 #include "timing.h"
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
-R_VideoInstance::R_VideoInstance()
+R_VideoInstance::R_VideoInstance() 
 {
 }
 
-R_VideoInstance::~R_VideoInstance()
-{
+R_VideoInstance::~R_VideoInstance() 
+{ 
     Shutdown();
 }
 
@@ -66,36 +65,17 @@ bool R_VideoInstance::Load(const std::string& path, bool loop)
         return false;
     }
 
-    glCreateTextures(GL_TEXTURE_2D, 1, &m_texY);
-    glTextureStorage2D(m_texY, 1, GL_R8, w, h);
-    glTextureParameteri(m_texY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureParameteri(m_texY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTextureParameteri(m_texY, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTextureParameteri(m_texY, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-    glCreateTextures(GL_TEXTURE_2D, 1, &m_texCb);
-    glTextureStorage2D(m_texCb, 1, GL_R8, w / 2, h / 2);
-    glTextureParameteri(m_texCb, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureParameteri(m_texCb, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTextureParameteri(m_texCb, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTextureParameteri(m_texCb, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-    glCreateTextures(GL_TEXTURE_2D, 1, &m_texCr);
-    glTextureStorage2D(m_texCr, 1, GL_R8, w / 2, h / 2);
-    glTextureParameteri(m_texCr, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureParameteri(m_texCr, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTextureParameteri(m_texCr, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTextureParameteri(m_texCr, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    m_texY = bgfx::createTexture2D((uint16_t)w, (uint16_t)h, false, 1, bgfx::TextureFormat::R8, BGFX_TEXTURE_NONE);
+    m_texCb = bgfx::createTexture2D((uint16_t)(w / 2), (uint16_t)(h / 2), false, 1, bgfx::TextureFormat::R8, BGFX_TEXTURE_NONE);
+    m_texCr = bgfx::createTexture2D((uint16_t)(w / 2), (uint16_t)(h / 2), false, 1, bgfx::TextureFormat::R8, BGFX_TEXTURE_NONE);
 
     return true;
 }
 
 void R_VideoInstance::Update(float dt)
 {
-    if (!m_plm)
-    {
+    if (!m_plm) 
         return;
-    }
 
     m_time += (double)dt;
 
@@ -104,9 +84,14 @@ void R_VideoInstance::Update(float dt)
         plm_frame_t* frame = plm_decode_video(m_plm);
         if (frame)
         {
-            glTextureSubImage2D(m_texY, 0, 0, 0, frame->width, frame->height, GL_RED, GL_UNSIGNED_BYTE, frame->y.data);
-            glTextureSubImage2D(m_texCb, 0, 0, 0, frame->width / 2, frame->height / 2, GL_RED, GL_UNSIGNED_BYTE, frame->cb.data);
-            glTextureSubImage2D(m_texCr, 0, 0, 0, frame->width / 2, frame->height / 2, GL_RED, GL_UNSIGNED_BYTE, frame->cr.data);
+            const bgfx::Memory* memY = bgfx::copy(frame->y.data, frame->width * frame->height);
+            bgfx::updateTexture2D(m_texY, 0, 0, 0, 0, (uint16_t)frame->width, (uint16_t)frame->height, memY);
+
+            const bgfx::Memory* memCb = bgfx::copy(frame->cb.data, (frame->width / 2) * (frame->height / 2));
+            bgfx::updateTexture2D(m_texCb, 0, 0, 0, 0, (uint16_t)(frame->width / 2), (uint16_t)(frame->height / 2), memCb);
+
+            const bgfx::Memory* memCr = bgfx::copy(frame->cr.data, (frame->width / 2) * (frame->height / 2));
+            bgfx::updateTexture2D(m_texCr, 0, 0, 0, 0, (uint16_t)(frame->width / 2), (uint16_t)(frame->height / 2), memCr);
 
             m_nextFrameTime += 1.0 / plm_get_framerate(m_plm);
         }
@@ -119,11 +104,11 @@ void R_VideoInstance::Update(float dt)
     }
 }
 
-void R_VideoInstance::BindTextures()
+void R_VideoInstance::BindTextures(bgfx::UniformHandle s_texY, bgfx::UniformHandle s_texCb, bgfx::UniformHandle s_texCr)
 {
-    glBindTextureUnit(10, m_texY);
-    glBindTextureUnit(11, m_texCb);
-    glBindTextureUnit(12, m_texCr);
+    bgfx::setTexture(10, s_texY, m_texY);
+    bgfx::setTexture(11, s_texCb, m_texCb);
+    bgfx::setTexture(12, s_texCr, m_texCr);
 }
 
 void R_VideoInstance::Shutdown()
@@ -131,49 +116,39 @@ void R_VideoInstance::Shutdown()
     if (m_plm)
     {
         plm_destroy(m_plm);
+        m_plm = nullptr;
     }
-    if (m_texY)
-        glDeleteTextures(1, &m_texY);
-    if (m_texCb)
-        glDeleteTextures(1, &m_texCb);
-    if (m_texCr)
-        glDeleteTextures(1, &m_texCr);
-    m_plm = nullptr;
+    if (bgfx::isValid(m_texY))
+        bgfx::destroy(m_texY);
+    if (bgfx::isValid(m_texCb)) 
+        bgfx::destroy(m_texCb);
+    if (bgfx::isValid(m_texCr)) 
+        bgfx::destroy(m_texCr);
+    m_texY = m_texCb = m_texCr = BGFX_INVALID_HANDLE;
 }
 
 void R_Video::Init()
 {
     m_shader.Load("shaders/video.vert", "shaders/video.frag");
+    m_sTexY = bgfx::createUniform("texY", bgfx::UniformType::Sampler);
+    m_sTexCb = bgfx::createUniform("texCb", bgfx::UniformType::Sampler);
+    m_sTexCr = bgfx::createUniform("texCr", bgfx::UniformType::Sampler);
 }
 
-void R_Video::Draw(const Camera& camera, R_BSP* bsp)
+void R_Video::Draw(bgfx::ViewId viewId, const Camera& camera, R_BSP* bsp)
 {
-    glEnable(GL_DEPTH_TEST);
-    glDepthMask(GL_TRUE);
-    glDisable(GL_BLEND);
-
-    m_shader.Bind();
-    m_shader.SetMat4("u_view", camera.GetViewMatrix());
-    m_shader.SetMat4("u_projection", camera.GetProjectionMatrix());
-
     for (const auto& ent : EntityManager::GetEntities())
     {
         if (ent->GetClassName() != "func_video" || !ent->IsEnabled())
-        {
             continue;
-        }
 
         auto video_ent = std::dynamic_pointer_cast<FuncVideo>(ent);
-        if (!video_ent)
-        {
+        if (!video_ent) 
             continue;
-        }
 
         auto video_handle = video_ent->GetHandle();
-        if (!video_handle || !video_handle->IsActive())
-        {
+        if (!video_handle || !video_handle->IsActive()) 
             continue;
-        }
 
         auto it = m_instances.find(video_handle.get());
         if (it == m_instances.end())
@@ -192,14 +167,20 @@ void R_Video::Draw(const Camera& camera, R_BSP* bsp)
         model = glm::rotate(model, glm::radians(ang.x), glm::vec3(1, 0, 0));
         model = glm::rotate(model, glm::radians(ang.z), glm::vec3(0, 0, 1));
 
-        m_shader.SetMat4("u_model", model);
-        it->second->BindTextures();
+        it->second->BindTextures(m_sTexY, m_sTexCb, m_sTexCr);
 
-        bsp->DrawBModel(ent->GetBModelIndex(), m_shader, model, true);
+        bsp->DrawBModel(ent->GetBModelIndex(), m_shader, viewId, model, camera.position, true);
     }
 }
 
 void R_Video::Shutdown()
 {
     m_instances.clear();
+    if (bgfx::isValid(m_sTexY))
+    {
+        bgfx::destroy(m_sTexY);
+        bgfx::destroy(m_sTexCb);
+        bgfx::destroy(m_sTexCr);
+        m_sTexY = m_sTexCb = m_sTexCr = BGFX_INVALID_HANDLE;
+    }
 }

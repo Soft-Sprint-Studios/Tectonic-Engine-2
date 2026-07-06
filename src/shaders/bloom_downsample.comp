@@ -1,0 +1,44 @@
+#include <bgfx_compute.sh>
+
+SAMPLER2D(s_source, 0);
+IMAGE2D_RW(s_destination, rgba16f, 1);
+
+uniform vec4 u_bloomParams;
+#define u_threshold u_bloomParams.x
+#define u_isFirstPass (u_bloomParams.y > 0.5)
+
+NUM_THREADS(16, 16, 1)
+void main()
+{
+    ivec2 destCoord = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 destSize = imageSize(s_destination);
+    if (destCoord.x >= destSize.x || destCoord.y >= destSize.y) 
+        return;
+
+    vec2 uv = (vec2(destCoord) + 0.5) / vec2(destSize);
+    vec2 texelSize = vec2_splat(1.0) / vec2(destSize * 2);
+
+    vec3 a = texture2D(s_source, uv + vec2(-2.0, -2.0) * texelSize).rgb;
+    vec3 b = texture2D(s_source, uv + vec2( 0.0, -2.0) * texelSize).rgb;
+    vec3 c = texture2D(s_source, uv + vec2( 2.0, -2.0) * texelSize).rgb;
+    vec3 d = texture2D(s_source, uv + vec2(-1.0, -1.0) * texelSize).rgb;
+    vec3 e = texture2D(s_source, uv + vec2( 1.0, -1.0) * texelSize).rgb;
+    vec3 f = texture2D(s_source, uv + vec2(-2.0,  0.0) * texelSize).rgb;
+    vec3 g = texture2D(s_source, uv).rgb;
+    vec3 h = texture2D(s_source, uv + vec2( 2.0,  0.0) * texelSize).rgb;
+    vec3 i = texture2D(s_source, uv + vec2(-1.0,  1.0) * texelSize).rgb;
+    vec3 j = texture2D(s_source, uv + vec2( 1.0,  1.0) * texelSize).rgb;
+    vec3 k = texture2D(s_source, uv + vec2(-2.0,  2.0) * texelSize).rgb;
+    vec3 l = texture2D(s_source, uv + vec2( 0.0,  2.0) * texelSize).rgb;
+    vec3 m = texture2D(s_source, uv + vec2( 2.0,  2.0) * texelSize).rgb;
+
+    vec3 color = (a+c+k+m)*0.03125 + (b+f+h+l)*0.0625 + (d+e+i+j)*0.125 + g*0.125;
+
+    if (u_isFirstPass)
+    {
+        color = max(vec3_splat(0.0), color - u_threshold);
+        color = color / (color + vec3_splat(1.0));
+    }
+
+    imageStore(s_destination, destCoord, vec4(color, 1.0));
+}

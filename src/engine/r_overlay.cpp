@@ -24,93 +24,80 @@
 #include "r_overlay.h"
 #include "materials.h"
 #include "screen_overlay.h"
+#include <cstring>
+#include <glm/gtc/type_ptr.hpp>
 
 void R_Overlay::Init()
 {
     m_shader.Load("shaders/overlay.vert", "shaders/overlay.frag");
+    
+    m_sTexture = bgfx::createUniform("s_texture", bgfx::UniformType::Sampler);
+    m_uOverlayParams = bgfx::createUniform("u_overlayParams", bgfx::UniformType::Vec4);
 
-    float quad[] = 
-    { 
-        -1.0f,  1.0f,  0.0f, 1.0f,
-        -1.0f, -1.0f,  0.0f, 0.0f,
-         1.0f, -1.0f,  1.0f, 0.0f,
-        -1.0f,  1.0f,  0.0f, 1.0f,
-         1.0f, -1.0f,  1.0f, 0.0f,
-         1.0f,  1.0f,  1.0f, 1.0f 
-    };
-
-    glCreateVertexArrays(1, &m_vao);
-    glCreateBuffers(1, &m_vbo);
-    glNamedBufferData(m_vbo, sizeof(quad), quad, GL_STATIC_DRAW);
-
-    glVertexArrayVertexBuffer(m_vao, 0, m_vbo, 0, 4 * sizeof(float));
-
-    glEnableVertexArrayAttrib(m_vao, 0);
-    glVertexArrayAttribFormat(m_vao, 0, 2, GL_FLOAT, GL_FALSE, 0);
-    glVertexArrayAttribBinding(m_vao, 0, 0);
-
-    glEnableVertexArrayAttrib(m_vao, 1);
-    glVertexArrayAttribFormat(m_vao, 1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float));
-    glVertexArrayAttribBinding(m_vao, 1, 0);
+    m_layout.begin()
+        .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
+        .end();
 }
 
-void R_Overlay::Draw()
+void R_Overlay::Draw(bgfx::ViewId viewId)
 {
     const auto& s = ScreenOverlay::GetSettings();
-    if (!s.active || s.textureName.empty())
-    {
+    if (!s.active || s.textureName.empty()) 
         return;
-    }
 
     auto tex = Materials::GetTexture(s.textureName);
-    if (!tex)
-    {
+    if (!tex) 
         return;
-    }
 
-    glDisable(GL_DEPTH_TEST);
-    glDepthMask(GL_FALSE);
-    glEnable(GL_BLEND);
-
-    switch (s.renderMode)
+    const uint32_t numVertices = 6;
+    if (bgfx::getAvailTransientVertexBuffer(numVertices, m_layout) >= numVertices)
     {
-    case 0:
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-        break;
+        bgfx::TransientVertexBuffer tvb;
+        bgfx::allocTransientVertexBuffer(&tvb, numVertices, m_layout);
 
-    case 1:
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        break;
+        struct Vertex
+        { 
+            float x, y, z; 
+            float u, v; 
+        };
+        Vertex* v = (Vertex*)tvb.data;
+        v[0] = { -1.0f,  1.0f, 0.0f, 0.0f, 0.0f };
+        v[1] = { -1.0f, -1.0f, 0.0f, 0.0f, 1.0f };
+        v[2] = {  1.0f, -1.0f, 0.0f, 1.0f, 1.0f };
+        v[3] = { -1.0f,  1.0f, 0.0f, 0.0f, 0.0f };
+        v[4] = {  1.0f, -1.0f, 0.0f, 1.0f, 1.0f };
+        v[5] = {  1.0f,  1.0f, 0.0f, 1.0f, 0.0f };
 
-    case 2:
-        glBlendFunc(GL_DST_COLOR, GL_ZERO);
-        break;
+        uint64_t blend = BGFX_STATE_BLEND_ALPHA;
+        if (s.renderMode == 0) 
+            blend = BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_SRC_ALPHA, BGFX_STATE_BLEND_ONE);
+        else if (s.renderMode == 2) 
+            blend = BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_DST_COLOR, BGFX_STATE_BLEND_ZERO);
+        else if (s.renderMode == 3) 
+            blend = BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_ONE, BGFX_STATE_BLEND_INV_SRC_COLOR);
 
-    case 3:
-        glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_COLOR);
-        break;
+        uint64_t state = BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | blend;
+        
+        float params[4] = { s.alpha, 0.0f, 0.0f, 0.0f };
+        bgfx::setUniform(m_uOverlayParams, params);
 
-    default:
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        break;
+        bgfx::setTexture(0, m_sTexture, tex->GetHandle());
+        bgfx::setVertexBuffer(0, &tvb);
+        bgfx::setState(state);
+        
+        glm::mat4 identity(1.0f);
+        bgfx::setTransform(glm::value_ptr(identity));
+        bgfx::submit(viewId, m_shader.GetProgram());
     }
-
-    m_shader.Bind();
-    tex->Bind(0);
-    m_shader.SetFloat("u_alpha", s.alpha);
-
-    glBindVertexArray(m_vao);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-
-    glDepthMask(GL_TRUE);
-    glEnable(GL_DEPTH_TEST);
-    glDisable(GL_BLEND);
 }
 
 void R_Overlay::Shutdown()
 {
-    if (m_vao) 
-        glDeleteVertexArrays(1, &m_vao);
-    if (m_vbo) 
-        glDeleteBuffers(1, &m_vbo);
+    if (bgfx::isValid(m_sTexture))
+    {
+        bgfx::destroy(m_sTexture);
+        bgfx::destroy(m_uOverlayParams);
+        m_sTexture = m_uOverlayParams = BGFX_INVALID_HANDLE;
+    }
 }

@@ -8,7 +8,7 @@
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
+ * furnished to do_ subject to the following conditions:
  *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
@@ -23,23 +23,32 @@
  */
 #include "r_motionblur.h"
 #include "cvar.h"
+#include <algorithm>
+#include <glm/gtc/type_ptr.hpp>
 
 CVar r_motionblur("r_motionblur", "1", "Enable Motion Blur.", CVAR_SAVE);
 CVar r_motionblur_samples("r_motionblur_samples", "16", "Number of samples for motion blur.", CVAR_SAVE);
 CVar r_motionblur_scale("r_motionblur_scale", "1.0", "Intensity of the motion blur effect.", CVAR_SAVE);
 
-R_MotionBlur::R_MotionBlur()
+R_MotionBlur::R_MotionBlur() 
 {
 }
 
-R_MotionBlur::~R_MotionBlur()
-{
-    Shutdown();
+R_MotionBlur::~R_MotionBlur() 
+{ 
+    Shutdown(); 
 }
 
 bool R_MotionBlur::Init(int width, int height)
 {
-    m_shader.Load("shaders/motion_blur.vert", "shaders/motion_blur.frag");
+    m_shader.LoadCompute("shaders/motion_blur.comp");
+
+    m_sSceneTex     = bgfx::createUniform("s_scene",        bgfx::UniformType::Sampler);
+    m_sDepthTex     = bgfx::createUniform("s_depth",        bgfx::UniformType::Sampler);
+    m_uInvViewProj  = bgfx::createUniform("u_currentInvViewProj",  bgfx::UniformType::Mat4);
+    m_uPrevViewProj = bgfx::createUniform("u_prevViewProj", bgfx::UniformType::Mat4);
+    m_uBlurParams   = bgfx::createUniform("u_blurParams",   bgfx::UniformType::Vec4);
+
     CreateBuffers(width, height);
     return true;
 }
@@ -49,78 +58,65 @@ void R_MotionBlur::CreateBuffers(int width, int height)
     m_width = width;
     m_height = height;
 
-    glCreateFramebuffers(1, &m_fbo);
-    glCreateTextures(GL_TEXTURE_2D, 1, &m_texture);
-    glTextureStorage2D(m_texture, 1, GL_RGB16F, width, height);
-    glTextureParameteri(m_texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureParameteri(m_texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTextureParameteri(m_texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTextureParameteri(m_texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glNamedFramebufferTexture(m_fbo, GL_COLOR_ATTACHMENT0, m_texture, 0);
+    uint64_t writeFlags = BGFX_TEXTURE_COMPUTE_WRITE | BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP;
+    m_texture = bgfx::createTexture2D((uint16_t)width, (uint16_t)height, false, 1, bgfx::TextureFormat::RGBA16F, writeFlags);
 }
 
-void R_MotionBlur::Render(GLuint sceneTex, GLuint depthTex, const Camera& camera, GLuint quadVAO)
+void R_MotionBlur::Render(bgfx::ViewId viewId, bgfx::TextureHandle sceneTex, bgfx::TextureHandle depthTex, const Camera& camera)
 {
     if (r_motionblur.GetInt() == 0)
     {
         return;
     }
 
-    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-    glViewport(0, 0, m_width, m_height);
-
-    m_shader.Bind();
-    m_shader.SetInt("u_samples", r_motionblur_samples.GetInt());
-    m_shader.SetFloat("u_blurScale", r_motionblur_scale.GetFloat());
-
     glm::mat4 viewProj = camera.GetProjectionMatrix() * camera.GetViewMatrix();
     glm::mat4 invViewProj = glm::inverse(viewProj);
     glm::mat4 prevViewProj = camera.GetPrevViewProj();
 
-    m_shader.SetMat4("u_invViewProj", invViewProj);
-    m_shader.SetMat4("u_prevViewProj", prevViewProj);
+    bgfx::setUniform(m_uInvViewProj,  glm::value_ptr(invViewProj));
+    bgfx::setUniform(m_uPrevViewProj, glm::value_ptr(prevViewProj));
 
-    glBindTextureUnit(0, sceneTex);
-    glBindTextureUnit(1, depthTex);
+    float params[4] = { (float)r_motionblur_samples.GetInt(), r_motionblur_scale.GetFloat(), 0.0f, 0.0f };
+    bgfx::setUniform(m_uBlurParams, params);
 
-    glBindVertexArray(quadVAO);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    bgfx::setTexture(0, m_sSceneTex, sceneTex);
+    bgfx::setTexture(1, m_sDepthTex, depthTex);
+    bgfx::setImage(2, m_texture, 0, bgfx::Access::Write, bgfx::TextureFormat::RGBA16F);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    bgfx::dispatch(viewId, m_shader.GetProgram(), (m_width + 15) / 16, (m_height + 15) / 16, 1);
 }
 
-void R_MotionBlur::Bind(const R_Shader& shader)
+void R_MotionBlur::Bind(bgfx::UniformHandle s_motionBlurTex)
 {
     if (r_motionblur.GetInt() > 0)
     {
-        shader.SetInt("u_motionblur_enabled", 1);
-        glBindTextureUnit(7, m_texture);
-    }
-    else
-    {
-        shader.SetInt("u_motionblur_enabled", 0);
+        bgfx::setTexture(7, s_motionBlurTex, m_texture);
     }
 }
 
 void R_MotionBlur::DeleteBuffers()
 {
-    if (m_fbo)
-    {
-        glDeleteFramebuffers(1, &m_fbo);
-    }
-    if (m_texture)
-    {
-        glDeleteTextures(1, &m_texture);
-    }
+    if (bgfx::isValid(m_texture))
+        bgfx::destroy(m_texture);
+    m_texture = BGFX_INVALID_HANDLE;
 }
 
-void R_MotionBlur::Rescale(int w, int h)
+void R_MotionBlur::Rescale(int width, int height)
 {
     DeleteBuffers();
-    CreateBuffers(w, h);
+    CreateBuffers(width, height);
 }
 
 void R_MotionBlur::Shutdown()
 {
     DeleteBuffers();
+    if (bgfx::isValid(m_sSceneTex))
+    {
+        bgfx::destroy(m_sSceneTex);
+        bgfx::destroy(m_sDepthTex);
+        bgfx::destroy(m_uInvViewProj);
+        bgfx::destroy(m_uPrevViewProj);
+        bgfx::destroy(m_uBlurParams);
+        m_sSceneTex = m_sDepthTex = m_uInvViewProj = m_uPrevViewProj = m_uBlurParams = BGFX_INVALID_HANDLE;
+    }
 }

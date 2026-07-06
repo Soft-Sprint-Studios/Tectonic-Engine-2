@@ -61,6 +61,7 @@
 #include "video.h"
 #include "screen_text.h"
 #include "decals.h"
+#include "cables.h"
 
 namespace Sys
 {
@@ -103,6 +104,12 @@ namespace Sys
             return false;
         }
 
+        if (!s_renderer.Init(s_window))
+        {
+            Console::Error("Renderer Init Failed!");
+            return false;
+        }
+
         Localization::Init();
         Physics::Init();
         EntityManager::Init();
@@ -126,12 +133,6 @@ namespace Sys
         MainMenu::Init();
 
         Maps::Init(&s_renderer, &s_camera, &s_input);
-
-        if (!s_renderer.Init(s_window)) 
-        {
-            Console::Error("Renderer Init Failed!");
-            return false;
-        }
 
         CommandLine::ExecuteInitialCommands();
 
@@ -312,6 +313,11 @@ namespace Sys
     bool ShouldExit()
     {
         return !s_running;
+    }
+
+    Window* GetWindow()
+    {
+        return &s_window;
     }
 
     void Quit()

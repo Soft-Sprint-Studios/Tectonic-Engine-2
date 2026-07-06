@@ -24,107 +24,110 @@
 #include "r_monitors.h"
 #include "renderer.h"
 #include "entities.h"
-#include <glm/gtc/matrix_transform.hpp>
 #include "r_bsp.h"
 #include "func_monitor.h"
+#include <glm/gtc/matrix_transform.hpp>
+#include <algorithm>
+
+R_Monitors::R_Monitors()
+{
+}
+
+R_Monitors::~R_Monitors()
+{
+    Shutdown();
+}
 
 void R_Monitors::Init()
 {
     m_shader.Load("shaders/monitor.vert", "shaders/monitor.frag");
+    m_sTexture = bgfx::createUniform("s_texture", bgfx::UniformType::Sampler);
+    m_uMonitorParams = bgfx::createUniform("u_monitorParams", bgfx::UniformType::Vec4);
 }
 
-R_Monitors::RenderTarget& R_Monitors::GetTarget(Monitor* m)
+void R_Monitors::RecreateFBO(int resolution)
 {
-    auto& def = m->GetDef();
-
-    // Create new FBO if it doesnt exist or resolution changed
-    if (m_targets.find(m) == m_targets.end() || m_targets[m].res != def.resolution)
+    if (m_currentResolution == resolution && bgfx::isValid(m_fbo))
     {
-        RenderTarget& rt = m_targets[m];
-        if (rt.fbo)
-        {
-            glDeleteFramebuffers(1, &rt.fbo);
-            glDeleteTextures(1, &rt.texture);
-            glDeleteRenderbuffers(1, &rt.rbo);
-        }
-
-        rt.res = def.resolution;
-        glCreateFramebuffers(1, &rt.fbo);
-        glCreateTextures(GL_TEXTURE_2D, 1, &rt.texture);
-        glTextureStorage2D(rt.texture, 1, GL_RGB16F, rt.res, rt.res);
-        glTextureParameteri(rt.texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTextureParameteri(rt.texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glNamedFramebufferTexture(rt.fbo, GL_COLOR_ATTACHMENT0, rt.texture, 0);
-
-        glCreateRenderbuffers(1, &rt.rbo);
-        glNamedRenderbufferStorage(rt.rbo, GL_DEPTH24_STENCIL8, rt.res, rt.res);
-        glNamedFramebufferRenderbuffer(rt.fbo, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rt.rbo);
+        return;
     }
-    return m_targets[m];
+
+    if (bgfx::isValid(m_fbo))
+    {
+        bgfx::destroy(m_fbo);
+        bgfx::destroy(m_colorTexture);
+        bgfx::destroy(m_depthTexture);
+    }
+
+    m_currentResolution = resolution;
+
+    uint64_t flags = BGFX_TEXTURE_RT | BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP;
+    m_colorTexture = bgfx::createTexture2D((uint16_t)resolution, (uint16_t)resolution, false, 1, bgfx::TextureFormat::RGBA16F, flags);
+    m_depthTexture = bgfx::createTexture2D((uint16_t)resolution, (uint16_t)resolution, false, 1, bgfx::TextureFormat::D24S8, flags);
+
+    bgfx::TextureHandle attachments[] = { m_colorTexture, m_depthTexture };
+    m_fbo = bgfx::createFrameBuffer(2, attachments, false);
 }
 
 void R_Monitors::RenderTextures(Renderer* renderer)
 {
     auto monitors = Monitors::GetActiveMonitors();
-    for (auto& m : monitors)
+    if (monitors.empty())
     {
-        if (!m->IsActive())
-        {
-            continue;
-        }
-
-        if (m->GetDef().isStatic && m->HasRenderedOnce())
-        {
-            continue;
-        }
-
-        auto camEnt = EntityManager::FindEntityByName(m->GetDef().cameraName);
-        if (!camEnt)
-        {
-            continue;
-        }
-
-        RenderTarget& rt = GetTarget(m.get());
-
-        // Setup a temporary camera
-        float fov = camEnt->GetFloat("fov", 75.0f);
-        float radius = camEnt->GetFloat("radius", 2000.0f);
-
-        Camera cam(fov, 1.0f, 0.1f, radius);
-        cam.position = camEnt->GetOrigin();
-        glm::vec3 entAngles = camEnt->GetAngles();
-        glm::mat4 rotation = glm::mat4(1.0f);
-
-        rotation = glm::rotate(rotation, glm::radians(entAngles.y + 90.0f), glm::vec3(0, 1, 0));
-        rotation = glm::rotate(rotation, glm::radians(-entAngles.x), glm::vec3(1, 0, 0));
-        rotation = glm::rotate(rotation, glm::radians(entAngles.z), glm::vec3(0, 0, 1));
-
-        glm::vec3 forward = glm::vec3(rotation * glm::vec4(0.0f, 0.0f, 1.0f, 0.0f));
-
-        cam.pitch = glm::degrees(asin(forward.y));
-        cam.yaw = glm::degrees(atan2(forward.z, forward.x));
-
-        glViewport(0, 0, rt.res, rt.res);
-        glBindFramebuffer(GL_FRAMEBUFFER, rt.fbo);
-
-        renderer->RenderWorld(cam, 0, true);
-
-        if (m->GetDef().isStatic)
-        {
-            m->SetRenderedOnce(true);
-        }
+        return;
     }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    auto m = monitors[0];
+
+    if (!m->IsActive())
+    {
+        return;
+    }
+
+    if (m->GetDef().isStatic && m->HasRenderedOnce())
+    {
+        return;
+    }
+
+    auto camEnt = EntityManager::FindEntityByName(m->GetDef().cameraName);
+    if (!camEnt)
+    {
+        return;
+    }
+
+    RecreateFBO(m->GetDef().resolution);
+
+    float fov = camEnt->GetFloat("fov", 75.0f);
+    float radius = camEnt->GetFloat("radius", 2000.0f);
+
+    Camera cam(fov, 1.0f, 0.1f, radius);
+    cam.position = camEnt->GetOrigin();
+    glm::vec3 entAngles = camEnt->GetAngles();
+    glm::mat4 rotation = glm::mat4(1.0f);
+
+    rotation = glm::rotate(rotation, glm::radians(entAngles.y + 90.0f), glm::vec3(0, 1, 0));
+    rotation = glm::rotate(rotation, glm::radians(-entAngles.x), glm::vec3(1, 0, 0));
+    rotation = glm::rotate(rotation, glm::radians(entAngles.z), glm::vec3(0, 0, 1));
+
+    glm::vec3 forward = glm::vec3(rotation * glm::vec4(0.0f, 0.0f, 1.0f, 0.0f));
+
+    cam.pitch = glm::degrees(asin(forward.y));
+    cam.yaw = glm::degrees(atan2(forward.z, forward.x));
+
+    renderer->RenderWorld(cam, 0, true, RenderView::MonitorGBuffer, RenderView::MonitorResolve, m_fbo);
+
+    if (m->GetDef().isStatic)
+    {
+        m->SetRenderedOnce(true);
+    }
 }
 
-void R_Monitors::Draw(const Camera& camera, R_BSP* bsp)
+void R_Monitors::Draw(bgfx::ViewId viewId, const Camera& camera, R_BSP* bsp)
 {
-    glEnable(GL_DEPTH_TEST);
-    glDepthMask(GL_TRUE);
-
-    m_shader.Bind();
-    m_shader.SetMat4("u_view", camera.GetViewMatrix());
-    m_shader.SetMat4("u_projection", camera.GetProjectionMatrix());
+    if (!bgfx::isValid(m_colorTexture))
+    {
+        return;
+    }
 
     for (const auto& ent : EntityManager::GetEntities())
     {
@@ -141,14 +144,27 @@ void R_Monitors::Draw(const Camera& camera, R_BSP* bsp)
         if (!monitor_handle) 
             continue;
 
-        auto it = m_targets.find(monitor_handle.get());
-        if (it == m_targets.end()) 
-            continue;
-
         auto& def = monitor_handle->GetDef();
-        m_shader.SetInt("u_grayscale", def.grayscale ? 1 : 0);
 
-        glBindTextureUnit(0, it->second.texture);
+        btVector3 bmin, bmax;
+        float monitorW = 512.0f;
+        float monitorH = 512.0f;
+        if (ent->GetPhysObject())
+        {
+            ent->GetPhysObject()->getCollisionShape()->getAabb(ent->GetPhysObject()->getWorldTransform(), bmin, bmax);
+            glm::vec3 size(bmax.x() - bmin.x(), bmax.y() - bmin.y(), bmax.z() - bmin.z());
+            size *= 32.0f;
+
+            float dims[3] = { size.x, size.y, size.z };
+            std::sort(dims, dims + 3);
+            monitorW = dims[2];
+            monitorH = dims[1];
+        }
+
+        float params[4] = { def.grayscale ? 1.0f : 0.0f, monitorW, monitorH, (float)def.resolution };
+        bgfx::setUniform(m_uMonitorParams, params);
+
+        bgfx::setTexture(10, m_sTexture, m_colorTexture);
 
         glm::mat4 model = glm::translate(glm::mat4(1.0f), ent->GetOrigin());
         glm::vec3 ang = ent->GetAngles();
@@ -156,17 +172,34 @@ void R_Monitors::Draw(const Camera& camera, R_BSP* bsp)
         model = glm::rotate(model, glm::radians(ang.x), glm::vec3(1, 0, 0));
         model = glm::rotate(model, glm::radians(ang.z), glm::vec3(0, 0, 1));
 
-        bsp->DrawBModel(ent->GetBModelIndex(), m_shader, model, true);
+        bsp->DrawBModel(ent->GetBModelIndex(), m_shader, viewId, model, camera.position, true);
     }
 }
 
 void R_Monitors::Shutdown()
 {
-    for (auto& pair : m_targets)
+    if (bgfx::isValid(m_fbo))
     {
-        glDeleteFramebuffers(1, &pair.second.fbo);
-        glDeleteTextures(1, &pair.second.texture);
-        glDeleteRenderbuffers(1, &pair.second.rbo);
+        bgfx::destroy(m_fbo);
+        m_fbo = BGFX_INVALID_HANDLE;
     }
-    m_targets.clear();
+    if (bgfx::isValid(m_colorTexture))
+    {
+        bgfx::destroy(m_colorTexture);
+        m_colorTexture = BGFX_INVALID_HANDLE;
+    }
+    if (bgfx::isValid(m_depthTexture))
+    {
+        bgfx::destroy(m_depthTexture);
+        m_depthTexture = BGFX_INVALID_HANDLE;
+    }
+    if (bgfx::isValid(m_sTexture))
+    {
+        bgfx::destroy(m_sTexture);
+        bgfx::destroy(m_uMonitorParams);
+        m_sTexture = BGFX_INVALID_HANDLE;
+        m_uMonitorParams = BGFX_INVALID_HANDLE;
+    }
+
+    m_currentResolution = 0;
 }

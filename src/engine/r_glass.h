@@ -23,19 +23,29 @@
  */
 #pragma once
 #include "r_shader.h"
-#include <glad/glad.h>
+#include <bgfx/bgfx.h>
+#include <memory>
+
+class Camera;
+class R_BSP;
 
 class R_Glass
 {
 public:
     void Init(int width, int height);
-    void CaptureScreen(GLuint screenFBO, int width, int height);
-    void Draw(const class Camera& camera, class R_BSP* bsp);
-    void Shutdown();
     void Rescale(int width, int height);
+    void CaptureScreen(bgfx::ViewId viewId, bgfx::TextureHandle sceneTex);
+    void Draw(bgfx::ViewId viewId, const Camera& camera, R_BSP* bsp);
+    void Shutdown();
 
 private:
     R_Shader m_shader;
-    GLuint m_refractTex = 0;
-    GLuint m_fbo = 0;
+    bgfx::TextureHandle m_refractTex = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sRefractTex = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sNormalMap = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uGlassParams = BGFX_INVALID_HANDLE;
+
+    bgfx::VertexLayout m_layout;
+    int m_width = 0;
+    int m_height = 0;
 };

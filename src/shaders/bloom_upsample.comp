@@ -1,0 +1,38 @@
+#include <bgfx_compute.sh>
+
+SAMPLER2D(s_smallerMip, 0); 
+SAMPLER2D(s_currentMip, 1); 
+IMAGE2D_RW(s_destination, rgba16f, 2); 
+
+uniform vec4 u_bloomParams2;
+#define u_scatter u_bloomParams2.x
+
+NUM_THREADS(16, 16, 1)
+void main()
+{
+    ivec2 destCoord = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 destSize = imageSize(s_destination);
+    if (destCoord.x >= destSize.x || destCoord.y >= destSize.y) 
+         return;
+
+    vec2 uv = (vec2(destCoord) + 0.5) / vec2(destSize);
+    vec2 texelSize = vec2_splat(1.0) / vec2(textureSize(s_smallerMip, 0)); 
+
+    float d = u_scatter;
+    vec3 smaller = vec3_splat(0.0);
+    smaller += texture2D(s_smallerMip, uv + texelSize * vec2(-d, -d)).rgb;
+    smaller += texture2D(s_smallerMip, uv + texelSize * vec2( 0.0, -d)).rgb;
+    smaller += texture2D(s_smallerMip, uv + texelSize * vec2( d, -d)).rgb;
+    smaller += texture2D(s_smallerMip, uv + texelSize * vec2(-d,  0.0)).rgb;
+    smaller += texture2D(s_smallerMip, uv).rgb;
+    smaller += texture2D(s_smallerMip, uv + texelSize * vec2( d,  0.0)).rgb;
+    smaller += texture2D(s_smallerMip, uv + texelSize * vec2(-d,  d)).rgb;
+    smaller += texture2D(s_smallerMip, uv + texelSize * vec2( 0.0,  d)).rgb;
+    smaller += texture2D(s_smallerMip, uv + texelSize * vec2( d,  d)).rgb;
+    smaller /= 9.0;
+
+    vec3 current = texture2D(s_currentMip, uv).rgb;
+    vec3 blended = current + smaller * u_scatter;
+
+    imageStore(s_destination, destCoord, vec4(blended, 1.0));
+}

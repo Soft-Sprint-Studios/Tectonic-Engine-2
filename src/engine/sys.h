@@ -23,10 +23,13 @@
  */
 #pragma once
 
+class Window;
+
 namespace Sys
 {
     bool Init(int argc, char** argv);
     void RunFrame();
     void Shutdown();
     bool ShouldExit();
+    Window* GetWindow();
 }

@@ -26,7 +26,6 @@
 #include <cstdint>
 
 class Renderer;
-class Camera;
 
 namespace R_Cubemap
 {

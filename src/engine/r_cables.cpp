@@ -22,13 +22,15 @@
  * SOFTWARE.
  */
 #include "r_cables.h"
+#include <glm/gtc/type_ptr.hpp>
 
 void R_Cables::Init()
 {
     m_shader.Load("shaders/cable.vert", "shaders/cable.frag");
     
-    glCreateVertexArrays(1, &m_vao);
-    glCreateBuffers(1, &m_vbo);
+    m_layout.begin()
+        .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
+        .end();
 }
 
 static glm::vec3 GetBezierPoint(float t, glm::vec3 p0, glm::vec3 p1, glm::vec3 p2) 
@@ -42,17 +44,14 @@ static glm::vec3 GetBezierPoint(float t, glm::vec3 p0, glm::vec3 p1, glm::vec3 p
     return p;
 }
 
-void R_Cables::Draw(const Camera& camera, const std::vector<std::shared_ptr<Cable>>& cables)
+void R_Cables::Draw(bgfx::ViewId viewId, const Camera& camera, const std::vector<std::shared_ptr<Cable>>& cables)
 {
     if (cables.empty()) 
         return;
 
-    m_shader.Bind();
-    m_shader.SetMat4("u_view", camera.GetViewMatrix());
-    m_shader.SetMat4("u_projection", camera.GetProjectionMatrix());
-    m_shader.SetVec3("u_viewPos", camera.position);
+    uint64_t state = BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_DEPTH_TEST_LESS | BGFX_STATE_CULL_CW | BGFX_STATE_PT_TRISTRIP;
 
-    glBindVertexArray(m_vao);
+    glm::mat4 identity(1.0f);
 
     for (auto& cable : cables)
     {
@@ -65,6 +64,8 @@ void R_Cables::Draw(const Camera& camera, const std::vector<std::shared_ptr<Cabl
         mid.y -= d.slack;
 
         std::vector<glm::vec3> vertices;
+        vertices.reserve((d.segments + 1) * 2);
+
         for (int i = 0; i <= d.segments; i++)
         {
             float t = (float)i / (float)d.segments;
@@ -82,20 +83,21 @@ void R_Cables::Draw(const Camera& camera, const std::vector<std::shared_ptr<Cabl
             vertices.push_back(p + side);
         }
 
-        glNamedBufferData(m_vbo, vertices.size() * sizeof(glm::vec3), vertices.data(), GL_STREAM_DRAW);
-        glVertexArrayVertexBuffer(m_vao, 0, m_vbo, 0, sizeof(glm::vec3));
-        glEnableVertexArrayAttrib(m_vao, 0);
-        glVertexArrayAttribFormat(m_vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
-        glVertexArrayAttribBinding(m_vao, 0, 0);
-        
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)vertices.size());
+        uint32_t numVerts = (uint32_t)vertices.size();
+        if (numVerts == bgfx::getAvailTransientVertexBuffer(numVerts, m_layout))
+        {
+            bgfx::TransientVertexBuffer tvb;
+            bgfx::allocTransientVertexBuffer(&tvb, numVerts, m_layout);
+            std::memcpy(tvb.data, vertices.data(), numVerts * sizeof(glm::vec3));
+
+            bgfx::setTransform(glm::value_ptr(identity));
+            bgfx::setVertexBuffer(0, &tvb);
+            bgfx::setState(state);
+            bgfx::submit(viewId, m_shader.GetProgram());
+        }
     }
 }
 
 void R_Cables::Shutdown()
 {
-    if (m_vao) 
-        glDeleteVertexArrays(1, &m_vao);
-    if (m_vbo) 
-        glDeleteBuffers(1, &m_vbo);
 }

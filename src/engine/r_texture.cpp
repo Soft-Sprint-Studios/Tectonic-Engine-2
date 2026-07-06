@@ -21,34 +21,46 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#include "cvar.h"
 #include "r_texture.h"
 #include "filesystem.h"
-#include "console.h"
 #include "dds.h"
-
-CVar r_textureAnisotropy("r_textureAnisotropy", "16.0", "Maximum anisotropic filtering level.", CVAR_SAVE);
 
 R_Texture::R_Texture()
 {
-    m_id = 0;
-    m_width = 0;
-    m_height = 0;
-    m_channels = 0;
 }
 
 R_Texture::~R_Texture()
 {
-    Release();
+    if (bgfx::isValid(m_handle))
+    {
+        bgfx::destroy(m_handle);
+    }
+}
+
+void R_Texture::Create(int width, int height, unsigned char* data, bool srgb)
+{
+    if (bgfx::isValid(m_handle))
+    {
+        bgfx::destroy(m_handle);
+    }
+
+    m_width = width;
+    m_height = height;
+
+    uint64_t flags = BGFX_TEXTURE_NONE | BGFX_SAMPLER_MIN_ANISOTROPIC | BGFX_SAMPLER_MAG_ANISOTROPIC;
+
+    if (srgb)
+    {
+        flags |= BGFX_TEXTURE_SRGB;
+    }
+
+    const bgfx::Memory* mem = bgfx::copy(data, width * height * 4);
+
+    m_handle = bgfx::createTexture2D(uint16_t(width), uint16_t(height), false, 1, bgfx::TextureFormat::RGBA8, flags, mem);
 }
 
 bool R_Texture::Load(const std::string& path, bool srgb)
 {
-    if (m_id != 0)
-    {
-        glDeleteTextures(1, &m_id);
-    }
-
     DDS::ImageInfo info;
     if (!DDS::Load(path, srgb, info))
     {
@@ -57,111 +69,9 @@ bool R_Texture::Load(const std::string& path, bool srgb)
 
     m_width = info.width;
     m_height = info.height;
-    CreateFromInfo(info);
-    return true;
-}
 
-void R_Texture::CreateFromInfo(const DDS::ImageInfo& info)
-{
-    glCreateTextures(GL_TEXTURE_2D, 1, &m_id);
+    const bgfx::Memory* mem = bgfx::copy(info.data.data(), (uint32_t)info.data.size());
+    m_handle = bgfx::createTexture(mem);
 
-    GLenum internalFormat;
-    switch (info.format)
-    {
-    case DDS::Format::BC1:      
-        internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT; 
-        break;
-    case DDS::Format::BC1_SRGB: 
-        internalFormat = GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT; 
-        break;
-    case DDS::Format::BC2:     
-        internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT; 
-        break;
-    case DDS::Format::BC2_SRGB:
-        internalFormat = GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT; 
-        break;
-    case DDS::Format::BC3:     
-        internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT; 
-        break;
-    case DDS::Format::BC3_SRGB: 
-        internalFormat = GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT; 
-        break;
-    case DDS::Format::RGBA8:   
-        internalFormat = GL_RGBA8; 
-        break;
-    case DDS::Format::SRGB8:   
-        internalFormat = GL_SRGB8_ALPHA8; 
-        break;
-    default:
-        internalFormat = GL_RGBA8;
-        break;
-    }
-
-    glTextureStorage2D(m_id, (GLsizei)info.mips.size(), internalFormat, info.width, info.height);
-
-    for (uint32_t i = 0; i < info.mips.size(); i++)
-    {
-        if (info.compressed)
-        {
-            glCompressedTextureSubImage2D(m_id, i, 0, 0, info.mips[i].width, info.mips[i].height, internalFormat, info.mips[i].size, &info.data[info.mips[i].offset]);
-        }
-        else
-        {
-            glTextureSubImage2D(m_id, i, 0, 0, info.mips[i].width, info.mips[i].height, GL_RGBA, GL_UNSIGNED_BYTE, &info.data[info.mips[i].offset]);
-        }
-    }
-
-    glTextureParameteri(m_id, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTextureParameteri(m_id, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTextureParameteri(m_id, GL_TEXTURE_MIN_FILTER, info.mips.size() > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
-    glTextureParameteri(m_id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTextureParameterf(m_id, GL_TEXTURE_MAX_ANISOTROPY_EXT, CVar::GetFloat("r_textureAnisotropy", 16.0f));
-}
-
-void R_Texture::Create(int width, int height, unsigned char* data, bool srgb)
-{
-    m_width = width;
-    m_height = height;
-
-    if (m_id != 0)
-    {
-        glDeleteTextures(1, &m_id);
-    }
-
-    glCreateTextures(GL_TEXTURE_2D, 1, &m_id);
-    glTextureParameteri(m_id, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTextureParameteri(m_id, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTextureParameteri(m_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTextureParameteri(m_id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    GLint internalFormat = srgb ? GL_SRGB8_ALPHA8 : GL_RGBA8;
-
-    int levels = 1;
-    int tempW = width;
-    int tempH = height;
-    while (tempW > 1 || tempH > 1) 
-    {
-        tempW = std::max(1, tempW / 2);
-        tempH = std::max(1, tempH / 2);
-        levels++;
-    }
-
-    glTextureStorage2D(m_id, levels, internalFormat, m_width, m_height);
-    glTextureSubImage2D(m_id, 0, 0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, data);
-    glGenerateTextureMipmap(m_id);
-    glTextureParameterf(m_id, GL_TEXTURE_MAX_ANISOTROPY_EXT, r_textureAnisotropy.GetFloat());
-}
-
-void R_Texture::Bind(unsigned int unit) const
-{
-    glBindTextureUnit(unit, m_id);
-}
-
-void R_Texture::Release()
-{
-    if (m_id != 0)
-    {
-        glDeleteTextures(1, &m_id);
-        m_id = 0;
-    }
+    return bgfx::isValid(m_handle);
 }

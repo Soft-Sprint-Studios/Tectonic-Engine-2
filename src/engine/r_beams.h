@@ -25,16 +25,26 @@
 #include "r_shader.h"
 #include "camera.h"
 #include "beams.h"
-#include <glad/glad.h>
+#include <bgfx/bgfx.h>
+#include <memory>
+#include <vector>
 
 class R_Beams
 {
 public:
     void Init();
-    void Draw(const Camera& camera, const std::vector<std::shared_ptr<Beam>>& beams);
+    void Draw(bgfx::ViewId viewId, const Camera& camera, const std::vector<std::shared_ptr<Beam>>& beams);
     void Shutdown();
 
 private:
     R_Shader m_shader;
-    GLuint m_vao = 0, m_vbo = 0;
+    bgfx::VertexBufferHandle m_vbo = BGFX_INVALID_HANDLE;
+    bgfx::VertexLayout m_layout;
+
+    bgfx::UniformHandle m_uBeamParams = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uStartPosLocal = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uEndPosLocal = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uViewPosLocal = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uBeamColor = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uBeamTime = BGFX_INVALID_HANDLE;
 };

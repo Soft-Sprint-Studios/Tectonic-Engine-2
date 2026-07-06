@@ -13,7 +13,6 @@ set(SDL3_PATH ${CMAKE_SOURCE_DIR}/libs/SDL3-3.4.4)
 set(SDL_TTF_PATH ${CMAKE_SOURCE_DIR}/libs/SDL3_ttf-3.2.0)
 set(GLM_PATH ${CMAKE_SOURCE_DIR}/libs/GLM)
 set(STB_IMAGE_PATH ${CMAKE_SOURCE_DIR}/libs/stb_image)
-set(GLAD_PATH ${CMAKE_SOURCE_DIR}/libs/glad)
 set(BULLET_PATH ${CMAKE_SOURCE_DIR}/libs/bullet)
 set(CGLTF_PATH ${CMAKE_SOURCE_DIR}/libs/cgltf)
 set(OPENAL_PATH ${CMAKE_SOURCE_DIR}/libs/openal-soft-1.24.3)
@@ -29,6 +28,7 @@ set(MINIZ_PATH ${CMAKE_SOURCE_DIR}/libs/miniz)
 if(WIN32)
     if(CMAKE_GENERATOR_PLATFORM STREQUAL "ARM64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "(ARM64|arm64)")
         set(ARCH_FOLDER "x64arm")
+        set(IS_ARM64_CROSS TRUE)
     elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
         set(ARCH_FOLDER "x64")
     else()
@@ -39,11 +39,25 @@ endif()
 # ---- SOURCE FILES ----
 file(GLOB_RECURSE ENGINE_SRC "src/engine/*.cpp")
 file(GLOB_RECURSE ENGINE_HDR "src/engine/*.h" "src/engine/*.hpp")
-set(GLAD_SRC "${GLAD_PATH}/src/glad.c")
 set(MINIZ_SRC "${MINIZ_PATH}/src/miniz.c")
 
 file(GLOB_RECURSE GAME_SRC "src/game/*.cpp")
 file(GLOB_RECURSE GAME_HDR "src/game/*.h")
+
+include(FetchContent)
+
+set(BGFX_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(BGFX_BUILD_TOOLS ON CACHE BOOL "" FORCE)
+set(BGFX_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(BGFX_INSTALL OFF CACHE BOOL "" FORCE)
+
+FetchContent_Declare(
+    bgfx
+    GIT_REPOSITORY https://github.com/bkaradzic/bgfx.cmake.git
+    GIT_TAG master
+)
+
+FetchContent_MakeAvailable(bgfx)
 
 # ---- GAME STATIC LIB ----
 add_library(Game STATIC ${GAME_SRC} ${GAME_HDR})
@@ -54,7 +68,7 @@ target_include_directories(Game PRIVATE
     ${GLM_PATH}/include
     ${BULLET_PATH}/include
     ${OPENAL_PATH}/include
-    ${CMAKE_SOURCE_DIR}/Game_Template/shaders
+    ${CMAKE_SOURCE_DIR}/src/shaders
     src/engine
     src/game
 )
@@ -84,14 +98,73 @@ target_include_directories(Engine PRIVATE
     ${PLMPEG_PATH}/include
     ${MINISPEC_PATH}/include
     ${MINIZ_PATH}/include
-    ${CMAKE_SOURCE_DIR}/Game_Template/shaders
+    ${CMAKE_SOURCE_DIR}/src/shaders
     src/engine
     src/game
 )
 
-# ---- LINKING ----
-find_package(OpenGL REQUIRED)
+# ---- SHADER COMPILATION ----
+if(NOT IS_ARM64_CROSS)
+    set(SHADER_SRC_DIR "${CMAKE_SOURCE_DIR}/src/shaders")
+    set(SHADER_OUT_DIR "$<TARGET_FILE_DIR:Engine>/shaders")
 
+    file(GLOB SHADER_FILES
+        "${SHADER_SRC_DIR}/*.vert"
+        "${SHADER_SRC_DIR}/*.frag"
+        "${SHADER_SRC_DIR}/*.comp"
+    )
+
+    set(SHADER_OUTPUTS)
+
+    foreach(SHADER_FILE ${SHADER_FILES})
+        get_filename_component(SHADER_NAME "${SHADER_FILE}" NAME)
+        get_filename_component(SHADER_EXT "${SHADER_FILE}" EXT)
+
+        if(SHADER_EXT STREQUAL ".vert")
+            set(SHADER_TYPE vertex)
+        elseif(SHADER_EXT STREQUAL ".frag")
+            set(SHADER_TYPE fragment)
+        elseif(SHADER_EXT STREQUAL ".comp")
+            set(SHADER_TYPE compute)
+        endif()
+
+        set(OUTPUT_FILE "${CMAKE_BINARY_DIR}/shaders/${SHADER_NAME}.bin")
+        list(APPEND SHADER_OUTPUTS "${OUTPUT_FILE}")
+
+        add_custom_command(
+            OUTPUT "${OUTPUT_FILE}"
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/shaders"
+            COMMAND $<TARGET_FILE:shaderc>
+                -f "${SHADER_FILE}"
+                -i "${bgfx_SOURCE_DIR}/bgfx/src"
+                -i "${bgfx_SOURCE_DIR}/src"
+                -i "${SHADER_SRC_DIR}"
+                --varyingdef "${SHADER_SRC_DIR}/varying.def.sc"
+                -o "${OUTPUT_FILE}"
+                --type ${SHADER_TYPE}
+                --platform vulkan
+                -p spirv
+            DEPENDS "${SHADER_FILE}"
+            VERBATIM
+        )
+    endforeach()
+
+    add_custom_target(Shaders ALL
+        DEPENDS ${SHADER_OUTPUTS}
+    )
+
+    add_dependencies(Engine Shaders)
+
+    add_custom_command(TARGET Engine POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+            "$<TARGET_FILE_DIR:Engine>/shaders"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_BINARY_DIR}/shaders"
+            "$<TARGET_FILE_DIR:Engine>/shaders"
+    )
+endif()
+
+# ---- LINKING ----
 if(WIN32)
     target_link_libraries(Engine PRIVATE Game)
 
@@ -107,24 +180,8 @@ if(WIN32)
         ${OPENAL_PATH}/lib/${ARCH_FOLDER}/OpenAL32.lib
         ${DISCORDRPC_PATH}/lib/${ARCH_FOLDER}/discord-rpc.lib
         ${SENTRY_PATH}/lib/${ARCH_FOLDER}/sentry.lib
-        OpenGL::GL
+        bgfx
         ws2_32
-    )
-elseif(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
-    target_include_directories(Engine PRIVATE /usr/local/include)
-    target_include_directories(Game PRIVATE /usr/local/include)
-    target_link_directories(Engine PRIVATE /usr/local/lib)
-
-    target_link_libraries(Engine PRIVATE -Wl,--whole-archive Game -Wl,--no-whole-archive)
-    target_link_libraries(Engine PRIVATE
-        SDL3
-        SDL3_ttf
-        BulletDynamics
-        BulletCollision
-        LinearMath
-        openal
-        OpenGL::GL
-        pthread
     )
 elseif(UNIX)
     target_link_libraries(Engine PRIVATE -Wl,--whole-archive Game -Wl,--no-whole-archive)
@@ -138,7 +195,7 @@ elseif(UNIX)
         "${DISCORDRPC_PATH}/lib/linux/libdiscord-rpc.a"
         "${SENTRY_PATH}/lib/linux/libsentry.so"
         "${OPENAL_PATH}/lib/Linux/libopenal.a"
-        OpenGL::GL
+        bgfx
         ${CMAKE_DL_LIBS}
         pthread
     )

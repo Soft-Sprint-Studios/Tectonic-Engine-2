@@ -27,75 +27,77 @@
 #include "renderer.h"
 #include "entities.h"
 #include "r_bsp.h"
+#include <glm/gtc/type_ptr.hpp>
 
 void R_Glass::Init(int width, int height)
 {
     m_shader.Load("shaders/glass.vert", "shaders/glass.frag");
+
+    m_sRefractTex = bgfx::createUniform("s_refractTex", bgfx::UniformType::Sampler);
+    m_sNormalMap = bgfx::createUniform("s_normalMap", bgfx::UniformType::Sampler);
+    m_uGlassParams = bgfx::createUniform("u_glassParams", bgfx::UniformType::Vec4);
+
     Rescale(width, height);
 }
 
 void R_Glass::Rescale(int width, int height)
 {
-    if (m_refractTex != 0)
-        glDeleteTextures(1, &m_refractTex);
+    m_width = width;
+    m_height = height;
 
-    glCreateTextures(GL_TEXTURE_2D, 1, &m_refractTex);
-    glTextureStorage2D(m_refractTex, 1, GL_RGB16F, width, height);
-    glTextureParameteri(m_refractTex, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureParameteri(m_refractTex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTextureParameteri(m_refractTex, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTextureParameteri(m_refractTex, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    if (m_fbo == 0)
+    if (bgfx::isValid(m_refractTex))
     {
-        glCreateFramebuffers(1, &m_fbo);
+        bgfx::destroy(m_refractTex);
     }
-    glNamedFramebufferTexture(m_fbo, GL_COLOR_ATTACHMENT0, m_refractTex, 0);
+
+    uint64_t flags = BGFX_TEXTURE_BLIT_DST | BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP;
+    m_refractTex = bgfx::createTexture2D((uint16_t)width, (uint16_t)height, false, 1, bgfx::TextureFormat::RGBA16F, flags);
 }
 
-void R_Glass::CaptureScreen(GLuint screenFBO, int width, int height)
+void R_Glass::CaptureScreen(bgfx::ViewId viewId, bgfx::TextureHandle sceneTex)
 {
-    glBlitNamedFramebuffer(screenFBO, m_fbo, 0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    bgfx::blit(viewId, m_refractTex, 0, 0, sceneTex);
 }
 
-void R_Glass::Draw(const Camera& camera, R_BSP* bsp)
+void R_Glass::Draw(bgfx::ViewId viewId, const Camera& camera, R_BSP* bsp)
 {
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glDepthMask(GL_FALSE);
-
-    m_shader.Bind();
-    m_shader.SetMat4("u_projection", camera.GetProjectionMatrix());
-    m_shader.SetMat4("u_view", camera.GetViewMatrix());
-
-    glBindTextureUnit(10, m_refractTex);
-
     for (auto& ent : EntityManager::GetEntities())
     {
         if (ent->GetClassName() == "func_glass" && ent->IsEnabled())
         {
             std::string normName = ent->GetValue("normal", "water_normal.dds");
             auto normTex = Resources::LoadTexture("textures/" + normName, false);
+            
             if (normTex)
             {
-                normTex->Bind(0);
+                bgfx::setTexture(0, m_sNormalMap, normTex->GetHandle());
             }
 
-            glm::mat4 model = glm::translate(glm::mat4(1.0f), ent->GetOrigin());
-            m_shader.SetMat4("u_model", model);
-            m_shader.SetFloat("u_amount", ent->GetFloat("refractamount", 0.1f));
+            bgfx::setTexture(10, m_sRefractTex, m_refractTex);
 
-            bsp->DrawBModel(ent->GetBModelIndex(), m_shader, model, true);
+            float params[4] = { ent->GetFloat("refractamount", 0.1f), 0.0f, 0.0f, 0.0f };
+            bgfx::setUniform(m_uGlassParams, params);
+
+            glm::mat4 model = glm::translate(glm::mat4(1.0f), ent->GetOrigin());
+            
+            bsp->DrawBModel(ent->GetBModelIndex(), m_shader, viewId, model, camera.position, true);
         }
     }
-
-    glDepthMask(GL_TRUE);
 }
 
 void R_Glass::Shutdown()
 {
-    if (m_fbo) 
-        glDeleteFramebuffers(1, &m_fbo);
-    if (m_refractTex) 
-        glDeleteTextures(1, &m_refractTex);
+    if (bgfx::isValid(m_refractTex))
+    {
+        bgfx::destroy(m_refractTex);
+        m_refractTex = BGFX_INVALID_HANDLE;
+    }
+
+    if (bgfx::isValid(m_sRefractTex))
+    {
+        bgfx::destroy(m_sRefractTex);
+        bgfx::destroy(m_sNormalMap);
+        bgfx::destroy(m_uGlassParams);
+        m_sRefractTex = m_sNormalMap = m_uGlassParams = BGFX_INVALID_HANDLE;
+    }
 }

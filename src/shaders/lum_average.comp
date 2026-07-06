@@ -1,0 +1,38 @@
+#include <bgfx_compute.sh>
+
+BUFFER_RO(b_histogram, uint, 1);
+BUFFER_RW(b_lumData, vec4, 2);
+
+uniform vec4 u_exposureParams1;
+uniform vec4 u_exposureParams2;
+
+NUM_THREADS(1, 1, 1)
+void main() 
+{
+    if (u_exposureParams2.y < 0.5) 
+    {
+        b_lumData[0] = vec4(1.0, 0.0, 0.0, 0.0);
+        return;
+    }
+
+    float count = 0.0;
+    float weightedSum = 0.0;
+    for(int i = 0; i < 256; i++) 
+    {
+        float binVal = float(b_histogram[i]);
+        weightedSum += binVal * float(i);
+        count += binVal;
+    }
+
+    float avgBin = weightedSum / max(count, 1.0);
+    float logLum = (avgBin / 254.0) * 12.0 - 10.0;
+    float sceneLum = exp2(logLum);
+
+    float targetExp = u_exposureParams1.z / max(sceneLum, 0.0001);
+    targetExp = clamp(targetExp, u_exposureParams1.w, u_exposureParams2.x);
+
+    float currentExp = b_lumData[0].x;
+    currentExp += (targetExp - currentExp) * (1.0 - exp(-u_exposureParams1.x * u_exposureParams1.y));
+    
+    b_lumData[0] = vec4(currentExp, 0.0, 0.0, 0.0);
+}

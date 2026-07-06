@@ -24,28 +24,33 @@
 #include "r_cas.h"
 #include "cvar.h"
 #include <algorithm>
-#include <cstring>
+#include <cmath>
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #define A_CPU 1
 #include "ffx_a.h"
 #include "ffx_cas.h"
 
 CVar r_cas("r_cas", "1", "Enable FidelityFX Contrast Adaptive Sharpening.", CVAR_SAVE);
-CVar r_cas_sharpness("r_cas_sharpness", "0.8", "CAS Sharpness intensity (0.0 to 1.0).", CVAR_SAVE);
+CVar r_cas_sharpness("r_cas_sharpness", "0.5", "Sharpness intensity for CAS (0.0 to 1.0).", CVAR_SAVE);
 
-R_CAS::R_CAS()
+R_CAS::R_CAS() 
 {
 }
 
-R_CAS::~R_CAS()
-{
-    Shutdown();
+R_CAS::~R_CAS() 
+{ 
+    Shutdown(); 
 }
 
 bool R_CAS::Init(int width, int height)
 {
-    m_computeShader.LoadCompute("shaders/cas.comp");
-    m_blitShader.Load("shaders/cas_blit.vert", "shaders/cas_blit.frag");
+    m_shader.LoadCompute("shaders/cas.comp");
+
+    m_sInput = bgfx::createUniform("u_input", bgfx::UniformType::Sampler);
+    m_uConst0 = bgfx::createUniform("u_const0", bgfx::UniformType::Vec4);
+    m_uConst1 = bgfx::createUniform("u_const1", bgfx::UniformType::Vec4);
 
     CreateBuffers(width, height);
     return true;
@@ -53,34 +58,17 @@ bool R_CAS::Init(int width, int height)
 
 void R_CAS::CreateBuffers(int width, int height)
 {
-    glCreateFramebuffers(1, &m_inputFbo);
-
-    glCreateTextures(GL_TEXTURE_2D, 1, &m_inputTex);
-    glTextureStorage2D(m_inputTex, 1, GL_RGBA8, width, height);
-    glTextureParameteri(m_inputTex, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureParameteri(m_inputTex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTextureParameteri(m_inputTex, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTextureParameteri(m_inputTex, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glNamedFramebufferTexture(m_inputFbo, GL_COLOR_ATTACHMENT0, m_inputTex, 0);
-
-    glCreateTextures(GL_TEXTURE_2D, 1, &m_outputTex);
-    glTextureStorage2D(m_outputTex, 1, GL_RGBA8, width, height);
-    glTextureParameteri(m_outputTex, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureParameteri(m_outputTex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTextureParameteri(m_outputTex, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTextureParameteri(m_outputTex, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    m_width = width;
+    m_height = height;
+    uint64_t flags = BGFX_TEXTURE_COMPUTE_WRITE | BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP;
+    m_texture = bgfx::createTexture2D((uint16_t)width, (uint16_t)height, false, 1, bgfx::TextureFormat::RGBA16F, flags);
 }
 
 void R_CAS::DeleteBuffers()
 {
-    if (m_inputFbo) 
-        glDeleteFramebuffers(1, &m_inputFbo);
-    if (m_inputTex) 
-        glDeleteTextures(1, &m_inputTex);
-    if (m_outputTex) 
-        glDeleteTextures(1, &m_outputTex);
-
-    m_inputFbo = m_inputTex = m_outputTex = 0;
+    if (bgfx::isValid(m_texture)) 
+        bgfx::destroy(m_texture);
+    m_texture = BGFX_INVALID_HANDLE;
 }
 
 void R_CAS::Rescale(int width, int height)
@@ -92,37 +80,38 @@ void R_CAS::Rescale(int width, int height)
 void R_CAS::Shutdown()
 {
     DeleteBuffers();
+    if (bgfx::isValid(m_sInput))
+    {
+        bgfx::destroy(m_sInput);
+        bgfx::destroy(m_uConst0);
+        bgfx::destroy(m_uConst1);
+        m_sInput = m_uConst0 = m_uConst1 = BGFX_INVALID_HANDLE;
+    }
 }
 
-void R_CAS::Render(GLuint quadVAO, int width, int height)
+void R_CAS::Render(bgfx::ViewId viewId, bgfx::TextureHandle inputTex)
 {
-    m_computeShader.Bind();
+    if (r_cas.GetInt() == 0) 
+        return;
+
+    float sharpness = r_cas_sharpness.GetFloat();
 
     varAU4(const0);
     varAU4(const1);
 
-    CasSetup(const0, const1, r_cas_sharpness.GetFloat(), (float)width, (float)height, (float)width, (float)height);
+    CasSetup(const0, const1, sharpness, (float)m_width, (float)m_height, (float)m_width, (float)m_height);
 
-    glm::vec4 c0(glm::uintBitsToFloat(const0[0]), glm::uintBitsToFloat(const0[1]), glm::uintBitsToFloat(const0[2]), glm::uintBitsToFloat(const0[3]));
-    glm::vec4 c1(glm::uintBitsToFloat(const1[0]), glm::uintBitsToFloat(const1[1]), glm::uintBitsToFloat(const1[2]), glm::uintBitsToFloat(const1[3]));
+    glm::uvec4 const0_u(const0[0], const0[1], const0[2], const0[3]);
+    glm::uvec4 const1_u(const1[0], const1[1], const1[2], const1[3]);
 
-    m_computeShader.SetVec4("u_const0", c0);
-    m_computeShader.SetVec4("u_const1", c1);
+    glm::vec4 c0 = glm::uintBitsToFloat(const0_u);
+    glm::vec4 c1 = glm::uintBitsToFloat(const1_u);
 
-    glBindTextureUnit(0, m_inputTex);
-    glBindImageTexture(1, m_outputTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
+    bgfx::setUniform(m_uConst0, glm::value_ptr(c0));
+    bgfx::setUniform(m_uConst1, glm::value_ptr(c1));
 
-    int groupX = (width + 15) / 16;
-    int groupY = (height + 15) / 16;
+    bgfx::setTexture(0, m_sInput, inputTex);
+    bgfx::setImage(1, m_texture, 0, bgfx::Access::Write, bgfx::TextureFormat::RGBA16F);
 
-    glDispatchCompute(groupX, groupY, 1);
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, width, height);
-
-    m_blitShader.Bind();
-    glBindTextureUnit(0, m_outputTex);
-    glBindVertexArray(quadVAO);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    bgfx::dispatch(viewId, m_shader.GetProgram(), (m_width + 15) / 16, (m_height + 15) / 16, 1);
 }

@@ -24,7 +24,7 @@
 #pragma once
 #include "r_shader.h"
 #include "camera.h"
-#include <glad/glad.h>
+#include <bgfx/bgfx.h>
 #include <string>
 #include <vector>
 
@@ -35,13 +35,21 @@ public:
     ~R_Sky();
 
     bool Init(const std::string& skyName);
-    void Draw(const Camera& camera);
+    void Draw(bgfx::ViewId viewId, const Camera& camera);
     void Shutdown();
 
 private:
-    GLuint m_vao, m_vbo;
-    GLuint m_cubemapTexture;
+    bgfx::VertexBufferHandle m_vbo = BGFX_INVALID_HANDLE;
+    bgfx::TextureHandle m_cubemapTexture = BGFX_INVALID_HANDLE;
+    bgfx::VertexLayout m_layout;
     R_Shader m_shader;
+
+    bgfx::UniformHandle m_sSkybox = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uSkyParams = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uSunDir = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uSunColor = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uViewPos = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uTime = BGFX_INVALID_HANDLE;
 
     void LoadCubemap(const std::string& skyName);
 };

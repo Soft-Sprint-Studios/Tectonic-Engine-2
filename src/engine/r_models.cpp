@@ -32,10 +32,12 @@
 #include "prop_animation.h"
 #include "animation.h"
 #include "gltf.h"
+#include "renderer.h"
 #include <glm/gtc/matrix_transform.hpp>
-#include <glad/glad.h>
+#include <glm/gtc/type_ptr.hpp>
 #include <algorithm>
 #include <filesystem>
+#include <cstring>
 
 R_Models::R_Models()
 {
@@ -50,6 +52,21 @@ R_Models::~R_Models()
 bool R_Models::Init(const BSP::MapData& mapData)
 {
     Shutdown();
+
+    m_layout.begin()
+        .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::Normal, 3, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::Tangent, 4, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::Indices, 4, bgfx::AttribType::Int16, false, false)
+        .add(bgfx::Attrib::Weight, 4, bgfx::AttribType::Float)
+        .end();
+
+    m_uModelParams = bgfx::createUniform("u_modelParams", bgfx::UniformType::Vec4);
+    m_uBones = bgfx::createUniform("u_bones", bgfx::UniformType::Mat4, 128);
+    m_sDiffuse = bgfx::createUniform("s_diffuse", bgfx::UniformType::Sampler);
+    m_sNormal = bgfx::createUniform("s_normal", bgfx::UniformType::Sampler);
+    m_sMRAO = bgfx::createUniform("s_mraohMap", bgfx::UniformType::Sampler);
 
     std::unordered_map<std::string, std::vector<const BSP::StaticPropInstance*>> groupedProps;
     for (const auto& prop : mapData.staticProps)
@@ -71,8 +88,7 @@ bool R_Models::Init(const BSP::MapData& mapData)
             group.hasBumpedLighting = props[0]->hasBumpedLighting || !props[0]->lmDirData[0].empty();
         }
 
-        std::vector<glm::mat4> transforms;
-        transforms.reserve(group.instanceCount);
+        group.transforms.reserve(group.instanceCount);
 
         std::vector<glm::vec4> allUVTransforms;
         for (const auto* prop : props) 
@@ -82,10 +98,15 @@ bool R_Models::Init(const BSP::MapData& mapData)
                 allUVTransforms.push_back(prop->lmUVTransform[i]);
         }
 
-        if (group.hasLightmap) 
+        if (group.hasLightmap && !allUVTransforms.empty()) 
         {
-            glCreateBuffers(1, &group.lmUVSSBO);
-            glNamedBufferData(group.lmUVSSBO, allUVTransforms.size() * sizeof(glm::vec4), allUVTransforms.data(), GL_STATIC_DRAW);
+            bgfx::VertexLayout uvLayout;
+            uvLayout.begin()
+                .add(bgfx::Attrib::Position, 4, bgfx::AttribType::Float)
+                .end();
+
+            const bgfx::Memory* mem = bgfx::copy(allUVTransforms.data(), (uint32_t)(allUVTransforms.size() * sizeof(glm::vec4)));
+            group.lmUVSSBO = bgfx::createVertexBuffer(mem, uvLayout);
         }
 
         glm::vec3 corners[8] =
@@ -112,7 +133,7 @@ bool R_Models::Init(const BSP::MapData& mapData)
             glm::mat4 m_physics = m_visual;
             m_visual = glm::scale(m_visual, glm::vec3(prop->scale));
 
-            transforms.push_back(m_visual);
+            group.transforms.push_back(m_visual);
 
             for (int c = 0; c < 8; c++)
             {
@@ -126,9 +147,6 @@ bool R_Models::Init(const BSP::MapData& mapData)
                 Physics::AddStaticBody(group.physicsShape, m_physics, glm::vec3(prop->scale));
             }
         }
-
-        glCreateBuffers(1, &group.transformSSBO);
-        glNamedBufferData(group.transformSSBO, transforms.size() * sizeof(glm::mat4), transforms.data(), GL_STATIC_DRAW);
     }
 
     return true;
@@ -171,87 +189,35 @@ void R_Models::LoadModel(const std::string& path)
         m.vertexOffset = currentVertexOffset;
         m.vertexCount = (uint32_t)prim.positions.size();
 
-        glCreateVertexArrays(1, &m.vao);
-
-        if (!prim.positions.empty())
+        std::vector<ModelVertex> vertices(prim.positions.size());
+        for (size_t v = 0; v < prim.positions.size(); ++v)
         {
-            GLuint vbo;
-            glCreateBuffers(1, &vbo);
-            glNamedBufferData(vbo, prim.positions.size() * sizeof(glm::vec3), prim.positions.data(), GL_STATIC_DRAW);
-            m.vbos.push_back(vbo);
-            glVertexArrayVertexBuffer(m.vao, 0, vbo, 0, sizeof(glm::vec3));
-            glEnableVertexArrayAttrib(m.vao, 0);
-            glVertexArrayAttribFormat(m.vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
-            glVertexArrayAttribBinding(m.vao, 0, 0);
+            vertices[v].pos = prim.positions[v];
+            vertices[v].normal = !prim.normals.empty() ? prim.normals[v] : glm::vec3(0, 1, 0);
+            vertices[v].tangent = !prim.tangents.empty() ? prim.tangents[v] : glm::vec4(1, 0, 0, 1);
+            vertices[v].uv = !prim.uvs.empty() ? prim.uvs[v] : glm::vec2(0, 0);
+
+            if (!prim.joints.empty())
+            {
+                vertices[v].joints[0] = (int16_t)prim.joints[v].x;
+                vertices[v].joints[1] = (int16_t)prim.joints[v].y;
+                vertices[v].joints[2] = (int16_t)prim.joints[v].z;
+                vertices[v].joints[3] = (int16_t)prim.joints[v].w;
+            }
+            else
+            {
+                std::memset(vertices[v].joints, 0, sizeof(vertices[v].joints));
+            }
+
+            vertices[v].weights = !prim.weights.empty() ? prim.weights[v] : glm::vec4(0.0f);
         }
 
-        if (!prim.uvs.empty())
-        {
-            GLuint vbo;
-            glCreateBuffers(1, &vbo);
-            glNamedBufferData(vbo, prim.uvs.size() * sizeof(glm::vec2), prim.uvs.data(), GL_STATIC_DRAW);
-            m.vbos.push_back(vbo);
-            glVertexArrayVertexBuffer(m.vao, 1, vbo, 0, sizeof(glm::vec2));
-            glEnableVertexArrayAttrib(m.vao, 1);
-            glVertexArrayAttribFormat(m.vao, 1, 2, GL_FLOAT, GL_FALSE, 0);
-            glVertexArrayAttribBinding(m.vao, 1, 1);
-        }
-
-        if (!prim.normals.empty())
-        {
-            GLuint vbo;
-            glCreateBuffers(1, &vbo);
-            glNamedBufferData(vbo, prim.normals.size() * sizeof(glm::vec3), prim.normals.data(), GL_STATIC_DRAW);
-            m.vbos.push_back(vbo);
-            glVertexArrayVertexBuffer(m.vao, 5, vbo, 0, sizeof(glm::vec3));
-            glEnableVertexArrayAttrib(m.vao, 5);
-            glVertexArrayAttribFormat(m.vao, 5, 3, GL_FLOAT, GL_FALSE, 0);
-            glVertexArrayAttribBinding(m.vao, 5, 5);
-        }
-
-        if (!prim.tangents.empty())
-        {
-            GLuint vbo;
-            glCreateBuffers(1, &vbo);
-            glNamedBufferData(vbo, prim.tangents.size() * sizeof(glm::vec4), prim.tangents.data(), GL_STATIC_DRAW);
-            m.vbos.push_back(vbo);
-            glVertexArrayVertexBuffer(m.vao, 6, vbo, 0, sizeof(glm::vec4));
-            glEnableVertexArrayAttrib(m.vao, 6);
-            glVertexArrayAttribFormat(m.vao, 6, 4, GL_FLOAT, GL_FALSE, 0);
-            glVertexArrayAttribBinding(m.vao, 6, 6);
-        }
-
-        if (!prim.joints.empty())
-        {
-            GLuint vbo;
-            glCreateBuffers(1, &vbo);
-            glNamedBufferData(vbo, prim.joints.size() * sizeof(glm::uvec4), prim.joints.data(), GL_STATIC_DRAW);
-            m.vbos.push_back(vbo);
-            glVertexArrayVertexBuffer(m.vao, 7, vbo, 0, sizeof(glm::uvec4));
-            glEnableVertexArrayAttrib(m.vao, 7);
-            glVertexArrayAttribIFormat(m.vao, 7, 4, GL_UNSIGNED_INT, 0);
-            glVertexArrayAttribBinding(m.vao, 7, 7);
-        }
-
-        if (!prim.weights.empty())
-        {
-            GLuint vbo;
-            glCreateBuffers(1, &vbo);
-            glNamedBufferData(vbo, prim.weights.size() * sizeof(glm::vec4), prim.weights.data(), GL_STATIC_DRAW);
-            m.vbos.push_back(vbo);
-            glVertexArrayVertexBuffer(m.vao, 8, vbo, 0, sizeof(glm::vec4));
-            glEnableVertexArrayAttrib(m.vao, 8);
-            glVertexArrayAttribFormat(m.vao, 8, 4, GL_FLOAT, GL_FALSE, 0);
-            glVertexArrayAttribBinding(m.vao, 8, 8);
-        }
+        m.vbo = bgfx::createVertexBuffer(bgfx::copy(vertices.data(), (uint32_t)(vertices.size() * sizeof(ModelVertex))), m_layout);
 
         if (!prim.indices.empty())
         {
-            glCreateBuffers(1, &m.ebo);
-            glNamedBufferData(m.ebo, prim.indices.size() * sizeof(uint32_t), prim.indices.data(), GL_STATIC_DRAW);
-            glVertexArrayElementBuffer(m.vao, m.ebo);
+            m.ebo = bgfx::createIndexBuffer(bgfx::copy(prim.indices.data(), (uint32_t)(prim.indices.size() * sizeof(uint32_t))), BGFX_BUFFER_INDEX32);
             m.indexCount = (uint32_t)prim.indices.size();
-            m.indexType = GL_UNSIGNED_INT;
         }
 
         std::string lookupName = modelName + "/" + prim.materialName;
@@ -271,11 +237,9 @@ void R_Models::LoadModel(const std::string& path)
     m_propGroups[path] = group;
 }
 
-void R_Models::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOnly)
+void R_Models::Draw(bgfx::ViewId viewId, const R_Shader& shader, const Frustum& frustum, bool depthOnly)
 {
     // Render static props
-    shader.SetInt("u_isInstanced", 1);
-
     for (auto& [path, group] : m_propGroups)
     {
         if (group.instanceCount == 0)
@@ -288,12 +252,9 @@ void R_Models::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOn
             continue;
         }
 
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, group.transformSSBO);
-
-        if (!depthOnly)
-        {
-            shader.SetInt("u_totalVertices", group.totalVertices);
-        }
+        uint16_t numInstances = (uint16_t)group.instanceCount;
+        uint16_t instanceStride = 64;
+        float modelParams[4] = { 1.0f, 0.0f, group.hasLightmap ? 1.0f : 0.0f, 0.0f };
 
         for (auto& mesh : group.meshes)
         {
@@ -302,42 +263,35 @@ void R_Models::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOn
                 continue;
             }
 
-            if (depthOnly)
-            {
-                glBindVertexArray(mesh.vao);
-                glDrawElementsInstanced(GL_TRIANGLES, mesh.indexCount, mesh.indexType, 0, group.instanceCount);
-            }
-            else
-            {
-                shader.SetInt("u_totalVertices", group.totalVertices);
+            bgfx::InstanceDataBuffer idb;
+            bgfx::allocInstanceDataBuffer(&idb, numInstances, instanceStride);
+            std::memcpy(idb.data, group.transforms.data(), numInstances * instanceStride);
+            bgfx::setInstanceDataBuffer(&idb, 0, numInstances);
 
-                shader.SetInt("u_hasLM", group.hasLightmap ? 1 : 0);
-                if (group.hasLightmap)
+            bgfx::setUniform(m_uModelParams, modelParams);
+
+            if (!depthOnly)
+            {
+                if (group.hasLightmap && bgfx::isValid(group.lmUVSSBO))
                 {
-                    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, group.lmUVSSBO);
+                    bgfx::setBuffer(7, group.lmUVSSBO, bgfx::Access::Read);
                 }
 
-                for (auto& mesh : group.meshes)
-                {
-                    if (mesh.indexCount == 0) 
-                        continue;
-
-                    glBindVertexArray(mesh.vao);
-                    shader.SetInt("u_vertexOffset", mesh.vertexOffset);
-                    shader.SetFloat("u_heightScale1", mesh.heightScale);
-                    shader.SetInt("u_useBump", group.hasBumpedLighting ? 1 : 0);
-
-                    (mesh.texture ? mesh.texture : Materials::GetTexture(""))->Bind(0);
-                    (mesh.normalMap ? mesh.normalMap : Materials::GetNormalMap(""))->Bind(1);
-                    (mesh.mraohMap ? mesh.mraohMap : Materials::GetMRAOMap(""))->Bind(2);
-
-                    glDrawElementsInstanced(GL_TRIANGLES, mesh.indexCount, mesh.indexType, 0, group.instanceCount);
-                }
+                bgfx::setTexture(0, m_sDiffuse, (mesh.texture ? mesh.texture : Materials::GetTexture(""))->GetHandle());
+                bgfx::setTexture(1, m_sNormal, (mesh.normalMap ? mesh.normalMap : Materials::GetNormalMap(""))->GetHandle());
+                bgfx::setTexture(2, m_sMRAO, (mesh.mraohMap ? mesh.mraohMap : Materials::GetMRAOMap(""))->GetHandle());
             }
+
+            bgfx::setVertexBuffer(0, mesh.vbo);
+            bgfx::setIndexBuffer(mesh.ebo);
+
+            uint64_t state = BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LESS;
+            state |= depthOnly ? 0 : BGFX_STATE_CULL_CW;
+
+            bgfx::setState(state);
+            bgfx::submit(viewId, shader.GetProgram());
         }
     }
-
-    shader.SetInt("u_isInstanced", 0);
 
     // Render Animated Props
     for (auto& ent : EntityManager::GetEntities())
@@ -410,20 +364,19 @@ void R_Models::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOn
         {
             std::vector<glm::mat4> bones;
             Animation::GetSkinMatrices(*data, p->m_nodeStates, bones);
-            DrawSkinned(shader, p->m_modelPath, mat, bones);
+            DrawSkinned(viewId, shader, p->m_modelPath, mat, bones, depthOnly);
         }
         else
         {
-            DrawSkinned(shader, p->m_modelPath, mat * p->m_nodeStates[0].globalMatrix, {});
+            DrawSkinned(viewId, shader, p->m_modelPath, mat * p->m_nodeStates[0].globalMatrix, {}, depthOnly);
         }
     }
 
-    // Render player model
+    // Render Player Model
     for (auto& ent : EntityManager::GetEntities())
     {
         if (ent->IsPlayer() && ent->IsRenderable())
         {
-            // error mdl for now
             std::string modelPath = "models/error.glb";
             LoadModel(modelPath);
 
@@ -435,13 +388,13 @@ void R_Models::Draw(const R_Shader& shader, const Frustum& frustum, bool depthOn
                 mat = glm::rotate(mat, glm::radians(a.y), { 0, 1, 0 });
                 mat = glm::scale(mat, glm::vec3(0.025f));
 
-                DrawSkinned(shader, modelPath, mat, {});
+                DrawSkinned(viewId, shader, modelPath, mat, {}, depthOnly);
             }
         }
     }
 }
 
-void R_Models::DrawSkinned(const R_Shader& shader, const std::string& modelPath, const glm::mat4& transform, const std::vector<glm::mat4>& boneMatrices)
+void R_Models::DrawSkinned(bgfx::ViewId viewId, const R_Shader& shader, const std::string& modelPath, const glm::mat4& transform, const std::vector<glm::mat4>& boneMatrices, bool depthOnly)
 {
     if (m_propGroups.find(modelPath) == m_propGroups.end())
     {
@@ -450,28 +403,34 @@ void R_Models::DrawSkinned(const R_Shader& shader, const std::string& modelPath,
 
     auto& group = m_propGroups[modelPath];
 
-    shader.SetMat4("u_model", transform);
-    shader.SetInt("u_isInstanced", 0);
-    shader.SetInt("u_isAnimated", boneMatrices.empty() ? 0 : 1);
-
-    // For now animated models dont have baked lighting
-    shader.SetInt("u_hasLM", 0);
-
-    for (size_t i = 0; i < boneMatrices.size() && i < 128; ++i)
-    {
-        shader.SetMat4("u_bones[" + std::to_string(i) + "]", boneMatrices[i]);
-    }
-
     for (auto& mesh : group.meshes)
     {
-        glBindVertexArray(mesh.vao);
-        (mesh.texture ? mesh.texture : Materials::GetTexture(""))->Bind(0);
-        (mesh.normalMap ? mesh.normalMap : Materials::GetNormalMap(""))->Bind(1);
-        (mesh.mraohMap ? mesh.mraohMap : Materials::GetMRAOMap(""))->Bind(2);
-        glDrawElements(GL_TRIANGLES, mesh.indexCount, mesh.indexType, 0);
-    }
+        bgfx::setTransform(glm::value_ptr(transform));
 
-    shader.SetInt("u_isAnimated", 0);
+        float modelParams[4] = { 0.0f, boneMatrices.empty() ? 0.0f : 1.0f, 0.0f, 0.0f };
+        bgfx::setUniform(m_uModelParams, modelParams);
+
+        if (!boneMatrices.empty())
+        {
+            bgfx::setUniform(m_uBones, glm::value_ptr(boneMatrices[0]), (uint16_t)std::min(boneMatrices.size(), (size_t)128));
+        }
+
+        bgfx::setVertexBuffer(0, mesh.vbo);
+        bgfx::setIndexBuffer(mesh.ebo);
+
+        if (!depthOnly)
+        {
+            bgfx::setTexture(0, m_sDiffuse, (mesh.texture ? mesh.texture : Materials::GetTexture(""))->GetHandle());
+            bgfx::setTexture(1, m_sNormal, (mesh.normalMap ? mesh.normalMap : Materials::GetNormalMap(""))->GetHandle());
+            bgfx::setTexture(2, m_sMRAO, (mesh.mraohMap ? mesh.mraohMap : Materials::GetMRAOMap(""))->GetHandle());
+        }
+
+        uint64_t state = BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LESS;
+        state |= depthOnly ? 0 : BGFX_STATE_CULL_CW;
+
+        bgfx::setState(state);
+        bgfx::submit(viewId, shader.GetProgram());
+    }
 }
 
 GLTF::ModelData* R_Models::GetModelData(const std::string& path)
@@ -494,20 +453,26 @@ void R_Models::Shutdown()
     {
         for (auto& mesh : group.meshes)
         {
-            if (mesh.vao != 0)
-                glDeleteVertexArrays(1, &mesh.vao);
-            if (!mesh.vbos.empty())
-                glDeleteBuffers((GLsizei)mesh.vbos.size(), mesh.vbos.data());
-            if (mesh.ebo != 0)
-                glDeleteBuffers(1, &mesh.ebo);
+            if (bgfx::isValid(mesh.vbo))
+                bgfx::destroy(mesh.vbo);
+            if (bgfx::isValid(mesh.ebo))
+                bgfx::destroy(mesh.ebo);
         }
 
-        if (group.transformSSBO != 0)
-            glDeleteBuffers(1, &group.transformSSBO);
-        if (group.lmUVSSBO != 0)
-            glDeleteBuffers(1, &group.lmUVSSBO);
+        if (bgfx::isValid(group.lmUVSSBO))
+            bgfx::destroy(group.lmUVSSBO);
 
         group.physicsShape = nullptr;
+    }
+
+    if (bgfx::isValid(m_uModelParams))
+    {
+        bgfx::destroy(m_uModelParams);
+        bgfx::destroy(m_uBones);
+        bgfx::destroy(m_sDiffuse);
+        bgfx::destroy(m_sNormal);
+        bgfx::destroy(m_sMRAO);
+        m_uModelParams = m_uBones = BGFX_INVALID_HANDLE;
     }
 
     m_propGroups.clear();

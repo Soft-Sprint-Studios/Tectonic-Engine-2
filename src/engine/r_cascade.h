@@ -24,12 +24,9 @@
 #pragma once
 #include "camera.h"
 #include "r_shader.h"
-#include <glad/glad.h>
+#include <bgfx/bgfx.h>
 #include <glm/glm.hpp>
 #include <vector>
-
-class R_BSP;
-class R_Models;
 
 class R_Cascade
 {
@@ -43,28 +40,27 @@ public:
     void Render(const Camera& camera, R_Shader& shadowShader, class Renderer* renderer);
     void Bind(R_Shader& shader, const glm::vec3& sunColor, const glm::vec3& sunDir, bool enabled, float sunVolIntensity, int sunVolSteps);
 
+    bgfx::TextureHandle GetTexArray() const 
+    { 
+        return m_texArray; 
+    }
+
 private:
     void UpdateMatrices(const Camera& cam, const glm::vec3& sunDir);
     std::vector<glm::vec4> GetFrustumCornersWorldSpace(const glm::mat4& proj, const glm::mat4& view);
 
-    GLuint m_fbo = 0;
-    GLuint m_texArray = 0;
-    GLuint m_dummyTex = 0;
-    GLuint m_sunSSBO = 0;
-
-    struct GPUSunData 
-    {
-        glm::mat4 matrices[4];
-        glm::vec4 splits;
-        glm::vec4 sunDir_vol;
-        glm::vec4 sunColor_en;
-        float split4;
-        float volSteps;
-        float pad[2];
-    };
+    bgfx::FrameBufferHandle m_fbo[4];
+    bgfx::TextureHandle m_texArray = BGFX_INVALID_HANDLE;
+    bgfx::TextureHandle m_dummyTex = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uSunMatrices = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uSunSplitsLow = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uSunDirVol = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uSunColorEn = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uCsmParams = BGFX_INVALID_HANDLE;
 
     int m_resolution;
-
     std::vector<glm::mat4> m_matrices;
+    std::vector<glm::mat4> m_viewMatrices;
+    std::vector<glm::mat4> m_projMatrices;
     std::vector<float> m_splits;
 };

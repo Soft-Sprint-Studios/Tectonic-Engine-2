@@ -1,0 +1,42 @@
+#include <bgfx_compute.sh>
+
+SAMPLER2D(s_aoTex, 0);
+IMAGE2D_WO(s_destination, r8, 1);
+
+uniform vec4 u_blurParams;
+#define u_horizontal (u_blurParams.x > 0.5)
+
+const float weight[5] = { 0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216 };
+
+NUM_THREADS(16, 16, 1)
+void main()
+{
+    ivec2 pos = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 size = imageSize(s_destination);
+    if (pos.x >= size.x || pos.y >= size.y)
+        return;
+
+    vec2 uv = (vec2(pos) + 0.5) / vec2(size);
+    vec2 tex_offset = vec2_splat(1.0) / vec2(textureSize(s_aoTex, 0));
+
+    float result = texture2D(s_aoTex, uv).r * weight[0];
+
+    if (u_horizontal)
+    {
+        for (int i = 1; i < 5; ++i)
+        {
+            result += texture2DLod(s_aoTex, uv + vec2(tex_offset.x * float(i), 0.0), 0.0).r * weight[i];
+            result += texture2DLod(s_aoTex, uv - vec2(tex_offset.x * float(i), 0.0), 0.0).r * weight[i];
+        }
+    }
+    else
+    {
+        for (int i = 1; i < 5; ++i)
+        {
+            result += texture2DLod(s_aoTex, uv + vec2(0.0, tex_offset.y * float(i)), 0.0).r * weight[i];
+            result += texture2DLod(s_aoTex, uv - vec2(0.0, tex_offset.y * float(i)), 0.0).r * weight[i];
+        }
+    }
+
+    imageStore(s_destination, pos, vec4_splat(result));
+}

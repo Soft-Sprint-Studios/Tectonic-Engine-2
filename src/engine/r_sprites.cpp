@@ -23,10 +23,16 @@
  */
 #include "r_sprites.h"
 #include "materials.h"
+#include <glm/gtc/type_ptr.hpp>
 
 void R_Sprites::Init()
 {
     m_shader.Load("shaders/sprite.vert", "shaders/sprite.frag");
+
+    m_layout.begin()
+        .add(bgfx::Attrib::Position, 2, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
+        .end();
 
     float quad[] = 
     {
@@ -38,38 +44,35 @@ void R_Sprites::Init()
          0.5f,  0.5f, 1.0f, 1.0f
     };
 
-    glCreateVertexArrays(1, &m_vao);
-    glCreateBuffers(1, &m_vbo);
-    glNamedBufferData(m_vbo, sizeof(quad), quad, GL_STATIC_DRAW);
+    m_vbo = bgfx::createVertexBuffer(bgfx::copy(quad, sizeof(quad)), m_layout);
 
-    glVertexArrayVertexBuffer(m_vao, 0, m_vbo, 0, 4 * sizeof(float));
-
-    glEnableVertexArrayAttrib(m_vao, 0);
-    glVertexArrayAttribFormat(m_vao, 0, 2, GL_FLOAT, GL_FALSE, 0);
-    glVertexArrayAttribBinding(m_vao, 0, 0);
-
-    glEnableVertexArrayAttrib(m_vao, 1);
-    glVertexArrayAttribFormat(m_vao, 1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float));
-    glVertexArrayAttribBinding(m_vao, 1, 0);
+    m_sTexture = bgfx::createUniform("s_texture", bgfx::UniformType::Sampler);
+    m_uColor = bgfx::createUniform("u_color", bgfx::UniformType::Vec4);
+    m_uSpriteParams = bgfx::createUniform("u_spriteParams", bgfx::UniformType::Vec4);
+    m_uViewRightLocal = bgfx::createUniform("u_viewRightLocal", bgfx::UniformType::Vec4);
+    m_uViewUpLocal = bgfx::createUniform("u_viewUpLocal", bgfx::UniformType::Vec4);
+    m_uWorldPosLocal = bgfx::createUniform("u_worldPosLocal", bgfx::UniformType::Vec4);
 }
 
-void R_Sprites::Draw(const Camera& camera, const std::vector<std::shared_ptr<Sprite>>& sprites)
+void R_Sprites::Draw(bgfx::ViewId viewId, const Camera& camera, const std::vector<std::shared_ptr<Sprite>>& sprites)
 {
     if (sprites.empty()) 
         return;
 
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    
-    m_shader.Bind();
-    m_shader.SetMat4("u_view", camera.GetViewMatrix());
-    m_shader.SetMat4("u_projection", camera.GetProjectionMatrix());
+    uint64_t state = BGFX_STATE_WRITE_RGB 
+                   | BGFX_STATE_WRITE_A 
+                   | BGFX_STATE_DEPTH_TEST_LESS 
+                   | BGFX_STATE_BLEND_ALPHA;
 
     glm::mat4 v = camera.GetViewMatrix();
-    m_shader.SetVec3("u_viewRight", { v[0][0], v[1][0], v[2][0] });
-    m_shader.SetVec3("u_viewUp", { v[0][1], v[1][1], v[2][1] });
+    float viewRight[4] = { v[0][0], v[1][0], v[2][0], 0.0f };
+    float viewUp[4] = { v[0][1], v[1][1], v[2][1], 0.0f };
 
-    glBindVertexArray(m_vao);
+    bgfx::setUniform(m_uViewRightLocal, viewRight);
+    bgfx::setUniform(m_uViewUpLocal, viewUp);
+
+    glm::mat4 identity(1.0f);
+
     for (const auto& sprite : sprites)
     {
         if (!sprite->IsActive()) 
@@ -79,21 +82,37 @@ void R_Sprites::Draw(const Camera& camera, const std::vector<std::shared_ptr<Spr
         auto tex = Materials::GetTexture(def.textureName);
         if (tex)
         {
-            tex->Bind(0);
-            m_shader.SetVec3("u_worldPos", sprite->GetPosition());
-            m_shader.SetVec2("u_scale", def.scale);
-            m_shader.SetVec4("u_color", def.color);
-            m_shader.SetInt("u_cylindrical", def.cylindrical ? 1 : 0);
-            glDrawArrays(GL_TRIANGLES, 0, 6);
+            bgfx::setTransform(glm::value_ptr(identity));
+
+            bgfx::setTexture(0, m_sTexture, tex->GetHandle());
+
+            float worldPos[4] = { sprite->GetPosition().x, sprite->GetPosition().y, sprite->GetPosition().z, 0.0f };
+            bgfx::setUniform(m_uWorldPosLocal, worldPos);
+
+            float spriteParams[4] = { def.scale.x, def.scale.y, def.cylindrical ? 1.0f : 0.0f, 0.0f };
+            bgfx::setUniform(m_uSpriteParams, spriteParams);
+            bgfx::setUniform(m_uColor, glm::value_ptr(def.color));
+
+            bgfx::setVertexBuffer(0, m_vbo);
+            bgfx::setState(state);
+            bgfx::submit(viewId, m_shader.GetProgram());
         }
     }
-    glDisable(GL_BLEND);
 }
 
 void R_Sprites::Shutdown()
 {
-    if (m_vao) 
-        glDeleteVertexArrays(1, &m_vao);
-    if (m_vbo) 
-        glDeleteBuffers(1, &m_vbo);
+    if (bgfx::isValid(m_vbo)) 
+        bgfx::destroy(m_vbo);
+    if (bgfx::isValid(m_sTexture))
+    {
+        bgfx::destroy(m_sTexture);
+        bgfx::destroy(m_uColor);
+        bgfx::destroy(m_uSpriteParams);
+        bgfx::destroy(m_uViewRightLocal);
+        bgfx::destroy(m_uViewUpLocal);
+        bgfx::destroy(m_uWorldPosLocal);
+    }
+    m_vbo = BGFX_INVALID_HANDLE;
+    m_sTexture = BGFX_INVALID_HANDLE;
 }

@@ -26,6 +26,7 @@
 #include "bsploader.h"
 #include "r_shader.h"
 #include "r_texture.h"
+#include <bgfx/bgfx.h>
 #include <vector>
 #include <string>
 #include <unordered_map>
@@ -33,13 +34,21 @@
 #include <glm/glm.hpp>
 #include <btBulletDynamicsCommon.h>
 
+struct ModelVertex
+{
+    glm::vec3 pos;
+    glm::vec3 normal;
+    glm::vec4 tangent;
+    glm::vec2 uv;
+    int16_t joints[4];
+    glm::vec4 weights;
+};
+
 struct ModelMesh
 {
-    uint32_t vao = 0;
-    std::vector<uint32_t> vbos;
-    uint32_t ebo = 0;
+    bgfx::VertexBufferHandle vbo = BGFX_INVALID_HANDLE;
+    bgfx::IndexBufferHandle ebo = BGFX_INVALID_HANDLE;
     uint32_t indexCount = 0;
-    uint32_t indexType = 0;
     std::shared_ptr<R_Texture> texture;
     std::shared_ptr<R_Texture> normalMap;
     std::shared_ptr<R_Texture> mraohMap;
@@ -55,16 +64,12 @@ public:
     ~R_Models();
 
     bool Init(const BSP::MapData& mapData);
-
     void LoadModel(const std::string& path);
+    void Draw(bgfx::ViewId viewId, const R_Shader& shader, const Frustum& frustum, bool depthOnly = false);
+    void DrawSkinned(bgfx::ViewId viewId, const R_Shader& shader, const std::string& modelPath, const glm::mat4& transform, const std::vector<glm::mat4>& boneMatrices, bool depthOnly = false);
 
-    void Draw(const R_Shader& shader, const Frustum& frustum, bool depthOnly = false);
-    void DrawSkinned(const R_Shader& shader, const std::string& modelPath, const glm::mat4& transform, const std::vector<glm::mat4>& boneMatrices);
-
-    // For animated models
     GLTF::ModelData* GetModelData(const std::string& path);
     btCollisionShape* GetPhysicsShape(const std::string& path);
-
     void Shutdown();
 
 private:
@@ -73,12 +78,11 @@ private:
     struct PropGroup
     {
         std::vector<ModelMesh> meshes;
-
         uint32_t instanceCount = 0;
         uint32_t totalVertices = 0;
 
-        GLuint transformSSBO = 0;
-        GLuint lmUVSSBO = 0;
+        std::vector<glm::mat4> transforms;
+        bgfx::VertexBufferHandle lmUVSSBO = BGFX_INVALID_HANDLE;
         bool hasLightmap = false;
         bool hasBumpedLighting = false;
 
@@ -90,4 +94,11 @@ private:
     };
 
     std::unordered_map<std::string, PropGroup> m_propGroups;
+    bgfx::VertexLayout m_layout;
+
+    bgfx::UniformHandle m_uModelParams = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uBones = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sDiffuse = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sNormal = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sMRAO = BGFX_INVALID_HANDLE;
 };

@@ -27,58 +27,57 @@
 #include "entities.h"
 #include "func_interior_parallax.h"
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 void R_InteriorParallax::Init()
 {
     m_shader.Load("shaders/interior_parallax.vert", "shaders/interior_parallax.frag");
+    m_sInteriorCube = bgfx::createUniform("s_interiorCube", bgfx::UniformType::Sampler);
+    m_uRoomParams = bgfx::createUniform("u_roomParams", bgfx::UniformType::Vec4);
+    m_uViewPos = bgfx::createUniform("u_viewPos", bgfx::UniformType::Vec4);
 }
 
-GLuint R_InteriorParallax::GetCubemap(const std::string& name)
+bgfx::TextureHandle R_InteriorParallax::GetCubemap(const std::string& name)
 {
     if (m_cubemapCache.count(name)) 
         return m_cubemapCache[name];
 
-    GLuint tex;
-    glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &tex);
-    glTextureStorage2D(tex, 10, GL_SRGB8_ALPHA8, 512, 512);
-
     std::vector<std::string> faces = { "right", "left", "top", "bottom", "front", "back" };
-    for (unsigned int i = 0; i < faces.size(); i++)
+    std::vector<uint8_t> allData;
+    uint32_t width = 512, height = 512;
+    bool first = true;
+
+    for (unsigned int i = 0; i < 6; i++)
     {
         std::string path = "textures/interiors/" + name + "_" + faces[i] + ".dds";
 
         DDS::ImageInfo info;
         if (DDS::Load(path, true, info) && !info.mips.empty())
         {
-            glTextureSubImage3D(tex, 0, 0, 0, i, info.width, info.height, 1, GL_RGBA, GL_UNSIGNED_BYTE, &info.data[info.mips[0].offset]);
+            if (first) 
+            { 
+                width = info.width; 
+                height = info.height; 
+                first = false; 
+            }
+            allData.insert(allData.end(), info.data.begin() + info.mips[0].offset, info.data.begin() + info.mips[0].offset + info.mips[0].size);
         }
         else
         {
-            uint8_t black[4] = { 0, 0, 0, 255 };
-            glTextureSubImage3D(tex, 0, 0, 0, i, 1, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, black);
+            std::vector<uint8_t> black(width * height * 4, 0);
+            allData.insert(allData.end(), black.begin(), black.end());
         }
     }
 
-    glTextureParameteri(tex, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTextureParameteri(tex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTextureParameteri(tex, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTextureParameteri(tex, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTextureParameteri(tex, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glGenerateTextureMipmap(tex);
-
+    const bgfx::Memory* mem = bgfx::copy(allData.data(), (uint32_t)allData.size());
+    bgfx::TextureHandle tex = bgfx::createTextureCube((uint16_t)width, false, 1, bgfx::TextureFormat::RGBA8, BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP, mem);
     m_cubemapCache[name] = tex;
     return tex;
 }
 
-void R_InteriorParallax::Draw(const Camera& camera, R_BSP* bsp)
+void R_InteriorParallax::Draw(bgfx::ViewId viewId, const Camera& camera, R_BSP* bsp)
 {
-    glEnable(GL_DEPTH_TEST);
-    glDepthMask(GL_TRUE);
-
-    m_shader.Bind();
-    m_shader.SetMat4("u_view", camera.GetViewMatrix());
-    m_shader.SetMat4("u_projection", camera.GetProjectionMatrix());
-    m_shader.SetVec3("u_viewPos", camera.position);
+    float vp[4] = { camera.position.x, camera.position.y, camera.position.z, 0.0f };
 
     for (const auto& ent : EntityManager::GetEntities())
     {
@@ -86,17 +85,22 @@ void R_InteriorParallax::Draw(const Camera& camera, R_BSP* bsp)
         {
             auto* p = static_cast<FuncInteriorParallax*>(ent.get());
             
-            glBindTextureUnit(0, GetCubemap(p->GetCubemapName()));
+            bgfx::TextureHandle cubemap = GetCubemap(p->GetCubemapName());
+            bgfx::setTexture(0, m_sInteriorCube, cubemap);
 
-            m_shader.SetVec3("u_roomSize", p->GetRoomSize());
-            
+            bgfx::setUniform(m_uViewPos, vp);
+
+            glm::vec3 roomSize = p->GetRoomSize();
+            float params[4] = { roomSize.x, roomSize.y, roomSize.z, 0.0f };
+            bgfx::setUniform(m_uRoomParams, params);
+
             glm::mat4 model = glm::translate(glm::mat4(1.0f), ent->GetOrigin());
             glm::vec3 ang = ent->GetAngles();
             model = glm::rotate(model, glm::radians(ang.y), glm::vec3(0, 1, 0));
             model = glm::rotate(model, glm::radians(ang.x), glm::vec3(1, 0, 0));
             model = glm::rotate(model, glm::radians(ang.z), glm::vec3(0, 0, 1));
 
-            bsp->DrawBModel(ent->GetBModelIndex(), m_shader, model, true);
+            bsp->DrawBModel(ent->GetBModelIndex(), m_shader, viewId, model, camera.position, true);
         }
     }
 }
@@ -105,7 +109,16 @@ void R_InteriorParallax::Shutdown()
 {
     for (auto& pair : m_cubemapCache) 
     {
-        glDeleteTextures(1, &pair.second);
+        if (bgfx::isValid(pair.second)) 
+            bgfx::destroy(pair.second);
     }
     m_cubemapCache.clear();
+
+    if (bgfx::isValid(m_sInteriorCube))
+    {
+        bgfx::destroy(m_sInteriorCube);
+        bgfx::destroy(m_uRoomParams);
+        bgfx::destroy(m_uViewPos);
+        m_sInteriorCube = m_uRoomParams = m_uViewPos = BGFX_INVALID_HANDLE;
+    }
 }

@@ -1,0 +1,13 @@
+#include <bgfx_compute.sh>
+
+BUFFER_RW(b_histogram, uint, 0);
+
+NUM_THREADS(64, 1, 1)
+void main() 
+{
+    uint idx = gl_GlobalInvocationID.x;
+    if (idx < 256u) 
+    {
+        b_histogram[idx] = 0u;
+    }
+}

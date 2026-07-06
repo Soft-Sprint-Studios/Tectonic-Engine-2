@@ -24,7 +24,9 @@
 #pragma once
 #include "r_shader.h"
 #include "camera.h"
-#include <glad/glad.h>
+#include <bgfx/bgfx.h>
+#include <memory>
+#include <vector>
 
 class R_Particles
 {
@@ -33,17 +35,20 @@ public:
     ~R_Particles();
 
     bool Init();
-    void Draw(const Camera& camera, uint32_t depthTex);
+    void Draw(bgfx::ViewId viewId, const Camera& camera);
     void Shutdown();
 
 private:
-    R_Shader m_shader;
-    GLuint m_vao, m_vbo;
-
-    struct PVertex
+    struct ParticleVertex
     {
-        glm::vec3 pos;
-        glm::vec4 col;
-        float size;
+        float x, y, z;
+        float r, g, b, a;
+        float u, v;
     };
+
+    R_Shader m_shader;
+    bgfx::VertexLayout m_layout;
+
+    bgfx::UniformHandle m_sTexture = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uParticleParams = BGFX_INVALID_HANDLE;
 };

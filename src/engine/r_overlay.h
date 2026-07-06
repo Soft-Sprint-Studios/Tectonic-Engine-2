@@ -23,17 +23,19 @@
  */
 #pragma once
 #include "r_shader.h"
-#include <glad/glad.h>
+#include <bgfx/bgfx.h>
 
 class R_Overlay
 {
 public:
     void Init();
-    void Draw();
+    void Draw(bgfx::ViewId viewId);
     void Shutdown();
 
 private:
     R_Shader m_shader;
-    GLuint m_vao = 0;
-    GLuint m_vbo = 0;
+    bgfx::VertexLayout m_layout;
+
+    bgfx::UniformHandle m_sTexture = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uOverlayParams = BGFX_INVALID_HANDLE;
 };

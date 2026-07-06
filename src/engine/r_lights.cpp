@@ -22,22 +22,40 @@
  * SOFTWARE.
  */
 #include "r_lights.h"
-#include "dynamic_light.h"
 #include "dynamic_sky.h"
-#include "r_bsp.h"
-#include "r_models.h"
-#include "r_sky.h"
 #include "renderer.h"
 #include "cvar.h"
-#include <string>
+#include <algorithm>
+#include <cstring>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 CVar r_shadows("r_shadows", "1", "Global toggle for dynamic shadows.", CVAR_SAVE);
 CVar r_csm("r_csm", "1", "Enable Cascaded Shadow Maps for the sun.", CVAR_SAVE);
 CVar r_csm_res("r_csm_res", "4096", "Resolution of the CSM shadow map array.", CVAR_SAVE);
 
-R_Lights::R_Lights() : m_SpotShadow(0), m_PointShadow(0)
+R_Lights::R_Lights()
 {
+    m_pointLightSSBO = BGFX_INVALID_HANDLE;
+    m_spotLightSSBO = BGFX_INVALID_HANDLE;
+    m_SpotShadow = BGFX_INVALID_HANDLE;
+    m_PointShadow = BGFX_INVALID_HANDLE;
+    m_shadowDepthTex = BGFX_INVALID_HANDLE;
+    m_PointDepth = BGFX_INVALID_HANDLE;
+
+    m_sSpotShadowMaps = BGFX_INVALID_HANDLE;
+    m_sPointShadowMaps = BGFX_INVALID_HANDLE;
+    m_uLightParams = BGFX_INVALID_HANDLE;
+    m_uShadowParams = BGFX_INVALID_HANDLE;
+
+    for (int i = 0; i < 8; i++)
+    {
+        m_spotFB[i] = BGFX_INVALID_HANDLE;
+        for (int j = 0; j < 6; j++)
+        {
+            m_pointFB[i][j] = BGFX_INVALID_HANDLE;
+        }
+    }
 }
 
 R_Lights::~R_Lights()
@@ -50,39 +68,50 @@ bool R_Lights::Init()
     Shutdown();
     m_nextSpotLayer = 0;
     m_nextPointLayer = 0;
+
     m_shadowSpotShader.Load("shaders/shadow_spot.vert", "shaders/shadow_spot.frag");
-    m_shadowCascadeShader.Load("shaders/shadow_cascade.vert", "shaders/shadow_cascade.frag", "shaders/shadow_cascade.geom");
-    m_shadowPointShader.Load("shaders/shadow_point.vert", "shaders/shadow_point.frag", "shaders/shadow_point.geom");
+    m_shadowCascadeShader.Load("shaders/shadow_cascade.vert", "shaders/shadow_cascade.frag");
+    m_shadowPointShader.Load("shaders/shadow_point.vert", "shaders/shadow_point.frag");
 
     m_cascade = std::make_unique<R_Cascade>();
-    m_cascade->Init(r_csm_res.GetInt());
+    m_cascade->Init();
 
-    glCreateFramebuffers(1, &m_shadowFBO);
+    uint64_t depthRtFlags = BGFX_TEXTURE_RT | BGFX_SAMPLER_U_BORDER | BGFX_SAMPLER_V_BORDER;
+    uint64_t colorRtFlags = BGFX_TEXTURE_RT | BGFX_SAMPLER_U_BORDER | BGFX_SAMPLER_V_BORDER;
 
-    glCreateTextures(GL_TEXTURE_2D, 1, &m_shadowDepthTex);
-    glTextureStorage2D(m_shadowDepthTex, 1, GL_DEPTH_COMPONENT24, 256, 256);
+    m_shadowDepthTex = bgfx::createTexture2D(256, 256, false, 8, bgfx::TextureFormat::D16, depthRtFlags);
+    m_PointDepth = bgfx::createTexture2D(256, 256, false, 48, bgfx::TextureFormat::D16, depthRtFlags);
 
-    glCreateTextures(GL_TEXTURE_CUBE_MAP_ARRAY, 1, &m_PointDepth);
-    glTextureStorage3D(m_PointDepth, 1, GL_DEPTH_COMPONENT24, 256, 256, 32 * 6);
+    m_SpotShadow = bgfx::createTexture2D(256, 256, false, 8, bgfx::TextureFormat::RG16F, colorRtFlags);
+    m_PointShadow = bgfx::createTexture2D(256, 256, false, 48, bgfx::TextureFormat::RG16F, colorRtFlags);
 
-    glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &m_SpotShadow);
-    glTextureStorage3D(m_SpotShadow, 1, GL_RG16F, 256, 256, 32);
+    for (int i = 0; i < 8; i++)
+    {
+        bgfx::Attachment at[2];
+        at[0].init(m_SpotShadow, bgfx::Access::Write, (uint16_t)i);
+        at[1].init(m_shadowDepthTex, bgfx::Access::Write, (uint16_t)i, 1, 0, BGFX_RESOLVE_NONE);
+        m_spotFB[i] = bgfx::createFrameBuffer(2, at);
+    }
 
-    const GLfloat spotClear[2] = { 1e10f, 1e20f };
-    glClearTexImage(m_SpotShadow, 0, GL_RG, GL_FLOAT, spotClear);
-    glTextureParameteri(m_SpotShadow, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureParameteri(m_SpotShadow, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    for (int i = 0; i < 8; i++)
+    {
+        for (int face = 0; face < 6; face++)
+        {
+            bgfx::Attachment at[2];
+            at[0].init(m_PointShadow, bgfx::Access::Write, (uint16_t)(i * 6 + face));
+            at[1].init(m_PointDepth, bgfx::Access::Write, (uint16_t)(i * 6 + face), 1, 0, BGFX_RESOLVE_NONE);
+            m_pointFB[i][face] = bgfx::createFrameBuffer(2, at);
+        }
+    }
 
-    glCreateTextures(GL_TEXTURE_CUBE_MAP_ARRAY, 1, &m_PointShadow);
-    glTextureStorage3D(m_PointShadow, 1, GL_RG16F, 256, 256, 32 * 6);
+    m_sCsmArray = bgfx::createUniform("u_csmArray", bgfx::UniformType::Sampler);
+    m_sSpotShadowMaps = bgfx::createUniform("u_spotShadowMaps", bgfx::UniformType::Sampler);
+    m_sPointShadowMaps = bgfx::createUniform("u_pointShadowMaps", bgfx::UniformType::Sampler);
+    m_uLightParams = bgfx::createUniform("u_lightParams", bgfx::UniformType::Vec4);
+    m_uShadowParams = bgfx::createUniform("u_shadowParams", bgfx::UniformType::Vec4);
 
-    const GLfloat pointClear[2] = { 1e10f, 1e20f };
-    glClearTexImage(m_PointShadow, 0, GL_RG, GL_FLOAT, pointClear);
-    glTextureParameteri(m_PointShadow, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureParameteri(m_PointShadow, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    glCreateBuffers(1, &m_lightSSBO);
-    glNamedBufferData(m_lightSSBO, 64 * sizeof(GPULight), NULL, GL_DYNAMIC_DRAW);
+    m_pointLightSSBO = bgfx::createDynamicIndexBuffer(288, BGFX_BUFFER_COMPUTE_READ | BGFX_BUFFER_INDEX32);
+    m_spotLightSSBO = bgfx::createDynamicIndexBuffer(288, BGFX_BUFFER_COMPUTE_READ | BGFX_BUFFER_INDEX32);
 
     return true;
 }
@@ -93,28 +122,28 @@ void R_Lights::SetupShadowMap(std::shared_ptr<DynamicLight> light)
     if (def.shadowLayer != -1) 
         return;
 
-    if (def.type == LightType::Spot && m_nextSpotLayer < 32)
+    if (def.type == LightType::Spot && m_nextSpotLayer < 8)
         def.shadowLayer = m_nextSpotLayer++;
-    else if (def.type == LightType::Point && m_nextPointLayer < 32)
+    else if (def.type == LightType::Point && m_nextPointLayer < 8)
         def.shadowLayer = m_nextPointLayer++;
 }
 
 void R_Lights::RenderShadowMaps(Camera& camera, Renderer* renderer)
 {
-    // CSM
     const auto& sky = DynamicSky::GetSettings();
-    if (r_shadows.GetInt() > 0 && r_csm.GetInt() > 0 && sky.hasCSM)
+    if (CVar::GetInt("r_shadows") > 0 && CVar::GetInt("r_csm") > 0 && sky.hasCSM)
     {
         m_cascade->Render(camera, m_shadowCascadeShader, renderer);
     }
 
     const auto& lights = DynamicLights::GetActiveLights();
+    bgfx::ViewId shadowViewBase = RenderView::ShadowBase;
 
     for (auto& light : lights)
     {
         auto& def = const_cast<DynamicLightDef&>(light->GetDef());
 
-        if (r_shadows.GetInt() == 0) 
+        if (CVar::GetInt("r_shadows") == 0) 
         {
             def.shadowRendered = false;
             continue;
@@ -125,7 +154,6 @@ void R_Lights::RenderShadowMaps(Camera& camera, Renderer* renderer)
             continue;
         }
 
-        // If we have static shadowmaps dont draw anymore
         if (def.isStaticShadow && def.shadowRendered)
         {
             continue;
@@ -135,19 +163,13 @@ void R_Lights::RenderShadowMaps(Camera& camera, Renderer* renderer)
         if (def.shadowLayer == -1) 
             continue;
 
-        glViewport(0, 0, 256, 256);
-        glBindFramebuffer(GL_FRAMEBUFFER, m_shadowFBO);
-
         if (def.type == LightType::Spot)
         {
-            glNamedFramebufferTextureLayer(m_shadowFBO, GL_COLOR_ATTACHMENT0, m_SpotShadow, 0, def.shadowLayer);
-            glNamedFramebufferTexture(m_shadowFBO, GL_DEPTH_ATTACHMENT, m_shadowDepthTex, 0);
-            glClearColor(1e10f, 1e20f, 0.0f, 0.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            bgfx::ViewId viewId = shadowViewBase++;
+            bgfx::setViewClear(viewId, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0xFFFFFFFF, 1.0f, 0);
+            bgfx::setViewRect(viewId, 0, 0, 256, 256);
+            bgfx::setViewFrameBuffer(viewId, m_spotFB[def.shadowLayer]);
 
-            m_shadowSpotShader.Bind();
-
-            // Create temporary camera for the light
             Camera lightCam(def.outerAngle * 2.0f, 1.0f, 0.1f, def.radius);
             lightCam.position = light->GetPosition();
 
@@ -155,36 +177,22 @@ void R_Lights::RenderShadowMaps(Camera& camera, Renderer* renderer)
             lightCam.pitch = glm::degrees(asin(dir.y));
             lightCam.yaw = glm::degrees(atan2(dir.z, dir.x));
 
-            const_cast<DynamicLightDef&>(def).lightSpaceMatrix = lightCam.GetProjectionMatrix() * lightCam.GetViewMatrix();
+            def.lightSpaceMatrix = lightCam.GetProjectionMatrix() * lightCam.GetViewMatrix();
             Frustum lightFrustum = lightCam.GetFrustum();
 
-            m_shadowSpotShader.SetMat4("u_lightSpaceMatrix", def.lightSpaceMatrix);
-            m_shadowSpotShader.SetMat4("u_model", glm::mat4(1.0f));
-            m_shadowSpotShader.SetVec3("u_lightPos", light->GetPosition());
-            m_shadowSpotShader.SetFloat("u_farPlane", def.radius);
+            bgfx::setViewTransform(viewId, nullptr, glm::value_ptr(def.lightSpaceMatrix));
 
-            renderer->DrawSceneDepth(m_shadowSpotShader, lightFrustum);
+            float shadowParams[4] = { light->GetPosition().x, light->GetPosition().y, light->GetPosition().z, def.radius };
+            bgfx::setUniform(m_uShadowParams, shadowParams);
+
+            renderer->DrawSceneDepth(viewId, m_shadowSpotShader, lightFrustum);
         }
         else
         {
-            for (int face = 0; face < 6; ++face) 
-            {
-                glNamedFramebufferTextureLayer(m_shadowFBO, GL_COLOR_ATTACHMENT0, m_PointShadow, 0, def.shadowLayer * 6 + face);
-                glNamedFramebufferTextureLayer(m_shadowFBO, GL_DEPTH_ATTACHMENT, m_PointDepth, 0, def.shadowLayer * 6 + face);
-                glClearColor(1e10f, 1e20f, 0.0f, 0.0f);
-                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            }
-
-            glNamedFramebufferTexture(m_shadowFBO, GL_COLOR_ATTACHMENT0, m_PointShadow, 0);
-            glNamedFramebufferTexture(m_shadowFBO, GL_DEPTH_ATTACHMENT, m_PointDepth, 0);
-
-            m_shadowPointShader.Bind();
-
             float farP = def.radius;
             glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, farP);
             glm::vec3 pos = light->GetPosition();
 
-            // Must render in cubemap 6 faces
             glm::mat4 shadowTransforms[] =
             {
                 shadowProj * glm::lookAt(pos, pos + glm::vec3(1,0,0),  glm::vec3(0,-1,0)),
@@ -195,22 +203,22 @@ void R_Lights::RenderShadowMaps(Camera& camera, Renderer* renderer)
                 shadowProj * glm::lookAt(pos, pos + glm::vec3(0,0,-1), glm::vec3(0,-1,0))
             };
 
-            for (int i = 0; i < 6; ++i)
+            for (int face = 0; face < 6; ++face)
             {
-                m_shadowPointShader.SetMat4("u_shadowMatrices[" + std::to_string(i) + "]", shadowTransforms[i]);
+                bgfx::ViewId viewId = shadowViewBase++;
+                bgfx::setViewClear(viewId, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0xFFFFFFFF, 1.0f, 0);
+                bgfx::setViewRect(viewId, 0, 0, 256, 256);
+                bgfx::setViewFrameBuffer(viewId, m_pointFB[def.shadowLayer][face]);
+                bgfx::setViewTransform(viewId, nullptr, glm::value_ptr(shadowTransforms[face]));
+
+                float shadowParams[4] = { pos.x, pos.y, pos.z, farP };
+                bgfx::setUniform(m_uShadowParams, shadowParams);
+
+                Frustum pointFrustum;
+                pointFrustum.valid = false;
+
+                renderer->DrawSceneDepth(viewId, m_shadowPointShader, pointFrustum);
             }
-
-            m_shadowPointShader.SetInt("u_shadowLayer", def.shadowLayer);
-            m_shadowPointShader.SetFloat("u_farPlane", farP);
-            m_shadowPointShader.SetVec3("u_lightPos", pos);
-
-            // Point lights render 6 face so no need for frustum
-            Frustum pointFrustum;
-            pointFrustum.valid = false;
-
-            m_shadowPointShader.SetMat4("u_model", glm::mat4(1.0f));
-
-            renderer->DrawSceneDepth(m_shadowPointShader, pointFrustum);
         }
 
         if (def.isStaticShadow)
@@ -218,23 +226,19 @@ void R_Lights::RenderShadowMaps(Camera& camera, Renderer* renderer)
             def.shadowRendered = true;
         }
     }
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 }
 
 void R_Lights::Bind(const R_Shader& shader)
 {
-    // CSM
     const auto& sky = DynamicSky::GetSettings();
-    bool csmEnabled = (r_shadows.GetInt() > 0 && r_csm.GetInt() > 0 && sky.hasCSM);
+    bool csmEnabled = (CVar::GetInt("r_shadows") > 0 && CVar::GetInt("r_csm") > 0 && sky.hasCSM);
     m_cascade->Bind(const_cast<R_Shader&>(shader), sky.sunColor, sky.sunDir, csmEnabled, sky.sunVolIntensity, sky.sunVolSteps);
 
-    // Then the scene dynamic lights
     std::vector<GPULight> points, spots;
 
-    glBindTextureUnit(14, m_SpotShadow);
-    glBindTextureUnit(15, m_PointShadow);
+    bgfx::setTexture(13, m_sCsmArray, m_cascade->GetTexArray());
+    bgfx::setTexture(14, m_sSpotShadowMaps, m_SpotShadow);
+    bgfx::setTexture(15, m_sPointShadowMaps, m_PointShadow);
 
     for (const auto& light : DynamicLights::GetActiveLights())
     {
@@ -243,11 +247,28 @@ void R_Lights::Bind(const R_Shader& shader)
 
         auto& d = light->GetDef();
         GPULight gpu = {};
-        gpu.posRadius = glm::vec4(light->GetPosition(), d.radius);
-        gpu.colorVol = glm::vec4(d.color, d.volumetricIntensity);
-        gpu.dirInner = glm::vec4(light->GetDirection(), glm::cos(glm::radians(d.innerAngle)));
-        gpu.shadowData = glm::vec4(glm::cos(glm::radians(d.outerAngle)), (float)d.volumetricSteps, 0, 0);
-        gpu.lightSpace = d.lightSpaceMatrix;
+        
+        gpu.posRadius[0] = light->GetPosition().x;
+        gpu.posRadius[1] = light->GetPosition().y;
+        gpu.posRadius[2] = light->GetPosition().z;
+        gpu.posRadius[3] = d.radius;
+
+        gpu.colorVol[0] = d.color.x;
+        gpu.colorVol[1] = d.color.y;
+        gpu.colorVol[2] = d.color.z;
+        gpu.colorVol[3] = d.volumetricIntensity;
+
+        gpu.dirInner[0] = light->GetDirection().x;
+        gpu.dirInner[1] = light->GetDirection().y;
+        gpu.dirInner[2] = light->GetDirection().z;
+        gpu.dirInner[3] = glm::cos(glm::radians(d.innerAngle));
+
+        gpu.shadowData[0] = glm::cos(glm::radians(d.outerAngle));
+        gpu.shadowData[1] = (float)d.volumetricSteps;
+        gpu.shadowData[2] = 0.0f;
+        gpu.shadowData[3] = 0.0f;
+
+        std::memcpy(gpu.lightSpace, glm::value_ptr(d.lightSpaceMatrix), sizeof(float) * 16);
         gpu.shadowLayer = (float)d.shadowLayer;
 
         if (d.type == LightType::Point)
@@ -256,35 +277,60 @@ void R_Lights::Bind(const R_Shader& shader)
             spots.push_back(gpu);
     }
 
-    if (!points.empty())
-    {
-        size_t count = std::min(points.size(), (size_t)32);
-        glNamedBufferSubData(m_lightSSBO, 0, count * sizeof(GPULight), points.data());
-    }
-    if (!spots.empty())
-    {
-        size_t count = std::min(spots.size(), (size_t)32);
-        glNamedBufferSubData(m_lightSSBO, 32 * sizeof(GPULight), count * sizeof(GPULight), spots.data());
-    }
+    points.resize(8);
+    spots.resize(8);
 
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 10, m_lightSSBO);
+    bgfx::update(m_pointLightSSBO, 0, bgfx::copy(points.data(), (uint32_t)(8 * sizeof(GPULight))));
+    bgfx::update(m_spotLightSSBO, 0, bgfx::copy(spots.data(), (uint32_t)(8 * sizeof(GPULight))));
 
-    shader.SetInt("u_numPointLights", (int)points.size());
-    shader.SetInt("u_numSpotLights", (int)spots.size());
+    bgfx::setBuffer(10, m_pointLightSSBO, bgfx::Access::Read);
+    bgfx::setBuffer(11, m_spotLightSSBO, bgfx::Access::Read);
+
+    float lightParams[4] = { (float)points.size(), (float)spots.size(), 0.0f, 0.0f };
+    bgfx::setUniform(m_uLightParams, lightParams);
 }
 
 void R_Lights::Shutdown()
 {
-    if (m_shadowFBO != 0)
-        glDeleteFramebuffers(1, &m_shadowFBO);
-    if (m_SpotShadow != 0) 
-        glDeleteTextures(1, &m_SpotShadow);
-    if (m_PointShadow != 0) 
-        glDeleteTextures(1, &m_PointShadow);
-    if (m_shadowDepthTex != 0) 
-        glDeleteTextures(1, &m_shadowDepthTex);
-    if (m_PointDepth != 0) 
-        glDeleteTextures(1, &m_PointDepth);
-    m_shadowFBO = m_SpotShadow = m_PointShadow = m_shadowDepthTex = m_PointDepth = 0;
+    if (m_cascade)
+    {
+        m_cascade->Shutdown();
+        m_cascade.reset();
+    }
+
+    for (int i = 0; i < 8; i++)
+    {
+        if (bgfx::isValid(m_spotFB[i]))
+        {
+            bgfx::destroy(m_spotFB[i]);
+            m_spotFB[i] = BGFX_INVALID_HANDLE;
+        }
+        for (int face = 0; face < 6; face++)
+        {
+            if (bgfx::isValid(m_pointFB[i][face]))
+            {
+                bgfx::destroy(m_pointFB[i][face]);
+                m_pointFB[i][face] = BGFX_INVALID_HANDLE;
+            }
+        }
+    }
+
+    if (bgfx::isValid(m_sCsmArray))
+        bgfx::destroy(m_sCsmArray);
+    if (bgfx::isValid(m_SpotShadow))
+        bgfx::destroy(m_SpotShadow);
+    if (bgfx::isValid(m_PointShadow))
+        bgfx::destroy(m_PointShadow);
+    if (bgfx::isValid(m_shadowDepthTex))
+        bgfx::destroy(m_shadowDepthTex);
+    if (bgfx::isValid(m_PointDepth))
+        bgfx::destroy(m_PointDepth);
+    if (bgfx::isValid(m_pointLightSSBO))
+        bgfx::destroy(m_pointLightSSBO);
+    if (bgfx::isValid(m_spotLightSSBO))
+        bgfx::destroy(m_spotLightSSBO);
+
+    m_SpotShadow = m_PointShadow = m_shadowDepthTex = m_PointDepth = BGFX_INVALID_HANDLE;
+    m_pointLightSSBO = m_spotLightSSBO = BGFX_INVALID_HANDLE;
     m_nextSpotLayer = m_nextPointLayer = 0;
 }

@@ -23,7 +23,7 @@
  */
 #pragma once
 #include "r_shader.h"
-#include <glad/glad.h>
+#include <bgfx/bgfx.h>
 
 class R_CAS
 {
@@ -32,24 +32,25 @@ public:
     ~R_CAS();
 
     bool Init(int width, int height);
-    void Rescale(int width, int height);
     void Shutdown();
+    void Rescale(int width, int height);
+    void Render(bgfx::ViewId viewId, bgfx::TextureHandle inputTex);
 
-    GLuint GetInputFBO() const 
+    bgfx::TextureHandle GetTexture() const 
     { 
-        return m_inputFbo; 
+        return m_texture;
     }
-
-    void Render(GLuint quadVAO, int width, int height);
 
 private:
     void CreateBuffers(int width, int height);
     void DeleteBuffers();
 
-    R_Shader m_computeShader;
-    R_Shader m_blitShader;
+    bgfx::TextureHandle m_texture = BGFX_INVALID_HANDLE;
 
-    GLuint m_inputFbo = 0;
-    GLuint m_inputTex = 0;
-    GLuint m_outputTex = 0;
+    R_Shader m_shader;
+    bgfx::UniformHandle m_sInput = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uConst0 = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uConst1 = BGFX_INVALID_HANDLE;
+
+    int m_width = 0, m_height = 0;
 };

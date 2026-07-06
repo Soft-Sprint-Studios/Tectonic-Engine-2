@@ -23,7 +23,7 @@
  */
 #include "r_bloom.h"
 #include "cvar.h"
-#include <cmath>
+#include <algorithm>
 
 CVar r_bloom("r_bloom", "1", "Enable bloom post-processing.", CVAR_SAVE);
 CVar r_bloom_intensity("r_bloom_intensity", "2", "Strength of the bloom effect.", CVAR_SAVE);
@@ -31,26 +31,27 @@ CVar r_bloom_threshold("r_bloom_threshold", "0.9", "Brightness threshold for pix
 CVar r_bloom_scatter("r_bloom_scatter", "0.7", "Scatter amount for bloom blur.", CVAR_SAVE);
 CVar r_bloom_passes("r_bloom_passes", "6", "Number of downsample/upsample passes.", CVAR_SAVE);
 
-R_Bloom::R_Bloom()
+R_Bloom::R_Bloom() 
 {
 }
 
-R_Bloom::~R_Bloom()
-{
+R_Bloom::~R_Bloom() 
+{ 
     Shutdown();
 }
 
 bool R_Bloom::Init(int width, int height)
 {
-    m_downsampleShader.Load("shaders/bloom_downsample.vert", "shaders/bloom_downsample.frag");
-    m_upsampleShader.Load("shaders/bloom_upsample.vert", "shaders/bloom_upsample.frag");
+    m_downsampleShader.LoadCompute("shaders/bloom_downsample.comp");
+    m_upsampleShader.LoadCompute("shaders/bloom_upsample.comp");
+
+    m_sSource = bgfx::createUniform("s_source", bgfx::UniformType::Sampler);
+    m_sCurrentMip = bgfx::createUniform("s_currentMip", bgfx::UniformType::Sampler);
+    m_uBloomParams = bgfx::createUniform("u_bloomParams", bgfx::UniformType::Vec4);
+    m_uBloomParams2 = bgfx::createUniform("u_bloomParams2", bgfx::UniformType::Vec4);
+
     CreateChain(width, height);
     return true;
-}
-
-void R_Bloom::Shutdown()
-{
-    DeleteChain();
 }
 
 void R_Bloom::Rescale(int width, int height)
@@ -64,6 +65,8 @@ void R_Bloom::CreateChain(int width, int height)
     glm::ivec2 mipSize(width, height);
     int passes = std::max(1, r_bloom_passes.GetInt());
 
+    uint64_t writeFlags = BGFX_TEXTURE_COMPUTE_WRITE | BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP;
+
     for (int i = 0; i < passes; i++)
     {
         mipSize /= 2;
@@ -73,82 +76,96 @@ void R_Bloom::CreateChain(int width, int height)
         Mip mip;
         mip.size = mipSize;
 
-        glCreateFramebuffers(1, &mip.fbo);
-        glCreateTextures(GL_TEXTURE_2D, 1, &mip.texture);
-        glTextureStorage2D(mip.texture, 1, GL_RGBA16F, mip.size.x, mip.size.y);
-        glTextureParameteri(mip.texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTextureParameteri(mip.texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTextureParameteri(mip.texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTextureParameteri(mip.texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glNamedFramebufferTexture(mip.fbo, GL_COLOR_ATTACHMENT0, mip.texture, 0);
+        mip.downsampleTex = bgfx::createTexture2D((uint16_t)mip.size.x, (uint16_t)mip.size.y, false, 1, bgfx::TextureFormat::RGBA16F, writeFlags);
+
+        if (i < passes - 1)
+        {
+            mip.upsampleTex = bgfx::createTexture2D((uint16_t)mip.size.x, (uint16_t)mip.size.y, false, 1, bgfx::TextureFormat::RGBA16F, writeFlags);
+        }
 
         m_mipChain.push_back(mip);
     }
 }
 
-void R_Bloom::DeleteChain()
-{
-    for (const auto& mip : m_mipChain)
-    {
-        glDeleteFramebuffers(1, &mip.fbo);
-        glDeleteTextures(1, &mip.texture);
-    }
-    m_mipChain.clear();
-}
-
-void R_Bloom::Render(GLuint sourceTexture, GLuint quadVAO, int screenW, int screenH)
+void R_Bloom::Render(bgfx::ViewId viewId, bgfx::TextureHandle sourceTexture, int screenW, int screenH)
 {
     if (r_bloom.GetInt() == 0 || m_mipChain.empty())
         return;
 
-    m_downsampleShader.Bind();
-    m_downsampleShader.SetFloat("u_threshold", r_bloom_threshold.GetFloat());
-
-    glBindTextureUnit(0, sourceTexture);
-
-    glBindVertexArray(quadVAO);
+    // Downsample
+    bgfx::TextureHandle currentSource = sourceTexture;
     for (size_t i = 0; i < m_mipChain.size(); ++i)
     {
         const auto& mip = m_mipChain[i];
-        glViewport(0, 0, mip.size.x, mip.size.y);
-        glBindFramebuffer(GL_FRAMEBUFFER, mip.fbo);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
 
-        glBindTextureUnit(0, mip.texture);
-        m_downsampleShader.SetFloat("u_threshold", 0.0f);
+        float params[4] = { r_bloom_threshold.GetFloat(), (i == 0) ? 1.0f : 0.0f, 0.0f, 0.0f };
+        bgfx::setUniform(m_uBloomParams, params);
+
+        bgfx::setTexture(0, m_sSource, currentSource);
+        bgfx::setImage(1, mip.downsampleTex, 0, bgfx::Access::Write, bgfx::TextureFormat::RGBA16F);
+
+        bgfx::dispatch(viewId, m_downsampleShader.GetProgram(), (mip.size.x + 15) / 16, (mip.size.y + 15) / 16, 1);
+
+        currentSource = mip.downsampleTex;
     }
 
-    m_upsampleShader.Bind();
-    m_upsampleShader.SetFloat("u_scatter", r_bloom_scatter.GetFloat());
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ONE);
-
+    // Upsample
     for (int i = (int)m_mipChain.size() - 1; i > 0; --i)
     {
         const auto& mip = m_mipChain[i];
         const auto& nextMip = m_mipChain[i - 1];
 
-        glBindTextureUnit(0, mip.texture);
-        glViewport(0, 0, nextMip.size.x, nextMip.size.y);
-        glBindFramebuffer(GL_FRAMEBUFFER, nextMip.fbo);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-    }
+        float params2[4] = { r_bloom_scatter.GetFloat(), 0.0f, 0.0f, 0.0f };
+        bgfx::setUniform(m_uBloomParams2, params2);
 
-    glDisable(GL_BLEND);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, screenW, screenH);
+        bgfx::TextureHandle smallerTex = (i == (int)m_mipChain.size() - 1) ? mip.downsampleTex : mip.upsampleTex;
+        bgfx::setTexture(0, m_sSource, smallerTex);
+        bgfx::setTexture(1, m_sCurrentMip, nextMip.downsampleTex);
+
+        bgfx::setImage(2, nextMip.upsampleTex, 0, bgfx::Access::Write, bgfx::TextureFormat::RGBA16F);
+
+        bgfx::dispatch(viewId, m_upsampleShader.GetProgram(), (nextMip.size.x + 15) / 16, (nextMip.size.y + 15) / 16, 1);
+    }
 }
 
-void R_Bloom::Bind(const R_Shader& shader)
+void R_Bloom::Bind(bgfx::UniformHandle s_bloomTex)
 {
     if (r_bloom.GetInt() > 0 && !m_mipChain.empty())
     {
-        shader.SetInt("u_bloom_enabled", 1);
-        shader.SetFloat("u_bloom_intensity", r_bloom_intensity.GetFloat());
-        glBindTextureUnit(2, m_mipChain[0].texture);
+        bgfx::setTexture(2, s_bloomTex, m_mipChain[0].upsampleTex);
     }
-    else
+}
+
+bgfx::TextureHandle R_Bloom::GetBloomTexture() const
+{
+    if (!m_mipChain.empty())
     {
-        shader.SetInt("u_bloom_enabled", 0);
+        return m_mipChain[0].upsampleTex;
+    }
+    return BGFX_INVALID_HANDLE;
+}
+
+void R_Bloom::DeleteChain()
+{
+    for (auto& mip : m_mipChain)
+    {
+        if (bgfx::isValid(mip.downsampleTex)) 
+            bgfx::destroy(mip.downsampleTex);
+        if (bgfx::isValid(mip.upsampleTex)) 
+            bgfx::destroy(mip.upsampleTex);
+    }
+    m_mipChain.clear();
+}
+
+void R_Bloom::Shutdown()
+{
+    DeleteChain();
+    if (bgfx::isValid(m_sSource))
+    {
+        bgfx::destroy(m_sSource);
+        bgfx::destroy(m_sCurrentMip);
+        bgfx::destroy(m_uBloomParams);
+        bgfx::destroy(m_uBloomParams2);
+        m_sSource = m_sCurrentMip = m_uBloomParams = m_uBloomParams2 = BGFX_INVALID_HANDLE;
     }
 }

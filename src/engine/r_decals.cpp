@@ -1,92 +1,50 @@
-/*
- * MIT License
- *
- * Copyright (c) 2025-2026 Soft Sprint Studios
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
 #include "r_decals.h"
 #include "materials.h"
 #include "cvar.h"
+#include <glm/gtc/type_ptr.hpp>
+#include <cstring>
+#include <unordered_map>
 
 void R_Decals::Init()
 {
     m_shader.Load("shaders/decal.vert", "shaders/decal.frag");
 
+    m_layout.begin()
+        .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
+        .end();
+
     DecalVertex vertices[] =
     {
-        { glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec2(0.0f, 0.0f) },
-        { glm::vec3(0.5f, -0.5f, 0.0f), glm::vec2(1.0f, 0.0f) },
-        { glm::vec3(0.5f,  0.5f, 0.0f), glm::vec2(1.0f, 1.0f) },
-        { glm::vec3(-0.5f,  0.5f, 0.0f), glm::vec2(0.0f, 1.0f) }
+        { -0.5f, -0.5f, 0.0f, 0.0f, 0.0f },
+        {  0.5f, -0.5f, 0.0f, 1.0f, 0.0f },
+        {  0.5f,  0.5f, 0.0f, 1.0f, 1.0f },
+        { -0.5f,  0.5f, 0.0f, 0.0f, 1.0f }
     };
 
-    unsigned int indices[] =
+    uint16_t indices[] =
     {
         0, 1, 2,
         2, 3, 0
     };
 
-    glCreateVertexArrays(1, &m_vao);
-    glCreateBuffers(1, &m_vbo);
-    glCreateBuffers(1, &m_ebo);
+    m_vbo = bgfx::createVertexBuffer(bgfx::copy(vertices, sizeof(vertices)), m_layout);
+    m_ebo = bgfx::createIndexBuffer(bgfx::copy(indices, sizeof(indices)));
 
-    glNamedBufferData(m_vbo, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glNamedBufferData(m_ebo, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    glVertexArrayVertexBuffer(m_vao, 0, m_vbo, 0, sizeof(DecalVertex));
-    glVertexArrayElementBuffer(m_vao, m_ebo);
-
-    glEnableVertexArrayAttrib(m_vao, 0);
-    glVertexArrayAttribFormat(m_vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
-    glVertexArrayAttribBinding(m_vao, 0, 0);
-
-    glEnableVertexArrayAttrib(m_vao, 1);
-    glVertexArrayAttribFormat(m_vao, 1, 2, GL_FLOAT, GL_FALSE, offsetof(DecalVertex, uv));
-    glVertexArrayAttribBinding(m_vao, 1, 0);
-
-    glCreateBuffers(1, &m_instanceSSBO);
-    glNamedBufferData(m_instanceSSBO, 1024 * sizeof(glm::mat4), NULL, GL_DYNAMIC_DRAW);
+    m_sDiffuse = bgfx::createUniform("s_diffuse", bgfx::UniformType::Sampler);
+    m_sNormal  = bgfx::createUniform("s_normal", bgfx::UniformType::Sampler);
+    m_sMRAO    = bgfx::createUniform("s_mraohMap", bgfx::UniformType::Sampler);
+    m_uParams  = bgfx::createUniform("u_params", bgfx::UniformType::Vec4);
+    m_uParallaxParams = bgfx::createUniform("u_parallaxParams", bgfx::UniformType::Vec4);
+    m_uViewPos = bgfx::createUniform("u_viewPos", bgfx::UniformType::Vec4);
 }
 
-void R_Decals::Draw(const Camera& camera, const Frustum& frustum, const std::vector<std::shared_ptr<Decal>>& decals)
+void R_Decals::Draw(bgfx::ViewId viewId, const Camera& camera, const Frustum& frustum, const std::vector<std::shared_ptr<Decal>>& decals)
 {
     if (decals.empty())
     {
         return;
     }
-
-    glDisable(GL_CULL_FACE);
-    glEnable(GL_DEPTH_TEST);
-    glDepthMask(GL_FALSE);
-    glEnable(GL_POLYGON_OFFSET_FILL);
-    glPolygonOffset(-1.0f, -1.0f);
-
-    m_shader.Bind();
-    m_shader.SetMat4("u_view", camera.GetViewMatrix());
-    m_shader.SetMat4("u_projection", camera.GetProjectionMatrix());
-
-    m_shader.SetVec3("u_viewPos", camera.position);
-    m_shader.SetInt("u_mat_parallax", CVar::GetInt("mat_parallax"));
-    m_shader.SetFloat("u_pomMinSteps", CVar::GetFloat("mat_parallax_min_steps"));
-    m_shader.SetFloat("u_pomMaxSteps", CVar::GetFloat("mat_parallax_max_steps"));
-    m_shader.SetInt("u_pomRefineSteps", CVar::GetInt("mat_parallax_refine"));
 
     std::unordered_map<std::string, std::vector<glm::mat4>> groups;
     for (const auto& d : decals)
@@ -104,47 +62,85 @@ void R_Decals::Draw(const Camera& camera, const Frustum& frustum, const std::vec
         groups[d->GetDef().textureName].push_back(d->GetModelMatrix());
     }
 
-    glBindVertexArray(m_vao);
+    float vp[4] = { camera.position.x, camera.position.y, camera.position.z, 0.0f };
+    bgfx::setUniform(m_uViewPos, vp);
+
+    float par[4] = 
+    {
+        (float)CVar::GetFloat("mat_parallax_min_steps", 8.0f),
+        (float)CVar::GetFloat("mat_parallax_max_steps", 32.0f),
+        (float)CVar::GetInt("mat_parallax_refine", 8),
+        (float)CVar::GetInt("mat_parallax", 1)
+    };
+    bgfx::setUniform(m_uParallaxParams, par);
+
+    uint64_t state = BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_DEPTH_TEST_LESS;
+
     for (auto& [texName, matrices] : groups)
     {
-        auto diff = Materials::GetTexture(texName);
-        auto norm = Materials::GetNormalMap(texName);
-        auto mraoh = Materials::GetMRAOMap(texName);
+        uint16_t numInstances = (uint16_t)matrices.size();
+        uint16_t instanceStride = 64; 
 
-        diff->Bind(0);
-        norm->Bind(1);
-        mraoh->Bind(2);
-        m_shader.SetFloat("u_heightScale", Materials::GetHeightScale(texName));
+        if (numInstances == 0)
+        {
+            continue;
+        }
 
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_instanceSSBO);
-        glNamedBufferSubData(m_instanceSSBO, 0, matrices.size() * sizeof(glm::mat4), matrices.data());
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, m_instanceSSBO);
+        uint32_t avail = bgfx::getAvailInstanceDataBuffer(numInstances, instanceStride);
+        if (avail > 0)
+        {
+            uint16_t instancesToDraw = std::min(numInstances, (uint16_t)avail);
+            bgfx::InstanceDataBuffer idb;
+            bgfx::allocInstanceDataBuffer(&idb, instancesToDraw, instanceStride);
 
-        glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, (GLsizei)matrices.size());
+            uint8_t* data = idb.data;
+            for (size_t i = 0; i < instancesToDraw; ++i)
+            {
+                std::memcpy(data, glm::value_ptr(matrices[i]), instanceStride);
+                data += instanceStride;
+            }
+
+            bgfx::setInstanceDataBuffer(&idb, 0, instancesToDraw);
+
+            auto diff = Materials::GetTexture(texName);
+            auto norm = Materials::GetNormalMap(texName);
+            auto mraoh = Materials::GetMRAOMap(texName);
+
+            bgfx::setTexture(0, m_sDiffuse, diff->GetHandle());
+            bgfx::setTexture(1, m_sNormal, norm->GetHandle());
+            bgfx::setTexture(2, m_sMRAO, mraoh->GetHandle());
+
+            float params[4] = { Materials::GetHeightScale(texName), 0.0f, 0.0f, 0.0f };
+            bgfx::setUniform(m_uParams, params);
+
+            bgfx::setVertexBuffer(0, m_vbo);
+            bgfx::setIndexBuffer(m_ebo);
+            bgfx::setState(state);
+            bgfx::submit(viewId, m_shader.GetProgram());
+        }
     }
-
-    glDisable(GL_POLYGON_OFFSET_FILL);
-    glDepthMask(GL_TRUE);
-    glEnable(GL_CULL_FACE);
 }
 
 void R_Decals::Shutdown()
 {
-    if (m_vao)
+    if (bgfx::isValid(m_vbo))
     {
-        glDeleteVertexArrays(1, &m_vao);
+        bgfx::destroy(m_vbo);
+        m_vbo = BGFX_INVALID_HANDLE;
     }
-    if (m_vbo)
+    if (bgfx::isValid(m_ebo))
     {
-        glDeleteBuffers(1, &m_vbo);
+        bgfx::destroy(m_ebo);
+        m_ebo = BGFX_INVALID_HANDLE;
     }
-    if (m_ebo)
+    if (bgfx::isValid(m_sDiffuse))
     {
-        glDeleteBuffers(1, &m_ebo);
+        bgfx::destroy(m_sDiffuse);
+        bgfx::destroy(m_sNormal);
+        bgfx::destroy(m_sMRAO);
+        bgfx::destroy(m_uParams);
+        bgfx::destroy(m_uParallaxParams);
+        bgfx::destroy(m_uViewPos);
+        m_sDiffuse = BGFX_INVALID_HANDLE;
     }
-    if (m_instanceSSBO)
-    {
-        glDeleteBuffers(1, &m_instanceSSBO);
-    }
-    m_vao = m_vbo = m_ebo = 0;
 }

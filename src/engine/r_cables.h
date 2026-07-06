@@ -25,17 +25,18 @@
 #include "r_shader.h"
 #include "camera.h"
 #include "cables.h"
-#include <glad/glad.h>
+#include <bgfx/bgfx.h>
+#include <memory>
+#include <vector>
 
 class R_Cables
 {
 public:
     void Init();
-    void Draw(const Camera& camera, const std::vector<std::shared_ptr<Cable>>& cables);
+    void Draw(bgfx::ViewId viewId, const Camera& camera, const std::vector<std::shared_ptr<Cable>>& cables);
     void Shutdown();
 
 private:
     R_Shader m_shader;
-    GLuint m_vao = 0;
-    GLuint m_vbo = 0;
+    bgfx::VertexLayout m_layout;
 };

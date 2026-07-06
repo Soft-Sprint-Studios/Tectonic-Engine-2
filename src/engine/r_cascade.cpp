@@ -22,17 +22,27 @@
  * SOFTWARE.
  */
 #include "r_cascade.h"
-#include "camera.h"
-#include "r_bsp.h"
-#include "r_models.h"
 #include "dynamic_sky.h"
 #include "renderer.h"
 #include <algorithm>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
-R_Cascade::R_Cascade() 
+R_Cascade::R_Cascade()
     : m_resolution(4096)
 {
+    m_texArray = BGFX_INVALID_HANDLE;
+    m_dummyTex = BGFX_INVALID_HANDLE;
+    m_uSunMatrices = BGFX_INVALID_HANDLE;
+    m_uSunSplitsLow = BGFX_INVALID_HANDLE;
+    m_uSunDirVol = BGFX_INVALID_HANDLE;
+    m_uSunColorEn = BGFX_INVALID_HANDLE;
+    m_uCsmParams = BGFX_INVALID_HANDLE;
+
+    for (int i = 0; i < 4; i++)
+    {
+        m_fbo[i] = BGFX_INVALID_HANDLE;
+    }
 }
 
 R_Cascade::~R_Cascade()
@@ -43,33 +53,27 @@ R_Cascade::~R_Cascade()
 void R_Cascade::Init(int res)
 {
     m_resolution = res;
-
-    // Cascade ranges
     m_splits = { 0.1f, 20.0f, 60.0f, 150.0f, 500.0f };
     m_matrices.assign(4, glm::mat4(1.0f));
 
-    glCreateFramebuffers(1, &m_fbo);
-    glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &m_texArray);
-    glTextureStorage3D(m_texArray, 1, GL_DEPTH_COMPONENT32F, m_resolution, m_resolution, 4);
+    uint64_t rtFlags = BGFX_TEXTURE_RT | BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP;
+    m_texArray = bgfx::createTexture2D((uint16_t)res, (uint16_t)res, false, 4, bgfx::TextureFormat::D16, rtFlags);
 
-    glTextureParameteri(m_texArray, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureParameteri(m_texArray, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTextureParameteri(m_texArray, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTextureParameteri(m_texArray, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    for (int i = 0; i < 4; i++)
+    {
+        bgfx::Attachment at;
+        at.init(m_texArray, bgfx::Access::Write, (uint16_t)i, 1, 0, BGFX_RESOLVE_NONE);
+        m_fbo[i] = bgfx::createFrameBuffer(1, &at);
+    }
 
-    float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-    glTextureParameterfv(m_texArray, GL_TEXTURE_BORDER_COLOR, borderColor);
+    uint16_t dummyData[1] = { 0 };
+    m_dummyTex = bgfx::createTexture2D(1, 1, false, 1, bgfx::TextureFormat::D16, BGFX_TEXTURE_RT, bgfx::copy(dummyData, 2));
 
-    glNamedFramebufferTexture(m_fbo, GL_DEPTH_ATTACHMENT, m_texArray, 0);
-
-    glCreateBuffers(1, &m_sunSSBO);
-    glNamedBufferData(m_sunSSBO, sizeof(GPUSunData), nullptr, GL_DYNAMIC_DRAW);
-
-    glNamedFramebufferDrawBuffer(m_fbo, GL_NONE);
-    glNamedFramebufferReadBuffer(m_fbo, GL_NONE);
-
-    glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &m_dummyTex);
-    glTextureStorage3D(m_dummyTex, 1, GL_DEPTH_COMPONENT32F, 1, 1, 1);
+    m_uSunMatrices = bgfx::createUniform("u_csmMatrices", bgfx::UniformType::Mat4, 4);
+    m_uSunSplitsLow = bgfx::createUniform("u_csmSplitsLow", bgfx::UniformType::Vec4);
+    m_uSunDirVol = bgfx::createUniform("u_sunDirVol", bgfx::UniformType::Vec4);
+    m_uSunColorEn = bgfx::createUniform("u_sunColorEn", bgfx::UniformType::Vec4);
+    m_uCsmParams = bgfx::createUniform("u_csmSplit4_volSteps", bgfx::UniformType::Vec4);
 }
 
 std::vector<glm::vec4> R_Cascade::GetFrustumCornersWorldSpace(const glm::mat4& proj, const glm::mat4& view)
@@ -93,6 +97,8 @@ std::vector<glm::vec4> R_Cascade::GetFrustumCornersWorldSpace(const glm::mat4& p
 void R_Cascade::UpdateMatrices(const Camera& cam, const glm::vec3& sunDir)
 {
     m_matrices.clear();
+    m_viewMatrices.clear();
+    m_projMatrices.clear();
     for (size_t i = 0; i < 4; ++i)
     {
         glm::mat4 proj = glm::perspective(glm::radians(cam.GetFOV()), cam.GetAspectRatio(), m_splits[i], m_splits[i + 1]);
@@ -111,7 +117,6 @@ void R_Cascade::UpdateMatrices(const Camera& cam, const glm::vec3& sunDir)
 
         glm::vec3 up = std::abs(sunDir.y) > 0.99f ? glm::vec3(0, 0, 1) : glm::vec3(0, 1, 0);
         glm::mat4 lightView = glm::lookAt(center + sunDir * radius, center, up);
-
         glm::mat4 lightProj = glm::ortho(-radius, radius, -radius, radius, -radius * 6.0f, radius * 6.0f);
 
         glm::mat4 shadowMatrix = lightProj * lightView;
@@ -126,6 +131,8 @@ void R_Cascade::UpdateMatrices(const Camera& cam, const glm::vec3& sunDir)
 
         lightProj[3] += roundOffset;
         m_matrices.push_back(lightProj * lightView);
+        m_viewMatrices.push_back(lightView);
+        m_projMatrices.push_back(lightProj);
     }
 }
 
@@ -133,62 +140,70 @@ void R_Cascade::Render(const Camera& camera, R_Shader& shadowShader, Renderer* r
 {
     UpdateMatrices(camera, DynamicSky::GetSettings().sunDir);
 
-    glNamedBufferSubData(m_sunSSBO, offsetof(GPUSunData, matrices), sizeof(glm::mat4) * 4, m_matrices.data());
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, m_sunSSBO);
-    
-    glViewport(0, 0, m_resolution, m_resolution);
-    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-    glClear(GL_DEPTH_BUFFER_BIT);
-    glCullFace(GL_FRONT);
-
-    shadowShader.Bind();
-    shadowShader.SetMat4("u_model", glm::mat4(1.0f));
+    glm::mat4 identity(1.0f);
 
     Frustum sunFrustum;
     sunFrustum.valid = false;
 
-    renderer->DrawSceneDepth(shadowShader, sunFrustum);
+    for (uint16_t i = 0; i < 4; i++)
+    {
+        bgfx::ViewId shadowView = RenderView::CSM_0 + i;
+        bgfx::setViewClear(shadowView, BGFX_CLEAR_DEPTH, 0, 1.0f, 0);
+        bgfx::setViewRect(shadowView, 0, 0, (uint16_t)m_resolution, (uint16_t)m_resolution);
+        bgfx::setViewFrameBuffer(shadowView, m_fbo[i]);
+        bgfx::setViewTransform(shadowView, glm::value_ptr(m_viewMatrices[i]), glm::value_ptr(m_projMatrices[i]));
 
-    glCullFace(GL_BACK);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        bgfx::setTransform(glm::value_ptr(identity));
+
+        renderer->DrawSceneDepth(shadowView, shadowShader, sunFrustum);
+    }
 }
 
 void R_Cascade::Bind(R_Shader& shader, const glm::vec3& sunColor, const glm::vec3& sunDir, bool enabled, float sunVolIntensity, int sunVolSteps)
 {
-    GPUSunData data;
-    for (int i = 0; i < 4; ++i) 
-        data.matrices[i] = m_matrices[i];
+    bgfx::setUniform(m_uSunMatrices, glm::value_ptr(m_matrices[0]), 4);
 
-    data.splits = glm::vec4(m_splits[0], m_splits[1], m_splits[2], m_splits[3]);
-    data.sunDir_vol = glm::vec4(sunDir, sunVolIntensity);
-    data.sunColor_en = glm::vec4(sunColor, enabled ? 1.0f : 0.0f);
-    data.split4 = m_splits[4];
-    data.volSteps = (float)sunVolSteps;
+    float splitsLow[4] = { m_splits[0], m_splits[1], m_splits[2], m_splits[3] };
+    bgfx::setUniform(m_uSunSplitsLow, splitsLow);
 
-    glNamedBufferSubData(m_sunSSBO, 0, sizeof(GPUSunData), &data);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, m_sunSSBO);
-    glBindTextureUnit(13, enabled ? m_texArray : m_dummyTex);
+    float dirVol[4] = { sunDir.x, sunDir.y, sunDir.z, sunVolIntensity };
+    bgfx::setUniform(m_uSunDirVol, dirVol);
+
+    float colorEn[4] = { sunColor.x, sunColor.y, sunColor.z, enabled ? 1.0f : 0.0f };
+    bgfx::setUniform(m_uSunColorEn, colorEn);
+
+    float csmParams[4] = { m_splits[4], (float)sunVolSteps, 0.0f, 0.0f };
+    bgfx::setUniform(m_uCsmParams, csmParams);
 }
 
 void R_Cascade::Shutdown()
 {
-    if (m_fbo)
+    for (int i = 0; i < 4; i++)
     {
-        glDeleteFramebuffers(1, &m_fbo);
+        if (bgfx::isValid(m_fbo[i]))
+        {
+            bgfx::destroy(m_fbo[i]);
+            m_fbo[i] = BGFX_INVALID_HANDLE;
+        }
     }
 
-    if (m_texArray)
+    if (bgfx::isValid(m_texArray))
     {
-        glDeleteTextures(1, &m_texArray);
+        bgfx::destroy(m_texArray);
+        m_texArray = BGFX_INVALID_HANDLE;
     }
-
-    if (m_sunSSBO)
+    if (bgfx::isValid(m_dummyTex))
     {
-        glDeleteBuffers(1, &m_sunSSBO);
+        bgfx::destroy(m_dummyTex);
+        m_dummyTex = BGFX_INVALID_HANDLE;
     }
-
-    if (m_dummyTex) 
+    if (bgfx::isValid(m_uSunMatrices))
     {
-        glDeleteTextures(1, &m_dummyTex);
+        bgfx::destroy(m_uSunMatrices);
+        bgfx::destroy(m_uSunSplitsLow);
+        bgfx::destroy(m_uSunDirVol);
+        bgfx::destroy(m_uSunColorEn);
+        bgfx::destroy(m_uCsmParams);
+        m_uSunMatrices = BGFX_INVALID_HANDLE;
     }
 }

@@ -23,10 +23,15 @@
  */
 #include "r_beams.h"
 #include "timing.h"
+#include <glm/gtc/type_ptr.hpp>
 
 void R_Beams::Init()
 {
     m_shader.Load("shaders/beam.vert", "shaders/beam.frag");
+
+    m_layout.begin()
+        .add(bgfx::Attrib::Position, 2, bgfx::AttribType::Float)
+        .end();
 
     float verts[] = 
     {
@@ -34,55 +39,69 @@ void R_Beams::Init()
         0, -1,  1,  1,  0, 1
     };
 
-    glCreateVertexArrays(1, &m_vao);
-    glCreateBuffers(1, &m_vbo);
-    glNamedBufferData(m_vbo, sizeof(verts), verts, GL_STATIC_DRAW);
+    m_vbo = bgfx::createVertexBuffer(bgfx::copy(verts, sizeof(verts)), m_layout);
 
-    glVertexArrayVertexBuffer(m_vao, 0, m_vbo, 0, 2 * sizeof(float));
-    glEnableVertexArrayAttrib(m_vao, 0);
-    glVertexArrayAttribFormat(m_vao, 0, 2, GL_FLOAT, GL_FALSE, 0);
-    glVertexArrayAttribBinding(m_vao, 0, 0);
+    m_uBeamParams = bgfx::createUniform("u_beamParams", bgfx::UniformType::Vec4);
+    m_uStartPosLocal = bgfx::createUniform("u_startPosLocal", bgfx::UniformType::Vec4);
+    m_uEndPosLocal = bgfx::createUniform("u_endPosLocal", bgfx::UniformType::Vec4);
+    m_uViewPosLocal = bgfx::createUniform("u_viewPosLocal", bgfx::UniformType::Vec4);
+    m_uBeamColor = bgfx::createUniform("u_beamColor", bgfx::UniformType::Vec4);
+    m_uBeamTime = bgfx::createUniform("u_beamTime", bgfx::UniformType::Vec4);
 }
 
-void R_Beams::Draw(const Camera& camera, const std::vector<std::shared_ptr<Beam>>& beams)
+void R_Beams::Draw(bgfx::ViewId viewId, const Camera& camera, const std::vector<std::shared_ptr<Beam>>& beams)
 {
     if (beams.empty()) 
         return;
 
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-    glDepthMask(GL_FALSE);
-    glCullFace(GL_FRONT);
+    uint64_t state = BGFX_STATE_WRITE_RGB  | BGFX_STATE_WRITE_A | BGFX_STATE_DEPTH_TEST_LESS | BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_SRC_ALPHA, BGFX_STATE_BLEND_ONE);
 
-    m_shader.Bind();
-    m_shader.SetMat4("u_view", camera.GetViewMatrix());
-    m_shader.SetMat4("u_projection", camera.GetProjectionMatrix());
-    m_shader.SetVec3("u_viewPos", camera.position);
-    m_shader.SetFloat("u_time", (float)Time::TotalTime());
+    float viewPos[4] = { camera.position.x, camera.position.y, camera.position.z, 0.0f };
+    bgfx::setUniform(m_uViewPosLocal, viewPos);
 
-    glBindVertexArray(m_vao);
+    float timeParam[4] = { (float)Time::TotalTime(), 0.0f, 0.0f, 0.0f };
+    bgfx::setUniform(m_uBeamTime, timeParam);
+
+    glm::mat4 identity(1.0f);
+
     for (auto& b : beams)
     {
         if (!b->IsActive()) 
             continue;
 
         auto& d = b->GetDef();
-        m_shader.SetVec3("u_startPos", d.startPos);
-        m_shader.SetVec3("u_endPos", d.endPos);
-        m_shader.SetVec3("u_color", d.color);
-        m_shader.SetFloat("u_width", d.width);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-    }
 
-    glCullFace(GL_BACK);
-    glDepthMask(GL_TRUE);
-    glDisable(GL_BLEND);
+        bgfx::setTransform(glm::value_ptr(identity));
+
+        float startPos[4] = { d.startPos.x, d.startPos.y, d.startPos.z, 0.0f };
+        float endPos[4] = { d.endPos.x, d.endPos.y, d.endPos.z, 0.0f };
+        float color[4] = { d.color.x, d.color.y, d.color.z, 0.0f };
+        float beamParams[4] = { d.width, 0.0f, 0.0f, 0.0f };
+
+        bgfx::setUniform(m_uStartPosLocal, startPos);
+        bgfx::setUniform(m_uEndPosLocal, endPos);
+        bgfx::setUniform(m_uBeamColor, color);
+        bgfx::setUniform(m_uBeamParams, beamParams);
+
+        bgfx::setVertexBuffer(0, m_vbo);
+        bgfx::setState(state);
+        bgfx::submit(viewId, m_shader.GetProgram());
+    }
 }
 
 void R_Beams::Shutdown()
 {
-    if (m_vao) 
-        glDeleteVertexArrays(1, &m_vao);
-    if (m_vbo) 
-        glDeleteBuffers(1, &m_vbo);
+    if (bgfx::isValid(m_vbo)) 
+        bgfx::destroy(m_vbo);
+    if (bgfx::isValid(m_uBeamParams))
+    {
+        bgfx::destroy(m_uBeamParams);
+        bgfx::destroy(m_uStartPosLocal);
+        bgfx::destroy(m_uEndPosLocal);
+        bgfx::destroy(m_uViewPosLocal);
+        bgfx::destroy(m_uBeamColor);
+        bgfx::destroy(m_uBeamTime);
+    }
+    m_vbo = BGFX_INVALID_HANDLE;
+    m_uBeamParams = BGFX_INVALID_HANDLE;
 }

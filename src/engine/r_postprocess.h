@@ -22,17 +22,16 @@
  * SOFTWARE.
  */
 #pragma once
-#include "r_gbuffer.h"
-#include "r_bloom.h"
-#include "r_volumetrics.h"
+#include "r_shader.h"
 #include "r_autoexposure.h"
+#include "r_bloom.h"
 #include "r_ssao.h"
 #include "r_ssr.h"
 #include "r_motionblur.h"
+#include "r_volumetrics.h"
 #include "r_cas.h"
 #include "camera.h"
-#include "r_shader.h"
-#include <glad/glad.h>
+#include <bgfx/bgfx.h>
 #include <memory>
 
 class R_PostProcess
@@ -41,33 +40,57 @@ public:
     R_PostProcess();
     ~R_PostProcess();
 
-    bool Init(int width, int height);
+    bool Init(int width, int height, bgfx::TextureHandle depthTexture);
     void Begin();
-    void End();
     void Draw(const Camera& camera, class R_Lights* lights, class R_GBuffer* gbuffer);
-    void Rescale(int width, int height);
+    void Rescale(int width, int height, bgfx::TextureHandle depthTexture);
     void Shutdown();
 
-    GLuint GetActiveFBO();
+    bgfx::FrameBufferHandle GetFBO() const
+    { 
+        return m_fbo;
+    }
+
+    bgfx::TextureHandle GetTexture() const 
+    {
+        return m_texture; 
+    }
 
 private:
-    GLuint m_fbo;
-    GLuint m_texture;
-    GLuint m_depthTexture;
+    void SetupBuffers(bgfx::TextureHandle depthTexture);
 
-    GLuint m_quadVAO;
-    GLuint m_quadVBO;
+    bgfx::FrameBufferHandle m_fbo = BGFX_INVALID_HANDLE;
+    bgfx::TextureHandle m_texture = BGFX_INVALID_HANDLE;
+
+    bgfx::VertexLayout m_quadLayout;
     R_Shader m_shader;
 
-    int m_width, m_height;
-    void SetupBuffers();
+    bgfx::UniformHandle m_sSceneTexture = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sDepthTexture = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sBloomTexture = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sSsaoTexture = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sSsrTexture = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sMotionBlurTexture = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sVolumetricTexture = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uParams = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uBloomParams = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uSsaoParams = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uSsrParams = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uMotionBlurParams = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uVolumetricParams = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uColorParams = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uFogColor = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uFogParams = BGFX_INVALID_HANDLE;
+
+    int m_width = 0;
+    int m_height = 0;
 
     // Postprocess subrenderers
-    std::unique_ptr<R_Bloom> m_bloom;
-    std::unique_ptr<R_Volumetrics> m_volumetrics;
     std::unique_ptr<R_AutoExposure> m_autoExposure;
+    std::unique_ptr<R_Bloom> m_bloom;
     std::unique_ptr<R_SSAO> m_ssao;
     std::unique_ptr<R_SSR> m_ssr;
     std::unique_ptr<R_MotionBlur> m_motionBlur;
+    std::unique_ptr<R_Volumetrics> m_volumetrics;
     std::unique_ptr<R_CAS> m_cas;
 };

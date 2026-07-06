@@ -28,7 +28,7 @@
 #include <vector>
 #include <memory>
 #include <glm/glm.hpp>
-#include <glad/glad.h>
+#include <bgfx/bgfx.h>
 
 struct WaterSurface
 {
@@ -45,17 +45,31 @@ public:
     void AddSurface(const WaterSurface& surface);
     void ClearSurfaces();
     void RenderReflection(class Renderer* renderer, const Camera& mainCam);
-    void Draw(const Camera& camera, GLuint vao, GLuint lightmap);
+    void Draw(bgfx::ViewId viewId, const Camera& camera, bgfx::VertexBufferHandle bspVbo, bgfx::TextureHandle lightmap);
+    void Rescale(int width, int height);
     void Shutdown();
 
 private:
     R_Shader m_shader;
     std::vector<WaterSurface> m_surfaces;
-    std::vector<GLint> m_starts;
-    std::vector<GLsizei> m_counts;
-    GLuint m_reflectFBO = 0;
-    GLuint m_reflectTex = 0;
-    GLuint m_reflectRBO = 0;
+    std::vector<int32_t> m_starts;
+    std::vector<uint32_t> m_counts;
+    bgfx::FrameBufferHandle m_reflectFBO = BGFX_INVALID_HANDLE;
+    bgfx::TextureHandle m_reflectTex = BGFX_INVALID_HANDLE;
+    bgfx::TextureHandle m_reflectDepthTex = BGFX_INVALID_HANDLE;
+    bgfx::TextureHandle m_whiteTexture = BGFX_INVALID_HANDLE;
+    bgfx::TextureHandle m_defaultNormal = BGFX_INVALID_HANDLE;
+
+    bgfx::UniformHandle m_sReflectionTexture = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sDudvMap = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sNormalMap = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sFlowMap = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sLightmap = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uViewPos = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uTime = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uFlowParams = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uReflectViewProj = BGFX_INVALID_HANDLE;
+
     glm::mat4 m_reflectView;
     glm::mat4 m_reflectProj;
     int m_width, m_height;

@@ -22,9 +22,7 @@
  * SOFTWARE.
  */
 #pragma once
-#include "r_shader.h"
-#include "r_ui.h"
-#include <glad/glad.h>
+#include <bgfx/bgfx.h>
 
 class R_GBuffer
 {
@@ -36,30 +34,27 @@ public:
     void Shutdown();
     void Rescale(int width, int height);
 
-    void Bind();
-    void Unbind();
+    bgfx::FrameBufferHandle GetFBO() const;
+    bgfx::TextureHandle GetDepthTex() const;
+    bgfx::TextureHandle GetAlbedoTex() const;
+    bgfx::TextureHandle GetNormalTex() const;
+    bgfx::TextureHandle GetMRAOTex() const;
+    bgfx::TextureHandle GetLightmapUVTex() const;
 
     void DrawDebug(int w, int h);
 
-    GLuint GetFBO() const;
-    GLuint GetNormalTex() const;
-    GLuint GetAlbedoTex() const;
-    GLuint GetMRAOTex() const;
-    GLuint GetLightmapUVTex() const;
-    GLuint GetDepthTex() const;
-
 private:
-    GLuint m_fbo = 0;
-    GLuint m_normalTex = 0;
-    GLuint m_albedoTex = 0;
-    GLuint m_mraoTex = 0;
-    GLuint m_lightmapUVTex = 0;
-    GLuint m_depthTex = 0;
-
     R_Shader m_debugShader;
-    GLuint m_quadVAO = 0;
-    GLuint m_quadVBO = 0;
-    void InitDebugQuad();
+    bgfx::UniformHandle m_sTex0 = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_sTex1 = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle m_uMode = BGFX_INVALID_HANDLE;
+
+    bgfx::FrameBufferHandle m_fbo = BGFX_INVALID_HANDLE;
+    bgfx::TextureHandle m_normalTex = BGFX_INVALID_HANDLE;
+    bgfx::TextureHandle m_albedoTex = BGFX_INVALID_HANDLE;
+    bgfx::TextureHandle m_mraoTex = BGFX_INVALID_HANDLE;
+    bgfx::TextureHandle m_lightmapUVTex = BGFX_INVALID_HANDLE;
+    bgfx::TextureHandle m_depthTex = BGFX_INVALID_HANDLE;
 
     int m_width = 0;
     int m_height = 0;
