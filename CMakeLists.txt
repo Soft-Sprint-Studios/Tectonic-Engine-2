@@ -108,27 +108,52 @@ if(NOT IS_ARM64_CROSS)
     set(SHADER_SRC_DIR "${CMAKE_SOURCE_DIR}/src/shaders")
     set(SHADER_OUT_DIR "$<TARGET_FILE_DIR:Engine>/shaders")
 
-    file(GLOB SHADER_FILES "${SHADER_SRC_DIR}/*.vert" "${SHADER_SRC_DIR}/*.frag" "${SHADER_SRC_DIR}/*.comp")
+    file(GLOB SHADER_FILES
+        "${SHADER_SRC_DIR}/*.vert"
+        "${SHADER_SRC_DIR}/*.frag"
+        "${SHADER_SRC_DIR}/*.comp"
+    )
+
+    set(SHADER_OUTPUTS)
 
     foreach(SHADER_FILE ${SHADER_FILES})
-        get_filename_component(SHADER_NAME ${SHADER_FILE} NAME)
-        get_filename_component(SHADER_EXT ${SHADER_FILE} EXT)
+        get_filename_component(SHADER_NAME "${SHADER_FILE}" NAME)
+        get_filename_component(SHADER_EXT "${SHADER_FILE}" EXT)
 
         if(SHADER_EXT STREQUAL ".vert")
-            set(SHADER_TYPE "vertex")
+            set(SHADER_TYPE vertex)
         elseif(SHADER_EXT STREQUAL ".frag")
-            set(SHADER_TYPE "fragment")
+            set(SHADER_TYPE fragment)
         elseif(SHADER_EXT STREQUAL ".comp")
-            set(SHADER_TYPE "compute")
+            set(SHADER_TYPE compute)
         endif()
 
+        set(OUTPUT_FILE "${CMAKE_BINARY_DIR}/shaders/${SHADER_NAME}.bin")
+        list(APPEND SHADER_OUTPUTS "${OUTPUT_FILE}")
+
         add_custom_command(
-            TARGET Engine PRE_BUILD
-            COMMAND ${CMAKE_COMMAND} -E make_directory "${SHADER_OUT_DIR}"
-            COMMAND $<TARGET_FILE:shaderc> -f "${SHADER_FILE}" -i "${bgfx_SOURCE_DIR}/bgfx/src" -i "${bgfx_SOURCE_DIR}/src" -i "${SHADER_SRC_DIR}" --varyingdef "${SHADER_SRC_DIR}/varying.def.sc" -o "${SHADER_OUT_DIR}/${SHADER_NAME}.bin" --type ${SHADER_TYPE} --platform vulkan -p spirv
-            COMMENT "Compiling shaders..."
+            OUTPUT "${OUTPUT_FILE}"
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/shaders"
+            COMMAND $<TARGET_FILE:shaderc>
+                -f "${SHADER_FILE}"
+                -i "${bgfx_SOURCE_DIR}/bgfx/src"
+                -i "${bgfx_SOURCE_DIR}/src"
+                -i "${SHADER_SRC_DIR}"
+                --varyingdef "${SHADER_SRC_DIR}/varying.def.sc"
+                -o "${OUTPUT_FILE}"
+                --type ${SHADER_TYPE}
+                --platform vulkan
+                -p spirv
+            DEPENDS "${SHADER_FILE}"
+            VERBATIM
         )
     endforeach()
+
+    add_custom_target(Shaders ALL
+        DEPENDS ${SHADER_OUTPUTS}
+    )
+
+    add_dependencies(Engine Shaders)
 endif()
 
 # ---- LINKING ----
