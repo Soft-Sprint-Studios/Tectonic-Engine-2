@@ -60,13 +60,13 @@ void main()
         vec3 samplePos = tangent * u_kernel[i].x + bitangent * u_kernel[i].y + normal * u_kernel[i].z;
         samplePos = fragPos + samplePos * u_radius;
         
-        vec4 offset = vec4(samplePos, 1.0);
-        offset = mul(u_currentProj, offset);
-        offset.xyz /= offset.w;
-        offset.xyz = offset.xyz * 0.5 + 0.5;
-        offset.y = 1.0 - offset.y;
+        vec4 offset = mul(u_currentProj, vec4(samplePos, 1.0));
+        vec2 sampleUV = (offset.xy / offset.w) * 0.5 + 0.5;
+        sampleUV.y = 1.0 - sampleUV.y;
         
-        float sampleDepth = GetViewPos(offset.xy).z;
+        float sampledDepth = texture2DLod(s_depth, sampleUV, 0.0).r;
+        vec4 viewPosSample = mul(u_currentInvProj, vec4(sampleUV.x * 2.0 - 1.0, (1.0 - sampleUV.y) * 2.0 - 1.0, sampledDepth * 2.0 - 1.0, 1.0));
+        float sampleDepth = viewPosSample.z / viewPosSample.w;
         
         float rangeCheck = smoothstep(0.0, 1.0, u_radius / abs(fragPos.z - sampleDepth));
         occlusion += (sampleDepth >= samplePos.z + u_bias ? 1.0 : 0.0) * rangeCheck;

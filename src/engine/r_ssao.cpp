@@ -30,12 +30,13 @@
 CVar r_ssao("r_ssao", "1", "Enable Screen Space Ambient Occlusion.", CVAR_SAVE);
 CVar r_ssao_radius("r_ssao_radius", "0.5", "Sampling radius for AO.", CVAR_SAVE);
 CVar r_ssao_bias("r_ssao_bias", "0.025", "Occlusion bias to prevent self-shadowing.", CVAR_SAVE);
-CVar r_ssao_samples("r_ssao_samples", "32", "Number of AO samples per pixel.", CVAR_SAVE);
+CVar r_ssao_samples("r_ssao_samples", "16", "Number of AO samples per pixel.", CVAR_SAVE);
 CVar r_ssao_power("r_ssao_power", "2.0", "Contrast strength of the AO effect.", CVAR_SAVE);
 CVar r_ssao_blur_passes("r_ssao_blur_passes", "4", "Number of blur passes for SSAO.", CVAR_SAVE);
 CVar r_ssao_downsample("r_ssao_downsample", "2", "Downscaling factor for SSAO buffer (higher = faster).", CVAR_SAVE);
 
-R_SSAO::R_SSAO() {
+R_SSAO::R_SSAO() 
+{
 }
 
 R_SSAO::~R_SSAO()
