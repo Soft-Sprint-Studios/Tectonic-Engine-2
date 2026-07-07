@@ -15,7 +15,7 @@ vec4 cubic(float v)
 
 vec4 texture_bicubic(sampler2D tex, vec2 uv)
 {
-    vec2 texSize = vec2(4096.0, 4096.0); 
+    vec2 texSize = vec2(LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE); 
     vec2 texelSize = vec2_splat(1.0) / texSize;
     
     vec2 p = uv * texSize - 0.5;

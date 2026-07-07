@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 #pragma once
+#include "lightmap.sh"
 #include <vector>
 #include <string>
 #include <cstdint>
@@ -235,8 +236,8 @@ namespace BSP
         bool loaded = false;
 
         std::vector<float> lightmapAtlas;
-        int lightmapAtlasWidth = 4096;
-        int lightmapAtlasHeight = 4096;
+        int lightmapAtlasWidth = LIGHTMAP_ATLAS_SIZE;
+        int lightmapAtlasHeight = LIGHTMAP_ATLAS_SIZE;
     };
 
     inline glm::vec3 ToEngineSpace(const glm::vec3& v)
