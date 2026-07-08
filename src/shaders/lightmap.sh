@@ -1,7 +1,7 @@
 #ifndef LIGHTMAP_SH
 #define LIGHTMAP_SH
 
-#define LIGHTMAP_ATLAS_SIZE 4096
+#define LIGHTMAP_ATLAS_SIZE 4096.0
 
 #ifndef __cplusplus
 uniform vec4 u_lightmapParams;
@@ -43,25 +43,16 @@ vec4 texture_bicubic(sampler2D tex, vec2 uv)
 
 vec2 PackLightmapUV(vec2 lmCoord, vec2 lmSize)
 {
-    uint w_pixels = uint(round(clamp(lmSize.x * 4096.0, 0.0, 255.0)));
-    uint h_pixels = uint(round(clamp(lmSize.y * 4096.0, 0.0, 255.0)));
-
-    uint u_val = uint(clamp(lmCoord.x, 0.0, 1.0) * 16777215.0);
-    uint v_val = uint(clamp(lmCoord.y, 0.0, 1.0) * 16777215.0);
-
-    uint packed_u = (u_val & 0x00FFFFFFu) | (w_pixels << 24);
-    uint packed_v = (v_val & 0x00FFFFFFu) | (h_pixels << 24);
-
-    return vec2(asfloat(packed_u), asfloat(packed_v));
+    uvec2 uv   = uvec2(lmCoord * 16777215.0);
+    uvec2 size = uvec2(lmSize * LIGHTMAP_ATLAS_SIZE);
+    return asfloat(uv | (size << 24u));
 }
 
-void UnpackLightmapUV(vec2 packedFloat, out vec2 lmCoord, out vec2 lmSize)
+void UnpackLightmapUV(vec2 packed, out vec2 lmCoord, out vec2 lmSize)
 {
-    uint packed_u = asuint(packedFloat.x);
-    uint packed_v = asuint(packedFloat.y);
-
-    lmCoord = vec2(float(packed_u & 0x00FFFFFFu), float(packed_v & 0x00FFFFFFu)) / 16777215.0;
-    lmSize = vec2(float(packed_u >> 24), float(packed_v >> 24)) / 4096.0;
+    uvec2 p = asuint(packed);
+    lmCoord = vec2(p & 0x00FFFFFFu) / 16777215.0;
+    lmSize  = vec2(p >> 24u) / LIGHTMAP_ATLAS_SIZE;
 }
 
 vec4 SampleLightmap(sampler2D tex, vec2 uv)
