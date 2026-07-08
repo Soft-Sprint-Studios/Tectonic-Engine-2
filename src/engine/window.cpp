@@ -60,7 +60,7 @@ bool Window::Init(const char* title, int width, int height)
 
     SDL_SetWindowRelativeMouseMode(m_window, true);
 
-	// Setup custom cursor
+    // Setup custom cursor
     int w, h, channels;
     std::vector<uint8_t> fileData = Filesystem::ReadBinary("media/cursor.png");
     unsigned char* pixels = stbi_load_from_memory(fileData.data(), (int)fileData.size(), &w, &h, &channels, 4);
