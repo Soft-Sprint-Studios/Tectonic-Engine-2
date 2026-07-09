@@ -120,8 +120,7 @@ void Materials::LoadDefinitions(const std::string& path)
                     ss >> token;
                     ss >> token;
 
-                    std::string fileName = "textures/" + token.substr(1, token.size() - 2);
-                    auto tex = Resources::LoadTexture(fileName, true);
+                    auto tex = Resources::LoadTexture("textures/" + token.substr(1, token.size() - 2), true);
 
                     if (tex)
                     {
@@ -133,8 +132,7 @@ void Materials::LoadDefinitions(const std::string& path)
                     ss >> token; 
                     ss >> token;
 
-                    std::string fileName = "textures/" + token.substr(1, token.size() - 2);
-                    auto tex = Resources::LoadTexture(fileName, false);
+                    auto tex = Resources::LoadTexture("textures/" + token.substr(1, token.size() - 2), false);
 
                     if (tex)
                     {
