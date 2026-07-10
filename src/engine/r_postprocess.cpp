@@ -38,8 +38,14 @@ CVar r_tonemap("r_tonemap", "1", "Enable filmic ACES tonemapping.", CVAR_SAVE);
 CVar r_fxaa("r_fxaa", "1", "Enable Fast Approximate Anti-Aliasing.", CVAR_SAVE);
 CVar r_fxaa_strength("r_fxaa_strength", "1.0", "Strength of FXAA smoothing.", CVAR_SAVE);
 
-R_PostProcess::R_PostProcess() {}
-R_PostProcess::~R_PostProcess() { Shutdown(); }
+R_PostProcess::R_PostProcess()
+{
+}
+
+R_PostProcess::~R_PostProcess()
+{
+    Shutdown(); 
+}
 
 bool R_PostProcess::Init(int width, int height, bgfx::TextureHandle depthTexture)
 {
