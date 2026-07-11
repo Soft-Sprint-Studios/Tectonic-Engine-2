@@ -101,4 +101,9 @@ private:
     bgfx::UniformHandle m_sDiffuse = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle m_sNormal = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle m_sMRAO = BGFX_INVALID_HANDLE;
+
+    // Merged models for depth only
+    bgfx::VertexBufferHandle m_mergedDepthVbo = BGFX_INVALID_HANDLE;
+    bgfx::IndexBufferHandle m_mergedDepthEbo = BGFX_INVALID_HANDLE;
+    uint32_t m_mergedDepthIndexCount = 0;
 };

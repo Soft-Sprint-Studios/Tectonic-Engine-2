@@ -149,6 +149,45 @@ bool R_Models::Init(const BSP::MapData& mapData)
         }
     }
 
+    // Merged models for depth only
+    std::vector<ModelVertex> allVertices;
+    std::vector<uint32_t> allIndices;
+
+    for (auto& [path, group] : m_propGroups)
+    {
+        if (group.instanceCount == 0 || m_blueprints.find(path) == m_blueprints.end())
+            continue;
+
+        const auto& blueprint = m_blueprints[path];
+
+        for (const auto& worldTransform : group.transforms)
+        {
+            for (const auto& prim : blueprint.primitives)
+            {
+                uint32_t vertexOffset = (uint32_t)allVertices.size();
+
+                for (size_t i = 0; i < prim.positions.size(); ++i)
+                {
+                    ModelVertex v;
+                    v.pos = glm::vec3(worldTransform * glm::vec4(prim.positions[i], 1.0f));
+                    allVertices.push_back(v);
+                }
+
+                for (uint32_t index : prim.indices)
+                {
+                    allIndices.push_back(vertexOffset + index);
+                }
+            }
+        }
+    }
+
+    if (!allIndices.empty())
+    {
+        m_mergedDepthIndexCount = (uint32_t)allIndices.size();
+        m_mergedDepthVbo = bgfx::createVertexBuffer(bgfx::copy(allVertices.data(), (uint32_t)(allVertices.size() * sizeof(ModelVertex))), m_layout);
+        m_mergedDepthEbo = bgfx::createIndexBuffer(bgfx::copy(allIndices.data(), (uint32_t)(allIndices.size() * sizeof(uint32_t))), BGFX_BUFFER_INDEX32);
+    }
+
     return true;
 }
 
@@ -239,39 +278,54 @@ void R_Models::LoadModel(const std::string& path)
 
 void R_Models::Draw(bgfx::ViewId viewId, const R_Shader& shader, const Frustum& frustum, bool depthOnly)
 {
-    // Render static props
-    for (auto& [path, group] : m_propGroups)
+    if (depthOnly && bgfx::isValid(m_mergedDepthVbo))
     {
-        if (group.instanceCount == 0)
-        {
-            continue;
-        }
+        glm::mat4 identity(1.0f);
+        bgfx::setTransform(glm::value_ptr(identity));
 
-        if (frustum.valid && !frustum.IsBoxVisible(group.worldMins, group.worldMaxs))
-        {
-            continue;
-        }
+        float modelParams[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+        bgfx::setUniform(m_uModelParams, modelParams);
 
-        uint16_t numInstances = (uint16_t)group.instanceCount;
-        uint16_t instanceStride = 64;
-        float modelParams[4] = { 1.0f, 0.0f, group.hasLightmap ? 1.0f : 0.0f, 0.0f };
+        bgfx::setVertexBuffer(0, m_mergedDepthVbo);
+        bgfx::setIndexBuffer(m_mergedDepthEbo);
 
-        for (auto& mesh : group.meshes)
+        uint64_t state = BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LESS | BGFX_STATE_CULL_CW;
+        bgfx::setState(state);
+        bgfx::submit(viewId, shader.GetProgram());
+    }
+
+    if (!depthOnly)
+    {
+        for (auto& [path, group] : m_propGroups)
         {
-            if (mesh.indexCount == 0)
+            if (group.instanceCount == 0)
             {
                 continue;
             }
 
-            bgfx::InstanceDataBuffer idb;
-            bgfx::allocInstanceDataBuffer(&idb, numInstances, instanceStride);
-            std::memcpy(idb.data, group.transforms.data(), numInstances * instanceStride);
-            bgfx::setInstanceDataBuffer(&idb, 0, numInstances);
-
-            bgfx::setUniform(m_uModelParams, modelParams);
-
-            if (!depthOnly)
+            if (frustum.valid && !frustum.IsBoxVisible(group.worldMins, group.worldMaxs))
             {
+                continue;
+            }
+
+            uint16_t numInstances = (uint16_t)group.instanceCount;
+            uint16_t instanceStride = 64;
+            float modelParams[4] = { 1.0f, 0.0f, group.hasLightmap ? 1.0f : 0.0f, 0.0f };
+
+            for (auto& mesh : group.meshes)
+            {
+                if (mesh.indexCount == 0)
+                {
+                    continue;
+                }
+
+                bgfx::InstanceDataBuffer idb;
+                bgfx::allocInstanceDataBuffer(&idb, numInstances, instanceStride);
+                std::memcpy(idb.data, group.transforms.data(), numInstances * instanceStride);
+                bgfx::setInstanceDataBuffer(&idb, 0, numInstances);
+
+                bgfx::setUniform(m_uModelParams, modelParams);
+
                 if (group.hasLightmap && bgfx::isValid(group.lmUVSSBO))
                 {
                     bgfx::setBuffer(7, group.lmUVSSBO, bgfx::Access::Read);
@@ -280,16 +334,15 @@ void R_Models::Draw(bgfx::ViewId viewId, const R_Shader& shader, const Frustum& 
                 bgfx::setTexture(0, m_sDiffuse, (mesh.texture ? mesh.texture : Materials::GetTexture(""))->GetHandle());
                 bgfx::setTexture(1, m_sNormal, (mesh.normalMap ? mesh.normalMap : Materials::GetNormalMap(""))->GetHandle());
                 bgfx::setTexture(2, m_sMRAO, (mesh.mraohMap ? mesh.mraohMap : Materials::GetMRAOMap(""))->GetHandle());
+
+                bgfx::setVertexBuffer(0, mesh.vbo);
+                bgfx::setIndexBuffer(mesh.ebo);
+
+                uint64_t state = BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LESS | BGFX_STATE_CULL_CW;
+
+                bgfx::setState(state);
+                bgfx::submit(viewId, shader.GetProgram());
             }
-
-            bgfx::setVertexBuffer(0, mesh.vbo);
-            bgfx::setIndexBuffer(mesh.ebo);
-
-            uint64_t state = BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LESS;
-            state |= depthOnly ? 0 : BGFX_STATE_CULL_CW;
-
-            bgfx::setState(state);
-            bgfx::submit(viewId, shader.GetProgram());
         }
     }
 
@@ -303,7 +356,7 @@ void R_Models::Draw(bgfx::ViewId viewId, const R_Shader& shader, const Frustum& 
         LoadModel(p->m_modelPath);
 
         auto* data = GetModelData(p->m_modelPath);
-        if (!data) 
+        if (!data)
             continue;
 
         if (!ent->GetPhysObject())
@@ -332,7 +385,7 @@ void R_Models::Draw(bgfx::ViewId viewId, const R_Shader& shader, const Frustum& 
         if (!p->m_animName.empty())
         {
             for (int i = 0; i < (int)data->animations.size(); ++i)
-                if (data->animations[i].name == p->m_animName) 
+                if (data->animations[i].name == p->m_animName)
                     idx = i;
 
             if (idx != -1 && !data->animations.empty())
@@ -341,17 +394,16 @@ void R_Models::Draw(bgfx::ViewId viewId, const R_Shader& shader, const Frustum& 
                 if (!p->m_looping && p->m_animTime > duration)
                 {
                     p->m_animTime = duration;
-                    if (p->m_playing) 
-                    { 
-                        p->m_playing = false; 
-                        p->FireOutput("OnAnimationDone"); 
+                    if (p->m_playing)
+                    {
+                        p->m_playing = false;
+                        p->FireOutput("OnAnimationDone");
                     }
                 }
             }
         }
 
-        if (!depthOnly)
-            Animation::UpdateHierarchy(*data, p->m_nodeStates, idx, p->m_animTime);
+        Animation::UpdateHierarchy(*data, p->m_nodeStates, idx, p->m_animTime);
 
         glm::vec3 a = ent->GetAngles();
         glm::mat4 mat = glm::translate(glm::mat4(1.0f), ent->GetOrigin());
@@ -464,6 +516,13 @@ void R_Models::Shutdown()
 
         group.physicsShape = nullptr;
     }
+
+    if (bgfx::isValid(m_mergedDepthVbo)) 
+        bgfx::destroy(m_mergedDepthVbo);
+    if (bgfx::isValid(m_mergedDepthEbo)) 
+        bgfx::destroy(m_mergedDepthEbo);
+    m_mergedDepthVbo = BGFX_INVALID_HANDLE;
+    m_mergedDepthEbo = BGFX_INVALID_HANDLE;
 
     if (bgfx::isValid(m_uModelParams))
     {
