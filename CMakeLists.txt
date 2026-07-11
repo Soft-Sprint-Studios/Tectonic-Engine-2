@@ -58,6 +58,10 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(bgfx)
+target_compile_definitions(bgfx PUBLIC 
+    BGFX_CONFIG_MAX_VIEWS=512 
+    BGFX_CONFIG_MAX_FRAME_BUFFERS=512
+)
 
 # ---- GAME STATIC LIB ----
 add_library(Game STATIC ${GAME_SRC} ${GAME_HDR})

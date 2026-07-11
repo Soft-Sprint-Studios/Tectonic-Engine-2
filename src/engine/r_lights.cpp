@@ -48,7 +48,7 @@ R_Lights::R_Lights()
     m_uLightParams = BGFX_INVALID_HANDLE;
     m_uShadowParams = BGFX_INVALID_HANDLE;
 
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < 32; i++)
     {
         m_spotFB[i] = BGFX_INVALID_HANDLE;
         for (int j = 0; j < 6; j++)
@@ -79,13 +79,13 @@ bool R_Lights::Init()
     uint64_t depthRtFlags = BGFX_TEXTURE_RT | BGFX_SAMPLER_U_BORDER | BGFX_SAMPLER_V_BORDER;
     uint64_t colorRtFlags = BGFX_TEXTURE_RT | BGFX_SAMPLER_U_BORDER | BGFX_SAMPLER_V_BORDER;
 
-    m_shadowDepthTex = bgfx::createTexture2D(256, 256, false, 8, bgfx::TextureFormat::D16, depthRtFlags);
-    m_PointDepth = bgfx::createTexture2D(256, 256, false, 48, bgfx::TextureFormat::D16, depthRtFlags);
+    m_shadowDepthTex = bgfx::createTexture2D(256, 256, false, 32, bgfx::TextureFormat::D16, depthRtFlags);
+    m_PointDepth = bgfx::createTexture2D(256, 256, false, 192, bgfx::TextureFormat::D16, depthRtFlags);
 
-    m_SpotShadow = bgfx::createTexture2D(256, 256, false, 8, bgfx::TextureFormat::RG16F, colorRtFlags);
-    m_PointShadow = bgfx::createTexture2D(256, 256, false, 48, bgfx::TextureFormat::RG16F, colorRtFlags);
+    m_SpotShadow = bgfx::createTexture2D(256, 256, false, 32, bgfx::TextureFormat::RG16F, colorRtFlags);
+    m_PointShadow = bgfx::createTexture2D(256, 256, false, 192, bgfx::TextureFormat::RG16F, colorRtFlags);
 
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < 32; i++)
     {
         bgfx::Attachment at[2];
         at[0].init(m_SpotShadow, bgfx::Access::Write, (uint16_t)i);
@@ -93,7 +93,7 @@ bool R_Lights::Init()
         m_spotFB[i] = bgfx::createFrameBuffer(2, at);
     }
 
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < 32; i++)
     {
         for (int face = 0; face < 6; face++)
         {
@@ -110,8 +110,9 @@ bool R_Lights::Init()
     m_uLightParams = bgfx::createUniform("u_lightParams", bgfx::UniformType::Vec4);
     m_uShadowParams = bgfx::createUniform("u_shadowParams", bgfx::UniformType::Vec4);
 
-    m_pointLightSSBO = bgfx::createDynamicIndexBuffer(288, BGFX_BUFFER_COMPUTE_READ | BGFX_BUFFER_INDEX32);
-    m_spotLightSSBO = bgfx::createDynamicIndexBuffer(288, BGFX_BUFFER_COMPUTE_READ | BGFX_BUFFER_INDEX32);
+    uint32_t ssboSize = (32 * sizeof(GPULight)) / 4;
+    m_pointLightSSBO = bgfx::createDynamicIndexBuffer(ssboSize, BGFX_BUFFER_COMPUTE_READ | BGFX_BUFFER_INDEX32);
+    m_spotLightSSBO = bgfx::createDynamicIndexBuffer(ssboSize, BGFX_BUFFER_COMPUTE_READ | BGFX_BUFFER_INDEX32);
 
     return true;
 }
@@ -122,9 +123,9 @@ void R_Lights::SetupShadowMap(std::shared_ptr<DynamicLight> light)
     if (def.shadowLayer != -1) 
         return;
 
-    if (def.type == LightType::Spot && m_nextSpotLayer < 8)
+    if (def.type == LightType::Spot && m_nextSpotLayer < 32)
         def.shadowLayer = m_nextSpotLayer++;
-    else if (def.type == LightType::Point && m_nextPointLayer < 8)
+    else if (def.type == LightType::Point && m_nextPointLayer < 32)
         def.shadowLayer = m_nextPointLayer++;
 }
 
@@ -277,11 +278,11 @@ void R_Lights::Bind(const R_Shader& shader)
             spots.push_back(gpu);
     }
 
-    points.resize(8);
-    spots.resize(8);
+    points.resize(32);
+    spots.resize(32);
 
-    bgfx::update(m_pointLightSSBO, 0, bgfx::copy(points.data(), (uint32_t)(8 * sizeof(GPULight))));
-    bgfx::update(m_spotLightSSBO, 0, bgfx::copy(spots.data(), (uint32_t)(8 * sizeof(GPULight))));
+    bgfx::update(m_pointLightSSBO, 0, bgfx::copy(points.data(), (uint32_t)(32 * sizeof(GPULight))));
+    bgfx::update(m_spotLightSSBO, 0, bgfx::copy(spots.data(), (uint32_t)(32 * sizeof(GPULight))));
 
     bgfx::setBuffer(10, m_pointLightSSBO, bgfx::Access::Read);
     bgfx::setBuffer(11, m_spotLightSSBO, bgfx::Access::Read);
@@ -298,7 +299,7 @@ void R_Lights::Shutdown()
         m_cascade.reset();
     }
 
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < 32; i++)
     {
         if (bgfx::isValid(m_spotFB[i]))
         {
